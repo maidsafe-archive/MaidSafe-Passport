@@ -139,7 +139,8 @@ INSTALL(FILES ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/passport.h
 			  ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/signaturepacket.pb.h
 			  ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/systempackethandler.h
 			  ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/systempackets.h
-              ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/version.h
+			  ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/version.h
+			  ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/cryptokeypairs.h
               DESTINATION include/maidsafe/passport)
 INSTALL(EXPORT ${EXPORT_NAME} DESTINATION share/maidsafe)
 ADD_VERSION_INFO_TO_INSTALLED_FILE()
