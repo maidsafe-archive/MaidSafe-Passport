@@ -78,6 +78,9 @@ SOURCE_GROUP("passport Source Files" FILES ${SOURCE_FILES_PASSPORT_DIR})
 SOURCE_GROUP("passport Header Files" FILES ${HEADER_FILES_PASSPORT_DIR})
 
 FILE(GLOB ALL_FILES_PASSPORT_TESTS_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/passport/tests/*.cc" "${PROJECT_SOURCE_DIR}/src/maidsafe/passport/tests/*.h")
+SET(STYLE_PASSPORT ${ALL_FILES_PASSPORT_DIR} ${ALL_FILES_PASSPORT_TESTS_DIR})
+LIST(REMOVE_ITEM STYLE_PASSPORT "${PROJECT_SOURCE_DIR}/src/maidsafe/passport/signaturepacket.pb.cc")
+LIST(REMOVE_ITEM STYLE_PASSPORT "${PROJECT_SOURCE_DIR}/src/maidsafe/passport/signaturepacket.pb.h")
 
 ###################################################################################################
 # All Platforms:  Add Test Exes and Create all passport libs                                      #
@@ -112,7 +115,7 @@ ENDIF()
 ###################################################################################################
 IF(PYTHONINTERP_FOUND)
   IF(UNIX)
-    ADD_TEST(STYLE_CHECK python ${MaidSafeCommon_TOOLS_DIR}/cpplint.py ${ALL_FILES_PASSPORT_DIR} ${ALL_FILES_PASSPORT_TESTS_DIR})
+    ADD_TEST(STYLE_CHECK python ${MaidSafeCommon_TOOLS_DIR}/cpplint.py ${STYLE_PASSPORT})
   ELSE()
     STRING(REPLACE "/" "\\\\" STYLE_CHECK_SOURCE ${PROJECT_SOURCE_DIR})
     ADD_TEST(STYLE_CHECK ${MaidSafeCommon_TOOLS_DIR}/run_cpplint.bat ${STYLE_CHECK_SOURCE} ${MaidSafeCommon_TOOLS_DIR}/cpplint.py)
