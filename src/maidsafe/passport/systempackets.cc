@@ -65,7 +65,7 @@ std::string DebugString(const int &packet_type) {
     default:
       return "error";
   }
-};
+}
 
 bool IsSignature(const int &packet_type, bool check_for_self_signer) {
   switch (packet_type) {
