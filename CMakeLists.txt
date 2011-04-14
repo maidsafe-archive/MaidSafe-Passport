@@ -63,6 +63,8 @@ ADD_MAIDSAFE_LIBRARY(MaidSafe-DHT)
 ###################################################################################################
 # Standard setup                                                                                  #
 ###################################################################################################
+SET(PROTO_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src)
+FILE(GLOB PROTO_FILES RELATIVE ${PROTO_SOURCE_DIR} "${PROTO_SOURCE_DIR}/maidsafe/passport/*.proto")
 INCLUDE(maidsafe_standard_setup)
 HANDLE_VERSIONS(${PROJECT_SOURCE_DIR}/src/maidsafe/passport/version.h)
 
