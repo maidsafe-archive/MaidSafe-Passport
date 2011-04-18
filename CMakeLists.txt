@@ -108,7 +108,10 @@ IF(MSVC)
                           LINK_FLAGS_DEBUG "${LINKER_LIBS_DIRS_DEBUG}"
                           LINK_FLAGS_RELWITHDEBINFO "${LINKER_LIBS_DIRS_DEBUG}"
                           LINK_FLAGS_MINSIZEREL "${LINKER_LIBS_DIRS_DEBUG}")
+ELSEIF(UNIX)
+  SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/src/maidsafe/passport/signaturepacket.pb.cc PROPERTIES COMPILE_FLAGS "-Wno-effc++")
 ENDIF()
+
 
 ###################################################################################################
 # Tests                                                                                           #
