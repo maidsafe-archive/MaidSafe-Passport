@@ -51,4 +51,14 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   Please update this project.
 #endif
 
+#include "maidsafe/pki/version.h"
+#define THIS_NEEDS_MAIDSAFE_PKI_VERSION 1
+#if MAIDSAFE_PKI_VERSION < THIS_NEEDS_MAIDSAFE_PKI_VERSION
+#error This API is not compatible with the installed library.\
+  Please update the MaidSafe-Pki library.
+#elif MAIDSAFE_PKI_VERSION > THIS_NEEDS_MAIDSAFE_PKI_VERSION
+#error This API uses a newer version of the MaidSafe-Pki library.\
+  Please update this project.
+#endif
+
 #endif  // MAIDSAFE_PASSPORT_VERSION_H_
