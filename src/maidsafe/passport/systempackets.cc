@@ -23,6 +23,7 @@
 #include "maidsafe/passport/systempackets.h"
 #include <cstdio>
 #include "boost/lexical_cast.hpp"
+#include "maidsafe/common/log.h"
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/passport/signaturepacket.pb.h"
 
@@ -287,7 +288,9 @@ TmidPacket::TmidPacket()
       salt_(),
       secure_key_(),
       secure_iv_(),
-      encrypted_master_data_() {}
+      encrypted_master_data_(),
+      obfuscated_master_data_(),
+      obfuscation_salt_() {}
 
 TmidPacket::TmidPacket(const std::string &username,
                        const std::string &pin,
@@ -304,7 +307,9 @@ TmidPacket::TmidPacket(const std::string &username,
       salt_(),
       secure_key_(),
       secure_iv_(),
-      encrypted_master_data_() {
+      encrypted_master_data_(),
+      obfuscated_master_data_(),
+      obfuscation_salt_() {
   Initialise();
 }
 
@@ -313,10 +318,18 @@ void TmidPacket::Initialise() {
     return Clear();
 
   name_ = crypto::Hash<crypto::SHA512>(username_ + pin_ + rid_);
-  if (!SetPassword())
+  if (!SetPassword()) {
+    DLOG(ERROR) << "TmidPacket::Initialise: Password set failure" << std::endl;
     return;
-  if (!SetPlainData())
+  }
+  if (!ObfuscatePlainData()) {
+    DLOG(ERROR) << "TmidPacket::Initialise: Obfuscation failure" << std::endl;
     return;
+  }
+  if (!SetPlainData()) {
+    DLOG(ERROR) << "TmidPacket::Initialise: Plain data failure" << std::endl;
+    return;
+  }
   if (name_.empty())
     Clear();
 }
@@ -339,7 +352,7 @@ bool TmidPacket::SetPassword() {
   }
 
   std::string secure_password = crypto::SecurePassword(password_, salt_,
-                                                        random_no_from_rid);
+                                                       random_no_from_rid);
   secure_key_ = secure_password.substr(0, crypto::AES256_KeySize);
   secure_iv_ = secure_password.substr(crypto::AES256_KeySize,
                                       crypto::AES256_IVSize);
@@ -351,14 +364,44 @@ bool TmidPacket::SetPassword() {
   }
 }
 
+bool TmidPacket::ObfuscatePlainData() {
+  if (plain_text_master_data_.empty() || username_.empty() || pin_.empty()) {
+    obfuscated_master_data_.clear();
+    return false;
+  }
+
+  obfuscation_salt_ = crypto::Hash<crypto::SHA512>(password_ + rid_);
+  boost::uint32_t numerical_pin(boost::lexical_cast<boost::uint32_t>(pin_));
+  boost::uint32_t rounds(numerical_pin / 2 == 0 ?
+                         numerical_pin * 3 / 2 : numerical_pin / 2);
+  std::string obfuscation_str = crypto::SecurePassword(username_,
+                                                       obfuscation_salt_,
+                                                       rounds);
+
+  // make the obfuscation_str of same size for XOR
+  if (plain_text_master_data_.size() < obfuscation_str.size()) {
+    obfuscation_str.resize(plain_text_master_data_.size());
+  } else if (plain_text_master_data_.size() > obfuscation_str.size()) {
+    while (plain_text_master_data_.size() > obfuscation_str.size())
+      obfuscation_str += obfuscation_str;
+    obfuscation_str.resize(plain_text_master_data_.size());
+  }
+
+  obfuscated_master_data_ = crypto::XOR(plain_text_master_data_,
+                                        obfuscation_str);
+
+  return true;
+}
+
 bool TmidPacket::SetPlainData() {
-  if (plain_text_master_data_.empty() || secure_key_.empty() ||
+  if (obfuscated_master_data_.empty() || secure_key_.empty() ||
       secure_iv_.empty()) {
     encrypted_master_data_.clear();
     return false;
   }
 
-  encrypted_master_data_ = crypto::SymmEncrypt(plain_text_master_data_,
+
+  encrypted_master_data_ = crypto::SymmEncrypt(obfuscated_master_data_,
                                                secure_key_, secure_iv_);
   if (encrypted_master_data_.empty()) {
     Clear();
@@ -366,6 +409,29 @@ bool TmidPacket::SetPlainData() {
   } else {
     return true;
   }
+}
+
+bool TmidPacket::ClarifyObfuscatedData() {
+  boost::uint32_t numerical_pin(boost::lexical_cast<boost::uint32_t>(pin_));
+  boost::uint32_t rounds(numerical_pin / 2 == 0 ?
+                         numerical_pin * 3 / 2 : numerical_pin / 2);
+  std::string obfuscation_str =
+      crypto::SecurePassword(username_,
+                             crypto::Hash<crypto::SHA512>(password_ + rid_),
+                             rounds);
+
+  // make the obfuscation_str of same sizer for XOR
+  if (obfuscated_master_data_.size() < obfuscation_str.size()) {
+    obfuscation_str.resize(obfuscated_master_data_.size());
+  } else if (obfuscated_master_data_.size() > obfuscation_str.size()) {
+    while (obfuscated_master_data_.size() > obfuscation_str.size())
+      obfuscation_str += obfuscation_str;
+    obfuscation_str.resize(obfuscated_master_data_.size());
+  }
+
+  plain_text_master_data_ = crypto::XOR(obfuscated_master_data_,
+                                        obfuscation_str);
+  return true;
 }
 
 std::string TmidPacket::DecryptPlainData(
@@ -386,10 +452,15 @@ std::string TmidPacket::DecryptPlainData(
   }
 
   encrypted_master_data_ = encrypted_master_data;
-  plain_text_master_data_ = crypto::SymmDecrypt(encrypted_master_data_,
+  obfuscated_master_data_ = crypto::SymmDecrypt(encrypted_master_data_,
                                                 secure_key_, secure_iv_);
-  if (plain_text_master_data_.empty())
+  if (obfuscated_master_data_.empty())
     Clear();
+
+  // Undo obfuscation of master data
+  if (!ClarifyObfuscatedData())
+    return "";
+
   return plain_text_master_data_;
 }
 
@@ -404,6 +475,8 @@ void TmidPacket::Clear() {
   secure_key_.clear();
   secure_iv_.clear();
   encrypted_master_data_.clear();
+  obfuscated_master_data_.clear();
+  obfuscation_salt_.clear();
 }
 
 bool TmidPacket::Equals(const pki::Packet *other) const {

@@ -117,9 +117,12 @@ class TmidPacket : public pki::Packet {
   virtual void Initialise();
   bool SetPassword();
   bool SetPlainData();
+  bool ObfuscatePlainData();
+  bool ClarifyObfuscatedData();
   virtual void Clear();
-  std::string username_, pin_, password_, rid_, plain_text_master_data_, salt_;
-  std::string secure_key_, secure_iv_, encrypted_master_data_;
+  std::string username_, pin_, password_, rid_, plain_text_master_data_, salt_,
+              secure_key_, secure_iv_, encrypted_master_data_,
+              obfuscated_master_data_, obfuscation_salt_;
 };
 
 }  // namespace passport

@@ -679,7 +679,26 @@ TEST_F(SystemPacketsTest, BEH_PASSPORT_SetAndDecryptData) {
   std::string rid;
   ASSERT_TRUE(GetRids(&rid, NULL));
   const std::string kRid(rid);
-  const std::string kPlainData(RandomString(100000));
+
+  // Plain data is now to be obfuscated first
+  std::string kPlainData(RandomString(100000));
+  boost::uint32_t numerical_pin(boost::lexical_cast<boost::uint32_t>(kPin));
+  boost::uint32_t rounds(numerical_pin / 2 == 0 ?
+                         numerical_pin * 3 / 2 : numerical_pin / 2);
+  std::string obfuscation_str =
+      crypto::SecurePassword(kUsername,
+                             crypto::Hash<crypto::SHA512>(kPassword + kRid),
+                             rounds);
+
+  // make the obfuscation_str of same size for XOR
+  if (kPlainData.size() < obfuscation_str.size()) {
+    obfuscation_str.resize(kPlainData.size());
+  } else if (kPlainData.size() > obfuscation_str.size()) {
+    while (kPlainData.size() > obfuscation_str.size())
+      obfuscation_str += obfuscation_str;
+    obfuscation_str.resize(kPlainData.size());
+  }
+  const std::string kObfuscatedData(crypto::XOR(kPlainData, obfuscation_str));
 
   // Set plain data
   std::string expected_tmid_name(crypto::Hash<crypto::SHA512>(kUsername +
@@ -700,7 +719,7 @@ TEST_F(SystemPacketsTest, BEH_PASSPORT_SetAndDecryptData) {
   std::string expected_secure_iv = expected_secure_password.
                                        substr(crypto::AES256_KeySize,
                                               crypto::AES256_IVSize);
-  std::string expected_encrypted_data(crypto::SymmEncrypt(kPlainData,
+  std::string expected_encrypted_data(crypto::SymmEncrypt(kObfuscatedData,
                                                           expected_secure_key,
                                                           expected_secure_iv));
   TmidPtr tmid(new TmidPacket(kUsername, kPinStr, kRid, false, kPassword,
