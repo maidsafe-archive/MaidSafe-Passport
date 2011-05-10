@@ -22,6 +22,8 @@
 
 #include "maidsafe/passport/systempackethandler.h"
 #include <cstdio>
+
+#include "maidsafe/passport/log.h"
 #include "maidsafe/passport/passportconfig.h"
 #include "maidsafe/passport/signaturepacket.pb.h"
 
@@ -44,8 +46,8 @@ bool SystemPacketHandler::AddPendingPacket(
             PacketInfo(packet)));
 #ifdef DEBUG
     if (!result.second)
-      printf("SystemPacketHandler::AddPacket: Failed for %s.\n",
-              DebugString(packet->packet_type()).c_str());
+      DLOG(ERROR) << "SystemPacketHandler::AddPacket: Failed for "
+                  << DebugString(packet->packet_type()) << std::endl;
 #endif
     return result.second;
   } else {
@@ -62,19 +64,15 @@ int SystemPacketHandler::ConfirmPacket(
   boost::mutex::scoped_lock lock(mutex_);
   SystemPacketMap::iterator it = packets_.find(packet_type);
   if (it == packets_.end()) {
-#ifdef DEBUG
-    printf("SystemPacketHandler::ConfirmPacket: Missing %s.\n",
-            DebugString(packet_type).c_str());
-#endif
+     DLOG(ERROR) << "SystemPacketHandler::ConfirmPacket: Missing "
+                 << DebugString(packet_type) << std::endl;
     return kNoPendingPacket;
   }
   if (!(*it).second.pending) {
     if ((*it).second.stored && (*it).second.stored->Equals(packet.get()))
       return kSuccess;
-#ifdef DEBUG
-    printf("SystemPacketHandler::ConfirmPacket: Missing %s.\n",
-            DebugString(packet_type).c_str());
-#endif
+    DLOG(ERROR) << "SystemPacketHandler::ConfirmPacket: Missing "
+                << DebugString(packet_type) << std::endl;
     return kNoPendingPacket;
   }
   bool dependencies_confirmed(true);
@@ -109,17 +107,15 @@ int SystemPacketHandler::ConfirmPacket(
       break;
   }
   if (!dependencies_confirmed) {
-#ifdef DEBUG
-    printf("SystemPacketHandler::ConfirmPacket: dependencies for %s not "
-           "confirmed.\n", DebugString(packet_type).c_str());
-#endif
+    DLOG(ERROR) << "SystemPacketHandler::ConfirmPacket: dependencies for"
+                << DebugString(packet_type) << "not confirmed" << std::endl;
     return kMissingDependentPackets;
   } else {
     if (!(*it).second.pending->Equals(packet.get())) {
-#ifdef DEBUG
-      printf("SystemPacketHandler::ConfirmPacket: input %s != pending %s.\n",
-          DebugString(packet_type).c_str(), DebugString(packet_type).c_str());
-#endif
+      DLOG(ERROR) << "SystemPacketHandler::ConfirmPacket: input "
+                  << DebugString(packet_type) << " != pending "
+                  << DebugString(packet_type) << std::endl;
+
       return kPacketsNotEqual;
     }
     (*it).second.stored = (*it).second.pending;
@@ -132,10 +128,8 @@ bool SystemPacketHandler::RevertPacket(const PacketType &packet_type) {
   boost::mutex::scoped_lock lock(mutex_);
   SystemPacketMap::iterator it = packets_.find(packet_type);
   if (it == packets_.end()) {
-#ifdef DEBUG
-    printf("SystemPacketHandler::RevertPacket: Missing %s.\n",
-            DebugString(packet_type).c_str());
-#endif
+    DLOG(ERROR) << "SystemPacketHandler::RevertPacket: Missing "
+                << DebugString(packet_type) << std::endl;
     return false;
   } else {
     (*it).second.pending.reset();
@@ -150,10 +144,8 @@ std::shared_ptr<pki::Packet> SystemPacketHandler::GetPacket(
   boost::mutex::scoped_lock lock(mutex_);
   SystemPacketMap::iterator it = packets_.find(packet_type);
   if (it == packets_.end()) {
-#ifdef DEBUG
-    printf("SystemPacketHandler::Packet: Missing %s.\n",
-            DebugString(packet_type).c_str());
-#endif
+    DLOG(ERROR) << "SystemPacketHandler::Packet: Missing "
+                << DebugString(packet_type) << std::endl;
   } else {
     std::shared_ptr<pki::Packet> retrieved_packet;
     if (confirmed && (*it).second.stored) {
@@ -173,17 +165,14 @@ std::shared_ptr<pki::Packet> SystemPacketHandler::GetPacket(
         packet = std::shared_ptr<SignaturePacket>(new SignaturePacket(
             *std::static_pointer_cast<SignaturePacket>(retrieved_packet)));
       } else {
-#ifdef DEBUG
-        printf("SystemPacketHandler::Packet: %s type error.\n",
-                DebugString(packet_type).c_str());
-#endif
+        DLOG(ERROR) << "SystemPacketHandler::Packet: "
+                    << DebugString(packet_type) << " type error."  << std::endl;
       }
     } else {
-#ifdef DEBUG
-      printf("SystemPacketHandler::Packet: %s not ",
-             DebugString(packet_type).c_str());
-      printf(confirmed ? "confirmed as stored.\n" : "pending confirmation.\n");
-#endif
+      DLOG(ERROR) << "SystemPacketHandler::Packet: " << DebugString(packet_type)
+        << "not "
+        << (confirmed ? "confirmed as stored." : "pending confirmation.")
+        << std::endl;
     }
   }
   return packet;
@@ -220,9 +209,7 @@ int SystemPacketHandler::ParseKeyring(const std::string &serialised_keyring,
   Keyring keyring;
   if (serialised_keyring.empty() ||
       !keyring.ParseFromString(serialised_keyring)) {
-#ifdef DEBUG
-    printf("SystemPacketHandler::ParseKeyring failed.\n");
-#endif
+    DLOG(ERROR) << "SystemPacketHandler::ParseKeyring failed." << std::endl;
     return kBadSerialisedKeyring;
   }
   boost::mutex::scoped_lock lock(mutex_);
@@ -237,8 +224,8 @@ int SystemPacketHandler::ParseKeyring(const std::string &serialised_keyring,
             static_cast<PacketType>(sig_packet->packet_type()), packet_info));
 #ifdef DEBUG
     if (!result.second)
-      printf("SystemPacketHandler::ParseKeyring: Failed for %s.\n",
-              DebugString(sig_packet->packet_type()).c_str());
+      DLOG(ERROR) << "SystemPacketHandler::ParseKeyring: Failed for "
+                  << DebugString(sig_packet->packet_type()) << std::endl;
 #endif
     success = success && result.second;
   }
@@ -263,10 +250,8 @@ int SystemPacketHandler::DeletePacket(const PacketType &packet_type) {
   boost::mutex::scoped_lock lock(mutex_);
   size_t deleted_count = packets_.erase(packet_type);
   if (deleted_count == 0U) {
-#ifdef DEBUG
-    printf("SystemPacketHandler::DeletePacket: Missing %s.\n",
-            DebugString(packet_type).c_str());
-#endif
+    DLOG(ERROR) << "SystemPacketHandler::DeletePacket: Missing "
+                << DebugString(packet_type) << std::endl;
     return kNoPacket;
   } else {
     return kSuccess;

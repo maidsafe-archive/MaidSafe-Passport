@@ -23,7 +23,7 @@
 #include "maidsafe/passport/systempackets.h"
 #include <cstdio>
 #include "boost/lexical_cast.hpp"
-#include "maidsafe/common/log.h"
+#include "maidsafe/passport/log.h"
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/passport/signaturepacket.pb.h"
 
@@ -210,9 +210,7 @@ void MidPacket::Initialise() {
     pin = boost::lexical_cast<boost::uint32_t>(pin_);
   }
   catch(boost::bad_lexical_cast & e) {
-#ifdef DEBUG
-    printf("MidPacket::Initialise: Bad pin: %s\n", e.what());
-#endif
+    DLOG(ERROR) << "MidPacket::Initialise: Bad pin:" << e.what() << std::endl;
     return Clear();
   }
   std::string secure_password = crypto::SecurePassword(username_, salt_, pin);
@@ -236,9 +234,8 @@ void MidPacket::SetRid(const std::string &rid) {
 
 std::string MidPacket::DecryptRid(const std::string &encrypted_rid) {
   if (username_.empty() || pin_.empty() || encrypted_rid.empty()) {
-#ifdef DEBUG
-    printf("MidPacket::DecryptRid: Bad encrypted RID or user data empty.\n");
-#endif
+    DLOG(ERROR) << "MidPacket::DecryptRid: Bad encrypted RID or user data empty." //NOLINT
+                << std::endl;
     Clear();
     return 0;
   }
@@ -441,9 +438,8 @@ std::string TmidPacket::DecryptPlainData(
   if (!SetPassword())
     return "";
   if (encrypted_master_data.empty()) {
-#ifdef DEBUG
-    printf("TmidPacket::DecryptPlainData: bad encrypted data.\n");
-#endif
+    DLOG(ERROR) << "TmidPacket::DecryptPlainData: bad encrypted data."
+                << std::endl;
     password_.clear();
     salt_.clear();
     secure_key_.clear();
