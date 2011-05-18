@@ -59,8 +59,9 @@ int Passport::SetNewUserData(const std::string &password,
                              const std::string &plain_text_master_data,
                              std::shared_ptr<MidPacket> mid,
                              std::shared_ptr<MidPacket> smid,
-                             std::shared_ptr<TmidPacket> tmid) {
-  if (!mid || !smid || !tmid)
+                             std::shared_ptr<TmidPacket> tmid,
+                             std::shared_ptr<TmidPacket> stmid) {
+  if (!mid || !smid || !tmid || !stmid)
     return kNullPointer;
   // Set same RID for MID and SMID
   std::shared_ptr<MidPacket> retrieved_pending_mid(PendingMid());
@@ -70,27 +71,35 @@ int Passport::SetNewUserData(const std::string &password,
   if (!retrieved_pending_smid)
     return kNoSmid;
   std::string rid(RandomString((RandomUint32() % 64) + 64));
+  std::string srid(RandomString((RandomUint32() % 64) + 64));
   retrieved_pending_mid->SetRid(rid);
-  retrieved_pending_smid->SetRid(rid);
+  retrieved_pending_smid->SetRid(srid);
 
   // Create TMID
   std::shared_ptr<TmidPacket> new_tmid(
       new TmidPacket(retrieved_pending_mid->username(),
                      retrieved_pending_mid->pin(), rid, false, password,
                      plain_text_master_data));
+  std::shared_ptr<TmidPacket> new_stmid(
+      new TmidPacket(retrieved_pending_mid->username(),
+                     retrieved_pending_mid->pin(), srid, true, password,
+                     plain_text_master_data));
   bool success(!retrieved_pending_mid->name().empty() &&
                !retrieved_pending_smid->name().empty() &&
-               !new_tmid->name().empty());
+               !new_tmid->name().empty() &&
+               !new_stmid->name().empty());
   if (success) {
     success = packet_handler_.AddPendingPacket(retrieved_pending_mid) &&
               packet_handler_.AddPendingPacket(retrieved_pending_smid) &&
-              packet_handler_.AddPendingPacket(new_tmid);
+              packet_handler_.AddPendingPacket(new_tmid) &&
+              packet_handler_.AddPendingPacket(new_stmid);
   }
 
   if (success) {
     *mid = *retrieved_pending_mid;
     *smid = *retrieved_pending_smid;
     *tmid = *new_tmid;
+    *stmid = *new_stmid;
     return kSuccess;
   } else {
     return kPassportError;
@@ -99,10 +108,11 @@ int Passport::SetNewUserData(const std::string &password,
 
 int Passport::ConfirmNewUserData(std::shared_ptr<MidPacket> mid,
                                  std::shared_ptr<MidPacket> smid,
-                                 std::shared_ptr<TmidPacket> tmid) {
-  if (!mid || !smid || !tmid)
+                                 std::shared_ptr<TmidPacket> tmid,
+                                 std::shared_ptr<TmidPacket> stmid) {
+  if (!mid || !smid || !tmid || !stmid)
     return kNullPointer;
-  return ConfirmUserData(mid, smid, tmid, std::shared_ptr<TmidPacket>());
+  return ConfirmUserData(mid, smid, tmid, stmid);
 }
 
 std::string Passport::SerialiseKeyring() {
@@ -144,7 +154,7 @@ int Passport::UpdateMasterData(
   if (!retrieved_tmid)
     return kNoTmid;
   std::shared_ptr<TmidPacket> retrieved_stmid(Stmid());
-  std::shared_ptr<TmidPacket> retrieved_pending_stmid(PendingStmid());
+//  std::shared_ptr<TmidPacket> retrieved_pending_stmid(PendingStmid());
 
   std::shared_ptr<TmidPacket> tmid(
       new TmidPacket(retrieved_tmid->username(), retrieved_tmid->pin(), new_rid,
@@ -172,13 +182,14 @@ int Passport::UpdateMasterData(
   *updated_mid = *retrieved_mid;
   *updated_smid = *retrieved_smid;
   *new_tmid = *tmid;
-  if (retrieved_stmid && (!(retrieved_pending_stmid &&
-      retrieved_pending_stmid->Equals(retrieved_tmid.get())))) {
-    *tmid_for_deletion = *retrieved_stmid;
-  } else {
-    std::shared_ptr<TmidPacket> empty_tmid(new TmidPacket);
-    *tmid_for_deletion = *empty_tmid;
-  }
+  *tmid_for_deletion = *retrieved_stmid;
+//  if (retrieved_stmid && (!(retrieved_pending_stmid &&
+//      retrieved_pending_stmid->Equals(retrieved_tmid.get())))) {
+//    *tmid_for_deletion = *retrieved_stmid;
+//  } else {
+//    std::shared_ptr<TmidPacket> empty_tmid(new TmidPacket);
+//    *tmid_for_deletion = *empty_tmid;
+//  }
   return kSuccess;
 }
 

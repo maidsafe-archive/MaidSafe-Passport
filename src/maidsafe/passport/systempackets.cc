@@ -363,6 +363,9 @@ bool TmidPacket::SetPassword() {
 
 bool TmidPacket::ObfuscatePlainData() {
   if (plain_text_master_data_.empty() || username_.empty() || pin_.empty()) {
+    DLOG(ERROR) << "TmidPacket::ObfuscatePlainData: "
+                << plain_text_master_data_.empty() << " - "
+                << username_.empty() << " - " << pin_.empty() << std::endl;
     obfuscated_master_data_.clear();
     return false;
   }

@@ -107,8 +107,8 @@ int SystemPacketHandler::ConfirmPacket(
       break;
   }
   if (!dependencies_confirmed) {
-    DLOG(ERROR) << "SystemPacketHandler::ConfirmPacket: dependencies for"
-                << DebugString(packet_type) << "not confirmed" << std::endl;
+    DLOG(ERROR) << "SystemPacketHandler::ConfirmPacket: dependencies for "
+                << DebugString(packet_type) << " not confirmed" << std::endl;
     return kMissingDependentPackets;
   } else {
     if (!(*it).second.pending->Equals(packet.get())) {
@@ -170,9 +170,10 @@ std::shared_ptr<pki::Packet> SystemPacketHandler::GetPacket(
       }
     } else {
       DLOG(ERROR) << "SystemPacketHandler::Packet: " << DebugString(packet_type)
-        << "not "
-        << (confirmed ? "confirmed as stored." : "pending confirmation.")
-        << std::endl;
+                  << " not "
+                  << (confirmed ? "confirmed as stored." :
+                                  "pending confirmation.")
+                  << std::endl;
     }
   }
   return packet;

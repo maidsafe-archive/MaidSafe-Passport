@@ -71,7 +71,8 @@ class Passport {
                      const std::string &plain_text_master_data,
                      std::shared_ptr<MidPacket> mid,
                      std::shared_ptr<MidPacket> smid,
-                     std::shared_ptr<TmidPacket> tmid);
+                     std::shared_ptr<TmidPacket> tmid,
+                     std::shared_ptr<TmidPacket> stmid);
 
   // Used when creating a new user.
   // Confirms MID, SMID and TMID are successfully stored.  mid, smid and tmid
@@ -80,7 +81,8 @@ class Passport {
   // else SetNewUserData should be used to regenerate pending packets.
   int ConfirmNewUserData(std::shared_ptr<MidPacket> mid,
                          std::shared_ptr<MidPacket> smid,
-                         std::shared_ptr<TmidPacket> tmid);
+                         std::shared_ptr<TmidPacket> tmid,
+                         std::shared_ptr<TmidPacket> stmid);
 
   // Used before saving a session.
   // Copies all confirmed signature packets to a keyring, and returns the
