@@ -29,6 +29,13 @@
 
 #include "maidsafe/pki/packet.h"
 #include "maidsafe/passport/passportconfig.h"
+#include "maidsafe/passport/version.h"
+
+#if MAIDSAFE_PASSPORT_VERSION != 100
+#  error This API is not compatible with the installed library.\
+    Please update the maidsafe-passport library.
+#endif
+
 
 namespace maidsafe {
 

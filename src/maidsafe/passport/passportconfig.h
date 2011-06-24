@@ -24,6 +24,13 @@
 #ifndef MAIDSAFE_PASSPORT_PASSPORTCONFIG_H_
 #define MAIDSAFE_PASSPORT_PASSPORTCONFIG_H_
 
+#include "maidsafe/passport/version.h"
+
+#if MAIDSAFE_PASSPORT_VERSION != 100
+#  error This API is not compatible with the installed library.\
+    Please update the maidsafe-passport library.
+#endif
+
 
 // *** typedefs, enums and consts ***
 namespace maidsafe {

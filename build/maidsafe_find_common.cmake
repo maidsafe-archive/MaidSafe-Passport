@@ -22,15 +22,17 @@
 #                                                                              #
 #==============================================================================#
 #                                                                              #
-#  Module used to locate MaidSafe-Common cmake modules.                        #
+#  Module used to locate MaidSafe-Common tools, cmake modules and the          #
+#    maidsafe_common libs and headers.                                         #
 #                                                                              #
-#  Settable variables to aid with finding MaidSafe-Common cmake modules are:   #
+#  Settable variables to aid with finding MaidSafe-Common are:                 #
 #    MAIDSAFE_COMMON_INSTALL_DIR                                               #
 #                                                                              #
-#  Variables set and cached by this module are:                                #
-#    MaidSafeCommon_MODULES_DIR.                                               #
+#  If found, a target named maidsafe_common_static is imported.                #
 #                                                                              #
-#  If found, MaidSafeCommon_MODULES_DIR is added to CMAKE_MODULE_PATH.         #
+#  Variables set and cached by this module are:                                #
+#    MaidSafeCommon_INCLUDE_DIR, MaidSafeCommon_MODULES_DIR,                   #
+#    MaidSafeCommon_TOOLS_DIR and MAIDSAFE_COMMON_VERSION.                     #
 #                                                                              #
 #==============================================================================#
 
@@ -40,7 +42,8 @@ IF(NOT MAIDSAFE_COMMON_INSTALL_DIR)
   IF(DEFAULT_THIRD_PARTY_ROOT)
     SET(MAIDSAFE_COMMON_INSTALL_DIR ${DEFAULT_THIRD_PARTY_ROOT})
   ELSE()
-    SET(MAIDSAFE_COMMON_INSTALL_DIR ${PROJECT_SOURCE_DIR}/../MaidSafe-Common/installed)
+    GET_FILENAME_COMPONENT(MAIDSAFE_COMMON_INSTALL_DIR ${PROJECT_SOURCE_DIR} PATH)
+    SET(MAIDSAFE_COMMON_INSTALL_DIR ${MAIDSAFE_COMMON_INSTALL_DIR}/MaidSafe-Common/installed)
   ENDIF()
 ENDIF()
 

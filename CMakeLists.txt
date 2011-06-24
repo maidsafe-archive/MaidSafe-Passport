@@ -135,15 +135,20 @@ TEST_SUMMARY_OUTPUT()
 ###################################################################################################
 FINAL_MESSAGE()
 
+SET(MAIDSAFE_PASSPORT_INSTALL_FILES
+      ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/passport.h
+      ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/passportconfig.h
+      ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/systempackethandler.h
+      ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/systempackets.h
+      ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/version.h
+      ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/cryptokeypairs.h)
+FOREACH(MAIDSAFE_PASSPORT_INSTALL_FILE ${MAIDSAFE_PASSPORT_INSTALL_FILES})
+  CHECK_INSTALL_HEADER_HAS_VERSION_GUARD(${MAIDSAFE_PASSPORT_INSTALL_FILE})
+ENDFOREACH()
+SET(MAIDSAFE_PASSPORT_INSTALL_FILES ${MAIDSAFE_PASSPORT_INSTALL_FILES} ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/signaturepacket.pb.h)
+
 SET(EXPORT_NAME passport)
 INSTALL(TARGETS passport_static EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
-INSTALL(FILES ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/passport.h
-			  ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/passportconfig.h
-			  ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/signaturepacket.pb.h
-			  ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/systempackethandler.h
-			  ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/systempackets.h
-			  ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/version.h
-			  ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/cryptokeypairs.h
-              DESTINATION include/maidsafe/passport)
+INSTALL(FILES ${MAIDSAFE_PASSPORT_INSTALL_FILES} DESTINATION include/maidsafe/passport)
 INSTALL(EXPORT ${EXPORT_NAME} DESTINATION share/maidsafe)
 ADD_VERSION_INFO_TO_INSTALLED_FILE()

@@ -28,37 +28,41 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef MAIDSAFE_PASSPORT_VERSION_H_
 #define MAIDSAFE_PASSPORT_VERSION_H_
 
-#define MAIDSAFE_PASSPORT_VERSION 1
+#define MAIDSAFE_PASSPORT_VERSION 100
 
-#include "maidsafe/common/version.h"
-#include "maidsafe-dht/version.h"
-
-#define THIS_NEEDS_MAIDSAFE_COMMON_VERSION 8
-#if MAIDSAFE_COMMON_VERSION < THIS_NEEDS_MAIDSAFE_COMMON_VERSION
-#error This API is not compatible with the installed library.\
-  Please update the maidsafe-common library.
-#elif MAIDSAFE_COMMON_VERSION > THIS_NEEDS_MAIDSAFE_COMMON_VERSION
-#error This API uses a newer version of the maidsafe-common library.\
-  Please update this project.
+#if defined CMAKE_MAIDSAFE_PASSPORT_VERSION &&\
+            MAIDSAFE_PASSPORT_VERSION != CMAKE_MAIDSAFE_PASSPORT_VERSION
+#  error The project version has changed.  Re-run CMake.
 #endif
 
-#define THIS_NEEDS_MAIDSAFE_DHT_VERSION 29
+#include "maidsafe/common/version.h"
+#define THIS_NEEDS_MAIDSAFE_COMMON_VERSION 900
+#if MAIDSAFE_COMMON_VERSION < THIS_NEEDS_MAIDSAFE_COMMON_VERSION
+#  error This API is not compatible with the installed library.\
+    Please update the maidsafe-common library.
+#elif MAIDSAFE_COMMON_VERSION > THIS_NEEDS_MAIDSAFE_COMMON_VERSION
+#  error This API uses a newer version of the maidsafe-common library.\
+    Please update this project.
+#endif
+
+#include "maidsafe/dht/version.h"
+#define THIS_NEEDS_MAIDSAFE_DHT_VERSION 3000
 #if MAIDSAFE_DHT_VERSION < THIS_NEEDS_MAIDSAFE_DHT_VERSION
-#error This API is not compatible with the installed library.\
-  Please update the maidsafe-dht library.
+#  error This API is not compatible with the installed library.\
+    Please update the maidsafe-dht library.
 #elif MAIDSAFE_DHT_VERSION > THIS_NEEDS_MAIDSAFE_DHT_VERSION
-#error This API uses a newer version of the maidsafe-dht library.\
-  Please update this project.
+#  error This API uses a newer version of the maidsafe-dht library.\
+    Please update this project.
 #endif
 
 #include "maidsafe/pki/version.h"
-#define THIS_NEEDS_MAIDSAFE_PKI_VERSION 1
+#define THIS_NEEDS_MAIDSAFE_PKI_VERSION 100
 #if MAIDSAFE_PKI_VERSION < THIS_NEEDS_MAIDSAFE_PKI_VERSION
-#error This API is not compatible with the installed library.\
-  Please update the MaidSafe-Pki library.
+#  error This API is not compatible with the installed library.\
+    Please update the MaidSafe-PKI library.
 #elif MAIDSAFE_PKI_VERSION > THIS_NEEDS_MAIDSAFE_PKI_VERSION
-#error This API uses a newer version of the MaidSafe-Pki library.\
-  Please update this project.
+#  error This API uses a newer version of the MaidSafe-PKI library.\
+    Please update this project.
 #endif
 
 #endif  // MAIDSAFE_PASSPORT_VERSION_H_
