@@ -53,7 +53,7 @@ PROJECT(${PROJECT_NAME})
 SET(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE_DIR} CACHE INTERNAL "Except for MSVC, the build type is set by running cmake from the appropriate build subdirectory e.g. for a Debug build, \"cd build/Linux/Debug && cmake ../../..\"." FORCE)
 
 ###################################################################################################
-# MaidSafe Common PKI and DHT library search                                                          #
+# MaidSafe Common PKI and DHT library search                                                      #
 ###################################################################################################
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build)
 INCLUDE(maidsafe_find_common)
