@@ -20,12 +20,22 @@
 * ============================================================================
 */
 
-#include "maidsafe/passport/systempackethandler.h"
+#include "maidsafe/passport/system_packet_handler.h"
 #include <cstdio>
 
 #include "maidsafe/passport/log.h"
-#include "maidsafe/passport/passportconfig.h"
-#include "maidsafe/passport/signaturepacket.pb.h"
+#include "maidsafe/passport/passport_config.h"
+
+#ifdef __MSVC__
+#  pragma warning(push)
+#  pragma warning(disable: 4127 4244 4267 4512)
+#endif
+
+#include "maidsafe/passport/signature_packet.pb.h"
+
+#ifdef __MSVC__
+#  pragma warning(pop)
+#endif
 
 
 namespace maidsafe {

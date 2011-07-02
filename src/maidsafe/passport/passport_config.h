@@ -21,12 +21,12 @@
 * ============================================================================
 */
 
-#ifndef MAIDSAFE_PASSPORT_PASSPORTCONFIG_H_
-#define MAIDSAFE_PASSPORT_PASSPORTCONFIG_H_
+#ifndef MAIDSAFE_PASSPORT_PASSPORT_CONFIG_H_
+#define MAIDSAFE_PASSPORT_PASSPORT_CONFIG_H_
 
 #include "maidsafe/passport/version.h"
 
-#if MAIDSAFE_PASSPORT_VERSION != 101
+#if MAIDSAFE_PASSPORT_VERSION != 102
 #  error This API is not compatible with the installed library.\
     Please update the maidsafe-passport library.
 #endif
@@ -120,4 +120,4 @@ class PassportTest_BEH_PASSPORT_ConfirmNewUserData_Test;
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_PASSPORT_PASSPORTCONFIG_H_
+#endif  // MAIDSAFE_PASSPORT_PASSPORT_CONFIG_H_

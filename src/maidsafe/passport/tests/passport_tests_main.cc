@@ -21,8 +21,9 @@
 * ============================================================================
 */
 
+#include "maidsafe/common/test.h"
+
 #include "maidsafe/passport/log.h"
-#include "gtest/gtest.h"
 
 int main(int argc, char **argv) {
   // Initialising logging

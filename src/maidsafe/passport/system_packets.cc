@@ -20,12 +20,23 @@
 * ============================================================================
 */
 
-#include "maidsafe/passport/systempackets.h"
+#include "maidsafe/passport/system_packets.h"
 #include <cstdio>
 #include "boost/lexical_cast.hpp"
 #include "maidsafe/passport/log.h"
 #include "maidsafe/common/crypto.h"
-#include "maidsafe/passport/signaturepacket.pb.h"
+
+#ifdef __MSVC__
+#  pragma warning(push)
+#  pragma warning(disable: 4127 4244 4267 4512)
+#endif
+
+#include "maidsafe/passport/signature_packet.pb.h"
+
+#ifdef __MSVC__
+#  pragma warning(pop)
+#endif
+
 
 namespace maidsafe {
 
@@ -205,9 +216,9 @@ void MidPacket::Initialise() {
     return Clear();
 
   salt_ = crypto::Hash<crypto::SHA512>(pin_ + username_);
-  boost::uint32_t pin;
+  uint32_t pin;
   try {
-    pin = boost::lexical_cast<boost::uint32_t>(pin_);
+    pin = boost::lexical_cast<uint32_t>(pin_);
   }
   catch(boost::bad_lexical_cast & e) {
     DLOG(ERROR) << "MidPacket::Initialise: Bad pin:" << e.what() << std::endl;
@@ -340,10 +351,10 @@ bool TmidPacket::SetPassword() {
   }
 
   salt_ = crypto::Hash<crypto::SHA512>(rid_ + password_);
-  boost::uint32_t random_no_from_rid(0);
+  uint32_t random_no_from_rid(0);
   int a = 1;
   for (int i = 0; i < 4; ++i) {
-    boost::uint8_t temp(static_cast<boost::uint8_t>(rid_.at(i)));
+    uint8_t temp(static_cast<uint8_t>(rid_.at(i)));
     random_no_from_rid += (temp * a);
     a *= 256;
   }
@@ -371,8 +382,8 @@ bool TmidPacket::ObfuscatePlainData() {
   }
 
   obfuscation_salt_ = crypto::Hash<crypto::SHA512>(password_ + rid_);
-  boost::uint32_t numerical_pin(boost::lexical_cast<boost::uint32_t>(pin_));
-  boost::uint32_t rounds(numerical_pin / 2 == 0 ?
+  uint32_t numerical_pin(boost::lexical_cast<uint32_t>(pin_));
+  uint32_t rounds(numerical_pin / 2 == 0 ?
                          numerical_pin * 3 / 2 : numerical_pin / 2);
   std::string obfuscation_str = crypto::SecurePassword(username_,
                                                        obfuscation_salt_,
@@ -412,9 +423,9 @@ bool TmidPacket::SetPlainData() {
 }
 
 bool TmidPacket::ClarifyObfuscatedData() {
-  boost::uint32_t numerical_pin(boost::lexical_cast<boost::uint32_t>(pin_));
-  boost::uint32_t rounds(numerical_pin / 2 == 0 ?
-                         numerical_pin * 3 / 2 : numerical_pin / 2);
+  uint32_t numerical_pin(boost::lexical_cast<uint32_t>(pin_));
+  uint32_t rounds(numerical_pin / 2 == 0 ?
+                  numerical_pin * 3 / 2 : numerical_pin / 2);
   std::string obfuscation_str =
       crypto::SecurePassword(username_,
                              crypto::Hash<crypto::SHA512>(password_ + rid_),

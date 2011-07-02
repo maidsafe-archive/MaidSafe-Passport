@@ -21,13 +21,26 @@
 * ============================================================================
 */
 
-#include "gtest/gtest.h"
+#include <cstdint>
+
 #include "boost/lexical_cast.hpp"
+#include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
-#include "maidsafe/passport/systempackets.h"
-#include "maidsafe/passport/cryptokeypairs.h"
-#include "maidsafe/passport/signaturepacket.pb.h"
+#include "maidsafe/passport/system_packets.h"
+#include "maidsafe/passport/crypto_key_pairs.h"
+
+#ifdef __MSVC__
+#  pragma warning(push)
+#  pragma warning(disable: 4127 4244 4267 4512)
+#endif
+
+#include "maidsafe/passport/signature_packet.pb.h"
+
+#ifdef __MSVC__
+#  pragma warning(pop)
+#endif
+
 
 namespace maidsafe {
 
@@ -35,8 +48,8 @@ namespace passport {
 
 namespace test {
 
-const boost::uint16_t kRsaKeySize(4096);
-const boost::uint8_t kMaxThreadCount(5);
+const uint16_t kRsaKeySize(4096);
+const uint8_t kMaxThreadCount(5);
 
 class SystemPacketsTest : public testing::Test {
  public:
@@ -396,7 +409,7 @@ testing::AssertionResult Equal(
 
 TEST_F(SystemPacketsTest, BEH_PASSPORT_CreateMid) {
   const std::string kUsername(RandomAlphaNumericString(20));
-  const boost::uint32_t kPin(RandomUint32());
+  const uint32_t kPin(RandomUint32());
   const std::string kPinStr(boost::lexical_cast<std::string>(kPin));
   const std::string kSmidAppendix(RandomAlphaNumericString(20));
 
@@ -444,7 +457,7 @@ TEST_F(SystemPacketsTest, BEH_PASSPORT_CreateMid) {
 
 TEST_F(SystemPacketsTest, BEH_PASSPORT_SetAndDecryptRid) {
   const std::string kUsername(RandomAlphaNumericString(20));
-  const boost::uint32_t kPin(RandomUint32());
+  const uint32_t kPin(RandomUint32());
   const std::string kPinStr(boost::lexical_cast<std::string>(kPin));
   const std::string kSmidAppendix(RandomAlphaNumericString(20));
   std::string rid1, rid2;
@@ -613,7 +626,7 @@ testing::AssertionResult Equal(
 
 TEST_F(SystemPacketsTest, BEH_PASSPORT_CreateTmid) {
   const std::string kUsername(RandomAlphaNumericString(20));
-  const boost::uint32_t kPin(RandomUint32());
+  const uint32_t kPin(RandomUint32());
   const std::string kPinStr(boost::lexical_cast<std::string>(kPin));
   const std::string kPassword(RandomAlphaNumericString(30));
   std::string rid;
@@ -648,10 +661,10 @@ TEST_F(SystemPacketsTest, BEH_PASSPORT_CreateTmid) {
 
   // Check with valid inputs - including password
   std::string expected_salt(crypto::Hash<crypto::SHA512>(kRid + kPassword));
-  boost::uint32_t random_no_from_rid(0);
+  uint32_t random_no_from_rid(0);
   int a = 1;
   for (int i = 0; i < 4; ++i) {
-    boost::uint8_t temp(static_cast<boost::uint8_t>(kRid.at(i)));
+    uint8_t temp(static_cast<uint8_t>(kRid.at(i)));
     random_no_from_rid += (temp * a);
     a *= 256;
   }
@@ -673,7 +686,7 @@ TEST_F(SystemPacketsTest, BEH_PASSPORT_CreateTmid) {
 
 TEST_F(SystemPacketsTest, BEH_PASSPORT_SetAndDecryptData) {
   const std::string kUsername(RandomAlphaNumericString(20));
-  const boost::uint32_t kPin(RandomUint32());
+  const uint32_t kPin(RandomUint32());
   const std::string kPinStr(boost::lexical_cast<std::string>(kPin));
   const std::string kPassword(RandomAlphaNumericString(30));
   std::string rid;
@@ -682,9 +695,9 @@ TEST_F(SystemPacketsTest, BEH_PASSPORT_SetAndDecryptData) {
 
   // Plain data is now to be obfuscated first
   std::string kPlainData(RandomString(100000));
-  boost::uint32_t numerical_pin(boost::lexical_cast<boost::uint32_t>(kPin));
-  boost::uint32_t rounds(numerical_pin / 2 == 0 ?
-                         numerical_pin * 3 / 2 : numerical_pin / 2);
+  uint32_t numerical_pin(boost::lexical_cast<uint32_t>(kPin));
+  uint32_t rounds(numerical_pin / 2 == 0 ?
+                  numerical_pin * 3 / 2 : numerical_pin / 2);
   std::string obfuscation_str =
       crypto::SecurePassword(kUsername,
                              crypto::Hash<crypto::SHA512>(kPassword + kRid),
@@ -705,10 +718,10 @@ TEST_F(SystemPacketsTest, BEH_PASSPORT_SetAndDecryptData) {
                                                               kPinStr +
                                                               kRid));
   std::string expected_salt(crypto::Hash<crypto::SHA512>(kRid + kPassword));
-  boost::uint32_t random_no_from_rid(0);
+  uint32_t random_no_from_rid(0);
   int a = 1;
   for (int i = 0; i < 4; ++i) {
-    boost::uint8_t temp(static_cast<boost::uint8_t>(kRid.at(i)));
+    uint8_t temp(static_cast<uint8_t>(kRid.at(i)));
     random_no_from_rid += (temp * a);
     a *= 256;
   }

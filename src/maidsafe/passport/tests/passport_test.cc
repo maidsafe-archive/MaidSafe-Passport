@@ -20,9 +20,12 @@
 * ============================================================================
 */
 
+#include <cstdint>
+
 #include "boost/lexical_cast.hpp"
-#include "gtest/gtest.h"
+#include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
+
 #include "maidsafe/passport/passport.h"
 
 namespace maidsafe {
@@ -31,8 +34,8 @@ namespace passport {
 
 namespace test {
 
-const boost::uint16_t kRsaKeySize(4096);
-const boost::uint8_t kMaxThreadCount(5);
+const uint16_t kRsaKeySize(4096);
+const uint8_t kMaxThreadCount(5);
 
 class PassportTest : public testing::Test {
  public:
@@ -392,7 +395,7 @@ TEST_F(PassportTest, BEH_PASSPORT_SetInitialDetails) {
 
   // Different pin should generate different mid and smid
   std::string different_pin(boost::lexical_cast<std::string>(
-                            boost::lexical_cast<boost::uint32_t>(kPin_) + 1));
+                            boost::lexical_cast<uint32_t>(kPin_) + 1));
   std::string different_pin_mid_name, different_pin_smid_name;
   EXPECT_EQ(kSuccess,
             passport_.SetInitialDetails(kUsername_, different_pin,
@@ -1340,7 +1343,7 @@ class PassportVPTest : public testing::TestWithParam<ChangeType> {
         kNewPin_((GetParam() == kChangePin ||
                  GetParam() == kChangeUsernameAndPin) ?
                  boost::lexical_cast<std::string>(
-                     boost::lexical_cast<boost::uint32_t>(kPin_) + 1) : kPin_),
+                     boost::lexical_cast<uint32_t>(kPin_) + 1) : kPin_),
         kNewPassword_(GetParam() == kChangePassword ? kPassword_ + "a" :
                      kPassword_),
         kPlainTextMasterDataTmid_(RandomString(10000)),

@@ -79,8 +79,8 @@ SOURCE_GROUP("passport Header Files" FILES ${HEADER_FILES_PASSPORT_DIR})
 
 FILE(GLOB ALL_FILES_PASSPORT_TESTS_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/passport/tests/*.cc" "${PROJECT_SOURCE_DIR}/src/maidsafe/passport/tests/*.h")
 SET(STYLE_PASSPORT ${ALL_FILES_PASSPORT_DIR} ${ALL_FILES_PASSPORT_TESTS_DIR})
-LIST(REMOVE_ITEM STYLE_PASSPORT "${PROJECT_SOURCE_DIR}/src/maidsafe/passport/signaturepacket.pb.cc")
-LIST(REMOVE_ITEM STYLE_PASSPORT "${PROJECT_SOURCE_DIR}/src/maidsafe/passport/signaturepacket.pb.h")
+LIST(REMOVE_ITEM STYLE_PASSPORT "${PROJECT_SOURCE_DIR}/src/maidsafe/passport/signature_packet.pb.cc")
+LIST(REMOVE_ITEM STYLE_PASSPORT "${PROJECT_SOURCE_DIR}/src/maidsafe/passport/signature_packet.pb.h")
 
 ###################################################################################################
 # All Platforms:  Add Test Exes and Create all passport libs                                      #
@@ -101,6 +101,12 @@ TARGET_LINK_LIBRARIES(TESTpassport passport_static gtest_static)
 INCLUDE(maidsafe_standard_flags)
 
 IF(MSVC)
+  # Set warnings as errors
+  SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /WX")
+  SET(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /WX")
+  SET(CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} /W4 /WX")
+  SET(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /W4 /WX")
+  SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/src/maidsafe/passport/signature_packet.pb.cc PROPERTIES COMPILE_FLAGS "/W0")
   SET_TARGET_PROPERTIES(passport_static PROPERTIES STATIC_LIBRARY_FLAGS_RELEASE "/LTCG")
   SET_TARGET_PROPERTIES(TESTpassport PROPERTIES
                           LINK_FLAGS "/STACK:1048576"
@@ -109,7 +115,7 @@ IF(MSVC)
                           LINK_FLAGS_RELWITHDEBINFO "${LINKER_LIBS_DIRS_DEBUG}"
                           LINK_FLAGS_MINSIZEREL "${LINKER_LIBS_DIRS_DEBUG}")
 ELSEIF(UNIX)
-  SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/src/maidsafe/passport/signaturepacket.pb.cc PROPERTIES COMPILE_FLAGS "-Wno-effc++")
+  SET_SOURCE_FILES_PROPERTIES(${PROJECT_SOURCE_DIR}/src/maidsafe/passport/signature_packet.pb.cc PROPERTIES COMPILE_FLAGS "-Wno-effc++")
 ENDIF()
 
 
@@ -137,15 +143,15 @@ FINAL_MESSAGE()
 
 SET(MAIDSAFE_PASSPORT_INSTALL_FILES
       ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/passport.h
-      ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/passportconfig.h
-      ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/systempackethandler.h
-      ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/systempackets.h
+      ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/passport_config.h
+      ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/system_packet_handler.h
+      ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/system_packets.h
       ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/version.h
-      ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/cryptokeypairs.h)
+      ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/crypto_key_pairs.h)
 FOREACH(MAIDSAFE_PASSPORT_INSTALL_FILE ${MAIDSAFE_PASSPORT_INSTALL_FILES})
   CHECK_INSTALL_HEADER_HAS_VERSION_GUARD(${MAIDSAFE_PASSPORT_INSTALL_FILE})
 ENDFOREACH()
-SET(MAIDSAFE_PASSPORT_INSTALL_FILES ${MAIDSAFE_PASSPORT_INSTALL_FILES} ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/signaturepacket.pb.h)
+SET(MAIDSAFE_PASSPORT_INSTALL_FILES ${MAIDSAFE_PASSPORT_INSTALL_FILES} ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/signature_packet.pb.h)
 
 SET(EXPORT_NAME passport)
 INSTALL(TARGETS passport_static EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)

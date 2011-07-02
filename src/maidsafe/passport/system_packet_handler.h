@@ -20,18 +20,18 @@
 * ============================================================================
 */
 
-#ifndef MAIDSAFE_PASSPORT_SYSTEMPACKETHANDLER_H_
-#define MAIDSAFE_PASSPORT_SYSTEMPACKETHANDLER_H_
+#ifndef MAIDSAFE_PASSPORT_SYSTEM_PACKET_HANDLER_H_
+#define MAIDSAFE_PASSPORT_SYSTEM_PACKET_HANDLER_H_
 
 #include <memory>
 #include <map>
 #include <string>
 #include "boost/thread/mutex.hpp"
 
-#include "maidsafe/passport/systempackets.h"
+#include "maidsafe/passport/system_packets.h"
 #include "maidsafe/passport/version.h"
 
-#if MAIDSAFE_PASSPORT_VERSION != 101
+#if MAIDSAFE_PASSPORT_VERSION != 102
 #  error This API is not compatible with the installed library.\
     Please update the maidsafe-passport library.
 #endif
@@ -95,5 +95,5 @@ class SystemPacketHandler {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_PASSPORT_SYSTEMPACKETHANDLER_H_
+#endif  // MAIDSAFE_PASSPORT_SYSTEM_PACKET_HANDLER_H_
 

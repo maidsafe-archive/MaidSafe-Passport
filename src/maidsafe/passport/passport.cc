@@ -21,8 +21,8 @@
 
 #include "maidsafe/passport/passport.h"
 #include "maidsafe/common/utils.h"
-#include "maidsafe/passport/passportconfig.h"
-#include "maidsafe/passport/systempackets.h"
+#include "maidsafe/passport/passport_config.h"
+#include "maidsafe/passport/system_packets.h"
 
 namespace maidsafe {
 

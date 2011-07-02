@@ -22,15 +22,16 @@
 * ============================================================================
 */
 
-#include "maidsafe/passport/cryptokeypairs.h"
+#include "maidsafe/passport/crypto_key_pairs.h"
 #include <functional>
+#include "maidsafe/common/crypto.h"
 
 namespace maidsafe {
 
 namespace passport {
 
-CryptoKeyPairs::CryptoKeyPairs(const boost::uint16_t &rsa_key_size,
-                               const boost::int8_t &max_crypto_thread_count)
+CryptoKeyPairs::CryptoKeyPairs(const uint16_t &rsa_key_size,
+                               const int8_t &max_crypto_thread_count)
     : kRsaKeySize_(rsa_key_size),
       kMaxCryptoThreadCount_(max_crypto_thread_count),
       keypairs_done_(0),
@@ -52,7 +53,7 @@ CryptoKeyPairs::~CryptoKeyPairs() {
 }
 
 bool CryptoKeyPairs::StartToCreateKeyPairs(
-    const boost::int16_t &no_of_keypairs) {
+    const int16_t &no_of_keypairs) {
   {
     boost::mutex::scoped_lock lock(start_mutex_);
     if (started_)
@@ -61,9 +62,9 @@ bool CryptoKeyPairs::StartToCreateKeyPairs(
     stopping_ = false;
   }
   keypairs_todo_ = no_of_keypairs;
-  keypairs_done_ = keypairs_.size();
-  boost::int16_t keys_needed = keypairs_todo_ - keypairs_done_;
-  boost::int16_t i = 0;
+  keypairs_done_ = static_cast<int16_t>(keypairs_.size());
+  int16_t keys_needed = keypairs_todo_ - keypairs_done_;
+  int16_t i = 0;
   for (auto it = thrds_.begin(); it != thrds_.end() && i < keys_needed; ++it) {
     try {
       it->reset(new boost::thread(&CryptoKeyPairs::CreateKeyPair, this));

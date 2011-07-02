@@ -23,11 +23,11 @@
 #include <memory>
 
 #include "boost/lexical_cast.hpp"
-#include "gtest/gtest.h"
-
+#include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
-#include "maidsafe/passport/systempackethandler.h"
-#include "maidsafe/passport/cryptokeypairs.h"
+
+#include "maidsafe/passport/system_packet_handler.h"
+#include "maidsafe/passport/crypto_key_pairs.h"
 
 namespace maidsafe {
 
@@ -35,11 +35,11 @@ namespace passport {
 
 namespace test {
 
-const boost::uint16_t kRsaKeySize(4096);
-const boost::uint8_t kMaxThreadCount(5);
+const uint16_t kRsaKeySize(4096);
+const uint8_t kMaxThreadCount(5);
 
-boost::uint32_t NonZeroRnd() {
-  boost::uint32_t result = RandomUint32();
+uint32_t NonZeroRnd() {
+  uint32_t result = RandomUint32();
   while (result == 0)
     result = RandomUint32();
   return result;

@@ -22,17 +22,17 @@
 * ============================================================================
 */
 
-#ifndef MAIDSAFE_PASSPORT_CRYPTOKEYPAIRS_H_
-#define MAIDSAFE_PASSPORT_CRYPTOKEYPAIRS_H_
+#ifndef MAIDSAFE_PASSPORT_CRYPTO_KEY_PAIRS_H_
+#define MAIDSAFE_PASSPORT_CRYPTO_KEY_PAIRS_H_
 
+#include <cstdint>
 #include <memory>
 #include <list>
 #include <vector>
 #include "boost/thread.hpp"
-#include "maidsafe/common/crypto.h"
 #include "maidsafe/passport/version.h"
 
-#if MAIDSAFE_PASSPORT_VERSION != 101
+#if MAIDSAFE_PASSPORT_VERSION != 102
 #  error This API is not compatible with the installed library.\
     Please update the maidsafe-passport library.
 #endif
@@ -40,16 +40,18 @@
 
 namespace maidsafe {
 
+namespace crypto { class RsaKeyPair; }
+
 namespace passport {
 
 namespace test { class CachePassport; }
 
 class CryptoKeyPairs {
  public:
-  CryptoKeyPairs(const boost::uint16_t &rsa_key_size,
-                 const boost::int8_t &max_crypto_thread_count);
+  CryptoKeyPairs(const uint16_t &rsa_key_size,
+                 const int8_t &max_crypto_thread_count);
   ~CryptoKeyPairs();
-  bool StartToCreateKeyPairs(const boost::int16_t &no_of_keypairs);
+  bool StartToCreateKeyPairs(const int16_t &no_of_keypairs);
   bool GetKeyPair(crypto::RsaKeyPair *keypair);
   void Stop();
  private:
@@ -58,11 +60,11 @@ class CryptoKeyPairs {
   friend class test::CachePassport;
   void CreateKeyPair();
   void FinishedCreating();
-  const boost::uint16_t kRsaKeySize_;
-  const boost::int8_t kMaxCryptoThreadCount_;
-  boost::int16_t keypairs_done_, keypairs_todo_, pending_requests_;
+  const uint16_t kRsaKeySize_;
+  const int8_t kMaxCryptoThreadCount_;
+  int16_t keypairs_done_, keypairs_todo_, pending_requests_;
   std::list<crypto::RsaKeyPair> keypairs_;
-  std::vector< std::shared_ptr<boost::thread> > thrds_;
+  std::vector<std::shared_ptr<boost::thread>> thrds_;
   boost::mutex keyslist_mutex_, keys_done_mutex_, start_mutex_, req_mutex_;
   boost::condition_variable keys_cond_, req_cond_;
   bool started_, stopping_;
@@ -72,4 +74,4 @@ class CryptoKeyPairs {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_PASSPORT_CRYPTOKEYPAIRS_H_
+#endif  // MAIDSAFE_PASSPORT_CRYPTO_KEY_PAIRS_H_

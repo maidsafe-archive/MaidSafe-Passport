@@ -22,8 +22,11 @@
 * ============================================================================
 */
 
-#include "gtest/gtest.h"
-#include "maidsafe/passport/cryptokeypairs.h"
+#include <cstdint>
+#include "maidsafe/common/crypto.h"
+#include "maidsafe/common/test.h"
+#include "maidsafe/common/utils.h"
+#include "maidsafe/passport/crypto_key_pairs.h"
 
 namespace maidsafe {
 
@@ -31,8 +34,8 @@ namespace passport {
 
 namespace test {
 
-const boost::uint16_t kRsaKeySize(4096);
-const boost::uint8_t kMaxThreadCount(5);
+const uint16_t kRsaKeySize(4096);
+const uint8_t kMaxThreadCount(5);
 
 TEST(CryptoKeyPairsTest, BEH_PASSPORT_GetCryptoKey) {
   CryptoKeyPairs ckp(kRsaKeySize, kMaxThreadCount);
@@ -46,33 +49,33 @@ TEST(CryptoKeyPairsTest, BEH_PASSPORT_GetCryptoKey) {
 
 TEST(CryptoKeyPairsTest, FUNC_PASSPORT_GetMultipleCryptoKeys) {
   CryptoKeyPairs ckp(kRsaKeySize, kMaxThreadCount);
-  boost::int16_t no_of_keys = 20;
+  int16_t no_of_keys = 20;
   std::vector<crypto::RsaKeyPair> kps;
   ASSERT_TRUE(ckp.StartToCreateKeyPairs(no_of_keys));
   ASSERT_FALSE(ckp.StartToCreateKeyPairs(no_of_keys));
 
-  boost::this_thread::sleep(boost::posix_time::seconds(1));
+  Sleep(boost::posix_time::seconds(1));
   crypto::RsaKeyPair kp;
   while (ckp.GetKeyPair(&kp)) {
     kps.push_back(kp);
     ASSERT_FALSE(kp.public_key().empty());
     ASSERT_FALSE(kp.private_key().empty());
     kp.ClearKeys();
-    boost::this_thread::sleep(boost::posix_time::seconds(1));
+    Sleep(boost::posix_time::seconds(1));
   }
   ASSERT_EQ(static_cast<size_t>(no_of_keys), kps.size());
 }
 
 TEST(CryptoKeyPairsTest, FUNC_PASSPORT_ReuseObject) {
   CryptoKeyPairs ckp(kRsaKeySize, kMaxThreadCount);
-  boost::int16_t no_of_keys(5);
+  int16_t no_of_keys(5);
   std::vector<crypto::RsaKeyPair> kps;
   ASSERT_TRUE(ckp.StartToCreateKeyPairs(no_of_keys));
   ASSERT_FALSE(ckp.StartToCreateKeyPairs(no_of_keys));
 
-  boost::this_thread::sleep(boost::posix_time::seconds(1));
+  Sleep(boost::posix_time::seconds(1));
   crypto::RsaKeyPair kp;
-  boost::int16_t i(0), keys_rec(3);
+  int16_t i(0), keys_rec(3);
   while (ckp.GetKeyPair(&kp)) {
     if (i == keys_rec)
       break;
@@ -81,23 +84,23 @@ TEST(CryptoKeyPairsTest, FUNC_PASSPORT_ReuseObject) {
     ASSERT_FALSE(kp.private_key().empty());
     kp.ClearKeys();
     ++i;
-    boost::this_thread::sleep(boost::posix_time::seconds(1));
+    Sleep(boost::posix_time::seconds(1));
   }
 
   while (!ckp.StartToCreateKeyPairs(no_of_keys))
-    boost::this_thread::sleep(boost::posix_time::seconds(1));
+    Sleep(boost::posix_time::seconds(1));
 
   while (ckp.GetKeyPair(&kp)) {
     kps.push_back(kp);
     ASSERT_FALSE(kp.public_key().empty());
     ASSERT_FALSE(kp.private_key().empty());
     kp.ClearKeys();
-    boost::this_thread::sleep(boost::posix_time::seconds(1));
+    Sleep(boost::posix_time::seconds(1));
   }
   ASSERT_EQ(static_cast<size_t>(no_of_keys + keys_rec), kps.size());
 }
 
-void GetKeys(CryptoKeyPairs *ckp, int *counter, const boost::int16_t &total) {
+void GetKeys(CryptoKeyPairs *ckp, int *counter, const int16_t &total) {
   for (int i = 0; i < total; ++i) {
     crypto::RsaKeyPair kp;
     while (!ckp->GetKeyPair(&kp)) {
@@ -113,7 +116,7 @@ void GetKeys(CryptoKeyPairs *ckp, int *counter, const boost::int16_t &total) {
 
 TEST(CryptoKeyPairsTest, FUNC_PASSPORT_AccessFromDiffThreads) {
   CryptoKeyPairs ckp(kRsaKeySize, kMaxThreadCount);
-  boost::int16_t no_of_keys(6), no_of_thrds(4);
+  int16_t no_of_keys(6), no_of_thrds(4);
   std::vector<crypto::RsaKeyPair> kps;
   ASSERT_TRUE(ckp.StartToCreateKeyPairs(no_of_keys));
   boost::thread_group thrds;
@@ -139,7 +142,7 @@ void GetKeyPair(CryptoKeyPairs *ckp, int *counter) {
 TEST(CryptoKeyPairsTest, BEH_PASSPORT_DestroyObjectWhileGenKeys) {
   CryptoKeyPairs *ckp = new CryptoKeyPairs(kRsaKeySize, kMaxThreadCount);
   ckp->StartToCreateKeyPairs(20);
-  boost::this_thread::sleep(boost::posix_time::seconds(3));
+  Sleep(boost::posix_time::seconds(3));
   delete ckp;
 }
 
@@ -151,7 +154,7 @@ TEST(CryptoKeyPairsTest, BEH_PASSPORT_DestroyObjectWithGetKeyReq) {
   for (int i = 0; i < 3; ++i) {
     thrds.create_thread(boost::bind(&GetKeyPair, ckp, &counter));
   }
-  boost::this_thread::sleep(boost::posix_time::seconds(1));
+  Sleep(boost::posix_time::seconds(1));
   delete ckp;
   thrds.join_all();
   ASSERT_EQ(1, counter);

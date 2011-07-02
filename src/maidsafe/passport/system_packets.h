@@ -20,18 +20,18 @@
 * ============================================================================
 */
 
-#ifndef MAIDSAFE_PASSPORT_SYSTEMPACKETS_H_
-#define MAIDSAFE_PASSPORT_SYSTEMPACKETS_H_
+#ifndef MAIDSAFE_PASSPORT_SYSTEM_PACKETS_H_
+#define MAIDSAFE_PASSPORT_SYSTEM_PACKETS_H_
 
 #include <cstdint>
 #include <memory>
 #include <string>
 
 #include "maidsafe/pki/packet.h"
-#include "maidsafe/passport/passportconfig.h"
+#include "maidsafe/passport/passport_config.h"
 #include "maidsafe/passport/version.h"
 
-#if MAIDSAFE_PASSPORT_VERSION != 101
+#if MAIDSAFE_PASSPORT_VERSION != 102
 #  error This API is not compatible with the installed library.\
     Please update the maidsafe-passport library.
 #endif
@@ -136,5 +136,5 @@ class TmidPacket : public pki::Packet {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_PASSPORT_SYSTEMPACKETS_H_
+#endif  // MAIDSAFE_PASSPORT_SYSTEM_PACKETS_H_
 

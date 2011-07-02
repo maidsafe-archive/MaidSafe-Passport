@@ -22,15 +22,15 @@
 #ifndef MAIDSAFE_PASSPORT_PASSPORT_H_
 #define MAIDSAFE_PASSPORT_PASSPORT_H_
 
+#include <cstdint>
 #include <memory>
 #include <string>
 
-#include "boost/cstdint.hpp"
-#include "maidsafe/passport/cryptokeypairs.h"
-#include "maidsafe/passport/systempackethandler.h"
+#include "maidsafe/passport/crypto_key_pairs.h"
+#include "maidsafe/passport/system_packet_handler.h"
 #include "maidsafe/passport/version.h"
 
-#if MAIDSAFE_PASSPORT_VERSION != 101
+#if MAIDSAFE_PASSPORT_VERSION != 102
 #  error This API is not compatible with the installed library.\
     Please update the maidsafe-passport library.
 #endif
@@ -43,8 +43,8 @@ namespace passport {
 class Passport {
  public:
   // Size to generate RSA keys in bits.
-  Passport(const boost::uint16_t &rsa_key_size,
-           const boost::int8_t &max_crypto_thread_count)
+  Passport(const uint16_t &rsa_key_size,
+           const int8_t &max_crypto_thread_count)
       : crypto_key_pairs_(rsa_key_size, max_crypto_thread_count),
         packet_handler_(),
         kSmidAppendix_("1"),
