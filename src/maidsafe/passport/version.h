@@ -36,7 +36,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include "maidsafe/common/version.h"
-#define THIS_NEEDS_MAIDSAFE_COMMON_VERSION 1000
+#define THIS_NEEDS_MAIDSAFE_COMMON_VERSION 1001
 #if MAIDSAFE_COMMON_VERSION < THIS_NEEDS_MAIDSAFE_COMMON_VERSION
 #  error This API is not compatible with the installed library.\
     Please update the maidsafe-common library.
@@ -46,7 +46,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include "maidsafe/dht/version.h"
-#define THIS_NEEDS_MAIDSAFE_DHT_VERSION 3102
+#define THIS_NEEDS_MAIDSAFE_DHT_VERSION 3103
 #if MAIDSAFE_DHT_VERSION < THIS_NEEDS_MAIDSAFE_DHT_VERSION
 #  error This API is not compatible with the installed library.\
     Please update the maidsafe-dht library.
@@ -56,7 +56,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endif
 
 #include "maidsafe/pki/version.h"
-#define THIS_NEEDS_MAIDSAFE_PKI_VERSION 106
+#define THIS_NEEDS_MAIDSAFE_PKI_VERSION 107
 #if MAIDSAFE_PKI_VERSION < THIS_NEEDS_MAIDSAFE_PKI_VERSION
 #  error This API is not compatible with the installed library.\
     Please update the MaidSafe-PKI library.
