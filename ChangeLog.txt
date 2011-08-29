@@ -1,0 +1,9 @@
+v0.01.06 (WIP)
+--------------
+
+* Swapped from threads to asio io_service for asynchronous key generation.  This
+  affects constructor of Passport and CrpytoKeyPairs.
+* Changed CryptoKeyPairs API method bool StartToCreateKeyPairs to
+  void CreateKeyPairs.
+* CreateKeyPairs behaviour changed to add requested number of keys to existing
+  outstanding total.
