@@ -35,9 +35,6 @@ namespace passport {
 
 namespace test {
 
-const uint16_t kRsaKeySize(4096);
-const uint8_t kMaxThreadCount(5);
-
 uint32_t NonZeroRnd() {
   uint32_t result = RandomUint32();
   while (result == 0)
@@ -53,7 +50,10 @@ class SystemPacketHandlerTest : public testing::Test {
   typedef std::shared_ptr<TmidPacket> TmidPtr;
   SystemPacketHandlerTest()
       : packet_handler_(),
-        crypto_key_pairs_(kRsaKeySize, kMaxThreadCount),
+        asio_service_(),
+        work_(new boost::asio::io_service::work(asio_service_)),
+        threads_(),
+        crypto_key_pairs_(asio_service_, 4096),
         kUsername1_(RandomAlphaNumericString(20)),
         kUsername2_(RandomAlphaNumericString(20)),
         kPin1_(boost::lexical_cast<std::string>(NonZeroRnd())),
@@ -90,7 +90,11 @@ class SystemPacketHandlerTest : public testing::Test {
         packets2_() {}
  protected:
   virtual void SetUp() {
-    ASSERT_TRUE(crypto_key_pairs_.StartToCreateKeyPairs(16));
+    for (int i(0); i != 5; ++i) {
+      threads_.create_thread(std::bind(&boost::asio::io_service::run,
+                                       &asio_service_));
+    }
+    crypto_key_pairs_.CreateKeyPairs(16);
     // MID
     MidPtr mid(new MidPacket(kUsername1_, kPin1_, ""));
     mid->SetRid(kMidRid1_);
@@ -193,8 +197,15 @@ class SystemPacketHandlerTest : public testing::Test {
               anmaid_keys2_.private_key(), anmaid_keys2_.private_key(), ""));
     packets2_.push_back(sig);
   }
-  virtual void TearDown() {}
+  void TearDown() {
+    work_.reset();
+    asio_service_.stop();
+    threads_.join_all();
+  }
   SystemPacketHandler packet_handler_;
+  AsioService asio_service_;
+  std::shared_ptr<boost::asio::io_service::work> work_;
+  boost::thread_group threads_;
   CryptoKeyPairs crypto_key_pairs_;
   const std::string kUsername1_, kUsername2_, kPin1_, kPin2_;
   const std::string kMidRid1_, kMidRid2_, kSmidRid1_, kSmidRid2_;

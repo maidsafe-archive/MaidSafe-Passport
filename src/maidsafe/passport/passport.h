@@ -43,9 +43,8 @@ namespace passport {
 class Passport {
  public:
   // Size to generate RSA keys in bits.
-  Passport(const uint16_t &rsa_key_size,
-           const int8_t &max_crypto_thread_count)
-      : crypto_key_pairs_(rsa_key_size, max_crypto_thread_count),
+  Passport(AsioService &asio_service, const uint16_t &rsa_key_size)  // NOLINT (Fraser)
+      : crypto_key_pairs_(asio_service, rsa_key_size),
         packet_handler_(),
         kSmidAppendix_("1"),
         pending_public_name_(),

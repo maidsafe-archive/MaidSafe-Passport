@@ -34,13 +34,13 @@ namespace passport {
 
 namespace test {
 
-const uint16_t kRsaKeySize(4096);
-const uint8_t kMaxThreadCount(5);
-
 class PassportTest : public testing::Test {
  public:
   PassportTest()
-      : passport_(kRsaKeySize, kMaxThreadCount),
+      : asio_service_(),
+        work_(new boost::asio::io_service::work(asio_service_)),
+        threads_(),
+        passport_(asio_service_, 4096),
         kUsername_(RandomAlphaNumericString(15)),
         kPin_(boost::lexical_cast<std::string>(RandomUint32())),
         kPassword_(RandomAlphaNumericString(20)),
@@ -53,9 +53,17 @@ class PassportTest : public testing::Test {
   typedef std::shared_ptr<TmidPacket> TmidPtr;
   typedef std::shared_ptr<SignaturePacket> SignaturePtr;
   void SetUp() {
+    for (int i(0); i != 5; ++i) {
+      threads_.create_thread(std::bind(&boost::asio::io_service::run,
+                                       &asio_service_));
+    }
     passport_.Init();
   }
-  void TearDown() {}
+  void TearDown() {
+    work_.reset();
+    asio_service_.stop();
+    threads_.join_all();
+  }
   bool CreateUser(MidPtr mid, MidPtr smid, TmidPtr tmid, TmidPtr stmid) {
     if (!mid || !smid || !tmid)
       return false;
@@ -82,6 +90,9 @@ class PassportTest : public testing::Test {
            passport_.GetPacket(TMID, true).get() &&
            passport_.GetPacket(STMID, true).get();
   }
+  AsioService asio_service_;
+  std::shared_ptr<boost::asio::io_service::work> work_;
+  boost::thread_group threads_;
   Passport passport_;
   const std::string kUsername_, kPin_, kPassword_, kPlainTextMasterData_;
   std::string mid_name_, smid_name_;
@@ -1333,7 +1344,10 @@ enum ChangeType {
 class PassportVPTest : public testing::TestWithParam<ChangeType> {
  public:
   PassportVPTest()
-      : passport_(kRsaKeySize, kMaxThreadCount),
+      : asio_service_(),
+        work_(new boost::asio::io_service::work(asio_service_)),
+        threads_(),
+        passport_(asio_service_, 4096),
         kUsername_(RandomAlphaNumericString(15)),
         kPin_(boost::lexical_cast<std::string>(RandomUint32())),
         kPassword_(RandomAlphaNumericString(20)),
@@ -1368,6 +1382,10 @@ class PassportVPTest : public testing::TestWithParam<ChangeType> {
   typedef std::shared_ptr<TmidPacket> TmidPtr;
   typedef std::shared_ptr<SignaturePacket> SignaturePtr;
   void SetUp() {
+    for (int i(0); i != 5; ++i) {
+      threads_.create_thread(std::bind(&boost::asio::io_service::run,
+                                       &asio_service_));
+    }
     passport_.Init();
     MidPtr mid(new MidPacket), smid(new MidPacket);
     TmidPtr tmid(new TmidPacket), stmid(new TmidPacket);
@@ -1400,7 +1418,14 @@ class PassportVPTest : public testing::TestWithParam<ChangeType> {
     ASSERT_TRUE(passport_.GetPacket(TMID, true).get() != NULL);
     ASSERT_TRUE(passport_.GetPacket(STMID, true).get() != NULL);
   }
-  void TearDown() {}
+  void TearDown() {
+    work_.reset();
+    asio_service_.stop();
+    threads_.join_all();
+  }
+  AsioService asio_service_;
+  std::shared_ptr<boost::asio::io_service::work> work_;
+  boost::thread_group threads_;
   Passport passport_;
   const std::string kUsername_, kPin_, kPassword_;
   const std::string kNewUsername_, kNewPin_, kNewPassword_;

@@ -29,7 +29,7 @@ namespace maidsafe {
 namespace passport {
 
 void Passport::Init() {
-  crypto_key_pairs_.StartToCreateKeyPairs(kCryptoKeyBufferCount);
+  crypto_key_pairs_.CreateKeyPairs(kCryptoKeyBufferCount);
 }
 
 void Passport::StopCreatingKeyPairs() {
@@ -436,7 +436,7 @@ int Passport::DoInitialiseSignaturePacket(
   crypto::RsaKeyPair key_pair;
   while (!crypto_key_pairs_.GetKeyPair(&key_pair)) {
     key_pair.ClearKeys();
-    crypto_key_pairs_.StartToCreateKeyPairs(kCryptoKeyBufferCount);
+    crypto_key_pairs_.CreateKeyPairs(kCryptoKeyBufferCount);
   }
   std::shared_ptr<SignaturePacket> packet(
       new SignaturePacket(packet_type, key_pair.public_key(),

@@ -48,20 +48,24 @@ namespace passport {
 
 namespace test {
 
-const uint16_t kRsaKeySize(4096);
-const uint8_t kMaxThreadCount(5);
-
 class SystemPacketsTest : public testing::Test {
  public:
   typedef std::shared_ptr<SignaturePacket> SignaturePtr;
   typedef std::shared_ptr<MidPacket> MidPtr;
   typedef std::shared_ptr<TmidPacket> TmidPtr;
   SystemPacketsTest()
-      : crypto_key_pairs_(kRsaKeySize, kMaxThreadCount),
+      : asio_service_(),
+        work_(new boost::asio::io_service::work(asio_service_)),
+        threads_(),
+        crypto_key_pairs_(asio_service_, 4096),
         signature_packet_types_(),
         packet_types_() {}
  protected:
   virtual void SetUp() {
+    for (int i(0); i != 5; ++i) {
+      threads_.create_thread(std::bind(&boost::asio::io_service::run,
+                                       &asio_service_));
+    }
     signature_packet_types_.push_back(MPID);
     signature_packet_types_.push_back(PMID);
     signature_packet_types_.push_back(MAID);
@@ -86,6 +90,11 @@ class SystemPacketsTest : public testing::Test {
     packet_types_.push_back(MSID);
     packet_types_.push_back(PD_DIR);
   }
+  void TearDown() {
+    work_.reset();
+    asio_service_.stop();
+    threads_.join_all();
+  }
   bool GetRids(std::string *rid1, std::string *rid2) {
     *rid1 = RandomString((RandomUint32() % 64) + 64);
     if (!rid2)
@@ -93,6 +102,9 @@ class SystemPacketsTest : public testing::Test {
     *rid2 = RandomString((RandomUint32() % 64) + 64);
     return (!rid1->empty() && !rid2->empty() && *rid1 != *rid2);
   }
+  AsioService asio_service_;
+  std::shared_ptr<boost::asio::io_service::work> work_;
+  boost::thread_group threads_;
   CryptoKeyPairs crypto_key_pairs_;
   std::vector<PacketType> signature_packet_types_, packet_types_;
 };
@@ -196,7 +208,7 @@ testing::AssertionResult Empty(std::shared_ptr<pki::Packet> packet) {
 }
 
 TEST_F(SystemPacketsTest, BEH_CreateSig) {
-  ASSERT_TRUE(crypto_key_pairs_.StartToCreateKeyPairs(2));
+  crypto_key_pairs_.CreateKeyPairs(2);
   crypto::RsaKeyPair key_pair1, key_pair2;
   ASSERT_TRUE(crypto_key_pairs_.GetKeyPair(&key_pair1));
   ASSERT_TRUE(crypto_key_pairs_.GetKeyPair(&key_pair2));
@@ -300,7 +312,7 @@ TEST_F(SystemPacketsTest, BEH_CreateSig) {
 }
 
 TEST_F(SystemPacketsTest, BEH_PutToAndGetFromKey) {
-  ASSERT_TRUE(crypto_key_pairs_.StartToCreateKeyPairs(2));
+  crypto_key_pairs_.CreateKeyPairs(2);
   crypto::RsaKeyPair key_pair1, key_pair2;
   ASSERT_TRUE(crypto_key_pairs_.GetKeyPair(&key_pair1));
   ASSERT_TRUE(crypto_key_pairs_.GetKeyPair(&key_pair2));

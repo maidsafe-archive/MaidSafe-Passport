@@ -29,6 +29,7 @@
 #include <memory>
 #include <list>
 #include <vector>
+#include "boost/asio/io_service.hpp"
 #include "boost/thread.hpp"
 #include "maidsafe/passport/version.h"
 
@@ -46,28 +47,30 @@ namespace passport {
 
 namespace test { class CachePassport; }
 
+typedef boost::asio::io_service AsioService;
+
 class CryptoKeyPairs {
  public:
-  CryptoKeyPairs(const uint16_t &rsa_key_size,
-                 const int8_t &max_crypto_thread_count);
+  CryptoKeyPairs(AsioService &asio_service,  // NOLINT (Fraser)
+                 const uint16_t &rsa_key_size);
   ~CryptoKeyPairs();
-  bool StartToCreateKeyPairs(const int16_t &no_of_keypairs);
+  void CreateKeyPairs(const int16_t &no_of_keypairs);
   bool GetKeyPair(crypto::RsaKeyPair *keypair);
   void Stop();
+  friend class test::CachePassport;
  private:
   CryptoKeyPairs &operator=(const CryptoKeyPairs&);
   CryptoKeyPairs(const CryptoKeyPairs&);
-  friend class test::CachePassport;
   void CreateKeyPair();
-  void FinishedCreating();
+  bool KeysReady();
+  bool DoneCreatingKeyPairs();
+  AsioService &asio_service_;
   const uint16_t kRsaKeySize_;
-  const int8_t kMaxCryptoThreadCount_;
-  int16_t keypairs_done_, keypairs_todo_, pending_requests_;
+  int16_t keypairs_todo_;
   std::list<crypto::RsaKeyPair> keypairs_;
-  std::vector<std::shared_ptr<boost::thread>> thrds_;
-  boost::mutex keyslist_mutex_, keys_done_mutex_, start_mutex_, req_mutex_;
-  boost::condition_variable keys_cond_, req_cond_;
-  bool started_, stopping_;
+  boost::mutex mutex_;
+  boost::condition_variable cond_var_;
+  bool stopping_;
 };
 
 }  // namespace passport
