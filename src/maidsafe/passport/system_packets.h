@@ -63,8 +63,8 @@ class SignaturePacket : public pki::Packet {
  private:
   friend testing::AssertionResult
       test::Empty(std::shared_ptr<pki::Packet> packet);
-  friend class test::SystemPacketsTest_BEH_PASSPORT_CreateSig_Test;
-  friend class test::SystemPacketsTest_BEH_PASSPORT_PutToAndGetFromKey_Test;
+  friend class test::SystemPacketsTest_BEH_CreateSig_Test;
+  friend class test::SystemPacketsTest_BEH_PutToAndGetFromKey_Test;
   virtual void Initialise();
   virtual void Clear();
   std::string public_key_, private_key_, signer_private_key_;

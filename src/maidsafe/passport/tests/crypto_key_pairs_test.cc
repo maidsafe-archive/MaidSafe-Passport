@@ -37,7 +37,7 @@ namespace test {
 const uint16_t kRsaKeySize(4096);
 const uint8_t kMaxThreadCount(5);
 
-TEST(CryptoKeyPairsTest, BEH_PASSPORT_GetCryptoKey) {
+TEST(CryptoKeyPairsTest, BEH_GetCryptoKey) {
   CryptoKeyPairs ckp(kRsaKeySize, kMaxThreadCount);
   crypto::RsaKeyPair kp;
   ASSERT_FALSE(ckp.GetKeyPair(&kp));
@@ -47,7 +47,7 @@ TEST(CryptoKeyPairsTest, BEH_PASSPORT_GetCryptoKey) {
   ASSERT_FALSE(kp.private_key().empty());
 }
 
-TEST(CryptoKeyPairsTest, FUNC_PASSPORT_GetMultipleCryptoKeys) {
+TEST(CryptoKeyPairsTest, FUNC_GetMultipleCryptoKeys) {
   CryptoKeyPairs ckp(kRsaKeySize, kMaxThreadCount);
   int16_t no_of_keys = 20;
   std::vector<crypto::RsaKeyPair> kps;
@@ -66,7 +66,7 @@ TEST(CryptoKeyPairsTest, FUNC_PASSPORT_GetMultipleCryptoKeys) {
   ASSERT_EQ(static_cast<size_t>(no_of_keys), kps.size());
 }
 
-TEST(CryptoKeyPairsTest, FUNC_PASSPORT_ReuseObject) {
+TEST(CryptoKeyPairsTest, FUNC_ReuseObject) {
   CryptoKeyPairs ckp(kRsaKeySize, kMaxThreadCount);
   int16_t no_of_keys(5);
   std::vector<crypto::RsaKeyPair> kps;
@@ -114,7 +114,7 @@ void GetKeys(CryptoKeyPairs *ckp, int *counter, const int16_t &total) {
   }
 }
 
-TEST(CryptoKeyPairsTest, FUNC_PASSPORT_AccessFromDiffThreads) {
+TEST(CryptoKeyPairsTest, FUNC_AccessFromDiffThreads) {
   CryptoKeyPairs ckp(kRsaKeySize, kMaxThreadCount);
   int16_t no_of_keys(6), no_of_thrds(4);
   std::vector<crypto::RsaKeyPair> kps;
@@ -139,14 +139,14 @@ void GetKeyPair(CryptoKeyPairs *ckp, int *counter) {
   }
 }
 
-TEST(CryptoKeyPairsTest, BEH_PASSPORT_DestroyObjectWhileGenKeys) {
+TEST(CryptoKeyPairsTest, BEH_DestroyObjectWhileGenKeys) {
   CryptoKeyPairs *ckp = new CryptoKeyPairs(kRsaKeySize, kMaxThreadCount);
   ckp->StartToCreateKeyPairs(20);
   Sleep(boost::posix_time::seconds(3));
   delete ckp;
 }
 
-TEST(CryptoKeyPairsTest, BEH_PASSPORT_DestroyObjectWithGetKeyReq) {
+TEST(CryptoKeyPairsTest, BEH_DestroyObjectWithGetKeyReq) {
   CryptoKeyPairs *ckp = new CryptoKeyPairs(kRsaKeySize, kMaxThreadCount);
   ckp->StartToCreateKeyPairs(1);
   boost::thread_group thrds;

@@ -101,8 +101,8 @@ class Passport;
 
 namespace test {
 testing::AssertionResult Empty(std::shared_ptr<pki::Packet> packet);
-class SystemPacketsTest_BEH_PASSPORT_CreateSig_Test;
-class SystemPacketsTest_BEH_PASSPORT_PutToAndGetFromKey_Test;
+class SystemPacketsTest_BEH_CreateSig_Test;
+class SystemPacketsTest_BEH_PutToAndGetFromKey_Test;
 struct ExpectedMidContent;
 testing::AssertionResult Equal(
     std::shared_ptr<ExpectedMidContent> expected,
@@ -111,9 +111,9 @@ struct ExpectedTmidContent;
 testing::AssertionResult Equal(
     std::shared_ptr<ExpectedTmidContent> expected,
     std::shared_ptr<TmidPacket> mid);
-class SystemPacketHandlerTest_FUNC_PASSPORT_All_Test;
-class PassportTest_BEH_PASSPORT_SetNewUserData_Test;
-class PassportTest_BEH_PASSPORT_ConfirmNewUserData_Test;
+class SystemPacketHandlerTest_FUNC_All_Test;
+class PassportTest_BEH_SetNewUserData_Test;
+class PassportTest_BEH_ConfirmNewUserData_Test;
 }  // namespace test
 
 }  // namespace passport

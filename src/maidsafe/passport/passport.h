@@ -268,8 +268,8 @@ class Passport {
   CryptoKeyPairs crypto_key_pairs_;
 
  private:
-  friend class test::PassportTest_BEH_PASSPORT_SetNewUserData_Test;
-  friend class test::PassportTest_BEH_PASSPORT_ConfirmNewUserData_Test;
+  friend class test::PassportTest_BEH_SetNewUserData_Test;
+  friend class test::PassportTest_BEH_ConfirmNewUserData_Test;
   Passport &operator=(const Passport&);
   Passport(const Passport&);
   int DoInitialiseSignaturePacket(

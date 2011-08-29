@@ -83,7 +83,7 @@ class SystemPacketHandler {
     std::shared_ptr<pki::Packet> pending, stored;
   };
   typedef std::map<PacketType, PacketInfo> SystemPacketMap;
-  friend class test::SystemPacketHandlerTest_FUNC_PASSPORT_All_Test;
+  friend class test::SystemPacketHandlerTest_FUNC_All_Test;
   SystemPacketHandler &operator=(const SystemPacketHandler&);
   SystemPacketHandler(const SystemPacketHandler&);
   bool IsConfirmed(SystemPacketMap::iterator it);

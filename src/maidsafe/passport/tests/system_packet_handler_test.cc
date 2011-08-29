@@ -208,7 +208,7 @@ class SystemPacketHandlerTest : public testing::Test {
   std::vector< std::shared_ptr<pki::Packet> > packets1_, packets2_;
 };
 
-TEST_F(SystemPacketHandlerTest, FUNC_PASSPORT_All) {
+TEST_F(SystemPacketHandlerTest, FUNC_All) {
   // *********************** Test AddPendingPacket *****************************
   // Add pending for each packet type
   std::vector< std::shared_ptr<pki::Packet> >::iterator packets1_itr =

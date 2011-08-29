@@ -87,7 +87,7 @@ class PassportTest : public testing::Test {
   std::string mid_name_, smid_name_;
 };
 
-TEST_F(PassportTest, BEH_PASSPORT_SignaturePacketFunctions) {
+TEST_F(PassportTest, BEH_SignaturePacketFunctions) {
   EXPECT_EQ(kNullPointer,
             passport_.InitialiseSignaturePacket(ANMID, SignaturePtr()));
 
@@ -248,7 +248,7 @@ TEST_F(PassportTest, BEH_PASSPORT_SignaturePacketFunctions) {
   EXPECT_FALSE(passport_.GetPacket(MAID, false).get());
 }
 
-TEST_F(PassportTest, BEH_PASSPORT_MpidFunctions) {
+TEST_F(PassportTest, BEH_MpidFunctions) {
   const std::string kPublicName(RandomAlphaNumericString(10));
   EXPECT_EQ(kNullPointer,
             passport_.InitialiseMpid(kPublicName, SignaturePtr()));
@@ -330,7 +330,7 @@ TEST_F(PassportTest, BEH_PASSPORT_MpidFunctions) {
   EXPECT_EQ(original_mpid_name, mpid->name());
 }
 
-TEST_F(PassportTest, BEH_PASSPORT_SetInitialDetails) {
+TEST_F(PassportTest, BEH_SetInitialDetails) {
   // Invalid data and null pointers
   std::string invalid_pin("Non-numerical");
   mid_name_ = smid_name_ = "a";
@@ -474,7 +474,7 @@ TEST_F(PassportTest, BEH_PASSPORT_SetInitialDetails) {
   EXPECT_EQ(smid_name_, pending_smid->name());
 }
 
-TEST_F(PassportTest, BEH_PASSPORT_SetNewUserData) {
+TEST_F(PassportTest, BEH_SetNewUserData) {
   // Invalid data and null pointers
   MidPtr null_mid, mid(new MidPacket), null_smid, smid(new MidPacket);
   TmidPtr null_tmid, tmid(new TmidPacket), stmid(new TmidPacket);
@@ -634,7 +634,7 @@ TEST_F(PassportTest, BEH_PASSPORT_SetNewUserData) {
   EXPECT_EQ(kPassword_, pending_stmid->password());
 }
 
-TEST_F(PassportTest, BEH_PASSPORT_ConfirmNewUserData) {
+TEST_F(PassportTest, BEH_ConfirmNewUserData) {
   MidPtr null_mid, different_username_mid(new MidPacket);
   MidPtr null_smid, different_username_smid(new MidPacket);
   TmidPtr null_tmid, different_username_tmid(new TmidPacket);
@@ -811,7 +811,7 @@ TEST_F(PassportTest, BEH_PASSPORT_ConfirmNewUserData) {
   EXPECT_EQ(kSuccess, passport_.ConfirmNewUserData(mid, smid, tmid, stmid));
 }
 
-TEST_F(PassportTest, BEH_PASSPORT_UpdateMasterData) {
+TEST_F(PassportTest, BEH_UpdateMasterData) {
   // Setup
   MidPtr original_mid(new MidPacket), original_smid(new MidPacket);
   TmidPtr original_tmid(new TmidPacket), original_stmid(new TmidPacket);
@@ -1124,7 +1124,7 @@ TEST_F(PassportTest, BEH_PASSPORT_UpdateMasterData) {
   EXPECT_EQ(passport_.GetPacket(STMID, true)->value(), original_tmid->value());
 }
 
-TEST_F(PassportTest, BEH_PASSPORT_Login) {
+TEST_F(PassportTest, BEH_Login) {
   // Setup
   MidPtr original_mid(new MidPacket), original_smid(new MidPacket);
   TmidPtr original_tmid(new TmidPacket), original_stmid(new TmidPacket);
@@ -1416,7 +1416,7 @@ class PassportVPTest : public testing::TestWithParam<ChangeType> {
   const bool kChangePassword_;
 };
 
-TEST_P(PassportVPTest, BEH_PASSPORT_ChangeUserDetails) {
+TEST_P(PassportVPTest, BEH_ChangeUserDetails) {
   std::string message("\n\nCHANGING ");
   switch (GetParam()) {
     case kChangeUsername:

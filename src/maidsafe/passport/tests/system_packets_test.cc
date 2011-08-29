@@ -97,7 +97,7 @@ class SystemPacketsTest : public testing::Test {
   std::vector<PacketType> signature_packet_types_, packet_types_;
 };
 
-TEST_F(SystemPacketsTest, BEH_PASSPORT_IsSignature) {
+TEST_F(SystemPacketsTest, BEH_IsSignature) {
   // Check for self-signers
   EXPECT_FALSE(IsSignature(MID, true));
   EXPECT_FALSE(IsSignature(SMID, true));
@@ -195,7 +195,7 @@ testing::AssertionResult Empty(std::shared_ptr<pki::Packet> packet) {
   return testing::AssertionSuccess();
 }
 
-TEST_F(SystemPacketsTest, BEH_PASSPORT_CreateSig) {
+TEST_F(SystemPacketsTest, BEH_CreateSig) {
   ASSERT_TRUE(crypto_key_pairs_.StartToCreateKeyPairs(2));
   crypto::RsaKeyPair key_pair1, key_pair2;
   ASSERT_TRUE(crypto_key_pairs_.GetKeyPair(&key_pair1));
@@ -299,7 +299,7 @@ TEST_F(SystemPacketsTest, BEH_PASSPORT_CreateSig) {
   }
 }
 
-TEST_F(SystemPacketsTest, BEH_PASSPORT_PutToAndGetFromKey) {
+TEST_F(SystemPacketsTest, BEH_PutToAndGetFromKey) {
   ASSERT_TRUE(crypto_key_pairs_.StartToCreateKeyPairs(2));
   crypto::RsaKeyPair key_pair1, key_pair2;
   ASSERT_TRUE(crypto_key_pairs_.GetKeyPair(&key_pair1));
@@ -407,7 +407,7 @@ testing::AssertionResult Equal(
   return testing::AssertionSuccess();
 }
 
-TEST_F(SystemPacketsTest, BEH_PASSPORT_CreateMid) {
+TEST_F(SystemPacketsTest, BEH_CreateMid) {
   const std::string kUsername(RandomAlphaNumericString(20));
   const uint32_t kPin(RandomUint32());
   const std::string kPinStr(boost::lexical_cast<std::string>(kPin));
@@ -455,7 +455,7 @@ TEST_F(SystemPacketsTest, BEH_PASSPORT_CreateMid) {
   EXPECT_TRUE(Equal(expected_smid_content, smid));
 }
 
-TEST_F(SystemPacketsTest, BEH_PASSPORT_SetAndDecryptRid) {
+TEST_F(SystemPacketsTest, BEH_SetAndDecryptRid) {
   const std::string kUsername(RandomAlphaNumericString(20));
   const uint32_t kPin(RandomUint32());
   const std::string kPinStr(boost::lexical_cast<std::string>(kPin));
@@ -624,7 +624,7 @@ testing::AssertionResult Equal(
   return testing::AssertionSuccess();
 }
 
-TEST_F(SystemPacketsTest, BEH_PASSPORT_CreateTmid) {
+TEST_F(SystemPacketsTest, BEH_CreateTmid) {
   const std::string kUsername(RandomAlphaNumericString(20));
   const uint32_t kPin(RandomUint32());
   const std::string kPinStr(boost::lexical_cast<std::string>(kPin));
@@ -684,7 +684,7 @@ TEST_F(SystemPacketsTest, BEH_PASSPORT_CreateTmid) {
   EXPECT_TRUE(Equal(expected_tmid_content, tmid));
 }
 
-TEST_F(SystemPacketsTest, BEH_PASSPORT_SetAndDecryptData) {
+TEST_F(SystemPacketsTest, BEH_SetAndDecryptData) {
   const std::string kUsername(RandomAlphaNumericString(20));
   const uint32_t kPin(RandomUint32());
   const std::string kPinStr(boost::lexical_cast<std::string>(kPin));
