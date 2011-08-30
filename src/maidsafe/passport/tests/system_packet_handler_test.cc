@@ -91,8 +91,9 @@ class SystemPacketHandlerTest : public testing::Test {
  protected:
   virtual void SetUp() {
     for (int i(0); i != 5; ++i) {
-      threads_.create_thread(std::bind(&boost::asio::io_service::run,
-                                       &asio_service_));
+      threads_.create_thread(
+          std::bind(static_cast<size_t(boost::asio::io_service::*)()>(
+              &boost::asio::io_service::run), &asio_service_));
     }
     crypto_key_pairs_.CreateKeyPairs(16);
     // MID
