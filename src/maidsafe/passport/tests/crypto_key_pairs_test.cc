@@ -120,10 +120,7 @@ void GetKeys(CryptoKeyPairs *crypto_key_pairs,
              const int16_t &total) {
   for (int i = 0; i < total; ++i) {
     crypto::RsaKeyPair rsa_key_pair;
-    while (!crypto_key_pairs->GetKeyPair(&rsa_key_pair)) {
-      rsa_key_pair.ClearKeys();
-      crypto_key_pairs->CreateKeyPairs(total);
-    }
+    EXPECT_TRUE(crypto_key_pairs->GetKeyPair(&rsa_key_pair));
     ASSERT_FALSE(rsa_key_pair.private_key().empty());
     ASSERT_FALSE(rsa_key_pair.public_key().empty());
     ++(*counter);
@@ -133,7 +130,7 @@ void GetKeys(CryptoKeyPairs *crypto_key_pairs,
 TEST_F(CryptoKeyPairsTest, FUNC_AccessFromDifferentThreads) {
   int16_t no_of_keys(6), no_of_threads(4);
   std::vector<crypto::RsaKeyPair> rsa_key_pairs;
-  crypto_key_pairs_.CreateKeyPairs(no_of_keys);
+  crypto_key_pairs_.CreateKeyPairs(no_of_keys * no_of_threads);
   boost::thread_group threads;
   std::vector<int> keys_gen(no_of_threads, 0);
   for (int i = 0; i != no_of_threads; ++i) {
@@ -145,6 +142,13 @@ TEST_F(CryptoKeyPairsTest, FUNC_AccessFromDifferentThreads) {
     ASSERT_EQ(no_of_keys, keys_gen[i]);
 }
 
+TEST_F(CryptoKeyPairsTest, BEH_DestroyObjectWhileGeneratingKeys) {
+  boost::scoped_ptr<CryptoKeyPairs> crypto_key_pairs_(
+      new CryptoKeyPairs(asio_service_, kRsaKeySize_));
+  crypto_key_pairs_->CreateKeyPairs(20);
+  Sleep(bptime::seconds(3));
+}
+
 void GetKeyPair(std::shared_ptr<CryptoKeyPairs> crypto_key_pairs,
                 int *counter) {
   crypto::RsaKeyPair rsa_key_pair;
@@ -153,13 +157,6 @@ void GetKeyPair(std::shared_ptr<CryptoKeyPairs> crypto_key_pairs,
     ASSERT_FALSE(rsa_key_pair.public_key().empty());
     ++(*counter);
   }
-}
-
-TEST_F(CryptoKeyPairsTest, BEH_DestroyObjectWhileGeneratingKeys) {
-  boost::scoped_ptr<CryptoKeyPairs> crypto_key_pairs_(
-      new CryptoKeyPairs(asio_service_, kRsaKeySize_));
-  crypto_key_pairs_->CreateKeyPairs(20);
-  Sleep(bptime::seconds(3));
 }
 
 TEST_F(CryptoKeyPairsTest, BEH_DestroyObjectWhileGettingKeys) {

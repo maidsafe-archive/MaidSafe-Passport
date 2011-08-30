@@ -57,13 +57,15 @@ void CryptoKeyPairs::CreateKeyPair() {
     boost::mutex::scoped_lock lock(mutex_);
     if (stopping_) {
       --keypairs_todo_;
+      cond_var_.notify_all();
       return;
     }
   }
   crypto::RsaKeyPair rsakp;
   rsakp.GenerateKeys(kRsaKeySize_);
   boost::mutex::scoped_lock lock(mutex_);
-  keypairs_.push_back(rsakp);
+  if (!stopping_)
+    keypairs_.push_back(rsakp);
   --keypairs_todo_;
   cond_var_.notify_all();
 }
@@ -97,7 +99,8 @@ void CryptoKeyPairs::Stop() {
   stopping_ = true;
   keypairs_.clear();
   cond_var_.notify_all();
-  cond_var_.wait(lock, std::bind(&CryptoKeyPairs::DoneCreatingKeyPairs, this));
+  cond_var_.timed_wait(lock, boost::posix_time::seconds(30),
+                       std::bind(&CryptoKeyPairs::DoneCreatingKeyPairs, this));
 }
 
 bool CryptoKeyPairs::KeysReady() {

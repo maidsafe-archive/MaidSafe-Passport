@@ -40,8 +40,10 @@ int Passport::SetInitialDetails(const std::string &username,
                                 const std::string &pin,
                                 std::string *mid_name,
                                 std::string *smid_name) {
-  if (!mid_name || !smid_name)
+  if (!mid_name || !smid_name) {
+    StopCreatingKeyPairs();
     return kNullPointer;
+  }
   std::shared_ptr<MidPacket> mid(new MidPacket(username, pin, ""));
   std::shared_ptr<MidPacket> smid(new MidPacket(username, pin,
                                                 kSmidAppendix_));
@@ -49,6 +51,8 @@ int Passport::SetInitialDetails(const std::string &username,
   if (success) {
     success = packet_handler_.AddPendingPacket(mid) &&
               packet_handler_.AddPendingPacket(smid);
+  } else {
+    StopCreatingKeyPairs();
   }
   *mid_name = mid->name();
   *smid_name = smid->name();
@@ -61,15 +65,21 @@ int Passport::SetNewUserData(const std::string &password,
                              std::shared_ptr<MidPacket> smid,
                              std::shared_ptr<TmidPacket> tmid,
                              std::shared_ptr<TmidPacket> stmid) {
-  if (!mid || !smid || !tmid || !stmid)
+  if (!mid || !smid || !tmid || !stmid) {
+    StopCreatingKeyPairs();
     return kNullPointer;
+  }
   // Set same RID for MID and SMID
   std::shared_ptr<MidPacket> retrieved_pending_mid(PendingMid());
   std::shared_ptr<MidPacket> retrieved_pending_smid(PendingSmid());
-  if (!retrieved_pending_mid)
+  if (!retrieved_pending_mid) {
+    StopCreatingKeyPairs();
     return kNoMid;
-  if (!retrieved_pending_smid)
+  }
+  if (!retrieved_pending_smid) {
+    StopCreatingKeyPairs();
     return kNoSmid;
+  }
   std::string rid(RandomString((RandomUint32() % 64) + 64));
   std::string srid(RandomString((RandomUint32() % 64) + 64));
   retrieved_pending_mid->SetRid(rid);
