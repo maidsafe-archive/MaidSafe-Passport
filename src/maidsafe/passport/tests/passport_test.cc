@@ -1206,7 +1206,6 @@ TEST_F(PassportTest, BEH_Login) {
             kEncryptedMasterDataSurrogate, &recovered_plain_text_surrogate));
 
   // Good data
-  std::string mid_name, smid_name;
   EXPECT_EQ(kSuccess, passport_.SetInitialDetails(kUsername_, kPin_, &mid_name_,
                                                   &smid_name_));
   EXPECT_TRUE(passport_.GetPacket(MID, false).get() != NULL);
@@ -1467,7 +1466,6 @@ TEST_P(PassportVPTest, BEH_ChangeUserDetails) {
   TmidPtr null_tmid;
   std::string temp;
   if (kChangePassword_) {
-    std::string tmid_old_value, stmid_old_value;
     EXPECT_EQ(kNullPointer, passport_.ChangePassword(kNewPassword_,
         kPlainTextMasterDataAfterChange_, NULL, &temp, tmid_after_change_,
         stmid_after_change_));
