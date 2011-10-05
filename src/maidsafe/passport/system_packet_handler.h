@@ -31,7 +31,7 @@
 #include "maidsafe/passport/system_packets.h"
 #include "maidsafe/passport/version.h"
 
-#if MAIDSAFE_PASSPORT_VERSION != 107
+#if MAIDSAFE_PASSPORT_VERSION != 108
 #  error This API is not compatible with the installed library.\
     Please update the maidsafe-passport library.
 #endif
