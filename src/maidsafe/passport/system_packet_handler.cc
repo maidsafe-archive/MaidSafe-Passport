@@ -191,14 +191,47 @@ std::shared_ptr<pki::Packet> SystemPacketHandler::GetPacket(
 
 std::shared_ptr<pki::Packet> SystemPacketHandler::GetPacket(
     const std::string &packet_id,
-    bool /*confirmed*/) {
+    bool confirmed) {
   std::shared_ptr<pki::Packet> packet;
   boost::mutex::scoped_lock lock(mutex_);
   auto it = packets_.begin();
-  for (; it != packets_.end(); ++it) {
-    if ((*it).second.stored->name() == packet_id) {
-      it = packets_.end();
-      packet = (*it).second.stored;
+  bool done(false);
+  for (; it != packets_.end() && !done; ++it) {
+    std::shared_ptr<pki::Packet> retrieved_packet;
+    if ((*it).second.stored &&
+        (*it).second.stored->name() == packet_id &&
+        confirmed) {
+      retrieved_packet = (*it).second.stored;
+    } else if ((*it).second.pending &&
+               (*it).second.pending->name() == packet_id &&
+               !confirmed) {
+      retrieved_packet = (*it).second.pending;
+    }
+    if (retrieved_packet) {
+      // return a copy of the contents
+      done = true;
+      if (retrieved_packet->packet_type() == TMID ||
+          retrieved_packet->packet_type() == STMID) {
+        packet = std::shared_ptr<TmidPacket>(new TmidPacket(
+            *std::static_pointer_cast<TmidPacket>(retrieved_packet)));
+      } else if (retrieved_packet->packet_type() == MID ||
+                 retrieved_packet->packet_type() == SMID) {
+        packet = std::shared_ptr<MidPacket>(new MidPacket(
+            *std::static_pointer_cast<MidPacket>(retrieved_packet)));
+      } else if (IsSignature(retrieved_packet->packet_type(), false)) {
+        packet = std::shared_ptr<SignaturePacket>(new SignaturePacket(
+            *std::static_pointer_cast<SignaturePacket>(retrieved_packet)));
+      } else {
+        DLOG(ERROR) << "SystemPacketHandler::Packet: "
+                    << DebugString(retrieved_packet->packet_type())
+                    << " type error."  << std::endl;
+      }
+    } else {
+      DLOG(ERROR) << "SystemPacketHandler::Packet: "
+                  << DebugString(retrieved_packet->packet_type()) << " not "
+                  << (confirmed ? "confirmed as stored." :
+                                  "pending confirmation.")
+                  << std::endl;
     }
   }
   return packet;
