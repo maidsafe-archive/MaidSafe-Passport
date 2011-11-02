@@ -253,6 +253,8 @@ class Passport {
                                   bool confirmed);
   std::string SignaturePacketPublicKey(const PacketType &packet_type,
                                        bool confirmed);
+  std::string SignaturePacketPublicKey(const std::string &packet_id,
+                                       bool confirmed);
   std::string SignaturePacketPrivateKey(const PacketType &packet_type,
                                         bool confirmed);
   std::string SignaturePacketPublicKeySignature(const PacketType &packet_type,

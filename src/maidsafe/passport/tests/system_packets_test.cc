@@ -27,6 +27,7 @@
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
+#include "maidsafe/passport/log.h"
 #include "maidsafe/passport/system_packets.h"
 #include "maidsafe/passport/crypto_key_pairs.h"
 
@@ -218,8 +219,10 @@ TEST_F(SystemPacketsTest, BEH_CreateSig) {
   for (size_t i = 0; i < packet_types_.size(); ++i) {
     if (!IsSignature(packet_types_.at(i), false)) {
       SignaturePtr sig_packet(new SignaturePacket(packet_types_.at(i),
-                              key_pair1.public_key(), key_pair1.private_key(),
-                              "", ""));
+                                                  key_pair1.public_key(),
+                                                  key_pair1.private_key(),
+                                                  "",
+                                                  ""));
       EXPECT_TRUE(Empty(sig_packet));
       EXPECT_EQ(UNKNOWN, sig_packet->packet_type());
     }
@@ -229,12 +232,16 @@ TEST_F(SystemPacketsTest, BEH_CreateSig) {
   for (size_t i = 0; i < signature_packet_types_.size(); ++i) {
     if (!IsSignature(signature_packet_types_.at(i), true)) {
       SignaturePtr sig_packet(new SignaturePacket(signature_packet_types_.at(i),
-                              key_pair1.public_key(), key_pair1.private_key(),
-                              "", ""));
+                                                  key_pair1.public_key(),
+                                                  key_pair1.private_key(),
+                                                  "",
+                                                  ""));
       EXPECT_TRUE(Empty(sig_packet));
       sig_packet.reset(new SignaturePacket(signature_packet_types_.at(i),
-                       key_pair1.public_key(), key_pair1.private_key(),
-                       key_pair1.private_key(), ""));
+                                           key_pair1.public_key(),
+                                           key_pair1.private_key(),
+                                           key_pair1.private_key(),
+                                           ""));
       EXPECT_TRUE(Empty(sig_packet));
     }
   }
@@ -243,8 +250,10 @@ TEST_F(SystemPacketsTest, BEH_CreateSig) {
   for (size_t i = 0; i < signature_packet_types_.size(); ++i) {
     if (IsSignature(signature_packet_types_.at(i), true)) {
       SignaturePtr sig_packet(new SignaturePacket(signature_packet_types_.at(i),
-                              key_pair1.public_key(), key_pair1.private_key(),
-                              key_pair2.private_key(), ""));
+                                                  key_pair1.public_key(),
+                                                  key_pair1.private_key(),
+                                                  key_pair2.private_key(),
+                                                  ""));
       EXPECT_TRUE(Empty(sig_packet));
     }
   }
@@ -255,11 +264,16 @@ TEST_F(SystemPacketsTest, BEH_CreateSig) {
     if (!IsSignature(signature_packet_types_.at(i), true))
       signer_private_key = key_pair2.private_key();
     SignaturePtr sig_packet(new SignaturePacket(signature_packet_types_.at(i),
-                            key_pair1.public_key(), "", signer_private_key,
-                            ""));
+                                                key_pair1.public_key(),
+                                                "",
+                                                signer_private_key,
+                                                ""));
     EXPECT_TRUE(Empty(sig_packet));
-    sig_packet.reset(new SignaturePacket(signature_packet_types_.at(i), "",
-                     key_pair1.private_key(), signer_private_key, ""));
+    sig_packet.reset(new SignaturePacket(signature_packet_types_.at(i),
+                                         "",
+                                         key_pair1.private_key(),
+                                         signer_private_key,
+                                         ""));
     EXPECT_TRUE(Empty(sig_packet));
   }
 
@@ -271,8 +285,10 @@ TEST_F(SystemPacketsTest, BEH_CreateSig) {
     if (signature_packet_types_.at(i) == MPID)
       public_name = "Name";
     SignaturePtr sig_packet(new SignaturePacket(signature_packet_types_.at(i),
-                            key_pair1.public_key(), key_pair1.private_key(),
-                            signer_private_key, public_name));
+                                                key_pair1.public_key(),
+                                                key_pair1.private_key(),
+                                                signer_private_key,
+                                                public_name));
     EXPECT_FALSE(Empty(sig_packet));
     std::string expected_signer_private_key(signer_private_key);
     if (signer_private_key.empty())
@@ -284,22 +300,37 @@ TEST_F(SystemPacketsTest, BEH_CreateSig) {
       expected_name = crypto::Hash<crypto::SHA512>(public_name);
     } else {
       expected_name =
-          crypto::Hash<crypto::SHA512>(key_pair1.public_key() +
-                                       expected_public_key_signature);
+          crypto::Hash<crypto::SHA512>(sig_packet->value() +
+                                       sig_packet->public_key_signature());
     }
-    EXPECT_EQ(expected_name, sig_packet->name());
-    EXPECT_EQ(key_pair1.public_key(), sig_packet->value());
+    ASSERT_EQ(expected_name, sig_packet->name());
     EXPECT_EQ(signature_packet_types_.at(i), sig_packet->packet_type());
+    EXPECT_EQ(key_pair1.public_key(), sig_packet->value());
     EXPECT_EQ(key_pair1.public_key(), sig_packet->public_key_);
     EXPECT_EQ(key_pair1.private_key(), sig_packet->private_key());
     EXPECT_EQ(expected_signer_private_key, sig_packet->signer_private_key_);
-    EXPECT_EQ(expected_public_key_signature,
-              sig_packet->public_key_signature());
+    if (signer_private_key.empty())
+      ASSERT_TRUE(crypto::AsymCheckSig(sig_packet->value(),
+                                       sig_packet->public_key_signature(),
+                                       key_pair1.public_key()));
+    else
+      ASSERT_TRUE(crypto::AsymCheckSig(sig_packet->value(),
+                                       sig_packet->public_key_signature(),
+                                       key_pair2.public_key()));
     // Check passing in a public_name leaves all unaffected except MPID
     public_name = "Name";
     sig_packet.reset(new SignaturePacket(signature_packet_types_.at(i),
-                     key_pair1.public_key(), key_pair1.private_key(),
-                     signer_private_key, public_name));
+                                         key_pair1.public_key(),
+                                         key_pair1.private_key(),
+                                         signer_private_key,
+                                         public_name));
+    if (signature_packet_types_.at(i) == MPID) {
+      expected_name = crypto::Hash<crypto::SHA512>(public_name);
+    } else {
+      expected_name =
+          crypto::Hash<crypto::SHA512>(sig_packet->value() +
+                                       sig_packet->public_key_signature());
+    }
     EXPECT_FALSE(Empty(sig_packet));
     EXPECT_EQ(expected_name, sig_packet->name());
     EXPECT_EQ(key_pair1.public_key(), sig_packet->value());
@@ -307,8 +338,14 @@ TEST_F(SystemPacketsTest, BEH_CreateSig) {
     EXPECT_EQ(key_pair1.public_key(), sig_packet->public_key_);
     EXPECT_EQ(key_pair1.private_key(), sig_packet->private_key());
     EXPECT_EQ(expected_signer_private_key, sig_packet->signer_private_key_);
-    EXPECT_EQ(expected_public_key_signature,
-              sig_packet->public_key_signature());
+    if (signer_private_key.empty())
+      ASSERT_TRUE(crypto::AsymCheckSig(sig_packet->value(),
+                                       sig_packet->public_key_signature(),
+                                       key_pair1.public_key()));
+    else
+      ASSERT_TRUE(crypto::AsymCheckSig(sig_packet->value(),
+                                       sig_packet->public_key_signature(),
+                                       key_pair2.public_key()));
   }
 }
 
@@ -325,8 +362,10 @@ TEST_F(SystemPacketsTest, BEH_PutToAndGetFromKey) {
     if (signature_packet_types_.at(i) == MPID)
       public_name = "Name";
     SignaturePtr sig_packet(new SignaturePacket(signature_packet_types_.at(i),
-                            key_pair1.public_key(), key_pair1.private_key(),
-                            signer_private_key, public_name));
+                                                key_pair1.public_key(),
+                                                key_pair1.private_key(),
+                                                signer_private_key,
+                                                public_name));
     Key key;
     sig_packet->PutToKey(&key);
     if (signer_private_key.empty())
@@ -339,17 +378,24 @@ TEST_F(SystemPacketsTest, BEH_PutToAndGetFromKey) {
     } else {
       expected_name =
           crypto::Hash<crypto::SHA512>(key_pair1.public_key() +
-                                       expected_public_key_signature);
+                                       key.public_key_signature());
     }
     EXPECT_EQ(expected_name, key.name());
     EXPECT_EQ(signature_packet_types_.at(i), key.packet_type());
     EXPECT_EQ(key_pair1.public_key(), key.public_key());
     EXPECT_EQ(key_pair1.private_key(), key.private_key());
-    if (signer_private_key == key.private_key())
+    if (signer_private_key == key.private_key()) {
       EXPECT_FALSE(key.has_signer_private_key());
-    else
+      ASSERT_TRUE(crypto::AsymCheckSig(key.public_key(),
+                                       key.public_key_signature(),
+                                       key_pair1.public_key()));
+    } else {
       EXPECT_EQ(signer_private_key, key.signer_private_key());
-    EXPECT_EQ(expected_public_key_signature, key.public_key_signature());
+      EXPECT_EQ(signer_private_key, key.signer_private_key());
+      ASSERT_TRUE(crypto::AsymCheckSig(key.public_key(),
+                                       key.public_key_signature(),
+                                       key_pair2.public_key()));
+    }
 
     SignaturePtr key_sig_packet(new SignaturePacket(key));
     EXPECT_FALSE(Empty(key_sig_packet));
@@ -359,8 +405,15 @@ TEST_F(SystemPacketsTest, BEH_PutToAndGetFromKey) {
     EXPECT_EQ(key_pair1.public_key(), key_sig_packet->public_key_);
     EXPECT_EQ(key_pair1.private_key(), key_sig_packet->private_key());
     EXPECT_EQ(signer_private_key, key_sig_packet->signer_private_key_);
-    EXPECT_EQ(expected_public_key_signature,
-              key_sig_packet->public_key_signature());
+    if (signer_private_key == key.private_key()) {
+      ASSERT_TRUE(crypto::AsymCheckSig(key_sig_packet->value(),
+                                       key.public_key_signature(),
+                                       key.public_key()));
+    } else {
+      ASSERT_TRUE(crypto::AsymCheckSig(key_sig_packet->value(),
+                                       key_sig_packet->public_key_signature(),
+                                       key_pair2.public_key()));
+    }
   }
 }
 

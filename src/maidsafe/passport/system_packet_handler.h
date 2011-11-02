@@ -54,6 +54,8 @@ class SystemPacketHandler {
   // Returns a *copy* of the confirmed or pending packet
   std::shared_ptr<pki::Packet> GetPacket(const PacketType &packet_type,
                                          bool confirmed);
+  std::shared_ptr<pki::Packet> GetPacket(const std::string &packet_id,
+                                         bool confirmed);
   bool Confirmed(const PacketType &packet_type);
   std::string SerialiseKeyring(const std::string &public_name);
   int ParseKeyring(const std::string &serialised_keyring,

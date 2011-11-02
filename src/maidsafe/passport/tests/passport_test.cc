@@ -258,6 +258,15 @@ TEST_F(PassportTest, BEH_SignaturePacketFunctions) {
   EXPECT_FALSE(passport_.GetPacket(ANMAID, false).get());
   EXPECT_FALSE(passport_.GetPacket(ANMAID, true).get());
   EXPECT_FALSE(passport_.GetPacket(MAID, false).get());
+
+  EXPECT_EQ(passport_.SignaturePacketPublicKey(ANMAID, true),
+            passport_.SignaturePacketPublicKey(
+                passport_.SignaturePacketName(ANMAID, true),
+                true));
+  EXPECT_EQ(passport_.SignaturePacketPublicKey(MAID, false),
+            passport_.SignaturePacketPublicKey(
+                passport_.SignaturePacketName(MAID, false),
+                true));
 }
 
 TEST_F(PassportTest, BEH_MpidFunctions) {

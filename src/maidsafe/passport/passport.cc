@@ -527,6 +527,14 @@ std::string Passport::SignaturePacketPublicKey(const PacketType &packet_type,
   return packet ? packet->value() : "";
 }
 
+std::string Passport::SignaturePacketPublicKey(const std::string &packet_id,
+                                               bool confirmed) {
+  std::shared_ptr<SignaturePacket> packet(
+      std::static_pointer_cast<SignaturePacket>(
+          packet_handler_.GetPacket(packet_id, confirmed)));
+  return packet ? packet->value() : "";
+}
+
 std::string Passport::SignaturePacketPrivateKey(const PacketType &packet_type,
                                                 bool confirmed) {
   if (!IsSignature(packet_type, false))

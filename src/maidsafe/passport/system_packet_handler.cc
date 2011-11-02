@@ -189,6 +189,21 @@ std::shared_ptr<pki::Packet> SystemPacketHandler::GetPacket(
   return packet;
 }
 
+std::shared_ptr<pki::Packet> SystemPacketHandler::GetPacket(
+    const std::string &packet_id,
+    bool /*confirmed*/) {
+  std::shared_ptr<pki::Packet> packet;
+  boost::mutex::scoped_lock lock(mutex_);
+  auto it = packets_.begin();
+  for (; it != packets_.end(); ++it) {
+    if ((*it).second.stored->name() == packet_id) {
+      it = packets_.end();
+      packet = (*it).second.stored;
+    }
+  }
+  return packet;
+}
+
 bool SystemPacketHandler::Confirmed(const PacketType &packet_type) {
   boost::mutex::scoped_lock lock(mutex_);
   return IsConfirmed(packets_.find(packet_type));
