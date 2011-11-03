@@ -226,13 +226,13 @@ std::shared_ptr<pki::Packet> SystemPacketHandler::GetPacket(
                     << DebugString(retrieved_packet->packet_type())
                     << " type error."  << std::endl;
       }
-    } else {
-      DLOG(ERROR) << "SystemPacketHandler::Packet: "
-                  << DebugString(retrieved_packet->packet_type()) << " not "
-                  << (confirmed ? "confirmed as stored." :
-                                  "pending confirmation.")
-                  << std::endl;
     }
+  }
+  if (!done) {
+    DLOG(ERROR) << "SystemPacketHandler::Packet: not "
+                << (confirmed ? "confirmed as stored." :
+                                "pending confirmation.")
+                << std::endl;
   }
   return packet;
 }
