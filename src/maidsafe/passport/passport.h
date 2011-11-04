@@ -221,18 +221,18 @@ class Passport {
   // the packet is set before returning kSuccess.
   int InitialiseSignaturePacket(
       const PacketType &packet_type,
-      std::shared_ptr<SignaturePacket> signature_packet);
+      std::shared_ptr<pki::SignaturePacket> signature_packet);
 
   // Creates a new MPID.  Will fail if ANMPID is not already in packet_handler_.
   // If successful, a copy of the MPID is set before returning kSuccess.
   int InitialiseMpid(const std::string &public_name,
-                     std::shared_ptr<SignaturePacket> mpid);
+                     std::shared_ptr<pki::SignaturePacket> mpid);
 
   // Confirms signature_packet is successfully stored.  A copy of the stored
   // packet must be passed in for verification.  If method returns failure, it
   // can safely be retried (e.g. after dependent packets have been confirmed).
   int ConfirmSignaturePacket(
-      std::shared_ptr<SignaturePacket> signature_packet);
+      std::shared_ptr<pki::SignaturePacket> signature_packet);
 
   // Indicates packet_type SignaturePacket failed storing.  The pending packet
   // is reverted to last confirmed version.
@@ -276,7 +276,7 @@ class Passport {
   int DoInitialiseSignaturePacket(
       const PacketType &packet_type,
       const std::string &public_name,
-      std::shared_ptr<SignaturePacket> signature_packet);
+      std::shared_ptr<pki::SignaturePacket> signature_packet);
   int ConfirmUserData(std::shared_ptr<MidPacket> mid,
                       std::shared_ptr<MidPacket> smid,
                       std::shared_ptr<TmidPacket> tmid,

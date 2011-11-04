@@ -401,14 +401,14 @@ int Passport::ConfirmPasswordChange(std::shared_ptr<TmidPacket> tmid,
 
 int Passport::InitialiseSignaturePacket(
     const PacketType &packet_type,
-    std::shared_ptr<SignaturePacket> signature_packet) {
+    std::shared_ptr<pki::SignaturePacket> signature_packet) {
   if (packet_type == MPID)
     return kPassportError;
   return DoInitialiseSignaturePacket(packet_type, "", signature_packet);
 }
 
 int Passport::InitialiseMpid(const std::string &public_name,
-                             std::shared_ptr<SignaturePacket> mpid) {
+                             std::shared_ptr<pki::SignaturePacket> mpid) {
   pending_public_name_ = public_name;
   return DoInitialiseSignaturePacket(MPID, public_name, mpid);
 }
@@ -416,7 +416,7 @@ int Passport::InitialiseMpid(const std::string &public_name,
 int Passport::DoInitialiseSignaturePacket(
     const PacketType &packet_type,
     const std::string &public_name,
-    std::shared_ptr<SignaturePacket> signature_packet) {
+    std::shared_ptr<pki::SignaturePacket> signature_packet) {
   if (!signature_packet)
     return kNullPointer;
   if (!IsSignature(packet_type, false))
@@ -435,28 +435,24 @@ int Passport::DoInitialiseSignaturePacket(
     default:
       break;
   }
+
   std::string signer_private_key;
   if (signer_type != UNKNOWN) {
-    std::shared_ptr<SignaturePacket> signer =
-        std::static_pointer_cast<SignaturePacket>(GetPacket(signer_type, true));
+    std::shared_ptr<pki::SignaturePacket> signer =
+        std::static_pointer_cast<pki::SignaturePacket>(GetPacket(signer_type,
+                                                                 true));
     if (!signer)
       return kNoSigningPacket;
     signer_private_key = signer->private_key();
   }
-  crypto::RsaKeyPair key_pair;
-  while (!crypto_key_pairs_.GetKeyPair(&key_pair)) {
-    key_pair.ClearKeys();
-    crypto_key_pairs_.CreateKeyPairs(kCryptoKeyBufferCount);
-  }
-  std::shared_ptr<SignaturePacket> packet(
-      new SignaturePacket(packet_type, key_pair.public_key(),
-                          key_pair.private_key(), signer_private_key,
-                          public_name));
-  bool success(!packet->name().empty());
-  if (success && (packet_type != MSID))
-    success = packet_handler_.AddPendingPacket(packet);
-  if (success) {
-    *signature_packet = *packet;
+
+  std::vector<pki::SignaturePacket> packets;
+  if (pki::kSuccess != pki::CreateChainedId(&packets, 1))
+    return kPassportError;
+
+  *signature_packet = packets.at(0);
+  signature_packet->set_packet_type(packet_type);
+  if (packet_handler_.AddPendingPacket(signature_packet)) {
     return kSuccess;
   } else {
     if (packet_type != MSID)
@@ -466,7 +462,7 @@ int Passport::DoInitialiseSignaturePacket(
 }
 
 int Passport::ConfirmSignaturePacket(
-    std::shared_ptr<SignaturePacket> signature_packet) {
+    std::shared_ptr<pki::SignaturePacket> signature_packet) {
   if (!signature_packet)
     return kPassportError;
   if (signature_packet->packet_type() == MPID)
@@ -511,8 +507,8 @@ std::string Passport::SignaturePacketName(const PacketType &packet_type,
                                           bool confirmed) {
   if (!IsSignature(packet_type, false))
     return "";
-  std::shared_ptr<SignaturePacket> packet(
-      std::static_pointer_cast<SignaturePacket>(GetPacket(packet_type,
+  std::shared_ptr<pki::SignaturePacket> packet(
+      std::static_pointer_cast<pki::SignaturePacket>(GetPacket(packet_type,
                                                           confirmed)));
   return packet ? packet->name() : "";
 }
@@ -521,16 +517,16 @@ std::string Passport::SignaturePacketPublicKey(const PacketType &packet_type,
                                                bool confirmed) {
   if (!IsSignature(packet_type, false))
     return "";
-  std::shared_ptr<SignaturePacket> packet(
-      std::static_pointer_cast<SignaturePacket>(GetPacket(packet_type,
+  std::shared_ptr<pki::SignaturePacket> packet(
+      std::static_pointer_cast<pki::SignaturePacket>(GetPacket(packet_type,
                                                           confirmed)));
   return packet ? packet->value() : "";
 }
 
 std::string Passport::SignaturePacketPublicKey(const std::string &packet_id,
                                                bool confirmed) {
-  std::shared_ptr<SignaturePacket> packet(
-      std::static_pointer_cast<SignaturePacket>(
+  std::shared_ptr<pki::SignaturePacket> packet(
+      std::static_pointer_cast<pki::SignaturePacket>(
           packet_handler_.GetPacket(packet_id, confirmed)));
   return packet ? packet->value() : "";
 }
@@ -539,8 +535,8 @@ std::string Passport::SignaturePacketPrivateKey(const PacketType &packet_type,
                                                 bool confirmed) {
   if (!IsSignature(packet_type, false))
     return "";
-  std::shared_ptr<SignaturePacket> packet(
-      std::static_pointer_cast<SignaturePacket>(GetPacket(packet_type,
+  std::shared_ptr<pki::SignaturePacket> packet(
+      std::static_pointer_cast<pki::SignaturePacket>(GetPacket(packet_type,
                                                           confirmed)));
   return packet ? packet->private_key() : "";
 }
@@ -550,10 +546,10 @@ std::string Passport::SignaturePacketPublicKeySignature(
     bool confirmed) {
   if (!IsSignature(packet_type, false))
     return "";
-  std::shared_ptr<SignaturePacket> packet(
-      std::static_pointer_cast<SignaturePacket>(GetPacket(packet_type,
+  std::shared_ptr<pki::SignaturePacket> packet(
+      std::static_pointer_cast<pki::SignaturePacket>(GetPacket(packet_type,
                                                           confirmed)));
-  return packet ? packet->public_key_signature() : "";
+  return packet ? packet->signature() : "";
 }
 
 std::shared_ptr<MidPacket> Passport::Mid() {

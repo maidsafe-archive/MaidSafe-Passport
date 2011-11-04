@@ -97,93 +97,6 @@ bool IsSignature(const int &packet_type, bool check_for_self_signer) {
   }
 }
 
-SignaturePacket::SignaturePacket()
-    : pki::Packet(UNKNOWN),
-      public_key_(),
-      private_key_(),
-      signer_private_key_(),
-      public_key_signature_() {}
-
-SignaturePacket::SignaturePacket(const PacketType &packet_type,
-                                 const std::string &public_key,
-                                 const std::string &private_key,
-                                 const std::string &signer_private_key,
-                                 const std::string &public_name)
-    : pki::Packet(packet_type),
-      public_key_(public_key),
-      private_key_(private_key),
-      signer_private_key_(signer_private_key),
-      public_key_signature_() {
-  if (packet_type == MPID)
-    name_ = crypto::Hash<crypto::SHA512>(public_name);
-  Initialise();
-}
-
-SignaturePacket::SignaturePacket(const Key &key)
-    : pki::Packet(key.packet_type()),
-      public_key_(key.public_key()),
-      private_key_(key.private_key()),
-      signer_private_key_(key.has_signer_private_key() ?
-                          key.signer_private_key() : key.private_key()),
-      public_key_signature_(key.public_key_signature()) {
-  name_ = key.name();
-}
-
-void SignaturePacket::Initialise() {
-  if (!IsSignature(packet_type_, false)) {
-    packet_type_ = UNKNOWN;
-    return Clear();
-  }
-  if (public_key_.empty() || private_key_.empty())
-    return Clear();
-
-  if (IsSignature(packet_type_, true)) {  // this is a self-signing packet
-    if (signer_private_key_.empty()) {
-      signer_private_key_ = private_key_;
-    } else if (signer_private_key_ != private_key_) {
-      return Clear();
-    }
-  } else if (signer_private_key_.empty() ||
-             (signer_private_key_ == private_key_)) {
-    return Clear();
-  }
-
-  public_key_signature_ = crypto::AsymSign(public_key_, signer_private_key_);
-  if (packet_type_ != MPID)
-    name_ = crypto::Hash<crypto::SHA512>(public_key_ + public_key_signature_);
-  if (name_.empty())
-    Clear();
-}
-
-void SignaturePacket::Clear() {
-  name_.clear();
-  public_key_.clear();
-  private_key_.clear();
-  signer_private_key_.clear();
-  public_key_signature_.clear();
-}
-
-bool SignaturePacket::Equals(const pki::Packet *other) const {
-  const SignaturePacket *rhs = static_cast<const SignaturePacket*>(other);
-  return packet_type_ == rhs->packet_type_ &&
-         name_ == rhs->name_ &&
-         public_key_ == rhs->public_key_ &&
-         private_key_ == rhs->private_key_ &&
-         signer_private_key_ == rhs->signer_private_key_ &&
-         public_key_signature_ == rhs->public_key_signature_;
-}
-
-void SignaturePacket::PutToKey(Key *key) {
-  key->set_name(name_);
-  key->set_packet_type(packet_type_);
-  key->set_public_key(public_key_);
-  key->set_private_key(private_key_);
-  if (signer_private_key_ != private_key_)
-    key->set_signer_private_key(signer_private_key_);
-  key->set_public_key_signature(public_key_signature_);
-}
-
-
 
 MidPacket::MidPacket()
     : pki::Packet(UNKNOWN),
@@ -271,19 +184,18 @@ void MidPacket::Clear() {
 }
 
 bool MidPacket::Equals(const pki::Packet *other) const {
-  const MidPacket *rhs = static_cast<const MidPacket*>(other);
-  return packet_type_ == rhs->packet_type_ &&
-         name_ == rhs->name_ &&
-         username_ == rhs->username_ &&
-         pin_ == rhs->pin_ &&
-         smid_appendix_ == rhs->smid_appendix_ &&
-         encrypted_rid_ == rhs->encrypted_rid_ &&
-         salt_ == rhs->salt_ &&
-         secure_key_ == rhs->secure_key_ &&
-         secure_iv_ == rhs->secure_iv_ &&
-         rid_ == rhs->rid_;
+  const MidPacket *mid = reinterpret_cast<const MidPacket*>(other);
+  return packet_type_ == mid->packet_type_ &&
+         name_ == mid->name_ &&
+         username_ == mid->username_ &&
+         pin_ == mid->pin_ &&
+         smid_appendix_ == mid->smid_appendix_ &&
+         encrypted_rid_ == mid->encrypted_rid_ &&
+         salt_ == mid->salt_ &&
+         secure_key_ == mid->secure_key_ &&
+         secure_iv_ == mid->secure_iv_ &&
+         rid_ == mid->rid_;
 }
-
 
 
 TmidPacket::TmidPacket()
@@ -489,19 +401,19 @@ void TmidPacket::Clear() {
   obfuscation_salt_.clear();
 }
 
-bool TmidPacket::Equals(const pki::Packet *other) const {
-  const TmidPacket *rhs = static_cast<const TmidPacket*>(other);
-  return packet_type_ == rhs->packet_type_ &&
-         name_ == rhs->name_ &&
-         username_ == rhs->username_ &&
-         pin_ == rhs->pin_ &&
-         password_ == rhs->password_ &&
-         rid_ == rhs->rid_ &&
-         plain_text_master_data_ == rhs->plain_text_master_data_ &&
-         salt_ == rhs->salt_ &&
-         secure_key_ == rhs->secure_key_ &&
-         secure_iv_ == rhs->secure_iv_ &&
-         encrypted_master_data_ == rhs->encrypted_master_data_;
+bool TmidPacket::Equals(const pki::Packet* other) const {
+  const TmidPacket *tmid = reinterpret_cast<const TmidPacket*>(other);
+  return packet_type_ == tmid->packet_type_ &&
+         name_ == tmid->name_ &&
+         username_ == tmid->username_ &&
+         pin_ == tmid->pin_ &&
+         password_ == tmid->password_ &&
+         rid_ == tmid->rid_ &&
+         plain_text_master_data_ == tmid->plain_text_master_data_ &&
+         salt_ == tmid->salt_ &&
+         secure_key_ == tmid->secure_key_ &&
+         secure_iv_ == tmid->secure_iv_ &&
+         encrypted_master_data_ == tmid->encrypted_master_data_;
 }
 
 }  // namespace passport

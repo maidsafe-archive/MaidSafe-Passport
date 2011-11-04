@@ -77,8 +77,8 @@ class SystemPacketHandler {
           pending = std::shared_ptr<MidPacket>(new MidPacket(
               *std::static_pointer_cast<MidPacket>(pend)));
         } else if (IsSignature(pend->packet_type(), false)) {
-          pending = std::shared_ptr<SignaturePacket>(new SignaturePacket(
-              *std::static_pointer_cast<SignaturePacket>(pend)));
+          pending = std::shared_ptr<pki::SignaturePacket>(new pki::SignaturePacket(
+              *std::static_pointer_cast<pki::SignaturePacket>(pend)));
         }
       }
     }

@@ -51,7 +51,7 @@ class PassportTest : public testing::Test {
   typedef std::shared_ptr<pki::Packet> PacketPtr;
   typedef std::shared_ptr<MidPacket> MidPtr;
   typedef std::shared_ptr<TmidPacket> TmidPtr;
-  typedef std::shared_ptr<SignaturePacket> SignaturePtr;
+  typedef std::shared_ptr<pki::SignaturePacket> SignaturePtr;
   void SetUp() {
     for (int i(0); i != 5; ++i) {
       threads_.create_thread(
@@ -68,7 +68,7 @@ class PassportTest : public testing::Test {
   bool CreateUser(MidPtr mid, MidPtr smid, TmidPtr tmid, TmidPtr stmid) {
     if (!mid || !smid || !tmid)
       return false;
-    SignaturePtr sig_packet(new SignaturePacket);
+    SignaturePtr sig_packet(new pki::SignaturePacket);
     bool result =
         passport_.InitialiseSignaturePacket(ANMID, sig_packet) == kSuccess &&
         passport_.ConfirmSignaturePacket(sig_packet) == kSuccess &&
@@ -103,7 +103,7 @@ TEST_F(PassportTest, BEH_SignaturePacketFunctions) {
   EXPECT_EQ(kNullPointer,
             passport_.InitialiseSignaturePacket(ANMID, SignaturePtr()));
 
-  SignaturePtr signature_packet(new SignaturePacket);
+  SignaturePtr signature_packet(new pki::SignaturePacket);
   EXPECT_EQ(kPassportError,
             passport_.InitialiseSignaturePacket(MID, signature_packet));
   EXPECT_TRUE(signature_packet->name().empty());
@@ -116,7 +116,7 @@ TEST_F(PassportTest, BEH_SignaturePacketFunctions) {
   EXPECT_FALSE(passport_.GetPacket(MAID, false).get());
   EXPECT_FALSE(passport_.GetPacket(MAID, true).get());
 
-  SignaturePtr anmaid1(new SignaturePacket);
+  SignaturePtr anmaid1(new pki::SignaturePacket);
   EXPECT_EQ(kSuccess,
             passport_.InitialiseSignaturePacket(ANMAID, anmaid1));
   EXPECT_FALSE(anmaid1->name().empty());
@@ -124,7 +124,7 @@ TEST_F(PassportTest, BEH_SignaturePacketFunctions) {
   EXPECT_TRUE(passport_.GetPacket(ANMAID, false)->Equals(anmaid1.get()));
   EXPECT_FALSE(passport_.GetPacket(ANMAID, true).get());
 
-  SignaturePtr anmaid2(new SignaturePacket);
+  SignaturePtr anmaid2(new pki::SignaturePacket);
   EXPECT_EQ(kSuccess,
             passport_.InitialiseSignaturePacket(ANMAID, anmaid2));
   EXPECT_FALSE(anmaid2->name().empty());
@@ -154,7 +154,7 @@ TEST_F(PassportTest, BEH_SignaturePacketFunctions) {
   ASSERT_TRUE(passport_.GetPacket(ANMAID, true).get() != NULL);
   EXPECT_TRUE(passport_.GetPacket(ANMAID, true)->Equals(anmaid2.get()));
 
-  SignaturePtr anmaid3(new SignaturePacket);
+  SignaturePtr anmaid3(new pki::SignaturePacket);
   EXPECT_EQ(kSuccess,
             passport_.InitialiseSignaturePacket(ANMAID, anmaid3));
   EXPECT_FALSE(anmaid3->name().empty());
@@ -185,13 +185,13 @@ TEST_F(PassportTest, BEH_SignaturePacketFunctions) {
             passport_.SignaturePacketPublicKey(ANMAID, false));
   EXPECT_EQ(anmaid3->private_key(),
             passport_.SignaturePacketPrivateKey(ANMAID, false));
-  EXPECT_EQ(anmaid3->public_key_signature(),
+  EXPECT_EQ(anmaid3->signature(),
             passport_.SignaturePacketPublicKeySignature(ANMAID, false));
   EXPECT_EQ(anmaid2->name(), passport_.SignaturePacketName(ANMAID, true));
   EXPECT_EQ(anmaid2->value(), passport_.SignaturePacketPublicKey(ANMAID, true));
   EXPECT_EQ(anmaid2->private_key(),
             passport_.SignaturePacketPrivateKey(ANMAID, true));
-  EXPECT_EQ(anmaid2->public_key_signature(),
+  EXPECT_EQ(anmaid2->signature(),
             passport_.SignaturePacketPublicKeySignature(ANMAID, true));
 
   EXPECT_EQ(kPassportError, passport_.RevertSignaturePacket(MID));
@@ -201,7 +201,7 @@ TEST_F(PassportTest, BEH_SignaturePacketFunctions) {
   ASSERT_TRUE(passport_.GetPacket(ANMAID, true).get() != NULL);
   EXPECT_TRUE(passport_.GetPacket(ANMAID, true)->Equals(anmaid2.get()));
 
-  SignaturePtr maid(new SignaturePacket);
+  SignaturePtr maid(new pki::SignaturePacket);
   EXPECT_EQ(kSuccess, passport_.InitialiseSignaturePacket(MAID, maid));
   std::string original_maid_name(maid->name());
   EXPECT_FALSE(original_maid_name.empty());
@@ -274,13 +274,13 @@ TEST_F(PassportTest, BEH_MpidFunctions) {
   EXPECT_EQ(kNullPointer,
             passport_.InitialiseMpid(kPublicName, SignaturePtr()));
 
-  SignaturePtr mpid(new SignaturePacket);
+  SignaturePtr mpid(new pki::SignaturePacket);
   EXPECT_EQ(kNoSigningPacket, passport_.InitialiseMpid(kPublicName, mpid));
   EXPECT_TRUE(mpid->name().empty());
   EXPECT_FALSE(passport_.GetPacket(MPID, false).get());
   EXPECT_FALSE(passport_.GetPacket(MPID, true).get());
 
-  SignaturePtr anmpid(new SignaturePacket);
+  SignaturePtr anmpid(new pki::SignaturePacket);
   EXPECT_EQ(kSuccess, passport_.InitialiseSignaturePacket(ANMPID, anmpid));
   EXPECT_FALSE(anmpid->name().empty());
   ASSERT_TRUE(passport_.GetPacket(ANMPID, false).get() != NULL);
@@ -327,7 +327,7 @@ TEST_F(PassportTest, BEH_MpidFunctions) {
   EXPECT_FALSE(passport_.GetPacket(MPID, false).get());
   EXPECT_FALSE(passport_.GetPacket(MPID, true).get());
 
-  SignaturePtr other_mpid(new SignaturePacket);
+  SignaturePtr other_mpid(new pki::SignaturePacket);
   EXPECT_EQ(kSuccess, passport_.InitialiseMpid(kPublicName + "a", other_mpid));
   EXPECT_FALSE(other_mpid->name().empty());
   EXPECT_NE(original_mpid_name, other_mpid->name());
@@ -745,7 +745,7 @@ TEST_F(PassportTest, BEH_ConfirmNewUserData) {
   EXPECT_FALSE(passport_.GetPacket(TMID, true).get());
   EXPECT_FALSE(passport_.GetPacket(STMID, true).get());
 
-  SignaturePtr signature_packet(new SignaturePacket);
+  SignaturePtr signature_packet(new pki::SignaturePacket);
   EXPECT_EQ(kSuccess,
             passport_.InitialiseSignaturePacket(ANMID, signature_packet));
   EXPECT_EQ(kSuccess, passport_.ConfirmSignaturePacket(signature_packet));
@@ -1389,7 +1389,7 @@ class PassportVPTest : public testing::TestWithParam<ChangeType> {
   typedef std::shared_ptr<pki::Packet> PacketPtr;
   typedef std::shared_ptr<MidPacket> MidPtr;
   typedef std::shared_ptr<TmidPacket> TmidPtr;
-  typedef std::shared_ptr<SignaturePacket> SignaturePtr;
+  typedef std::shared_ptr<pki::SignaturePacket> SignaturePtr;
   void SetUp() {
     for (int i(0); i != 5; ++i) {
       threads_.create_thread(
@@ -1399,7 +1399,7 @@ class PassportVPTest : public testing::TestWithParam<ChangeType> {
     passport_.Init();
     MidPtr mid(new MidPacket), smid(new MidPacket);
     TmidPtr tmid(new TmidPacket), stmid(new TmidPacket);
-    SignaturePtr sig_packet(new SignaturePacket);
+    SignaturePtr sig_packet(new pki::SignaturePacket);
     ASSERT_TRUE(
         passport_.InitialiseSignaturePacket(ANMID, sig_packet) == kSuccess &&
         passport_.ConfirmSignaturePacket(sig_packet) == kSuccess &&

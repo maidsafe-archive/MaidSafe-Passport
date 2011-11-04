@@ -45,7 +45,7 @@ uint32_t NonZeroRnd() {
 class SystemPacketHandlerTest : public testing::Test {
  public:
   typedef std::shared_ptr<pki::Packet> PacketPtr;
-  typedef std::shared_ptr<SignaturePacket> SignaturePtr;
+  typedef std::shared_ptr<pki::SignaturePacket> SignaturePtr;
   typedef std::shared_ptr<MidPacket> MidPtr;
   typedef std::shared_ptr<TmidPacket> TmidPtr;
   SystemPacketHandlerTest()
@@ -142,59 +142,59 @@ class SystemPacketHandlerTest : public testing::Test {
     ASSERT_TRUE(crypto_key_pairs_.GetKeyPair(&anmaid_keys1_));
     ASSERT_TRUE(crypto_key_pairs_.GetKeyPair(&anmaid_keys2_));
     // MPID
-    SignaturePtr sig(new SignaturePacket(MPID, mpid_keys1_.public_key(),
+    SignaturePtr sig(new pki::SignaturePacket(MPID, mpid_keys1_.public_key(),
         mpid_keys1_.private_key(), anmpid_keys1_.private_key(), kPublicName1_));
     packets1_.push_back(sig);
-    sig.reset(new SignaturePacket(MPID, mpid_keys2_.public_key(),
+    sig.reset(new pki::SignaturePacket(MPID, mpid_keys2_.public_key(),
         mpid_keys2_.private_key(), anmpid_keys2_.private_key(), kPublicName2_));
     packets2_.push_back(sig);
     // MAID
-    sig.reset(new SignaturePacket(MAID, maid_keys1_.public_key(),
+    sig.reset(new pki::SignaturePacket(MAID, maid_keys1_.public_key(),
               maid_keys1_.private_key(), anmaid_keys1_.private_key(), ""));
     packets1_.push_back(sig);
-    sig.reset(new SignaturePacket(MAID, maid_keys2_.public_key(),
+    sig.reset(new pki::SignaturePacket(MAID, maid_keys2_.public_key(),
               maid_keys2_.private_key(), anmaid_keys2_.private_key(), ""));
     packets2_.push_back(sig);
     // PMID
-    sig.reset(new SignaturePacket(PMID, pmid_keys1_.public_key(),
+    sig.reset(new pki::SignaturePacket(PMID, pmid_keys1_.public_key(),
               pmid_keys1_.private_key(), maid_keys1_.private_key(), ""));
     packets1_.push_back(sig);
-    sig.reset(new SignaturePacket(PMID, pmid_keys2_.public_key(),
+    sig.reset(new pki::SignaturePacket(PMID, pmid_keys2_.public_key(),
               pmid_keys2_.private_key(), maid_keys2_.private_key(), ""));
     packets2_.push_back(sig);
     // ANMID
-    sig.reset(new SignaturePacket(ANMID, anmid_keys1_.public_key(),
+    sig.reset(new pki::SignaturePacket(ANMID, anmid_keys1_.public_key(),
               anmid_keys1_.private_key(), anmid_keys1_.private_key(), ""));
     packets1_.push_back(sig);
-    sig.reset(new SignaturePacket(ANMID, anmid_keys2_.public_key(),
+    sig.reset(new pki::SignaturePacket(ANMID, anmid_keys2_.public_key(),
               anmid_keys2_.private_key(), anmid_keys2_.private_key(), ""));
     packets2_.push_back(sig);
     // ANSMID
-    sig.reset(new SignaturePacket(ANSMID, ansmid_keys1_.public_key(),
+    sig.reset(new pki::SignaturePacket(ANSMID, ansmid_keys1_.public_key(),
               ansmid_keys1_.private_key(), ansmid_keys1_.private_key(), ""));
     packets1_.push_back(sig);
-    sig.reset(new SignaturePacket(ANSMID, ansmid_keys2_.public_key(),
+    sig.reset(new pki::SignaturePacket(ANSMID, ansmid_keys2_.public_key(),
               ansmid_keys2_.private_key(), ansmid_keys2_.private_key(), ""));
     packets2_.push_back(sig);
     // ANTMID
-    sig.reset(new SignaturePacket(ANTMID, antmid_keys1_.public_key(),
+    sig.reset(new pki::SignaturePacket(ANTMID, antmid_keys1_.public_key(),
               antmid_keys1_.private_key(), antmid_keys1_.private_key(), ""));
     packets1_.push_back(sig);
-    sig.reset(new SignaturePacket(ANTMID, antmid_keys2_.public_key(),
+    sig.reset(new pki::SignaturePacket(ANTMID, antmid_keys2_.public_key(),
               antmid_keys2_.private_key(), antmid_keys2_.private_key(), ""));
     packets2_.push_back(sig);
     // ANMPID
-    sig.reset(new SignaturePacket(ANMPID, anmpid_keys1_.public_key(),
+    sig.reset(new pki::SignaturePacket(ANMPID, anmpid_keys1_.public_key(),
               anmpid_keys1_.private_key(), anmpid_keys1_.private_key(), ""));
     packets1_.push_back(sig);
-    sig.reset(new SignaturePacket(ANMPID, anmpid_keys2_.public_key(),
+    sig.reset(new pki::SignaturePacket(ANMPID, anmpid_keys2_.public_key(),
               anmpid_keys2_.private_key(), anmpid_keys2_.private_key(), ""));
     packets2_.push_back(sig);
     // ANMAID
-    sig.reset(new SignaturePacket(ANMAID, anmaid_keys1_.public_key(),
+    sig.reset(new pki::SignaturePacket(ANMAID, anmaid_keys1_.public_key(),
               anmaid_keys1_.private_key(), anmaid_keys1_.private_key(), ""));
     packets1_.push_back(sig);
-    sig.reset(new SignaturePacket(ANMAID, anmaid_keys2_.public_key(),
+    sig.reset(new pki::SignaturePacket(ANMAID, anmaid_keys2_.public_key(),
               anmaid_keys2_.private_key(), anmaid_keys2_.private_key(), ""));
     packets2_.push_back(sig);
   }

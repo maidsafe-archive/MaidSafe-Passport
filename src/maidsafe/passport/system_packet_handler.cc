@@ -172,8 +172,8 @@ std::shared_ptr<pki::Packet> SystemPacketHandler::GetPacket(
         packet = std::shared_ptr<MidPacket>(new MidPacket(
             *std::static_pointer_cast<MidPacket>(retrieved_packet)));
       } else if (IsSignature(packet_type, false)) {
-        packet = std::shared_ptr<SignaturePacket>(new SignaturePacket(
-            *std::static_pointer_cast<SignaturePacket>(retrieved_packet)));
+        packet = std::shared_ptr<pki::SignaturePacket>(new pki::SignaturePacket(
+            *std::static_pointer_cast<pki::SignaturePacket>(retrieved_packet)));
       } else {
         DLOG(ERROR) << "SystemPacketHandler::Packet: "
                     << DebugString(packet_type) << " type error."  << std::endl;
@@ -219,8 +219,8 @@ std::shared_ptr<pki::Packet> SystemPacketHandler::GetPacket(
         packet = std::shared_ptr<MidPacket>(new MidPacket(
             *std::static_pointer_cast<MidPacket>(retrieved_packet)));
       } else if (IsSignature(retrieved_packet->packet_type(), false)) {
-        packet = std::shared_ptr<SignaturePacket>(new SignaturePacket(
-            *std::static_pointer_cast<SignaturePacket>(retrieved_packet)));
+        packet = std::shared_ptr<pki::SignaturePacket>(new pki::SignaturePacket(
+            *std::static_pointer_cast<pki::SignaturePacket>(retrieved_packet)));
       } else {
         DLOG(ERROR) << "SystemPacketHandler::Packet: "
                     << DebugString(retrieved_packet->packet_type())
@@ -253,8 +253,8 @@ std::string SystemPacketHandler::SerialiseKeyring(
   SystemPacketMap::iterator it = packets_.begin();
   while (it != packets_.end()) {
     if (IsSignature((*it).first, false) && (*it).second.stored) {
-      std::static_pointer_cast<SignaturePacket>((*it).second.stored)->
-          PutToKey(keyring.add_key());
+//      std::static_pointer_cast<pki::SignaturePacket>((*it).second.stored)->
+//          PutToKey(keyring.add_key());
     }
     ++it;
   }
@@ -274,19 +274,19 @@ int SystemPacketHandler::ParseKeyring(const std::string &serialised_keyring,
   boost::mutex::scoped_lock lock(mutex_);
   bool success(true);
   for (int i = 0; i < keyring.key_size(); ++i) {
-    std::shared_ptr<SignaturePacket> sig_packet(
-        new SignaturePacket(keyring.key(i)));
-    PacketInfo packet_info;
-    packet_info.stored = sig_packet;
-    std::pair<SystemPacketMap::iterator, bool> result =
-        packets_.insert(SystemPacketMap::value_type(
-            static_cast<PacketType>(sig_packet->packet_type()), packet_info));
-#ifdef DEBUG
-    if (!result.second)
-      DLOG(ERROR) << "SystemPacketHandler::ParseKeyring: Failed for "
-                  << DebugString(sig_packet->packet_type()) << std::endl;
-#endif
-    success = success && result.second;
+//    std::shared_ptr<pki::SignaturePacket> sig_packet(
+//        new pki::SignaturePacket(keyring.key(i)));
+//    PacketInfo packet_info;
+//    packet_info.stored = sig_packet;
+//    std::pair<SystemPacketMap::iterator, bool> result =
+//        packets_.insert(SystemPacketMap::value_type(
+//            static_cast<PacketType>(sig_packet->packet_type()), packet_info));
+//#ifdef DEBUG
+//    if (!result.second)
+//      DLOG(ERROR) << "SystemPacketHandler::ParseKeyring: Failed for "
+//                  << DebugString(sig_packet->packet_type()) << std::endl;
+//#endif
+//    success = success && result.second;
   }
   if (success && public_name)
     *public_name = keyring.public_name();
