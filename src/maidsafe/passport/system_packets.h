@@ -53,7 +53,7 @@ class MidPacket : public pki::Packet {
             const std::string &smid_appendix);
   ~MidPacket() {}
   std::string value() const { return encrypted_rid_; }
-  bool Equals(const pki::Packet *other) const;
+  bool Equals(const std::shared_ptr<pki::Packet> other) const;
   void SetRid(const std::string &rid);
   std::string DecryptRid(const std::string &encrypted_rid);
   std::string username() const { return username_; }
@@ -82,7 +82,7 @@ class TmidPacket : public pki::Packet {
              const std::string &plain_text_master_data);
   ~TmidPacket() {}
   std::string value() const { return encrypted_master_data_; }
-  bool Equals(const pki::Packet *other) const;
+  bool Equals(const std::shared_ptr<pki::Packet> other) const;
   std::string DecryptPlainData(const std::string &password,
                                const std::string &encrypted_master_data);
   void SetToSurrogate() { packet_type_ = STMID; }

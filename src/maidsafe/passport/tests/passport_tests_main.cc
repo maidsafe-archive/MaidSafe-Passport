@@ -34,6 +34,9 @@ int main(int argc, char **argv) {
   // Severity levels are INFO, WARNING, ERROR, and FATAL (0 to 3 respectively).
   FLAGS_minloglevel = google::INFO;
   FLAGS_ms_logging_common = false;
+  FLAGS_ms_logging_pki = true;
+  FLAGS_ms_logging_passport = true;
+
   testing::InitGoogleTest(&argc, argv);
   int result(RUN_ALL_TESTS());
   int test_count = testing::UnitTest::GetInstance()->test_to_run_count();

@@ -20,7 +20,11 @@
 */
 
 #include "maidsafe/passport/passport.h"
+
+#include <vector>
+
 #include "maidsafe/common/utils.h"
+
 #include "maidsafe/passport/passport_config.h"
 #include "maidsafe/passport/system_packets.h"
 
@@ -415,7 +419,7 @@ int Passport::InitialiseMpid(const std::string &public_name,
 
 int Passport::DoInitialiseSignaturePacket(
     const PacketType &packet_type,
-    const std::string &public_name,
+    const std::string & /*public_name*/,
     std::shared_ptr<pki::SignaturePacket> signature_packet) {
   if (!signature_packet)
     return kNullPointer;
@@ -446,11 +450,11 @@ int Passport::DoInitialiseSignaturePacket(
     signer_private_key = signer->private_key();
   }
 
-  std::vector<pki::SignaturePacket> packets;
+  std::vector<pki::SignaturePacketPtr> packets;
   if (pki::kSuccess != pki::CreateChainedId(&packets, 1))
     return kPassportError;
 
-  *signature_packet = packets.at(0);
+  *signature_packet = *packets.at(0);
   signature_packet->set_packet_type(packet_type);
   if (packet_handler_.AddPendingPacket(signature_packet)) {
     return kSuccess;

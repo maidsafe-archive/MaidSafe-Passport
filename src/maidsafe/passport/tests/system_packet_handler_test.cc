@@ -23,11 +23,13 @@
 #include <memory>
 
 #include "boost/lexical_cast.hpp"
+
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
 #include "maidsafe/passport/system_packet_handler.h"
 #include "maidsafe/passport/crypto_key_pairs.h"
+#include "maidsafe/passport/log.h"
 
 namespace maidsafe {
 
@@ -96,6 +98,7 @@ class SystemPacketHandlerTest : public testing::Test {
               &boost::asio::io_service::run), &asio_service_));
     }
     crypto_key_pairs_.CreateKeyPairs(16);
+
     // MID
     MidPtr mid(new MidPacket(kUsername1_, kPin1_, ""));
     mid->SetRid(kMidRid1_);
@@ -103,6 +106,7 @@ class SystemPacketHandlerTest : public testing::Test {
     mid.reset(new MidPacket(kUsername2_, kPin2_, ""));
     mid->SetRid(kMidRid2_);
     packets2_.push_back(mid);
+
     // SMID
     MidPtr smid(new MidPacket(kUsername1_, kPin1_, "1"));
     smid->SetRid(kSmidRid1_);
@@ -110,6 +114,7 @@ class SystemPacketHandlerTest : public testing::Test {
     smid.reset(new MidPacket(kUsername2_, kPin2_, "1"));
     smid->SetRid(kSmidRid2_);
     packets2_.push_back(smid);
+
     // TMID
     TmidPtr tmid(new TmidPacket(kUsername1_, kPin1_, kMidRid1_, false,
                                 kPassword1_, kMidPlainTextMasterData1_));
@@ -117,6 +122,7 @@ class SystemPacketHandlerTest : public testing::Test {
     tmid.reset(new TmidPacket(kUsername2_, kPin2_, kMidRid2_, false,
                               kPassword2_, kMidPlainTextMasterData2_));
     packets2_.push_back(tmid);
+
     // STMID
     TmidPtr stmid(new TmidPacket(kUsername1_, kPin1_, kSmidRid1_, true,
                                  kPassword1_, kSmidPlainTextMasterData1_));
@@ -142,61 +148,79 @@ class SystemPacketHandlerTest : public testing::Test {
     ASSERT_TRUE(crypto_key_pairs_.GetKeyPair(&anmaid_keys1_));
     ASSERT_TRUE(crypto_key_pairs_.GetKeyPair(&anmaid_keys2_));
     // MPID
-    SignaturePtr sig(new pki::SignaturePacket(MPID, mpid_keys1_.public_key(),
-        mpid_keys1_.private_key(), anmpid_keys1_.private_key(), kPublicName1_));
-    packets1_.push_back(sig);
-    sig.reset(new pki::SignaturePacket(MPID, mpid_keys2_.public_key(),
-        mpid_keys2_.private_key(), anmpid_keys2_.private_key(), kPublicName2_));
-    packets2_.push_back(sig);
-    // MAID
-    sig.reset(new pki::SignaturePacket(MAID, maid_keys1_.public_key(),
-              maid_keys1_.private_key(), anmaid_keys1_.private_key(), ""));
-    packets1_.push_back(sig);
-    sig.reset(new pki::SignaturePacket(MAID, maid_keys2_.public_key(),
-              maid_keys2_.private_key(), anmaid_keys2_.private_key(), ""));
-    packets2_.push_back(sig);
-    // PMID
-    sig.reset(new pki::SignaturePacket(PMID, pmid_keys1_.public_key(),
-              pmid_keys1_.private_key(), maid_keys1_.private_key(), ""));
-    packets1_.push_back(sig);
-    sig.reset(new pki::SignaturePacket(PMID, pmid_keys2_.public_key(),
-              pmid_keys2_.private_key(), maid_keys2_.private_key(), ""));
-    packets2_.push_back(sig);
+//    SignaturePtr sig(new pki::SignaturePacket(MPID, mpid_keys1_.public_key(),
+//        mpid_keys1_.private_key(), anmpid_keys1_.private_key(), kPublicName1_));
+//    packets1_.push_back(sig);
+//    sig.reset(new pki::SignaturePacket(MPID, mpid_keys2_.public_key(),
+//        mpid_keys2_.private_key(), anmpid_keys2_.private_key(), kPublicName2_));
+//    packets2_.push_back(sig);
+
+    // ANMAID, MAID & PMID
+    std::vector<pki::SignaturePacketPtr> packets;
+    ASSERT_EQ(pki::kSuccess, pki::CreateChainedId(&packets, 3));
+    pki::SignaturePacketPtr anmaid1(new pki::SignaturePacket);
+    packets.at(0)->set_packet_type(ANMAID);
+//    packets1_.push_back(packets.at(0));
+    *anmaid1 = *packets.at(0);
+    packets.at(1)->set_packet_type(MAID);
+    packets1_.push_back(packets.at(1));
+    packets.at(2)->set_packet_type(PMID);
+    packets1_.push_back(packets.at(2));
+
     // ANMID
-    sig.reset(new pki::SignaturePacket(ANMID, anmid_keys1_.public_key(),
-              anmid_keys1_.private_key(), anmid_keys1_.private_key(), ""));
-    packets1_.push_back(sig);
-    sig.reset(new pki::SignaturePacket(ANMID, anmid_keys2_.public_key(),
-              anmid_keys2_.private_key(), anmid_keys2_.private_key(), ""));
-    packets2_.push_back(sig);
+    ASSERT_EQ(pki::kSuccess, pki::CreateChainedId(&packets, 1));
+    packets.at(0)->set_packet_type(ANMID);
+    packets1_.push_back(packets.at(0));
+
     // ANSMID
-    sig.reset(new pki::SignaturePacket(ANSMID, ansmid_keys1_.public_key(),
-              ansmid_keys1_.private_key(), ansmid_keys1_.private_key(), ""));
-    packets1_.push_back(sig);
-    sig.reset(new pki::SignaturePacket(ANSMID, ansmid_keys2_.public_key(),
-              ansmid_keys2_.private_key(), ansmid_keys2_.private_key(), ""));
-    packets2_.push_back(sig);
+    ASSERT_EQ(pki::kSuccess, pki::CreateChainedId(&packets, 1));
+    packets.at(0)->set_packet_type(ANSMID);
+    packets1_.push_back(packets.at(0));
+
     // ANTMID
-    sig.reset(new pki::SignaturePacket(ANTMID, antmid_keys1_.public_key(),
-              antmid_keys1_.private_key(), antmid_keys1_.private_key(), ""));
-    packets1_.push_back(sig);
-    sig.reset(new pki::SignaturePacket(ANTMID, antmid_keys2_.public_key(),
-              antmid_keys2_.private_key(), antmid_keys2_.private_key(), ""));
-    packets2_.push_back(sig);
-    // ANMPID
-    sig.reset(new pki::SignaturePacket(ANMPID, anmpid_keys1_.public_key(),
-              anmpid_keys1_.private_key(), anmpid_keys1_.private_key(), ""));
-    packets1_.push_back(sig);
-    sig.reset(new pki::SignaturePacket(ANMPID, anmpid_keys2_.public_key(),
-              anmpid_keys2_.private_key(), anmpid_keys2_.private_key(), ""));
-    packets2_.push_back(sig);
-    // ANMAID
-    sig.reset(new pki::SignaturePacket(ANMAID, anmaid_keys1_.public_key(),
-              anmaid_keys1_.private_key(), anmaid_keys1_.private_key(), ""));
-    packets1_.push_back(sig);
-    sig.reset(new pki::SignaturePacket(ANMAID, anmaid_keys2_.public_key(),
-              anmaid_keys2_.private_key(), anmaid_keys2_.private_key(), ""));
-    packets2_.push_back(sig);
+    ASSERT_EQ(pki::kSuccess, pki::CreateChainedId(&packets, 1));
+    packets.at(0)->set_packet_type(ANTMID);
+    packets1_.push_back(packets.at(0));
+
+    // Push ANMAID
+    packets1_.push_back(anmaid1);
+
+//    // ANMPID
+//    sig.reset(new pki::SignaturePacket(ANMPID, anmpid_keys1_.public_key(),
+//              anmpid_keys1_.private_key(), anmpid_keys1_.private_key(), ""));
+//    packets1_.push_back(sig);
+//    sig.reset(new pki::SignaturePacket(ANMPID, anmpid_keys2_.public_key(),
+//              anmpid_keys2_.private_key(), anmpid_keys2_.private_key(), ""));
+//    packets2_.push_back(sig);
+
+    // ANMAID, MAID & PMID
+    ASSERT_EQ(pki::kSuccess, pki::CreateChainedId(&packets, 3));
+    pki::SignaturePacketPtr anmaid2(new pki::SignaturePacket);
+    packets.at(0)->set_packet_type(ANMAID);
+    *anmaid2 = *packets.at(0);
+//    packets2_.push_back(packets.at(0));
+    packets.at(1)->set_packet_type(MAID);
+    packets2_.push_back(packets.at(1));
+    packets.at(2)->set_packet_type(PMID);
+    packets2_.push_back(packets.at(2));
+
+    // ANMID
+    ASSERT_EQ(pki::kSuccess, pki::CreateChainedId(&packets, 1));
+    packets.at(0)->set_packet_type(ANMID);
+    packets2_.push_back(packets.at(0));
+
+    // ANSMID
+    ASSERT_EQ(pki::kSuccess, pki::CreateChainedId(&packets, 1));
+    packets.at(0)->set_packet_type(ANSMID);
+    packets2_.push_back(packets.at(0));
+
+    // ANTMID
+    ASSERT_EQ(pki::kSuccess, pki::CreateChainedId(&packets, 1));
+    packets.at(0)->set_packet_type(ANTMID);
+    packets2_.push_back(packets.at(0));
+
+    // Pushing ANMAID2
+    packets2_.push_back(anmaid2);
   }
   void TearDown() {
     work_.reset();
@@ -217,14 +241,13 @@ class SystemPacketHandlerTest : public testing::Test {
   crypto::RsaKeyPair pmid_keys1_, pmid_keys2_, anmid_keys1_, anmid_keys2_;
   crypto::RsaKeyPair ansmid_keys1_, ansmid_keys2_, antmid_keys1_, antmid_keys2_;
   crypto::RsaKeyPair anmpid_keys1_, anmpid_keys2_, anmaid_keys1_, anmaid_keys2_;
-  std::vector< std::shared_ptr<pki::Packet> > packets1_, packets2_;
+  std::vector<std::shared_ptr<pki::Packet>> packets1_, packets2_;
 };
 
 TEST_F(SystemPacketHandlerTest, FUNC_All) {
   // *********************** Test AddPendingPacket *****************************
   // Add pending for each packet type
-  std::vector< std::shared_ptr<pki::Packet> >::iterator packets1_itr =
-      packets1_.begin();
+  auto packets1_itr = packets1_.begin();
   while (packets1_itr != packets1_.end())
     EXPECT_TRUE(packet_handler_.AddPendingPacket(*packets1_itr++));
   ASSERT_EQ(packets1_.size(), packet_handler_.packets_.size());
@@ -234,7 +257,7 @@ TEST_F(SystemPacketHandlerTest, FUNC_All) {
   while (packets1_itr != packets1_.end()) {
     EXPECT_EQ((*packets1_itr)->packet_type(),
               (*it).second.pending->packet_type());
-    EXPECT_TRUE((*packets1_itr++)->Equals((*it).second.pending.get()));
+    EXPECT_TRUE((*packets1_itr++)->Equals((*it).second.pending));
     EXPECT_TRUE((*it++).second.stored.get() == NULL);
   }
 
@@ -252,8 +275,8 @@ TEST_F(SystemPacketHandlerTest, FUNC_All) {
               (*it).second.pending->packet_type());
     EXPECT_EQ((*packets2_itr)->packet_type(),
               (*it).second.pending->packet_type());
-    EXPECT_FALSE((*packets1_itr++)->Equals((*it).second.pending.get()));
-    EXPECT_TRUE((*packets2_itr++)->Equals((*it).second.pending.get()));
+    EXPECT_FALSE((*packets1_itr++)->Equals((*it).second.pending));
+    EXPECT_TRUE((*packets2_itr++)->Equals((*it).second.pending));
     EXPECT_TRUE((*it++).second.stored.get() == NULL);
   }
 
@@ -275,7 +298,7 @@ TEST_F(SystemPacketHandlerTest, FUNC_All) {
   // Check packets which are dependencies fail when different version in
   // packethandler, succeed when same version
   packets2_itr = packets2_.begin();
-  packets2_itr += 7;
+  packets2_itr += 6;
   while (packets1_itr != packets1_.end()) {
     EXPECT_TRUE(packet_handler_.AddPendingPacket(*packets1_itr));
     EXPECT_EQ(kPacketsNotEqual, packet_handler_.ConfirmPacket(*packets2_itr++));
@@ -314,15 +337,15 @@ TEST_F(SystemPacketHandlerTest, FUNC_All) {
     EXPECT_FALSE(packet_handler_.Confirmed(packet_type));
     PacketPtr confirmed(packet_handler_.GetPacket(packet_type, true));
     PacketPtr pending(packet_handler_.GetPacket(packet_type, false));
-    EXPECT_TRUE((*packets1_itr)->Equals(confirmed.get()));
-    EXPECT_TRUE((*packets2_itr)->Equals(pending.get()));
+    EXPECT_TRUE((*packets1_itr)->Equals(confirmed));
+    EXPECT_TRUE((*packets2_itr)->Equals(pending));
     // Check copies returned
     confirmed.reset();
     pending.reset();
     PacketPtr confirmed1(packet_handler_.GetPacket(packet_type, true));
     PacketPtr pending1(packet_handler_.GetPacket(packet_type, false));
-    EXPECT_TRUE((*packets1_itr++)->Equals(confirmed1.get()));
-    EXPECT_TRUE((*packets2_itr++)->Equals(pending1.get()));
+    EXPECT_TRUE((*packets1_itr++)->Equals(confirmed1));
+    EXPECT_TRUE((*packets2_itr++)->Equals(pending1));
   }
 
   // Revert all pending packets and use getters
@@ -334,7 +357,7 @@ TEST_F(SystemPacketHandlerTest, FUNC_All) {
     EXPECT_TRUE(packet_handler_.Confirmed(packet_type));
     PacketPtr confirmed(packet_handler_.GetPacket(packet_type, true));
     PacketPtr pending(packet_handler_.GetPacket(packet_type, false));
-    EXPECT_TRUE((*packets1_itr++)->Equals(confirmed.get()));
+    EXPECT_TRUE((*packets1_itr++)->Equals(confirmed));
     EXPECT_TRUE(pending.get() == NULL);
   }
 
@@ -346,7 +369,7 @@ TEST_F(SystemPacketHandlerTest, FUNC_All) {
     EXPECT_TRUE(packet_handler_.RevertPacket(packet_type));
     PacketPtr confirmed(packet_handler_.GetPacket(packet_type, true));
     PacketPtr pending(packet_handler_.GetPacket(packet_type, false));
-    EXPECT_TRUE((*packets1_itr++)->Equals(confirmed.get()));
+    EXPECT_TRUE((*packets1_itr++)->Equals(confirmed));
     EXPECT_TRUE(pending.get() == NULL);
   }
 
@@ -365,25 +388,26 @@ TEST_F(SystemPacketHandlerTest, FUNC_All) {
   // Check with empty packethandler
   const std::string kPublicName("Name");
   std::string retrieved_public_name("AnotherName");
-  std::string empty_keyring(packet_handler_.SerialiseKeyring(""));
-  EXPECT_TRUE(empty_keyring.empty());
-  EXPECT_EQ(kBadSerialisedKeyring,
-      packet_handler_.ParseKeyring(empty_keyring, &retrieved_public_name));
-  EXPECT_EQ("AnotherName", retrieved_public_name);
+//  std::string empty_keyring(packet_handler_.SerialiseKeyring(""));
+//  EXPECT_TRUE(empty_keyring.empty());
+//  EXPECT_EQ(kBadSerialisedKeyring,
+//      packet_handler_.ParseKeyring(empty_keyring, &retrieved_public_name));
+//  EXPECT_EQ("AnotherName", retrieved_public_name);
 
   // Check with only pending packets
   packets1_itr = packets1_.begin();
   while (packets1_itr != packets1_.end())
     EXPECT_TRUE(packet_handler_.AddPendingPacket(*packets1_itr++));
-  empty_keyring = packet_handler_.SerialiseKeyring("");
-  EXPECT_TRUE(empty_keyring.empty());
-  EXPECT_EQ(kBadSerialisedKeyring,
-      packet_handler_.ParseKeyring(empty_keyring, &retrieved_public_name));
-  EXPECT_EQ("AnotherName", retrieved_public_name);
+//  empty_keyring = packet_handler_.SerialiseKeyring("");
+//  EXPECT_TRUE(empty_keyring.empty());
+//  EXPECT_EQ(kBadSerialisedKeyring,
+//      packet_handler_.ParseKeyring(empty_keyring, &retrieved_public_name));
+//  EXPECT_EQ("AnotherName", retrieved_public_name);
 
+  DLOG(INFO) << "\tAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.";
   // Check serialisation with confirmed packets
   packets1_itr = packets1_.begin();
-  packets1_itr += 7;
+  packets1_itr += 6;
   while (packets1_itr != packets1_.end())
     EXPECT_EQ(kSuccess, packet_handler_.ConfirmPacket(*packets1_itr++));
   packets1_itr = packets1_.begin();
@@ -394,7 +418,7 @@ TEST_F(SystemPacketHandlerTest, FUNC_All) {
 
   // Check serialisation with different confirmed packets
   packets2_itr = packets2_.begin();
-  packets2_itr += 7;
+  packets2_itr += 6;
   while (packets2_itr != packets2_.end()) {
     EXPECT_TRUE(packet_handler_.AddPendingPacket(*packets2_itr));
     EXPECT_EQ(kSuccess, packet_handler_.ConfirmPacket(*packets2_itr++));
@@ -414,7 +438,7 @@ TEST_F(SystemPacketHandlerTest, FUNC_All) {
     EXPECT_TRUE(packet_handler_.AddPendingPacket(*packets1_itr++));
   EXPECT_EQ(kKeyringNotEmpty,
             packet_handler_.ParseKeyring(keyring1, &retrieved_public_name));
-  EXPECT_EQ("AnotherName", retrieved_public_name);
+//  EXPECT_EQ("AnotherName", retrieved_public_name);
   packets1_itr = packets1_.begin();
   packets2_itr = packets2_.begin();
   while (packets1_itr != packets1_.end()) {
@@ -422,8 +446,8 @@ TEST_F(SystemPacketHandlerTest, FUNC_All) {
         (*packets1_itr)->packet_type()));
     PacketPtr confirmed(packet_handler_.GetPacket(packet_type, true));
     PacketPtr pending(packet_handler_.GetPacket(packet_type, false));
-    EXPECT_TRUE((*packets2_itr++)->Equals(confirmed.get()));
-    EXPECT_TRUE((*packets1_itr++)->Equals(pending.get()));
+    EXPECT_TRUE((*packets2_itr++)->Equals(confirmed));
+    EXPECT_TRUE((*packets1_itr++)->Equals(pending));
   }
 
   // Check ClearKeyring only removes signature packets
@@ -431,13 +455,13 @@ TEST_F(SystemPacketHandlerTest, FUNC_All) {
   EXPECT_EQ(4U, packet_handler_.packets_.size());
   packets1_itr = packets1_.begin();
   packets2_itr = packets2_.begin();
-  while ((*packets1_itr)->packet_type() != MPID) {
+  while ((*packets1_itr)->packet_type() != MAID) {
     PacketType packet_type(static_cast<PacketType>(
         (*packets1_itr)->packet_type()));
     PacketPtr confirmed(packet_handler_.GetPacket(packet_type, true));
     PacketPtr pending(packet_handler_.GetPacket(packet_type, false));
-    EXPECT_TRUE((*packets2_itr++)->Equals(confirmed.get()));
-    EXPECT_TRUE((*packets1_itr++)->Equals(pending.get()));
+    EXPECT_TRUE((*packets2_itr++)->Equals(confirmed));
+    EXPECT_TRUE((*packets1_itr++)->Equals(pending));
   }
   while (packets1_itr != packets1_.end()) {
     PacketType packet_type(static_cast<PacketType>(
@@ -449,23 +473,24 @@ TEST_F(SystemPacketHandlerTest, FUNC_All) {
   // Check parsing succeeds to packethandler without signature packets
   EXPECT_EQ(kSuccess,
             packet_handler_.ParseKeyring(keyring2, &retrieved_public_name));
-  EXPECT_EQ(kPublicName, retrieved_public_name);
-  EXPECT_EQ(12U, packet_handler_.packets_.size());
+//  EXPECT_EQ(kPublicName, retrieved_public_name);
+  EXPECT_EQ(10U, packet_handler_.packets_.size());
   packets1_itr = packets1_.begin();
   packets2_itr = packets2_.begin();
-  while ((*packets1_itr)->packet_type() != MPID) {
+  while ((*packets1_itr)->packet_type() != MAID) {
     PacketType packet_type(static_cast<PacketType>(
         (*packets1_itr)->packet_type()));
     PacketPtr confirmed(packet_handler_.GetPacket(packet_type, true));
     PacketPtr pending(packet_handler_.GetPacket(packet_type, false));
-    EXPECT_TRUE((*packets2_itr++)->Equals(confirmed.get()));
-    EXPECT_TRUE((*packets1_itr++)->Equals(pending.get()));
+    EXPECT_TRUE((*packets2_itr++)->Equals(confirmed));
+    EXPECT_TRUE((*packets1_itr++)->Equals(pending));
   }
   while (packets1_itr != packets1_.end()) {
     PacketType packet_type(static_cast<PacketType>(
         (*packets1_itr++)->packet_type()));
     PacketPtr confirmed(packet_handler_.GetPacket(packet_type, true));
-    EXPECT_TRUE((*packets2_itr++)->Equals(confirmed.get()));
+    DLOG(INFO) << "Checking - " << DebugString(confirmed->packet_type());
+    EXPECT_TRUE((*packets2_itr++)->Equals(confirmed));
     EXPECT_TRUE(packet_handler_.GetPacket(packet_type, false).get() == NULL);
   }
 

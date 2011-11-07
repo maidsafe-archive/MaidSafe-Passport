@@ -21,21 +21,18 @@
 */
 
 #include "maidsafe/passport/system_packet_handler.h"
+
 #include <cstdio>
+#include <sstream>
+
+#include "boost/archive/text_oarchive.hpp"
+#include "boost/archive/text_iarchive.hpp"
+#include "boost/serialization/map.hpp"
+
+#include "maidsafe/common/utils.h"
 
 #include "maidsafe/passport/log.h"
 #include "maidsafe/passport/passport_config.h"
-
-#ifdef __MSVC__
-#  pragma warning(push)
-#  pragma warning(disable: 4127 4244 4267 4512)
-#endif
-
-#include "maidsafe/passport/signature_packet.pb.h"
-
-#ifdef __MSVC__
-#  pragma warning(pop)
-#endif
 
 
 namespace maidsafe {
@@ -79,7 +76,7 @@ int SystemPacketHandler::ConfirmPacket(
     return kNoPendingPacket;
   }
   if (!(*it).second.pending) {
-    if ((*it).second.stored && (*it).second.stored->Equals(packet.get()))
+    if ((*it).second.stored && (*it).second.stored->Equals(packet))
       return kSuccess;
     DLOG(ERROR) << "SystemPacketHandler::ConfirmPacket: Missing "
                 << DebugString(packet_type) << std::endl;
@@ -121,7 +118,7 @@ int SystemPacketHandler::ConfirmPacket(
                 << DebugString(packet_type) << " not confirmed" << std::endl;
     return kMissingDependentPackets;
   } else {
-    if (!(*it).second.pending->Equals(packet.get())) {
+    if (!(*it).second.pending->Equals(packet)) {
       DLOG(ERROR) << "SystemPacketHandler::ConfirmPacket: input "
                   << DebugString(packet_type) << " != pending "
                   << DebugString(packet_type) << std::endl;
@@ -247,50 +244,47 @@ bool SystemPacketHandler::IsConfirmed(SystemPacketMap::iterator it) {
 }
 
 std::string SystemPacketHandler::SerialiseKeyring(
-    const std::string &public_name) {
-  Keyring keyring;
+    const std::string & /*public_name*/) {
+  std::ostringstream key_chain(std::ios_base::binary);
+  boost::archive::text_oarchive output_archive(key_chain);
   boost::mutex::scoped_lock lock(mutex_);
   SystemPacketMap::iterator it = packets_.begin();
+  SystemPacketMap spm;
   while (it != packets_.end()) {
     if (IsSignature((*it).first, false) && (*it).second.stored) {
-//      std::static_pointer_cast<pki::SignaturePacket>((*it).second.stored)->
-//          PutToKey(keyring.add_key());
+//      output_archive << (*it);
+      spm.insert(*it);
     }
     ++it;
   }
-  if (!public_name.empty())
-    keyring.set_public_name(public_name);
-  return keyring.SerializeAsString();
+  // Serialise map
+  output_archive << spm;
+  return key_chain.str();
 }
 
 int SystemPacketHandler::ParseKeyring(const std::string &serialised_keyring,
-                                      std::string *public_name) {
-  Keyring keyring;
-  if (serialised_keyring.empty() ||
-      !keyring.ParseFromString(serialised_keyring)) {
+                                      std::string * /*public_name*/) {
+  std::istringstream key_chain(serialised_keyring, std::ios_base::binary);
+  boost::archive::text_iarchive input_archive(key_chain);
+
+  SystemPacketMap spm;
+  input_archive >> spm;
+  if (spm.empty()) {
     DLOG(ERROR) << "SystemPacketHandler::ParseKeyring failed." << std::endl;
     return kBadSerialisedKeyring;
   }
+
   boost::mutex::scoped_lock lock(mutex_);
-  bool success(true);
-  for (int i = 0; i < keyring.key_size(); ++i) {
-//    std::shared_ptr<pki::SignaturePacket> sig_packet(
-//        new pki::SignaturePacket(keyring.key(i)));
-//    PacketInfo packet_info;
-//    packet_info.stored = sig_packet;
-//    std::pair<SystemPacketMap::iterator, bool> result =
-//        packets_.insert(SystemPacketMap::value_type(
-//            static_cast<PacketType>(sig_packet->packet_type()), packet_info));
-//#ifdef DEBUG
-//    if (!result.second)
-//      DLOG(ERROR) << "SystemPacketHandler::ParseKeyring: Failed for "
-//                  << DebugString(sig_packet->packet_type()) << std::endl;
-//#endif
-//    success = success && result.second;
+  for (auto it(spm.begin()); it != spm.end(); ++it) {
+    auto result = packets_.insert(*it);
+    if (!result.second) {
+      DLOG(ERROR) << "SystemPacketHandler::ParseKeyring: Failed for "
+                  << DebugString((*it).second.stored->packet_type());
+      return kKeyringNotEmpty;
+    }
   }
-  if (success && public_name)
-    *public_name = keyring.public_name();
-  return success ? kSuccess : kKeyringNotEmpty;
+
+  return kSuccess;
 }
 
 void SystemPacketHandler::ClearKeyring() {

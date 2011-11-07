@@ -26,10 +26,16 @@
 #include <memory>
 #include <map>
 #include <string>
+
 #include "boost/thread/mutex.hpp"
+#include "boost/archive/text_oarchive.hpp"
+#include "boost/archive/text_iarchive.hpp"
+
+#include "maidsafe/common/utils.h"
 
 #include "maidsafe/passport/system_packets.h"
 #include "maidsafe/passport/version.h"
+#include "maidsafe/passport/log.h"
 
 #if MAIDSAFE_PASSPORT_VERSION != 109
 #  error This API is not compatible with the installed library.\
@@ -63,6 +69,8 @@ class SystemPacketHandler {
   void ClearKeyring();
   int DeletePacket(const PacketType &packet_type);
   void Clear();
+  friend class test::SystemPacketHandlerTest_FUNC_All_Test;
+
  private:
   struct PacketInfo {
     PacketInfo() : pending(), stored() {}
@@ -77,15 +85,31 @@ class SystemPacketHandler {
           pending = std::shared_ptr<MidPacket>(new MidPacket(
               *std::static_pointer_cast<MidPacket>(pend)));
         } else if (IsSignature(pend->packet_type(), false)) {
-          pending = std::shared_ptr<pki::SignaturePacket>(new pki::SignaturePacket(
-              *std::static_pointer_cast<pki::SignaturePacket>(pend)));
+          pending = std::shared_ptr<pki::SignaturePacket>(
+              new pki::SignaturePacket(
+                  *std::static_pointer_cast<pki::SignaturePacket>(pend)));
         }
       }
     }
     std::shared_ptr<pki::Packet> pending, stored;
+    friend class boost::serialization::access;
+
+   private:
+    template<typename Archive>
+    void serialize(Archive &archive, const unsigned int /*version*/) {  // NOLINT (Fraser)
+      pki::SignaturePacket sig_packet;
+      if (Archive::is_saving::value) {
+        BOOST_ASSERT(IsSignature(stored->packet_type(), false));
+        sig_packet = *std::static_pointer_cast<pki::SignaturePacket>(stored);
+      }
+      archive & sig_packet;
+      if (Archive::is_loading::value) {
+        stored.reset(new pki::SignaturePacket(sig_packet));
+        BOOST_ASSERT(IsSignature(stored->packet_type(), false));
+      }
+    }
   };
   typedef std::map<PacketType, PacketInfo> SystemPacketMap;
-  friend class test::SystemPacketHandlerTest_FUNC_All_Test;
   SystemPacketHandler &operator=(const SystemPacketHandler&);
   SystemPacketHandler(const SystemPacketHandler&);
   bool IsConfirmed(SystemPacketMap::iterator it);
