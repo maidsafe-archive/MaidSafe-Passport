@@ -130,7 +130,7 @@ int Passport::ConfirmNewUserData(std::shared_ptr<MidPacket> mid,
 }
 
 std::string Passport::SerialiseKeyring() {
-  return packet_handler_.SerialiseKeyring(public_name_);
+  return packet_handler_.SerialiseKeyring();
 }
 
 int Passport::UpdateMasterData(
@@ -265,7 +265,7 @@ int Passport::GetUserData(const std::string &password,
 }
 
 int Passport::ParseKeyring(const std::string &serialised_keyring) {
-  int result = packet_handler_.ParseKeyring(serialised_keyring, &public_name_);
+  int result = packet_handler_.ParseKeyring(serialised_keyring);
   if (result != kSuccess)
     return result;
   return ConfirmUserData(PendingMid(), PendingSmid(), PendingTmid(),

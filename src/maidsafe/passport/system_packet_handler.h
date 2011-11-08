@@ -63,9 +63,8 @@ class SystemPacketHandler {
   std::shared_ptr<pki::Packet> GetPacket(const std::string &packet_id,
                                          bool confirmed);
   bool Confirmed(const PacketType &packet_type);
-  std::string SerialiseKeyring(const std::string &public_name);
-  int ParseKeyring(const std::string &serialised_keyring,
-                   std::string *public_name);
+  std::string SerialiseKeyring();
+  int ParseKeyring(const std::string &serialised_keyring);
   void ClearKeyring();
   int DeletePacket(const PacketType &packet_type);
   void Clear();
@@ -75,7 +74,8 @@ class SystemPacketHandler {
   struct PacketInfo {
     PacketInfo() : pending(), stored() {}
     explicit PacketInfo(std::shared_ptr<pki::Packet> pend)
-        : pending(), stored() {
+        : pending(),
+          stored() {
       if (pend) {
         // keep a copy of the contents
         if (pend->packet_type() == TMID || pend->packet_type() == STMID) {

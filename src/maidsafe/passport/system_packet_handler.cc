@@ -243,18 +243,15 @@ bool SystemPacketHandler::IsConfirmed(SystemPacketMap::iterator it) {
   return (it != packets_.end() && !(*it).second.pending && (*it).second.stored);
 }
 
-std::string SystemPacketHandler::SerialiseKeyring(
-    const std::string & /*public_name*/) {
+std::string SystemPacketHandler::SerialiseKeyring() {
   std::ostringstream key_chain(std::ios_base::binary);
   boost::archive::text_oarchive output_archive(key_chain);
   boost::mutex::scoped_lock lock(mutex_);
   SystemPacketMap::iterator it = packets_.begin();
   SystemPacketMap spm;
   while (it != packets_.end()) {
-    if (IsSignature((*it).first, false) && (*it).second.stored) {
-//      output_archive << (*it);
+    if (IsSignature((*it).first, false) && (*it).second.stored)
       spm.insert(*it);
-    }
     ++it;
   }
   // Serialise map
@@ -262,8 +259,7 @@ std::string SystemPacketHandler::SerialiseKeyring(
   return key_chain.str();
 }
 
-int SystemPacketHandler::ParseKeyring(const std::string &serialised_keyring,
-                                      std::string * /*public_name*/) {
+int SystemPacketHandler::ParseKeyring(const std::string &serialised_keyring) {
   std::istringstream key_chain(serialised_keyring, std::ios_base::binary);
   boost::archive::text_iarchive input_archive(key_chain);
 
