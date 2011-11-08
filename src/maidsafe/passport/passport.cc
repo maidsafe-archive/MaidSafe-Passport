@@ -92,11 +92,15 @@ int Passport::SetNewUserData(const std::string &password,
   // Create TMID
   std::shared_ptr<TmidPacket> new_tmid(
       new TmidPacket(retrieved_pending_mid->username(),
-                     retrieved_pending_mid->pin(), rid, false, password,
+                     retrieved_pending_mid->pin(),
+                     false,
+                     password,
                      plain_text_master_data));
   std::shared_ptr<TmidPacket> new_stmid(
       new TmidPacket(retrieved_pending_mid->username(),
-                     retrieved_pending_mid->pin(), srid, true, password,
+                     retrieved_pending_mid->pin(),
+                     true,
+                     password,
                      plain_text_master_data));
   bool success(!retrieved_pending_mid->name().empty() &&
                !retrieved_pending_smid->name().empty() &&
@@ -171,8 +175,10 @@ int Passport::UpdateMasterData(
 //  std::shared_ptr<TmidPacket> retrieved_pending_stmid(PendingStmid());
 
   std::shared_ptr<TmidPacket> tmid(
-      new TmidPacket(retrieved_tmid->username(), retrieved_tmid->pin(), new_rid,
-                     false, retrieved_tmid->password(),
+      new TmidPacket(retrieved_tmid->username(),
+                     retrieved_tmid->pin(),
+                     false,
+                     retrieved_tmid->password(),
                      plain_text_master_data));
   if (tmid->name().empty())
     return kPassportError;
@@ -228,8 +234,10 @@ int Passport::InitialiseTmid(bool surrogate,
     return surrogate ? kBadSerialisedSmidRid : kBadSerialisedMidRid;
   std::shared_ptr<TmidPacket> tmid(
       new TmidPacket(retrieved_pending_mid->username(),
-                     retrieved_pending_mid->pin(), retrieved_pending_mid->rid(),
-                     surrogate, "", ""));
+                     retrieved_pending_mid->pin(),
+                     surrogate,
+                     "",
+                     ""));
   bool success(!tmid->name().empty());
   if (success)
     success = packet_handler_.AddPendingPacket(tmid);
@@ -301,18 +309,27 @@ int Passport::ChangeUserData(
     return kNoStmid;
 
   std::shared_ptr<MidPacket> mid(new MidPacket(new_username, new_pin, ""));
-  std::shared_ptr<MidPacket> smid(new MidPacket(new_username, new_pin,
+  std::shared_ptr<MidPacket> smid(new MidPacket(new_username,
+                                                new_pin,
                                                 kSmidAppendix_));
   mid->SetRid(retrieved_mid->rid());
   smid->SetRid(retrieved_smid->rid());
   std::shared_ptr<TmidPacket> tmid(
-      new TmidPacket(new_username, new_pin, mid->rid(), false,
-                     retrieved_tmid->password(), plain_text_master_data));
+      new TmidPacket(new_username,
+                     new_pin,
+                     false,
+                     retrieved_tmid->password(),
+                     plain_text_master_data));
   std::shared_ptr<TmidPacket> stmid(
-      new TmidPacket(new_username, new_pin, smid->rid(), true,
-                     retrieved_stmid->password(), plain_text_master_data));
+      new TmidPacket(new_username,
+                     new_pin,
+                     true,
+                     retrieved_stmid->password(),
+                     plain_text_master_data));
 
-  if (mid->name().empty() || smid->name().empty() || tmid->name().empty() ||
+  if (mid->name().empty() ||
+      smid->name().empty() ||
+      tmid->name().empty() ||
       stmid->name().empty()) {
     return kPassportError;
   }
@@ -370,12 +387,16 @@ int Passport::ChangePassword(const std::string &new_password,
     return kNoStmid;
 
   std::shared_ptr<TmidPacket> tmid(
-      new TmidPacket(retrieved_tmid->username(), retrieved_tmid->pin(),
-                     retrieved_mid->rid(), false, new_password,
+      new TmidPacket(retrieved_tmid->username(),
+                     retrieved_tmid->pin(),
+                     false,
+                     new_password,
                      plain_text_master_data));
   std::shared_ptr<TmidPacket> stmid(
-      new TmidPacket(retrieved_stmid->username(), retrieved_stmid->pin(),
-                     retrieved_smid->rid(), true, new_password,
+      new TmidPacket(retrieved_stmid->username(),
+                     retrieved_stmid->pin(),
+                     true,
+                     new_password,
                      plain_text_master_data));
 
   if (tmid->name().empty() || stmid->name().empty())

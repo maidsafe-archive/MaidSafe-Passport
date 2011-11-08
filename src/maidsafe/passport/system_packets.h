@@ -76,7 +76,6 @@ class TmidPacket : public pki::Packet {
   TmidPacket();
   TmidPacket(const std::string &username,
              const std::string &pin,
-             const std::string &rid,
              bool surrogate,
              const std::string &password,
              const std::string &plain_text_master_data);

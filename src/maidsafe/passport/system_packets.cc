@@ -134,7 +134,7 @@ void MidPacket::Initialise() {
     pin = boost::lexical_cast<uint32_t>(pin_);
   }
   catch(boost::bad_lexical_cast & e) {
-    DLOG(ERROR) << "MidPacket::Initialise: Bad pin:" << e.what() << std::endl;
+    DLOG(ERROR) << "MidPacket::Initialise: Bad pin:" << e.what();
     return Clear();
   }
   std::string secure_password = crypto::SecurePassword(username_, salt_, pin);
@@ -158,8 +158,7 @@ void MidPacket::SetRid(const std::string &rid) {
 
 std::string MidPacket::DecryptRid(const std::string &encrypted_rid) {
   if (username_.empty() || pin_.empty() || encrypted_rid.empty()) {
-    DLOG(ERROR) << "MidPacket::DecryptRid: Bad encrypted RID or user data empty." //NOLINT
-                << std::endl;
+    DLOG(ERROR) << "MidPacket::DecryptRid: Empty encrypted RID or user data.";
     Clear();
     return 0;
   }
@@ -215,7 +214,6 @@ TmidPacket::TmidPacket()
 
 TmidPacket::TmidPacket(const std::string &username,
                        const std::string &pin,
-                       const std::string &rid,
                        bool surrogate,
                        const std::string &password,
                        const std::string &plain_text_master_data)
@@ -223,7 +221,7 @@ TmidPacket::TmidPacket(const std::string &username,
       username_(username),
       pin_(pin),
       password_(password),
-      rid_(rid),
+      rid_(crypto::Hash<crypto::SHA512>(pin)),
       plain_text_master_data_(plain_text_master_data),
       salt_(),
       secure_key_(),
@@ -235,24 +233,27 @@ TmidPacket::TmidPacket(const std::string &username,
 }
 
 void TmidPacket::Initialise() {
-  if (username_.empty() || pin_.empty() || rid_.empty())
+  if (username_.empty() || pin_.empty()/* || rid_.empty()*/) {
+    DLOG(ERROR) << "TmidPacket::Initialise: Empty uname/pin";
     return Clear();
+  }
 
-  name_ = crypto::Hash<crypto::SHA512>(username_ + pin_ + rid_);
   if (!SetPassword()) {
-    DLOG(ERROR) << "TmidPacket::Initialise: Password set failure" << std::endl;
+    DLOG(ERROR) << "TmidPacket::Initialise: Password set failure";
     return;
   }
   if (!ObfuscatePlainData()) {
-    DLOG(ERROR) << "TmidPacket::Initialise: Obfuscation failure" << std::endl;
+    DLOG(ERROR) << "TmidPacket::Initialise: Obfuscation failure";
     return;
   }
   if (!SetPlainData()) {
-    DLOG(ERROR) << "TmidPacket::Initialise: Plain data failure" << std::endl;
+    DLOG(ERROR) << "TmidPacket::Initialise: Plain data failure";
     return;
   }
+
+  name_ = crypto::Hash<crypto::SHA512>(encrypted_master_data_);
   if (name_.empty())
-    Clear();
+    DLOG(ERROR) << "TmidPacket::Initialise: Empty TMID name";
 }
 
 bool TmidPacket::SetPassword() {
@@ -260,10 +261,17 @@ bool TmidPacket::SetPassword() {
     salt_.clear();
     secure_key_.clear();
     secure_iv_.clear();
+    DLOG(ERROR) << "Password empty or RID too small(" << rid_.size() << ")";
     return false;
   }
 
   salt_ = crypto::Hash<crypto::SHA512>(rid_ + password_);
+  if (salt_.empty()) {
+    Clear();
+    DLOG(ERROR) << "Salt empty";
+    return false;
+  }
+
   uint32_t random_no_from_rid(0);
   int a = 1;
   for (int i = 0; i < 4; ++i) {
@@ -272,32 +280,29 @@ bool TmidPacket::SetPassword() {
     a *= 256;
   }
 
-  std::string secure_password = crypto::SecurePassword(password_, salt_,
+  std::string secure_password = crypto::SecurePassword(password_,
+                                                       salt_,
                                                        random_no_from_rid);
   secure_key_ = secure_password.substr(0, crypto::AES256_KeySize);
   secure_iv_ = secure_password.substr(crypto::AES256_KeySize,
                                       crypto::AES256_IVSize);
-  if (salt_.empty()) {
-    Clear();
-    return false;
-  } else {
-    return true;
-  }
+
+  return true;
 }
 
 bool TmidPacket::ObfuscatePlainData() {
   if (plain_text_master_data_.empty() || username_.empty() || pin_.empty()) {
     DLOG(ERROR) << "TmidPacket::ObfuscatePlainData: "
                 << plain_text_master_data_.empty() << " - "
-                << username_.empty() << " - " << pin_.empty() << std::endl;
+                << username_.empty() << " - " << pin_.empty();
     obfuscated_master_data_.clear();
     return false;
   }
 
   obfuscation_salt_ = crypto::Hash<crypto::SHA512>(password_ + rid_);
   uint32_t numerical_pin(boost::lexical_cast<uint32_t>(pin_));
-  uint32_t rounds(numerical_pin / 2 == 0 ?
-                         numerical_pin * 3 / 2 : numerical_pin / 2);
+  uint32_t rounds(numerical_pin / 2 == 0 ? numerical_pin * 3 / 2 :
+                                           numerical_pin / 2);
   std::string obfuscation_str = crypto::SecurePassword(username_,
                                                        obfuscation_salt_,
                                                        rounds);
@@ -362,11 +367,13 @@ std::string TmidPacket::DecryptPlainData(
     const std::string &password,
     const std::string &encrypted_master_data) {
   password_ = password;
-  if (!SetPassword())
+  if (!SetPassword()) {
+    DLOG(ERROR) << "TmidPacket::DecryptPlainData: failed to set password.";
     return "";
+  }
+
   if (encrypted_master_data.empty()) {
-    DLOG(ERROR) << "TmidPacket::DecryptPlainData: bad encrypted data."
-                << std::endl;
+    DLOG(ERROR) << "TmidPacket::DecryptPlainData: bad encrypted data.";
     password_.clear();
     salt_.clear();
     secure_key_.clear();

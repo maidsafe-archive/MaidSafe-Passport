@@ -116,18 +116,18 @@ class SystemPacketHandlerTest : public testing::Test {
     packets2_.push_back(smid);
 
     // TMID
-    TmidPtr tmid(new TmidPacket(kUsername1_, kPin1_, kMidRid1_, false,
+    TmidPtr tmid(new TmidPacket(kUsername1_, kPin1_, false,
                                 kPassword1_, kMidPlainTextMasterData1_));
     packets1_.push_back(tmid);
-    tmid.reset(new TmidPacket(kUsername2_, kPin2_, kMidRid2_, false,
+    tmid.reset(new TmidPacket(kUsername2_, kPin2_, false,
                               kPassword2_, kMidPlainTextMasterData2_));
     packets2_.push_back(tmid);
 
     // STMID
-    TmidPtr stmid(new TmidPacket(kUsername1_, kPin1_, kSmidRid1_, true,
+    TmidPtr stmid(new TmidPacket(kUsername1_, kPin1_, true,
                                  kPassword1_, kSmidPlainTextMasterData1_));
     packets1_.push_back(stmid);
-    stmid.reset(new TmidPacket(kUsername2_, kPin2_, kSmidRid2_, true,
+    stmid.reset(new TmidPacket(kUsername2_, kPin2_, true,
                                kPassword2_, kSmidPlainTextMasterData2_));
     packets2_.push_back(stmid);
 
@@ -404,7 +404,6 @@ TEST_F(SystemPacketHandlerTest, FUNC_All) {
 //      packet_handler_.ParseKeyring(empty_keyring, &retrieved_public_name));
 //  EXPECT_EQ("AnotherName", retrieved_public_name);
 
-  DLOG(INFO) << "\tAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA.";
   // Check serialisation with confirmed packets
   packets1_itr = packets1_.begin();
   packets1_itr += 6;
