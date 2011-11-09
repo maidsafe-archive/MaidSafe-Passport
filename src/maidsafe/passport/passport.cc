@@ -224,12 +224,18 @@ int Passport::ConfirmMasterDataUpdate(std::shared_ptr<MidPacket> mid,
 int Passport::InitialiseTmid(bool surrogate,
                              const std::string &encrypted_rid,
                              std::string *tmid_name) {
-  if (!tmid_name)
+  if (!tmid_name) {
+    DLOG(ERROR) << "Null tmid name";
     return kNullPointer;
+  }
+
   std::shared_ptr<MidPacket>
       retrieved_pending_mid(surrogate ? PendingSmid() : PendingMid());
-  if (!retrieved_pending_mid)
+  if (!retrieved_pending_mid) {
+    DLOG(ERROR) << "No pending (S)MID paket";
     return surrogate ? kNoPendingSmid : kNoPendingMid;
+  }
+
   if (retrieved_pending_mid->DecryptRid(encrypted_rid).empty())
     return surrogate ? kBadSerialisedSmidRid : kBadSerialisedMidRid;
   std::shared_ptr<TmidPacket> tmid(
@@ -239,14 +245,21 @@ int Passport::InitialiseTmid(bool surrogate,
                      "",
                      ""));
   bool success(!tmid->name().empty());
-  if (success)
+  if (success) {
     success = packet_handler_.AddPendingPacket(tmid);
-  if (success)
+  } else {
+    DLOG(INFO) << "Tmid name empty.";
+  }
+  if (success) {
     success = packet_handler_.AddPendingPacket(retrieved_pending_mid);
+  } else {
+    DLOG(INFO) << "Failed to add tmid";
+  }
   if (success) {
     *tmid_name = tmid->name();
     return kSuccess;
   } else {
+    DLOG(ERROR) << "Failed to add retrieved_pending_mid";
     packet_handler_.RevertPacket(TMID);
     return kPassportError;
   }

@@ -600,7 +600,7 @@ TEST_F(PassportTest, BEH_SetNewUserData) {
   MidPtr retry_mid(new MidPacket), retry_smid(new MidPacket);
   TmidPtr retry_tmid(new TmidPacket), retry_stmid(new TmidPacket);
   EXPECT_EQ(kSuccess,
-            passport_.SetNewUserData(kPassword_, kPlainTextMasterData_,
+            passport_.SetNewUserData(kPassword_, kPlainTextMasterData_ + "1",
                                      retry_mid, retry_smid, retry_tmid,
                                      retry_stmid));
   pending_mid = std::static_pointer_cast<MidPacket>(
@@ -1157,18 +1157,31 @@ TEST_F(PassportTest, BEH_Login) {
   ASSERT_TRUE(CreateUser(original_mid, original_smid, original_tmid,
                          original_stmid));
   EXPECT_EQ(kSuccess, passport_.UpdateMasterData(kPlainTextMasterData1,
-            &mid_old_value, &smid_old_value, updated_mid1, updated_smid1,
-            new_tmid1, tmid_for_deletion1));
-  EXPECT_EQ(kSuccess, passport_.ConfirmMasterDataUpdate(updated_mid1,
-                      updated_smid1, new_tmid1));
+                                                 &mid_old_value,
+                                                 &smid_old_value,
+                                                 updated_mid1,
+                                                 updated_smid1,
+                                                 new_tmid1,
+                                                 tmid_for_deletion1));
+  EXPECT_EQ(kSuccess,
+            passport_.ConfirmMasterDataUpdate(updated_mid1,
+                                              updated_smid1,
+                                              new_tmid1));
+
   const std::string kPlainTextMasterData2(RandomString(10000));
   MidPtr updated_mid2(new MidPacket), updated_smid2(new MidPacket);
   TmidPtr new_tmid2(new TmidPacket), tmid_for_deletion2(new TmidPacket);
-  EXPECT_EQ(kSuccess, passport_.UpdateMasterData(kPlainTextMasterData2,
-            &mid_old_value, &smid_old_value, updated_mid2, updated_smid2,
-            new_tmid2, tmid_for_deletion2));
-  EXPECT_EQ(kSuccess, passport_.ConfirmMasterDataUpdate(updated_mid2,
-                      updated_smid2, new_tmid2));
+  EXPECT_EQ(kSuccess,passport_.UpdateMasterData(kPlainTextMasterData2,
+                                                &mid_old_value,
+                                                &smid_old_value,
+                                                updated_mid2,
+                                                updated_smid2,
+                                                new_tmid2,
+                                                tmid_for_deletion2));
+  EXPECT_EQ(kSuccess,
+            passport_.ConfirmMasterDataUpdate(updated_mid2,
+                                              updated_smid2,
+                                              new_tmid2));
   ASSERT_TRUE(passport_.GetPacket(MID, true).get() != NULL);
   ASSERT_TRUE(passport_.GetPacket(SMID, true).get() != NULL);
   ASSERT_TRUE(passport_.GetPacket(TMID, true).get() != NULL);
@@ -1194,7 +1207,8 @@ TEST_F(PassportTest, BEH_Login) {
   EXPECT_EQ(kNoPendingMid,
             passport_.InitialiseTmid(false, kEncryptedRidMain, &tmid_name));
   EXPECT_EQ(kNoPendingSmid, passport_.InitialiseTmid(true,
-                            kEncryptedRidSurrogate, &stmid_name));
+                                                     kEncryptedRidSurrogate,
+                                                     &stmid_name));
   EXPECT_FALSE(passport_.GetPacket(MID, false).get());
   EXPECT_FALSE(passport_.GetPacket(SMID, false).get());
   EXPECT_FALSE(passport_.GetPacket(TMID, false).get());
@@ -1204,18 +1218,29 @@ TEST_F(PassportTest, BEH_Login) {
   EXPECT_FALSE(passport_.GetPacket(TMID, true).get());
   EXPECT_FALSE(passport_.GetPacket(STMID, true).get());
 
-  EXPECT_EQ(kNullPointer, passport_.GetUserData(kPassword_, false,
-                          kEncryptedMasterDataMain, NULL));
-  EXPECT_EQ(kNullPointer, passport_.GetUserData(kPassword_, true,
-                          kEncryptedMasterDataSurrogate, NULL));
+  EXPECT_EQ(kNullPointer, passport_.GetUserData(kPassword_,
+                                                false,
+                                                kEncryptedMasterDataMain,
+                                                NULL));
+  EXPECT_EQ(kNullPointer, passport_.GetUserData(kPassword_,
+                                                true,
+                                                kEncryptedMasterDataSurrogate,
+                                                NULL));
   std::string recovered_plain_text_main, recovered_plain_text_surrogate;
-  EXPECT_EQ(kNoPendingTmid, passport_.GetUserData(kPassword_, false,
-            kEncryptedMasterDataMain, &recovered_plain_text_main));
-  EXPECT_EQ(kNoPendingStmid, passport_.GetUserData(kPassword_, true,
-            kEncryptedMasterDataSurrogate, &recovered_plain_text_surrogate));
+  EXPECT_EQ(kNoPendingTmid, passport_.GetUserData(kPassword_,
+                                                  false,
+                                                  kEncryptedMasterDataMain,
+                                                  &recovered_plain_text_main));
+  EXPECT_EQ(kNoPendingStmid,
+            passport_.GetUserData(kPassword_,
+                                  true,
+                                  kEncryptedMasterDataSurrogate,
+                                  &recovered_plain_text_surrogate));
 
   // Good data
-  EXPECT_EQ(kSuccess, passport_.SetInitialDetails(kUsername_, kPin_, &mid_name_,
+  EXPECT_EQ(kSuccess, passport_.SetInitialDetails(kUsername_,
+                                                  kPin_,
+                                                  &mid_name_,
                                                   &smid_name_));
   EXPECT_TRUE(passport_.GetPacket(MID, false).get() != NULL);
   EXPECT_TRUE(passport_.GetPacket(SMID, false).get() != NULL);
@@ -1228,7 +1253,8 @@ TEST_F(PassportTest, BEH_Login) {
   EXPECT_EQ(updated_mid2->name(), mid_name_);
   EXPECT_EQ(updated_smid2->name(), smid_name_);
 
-  EXPECT_EQ(kSuccess, passport_.InitialiseTmid(false, kEncryptedRidMain,
+  ASSERT_EQ(kSuccess, passport_.InitialiseTmid(false,
+                                               kEncryptedRidMain,
                                                &tmid_name));
   EXPECT_TRUE(passport_.GetPacket(MID, false).get() != NULL);
   EXPECT_TRUE(passport_.GetPacket(SMID, false).get() != NULL);
@@ -1239,7 +1265,8 @@ TEST_F(PassportTest, BEH_Login) {
   EXPECT_FALSE(passport_.GetPacket(TMID, true).get());
   EXPECT_FALSE(passport_.GetPacket(STMID, true).get());
 
-  EXPECT_EQ(kSuccess, passport_.InitialiseTmid(true, kEncryptedRidSurrogate,
+  EXPECT_EQ(kSuccess, passport_.InitialiseTmid(true,
+                                               kEncryptedRidSurrogate,
                                                &stmid_name));
   EXPECT_TRUE(passport_.GetPacket(MID, false).get() != NULL);
   EXPECT_TRUE(passport_.GetPacket(SMID, false).get() != NULL);
@@ -1253,8 +1280,10 @@ TEST_F(PassportTest, BEH_Login) {
   EXPECT_EQ(new_tmid1->name(), stmid_name);
 
   std::string original_plain_text1, original_plain_text2;
-  EXPECT_EQ(kSuccess, passport_.GetUserData(kPassword_, false,
-                      kEncryptedMasterDataMain, &original_plain_text2));
+  EXPECT_EQ(kSuccess, passport_.GetUserData(kPassword_,
+                                            false,
+                                            kEncryptedMasterDataMain,
+                                            &original_plain_text2));
   EXPECT_TRUE(passport_.GetPacket(MID, false).get() != NULL);
   EXPECT_TRUE(passport_.GetPacket(SMID, false).get() != NULL);
   EXPECT_TRUE(passport_.GetPacket(TMID, false).get() != NULL);
@@ -1264,8 +1293,10 @@ TEST_F(PassportTest, BEH_Login) {
   EXPECT_FALSE(passport_.GetPacket(TMID, true).get());
   EXPECT_FALSE(passport_.GetPacket(STMID, true).get());
 
-  EXPECT_EQ(kSuccess, passport_.GetUserData(kPassword_, true,
-                      kEncryptedMasterDataSurrogate, &original_plain_text1));
+  EXPECT_EQ(kSuccess, passport_.GetUserData(kPassword_,
+                                            true,
+                                            kEncryptedMasterDataSurrogate,
+                                            &original_plain_text1));
   EXPECT_TRUE(passport_.GetPacket(MID, false).get() != NULL);
   EXPECT_TRUE(passport_.GetPacket(SMID, false).get() != NULL);
   EXPECT_TRUE(passport_.GetPacket(TMID, false).get() != NULL);
@@ -1329,18 +1360,28 @@ TEST_F(PassportTest, BEH_Login) {
 
   // Try to GetUserData with wrong encrypted data
   passport_.Clear();
-  EXPECT_EQ(kSuccess, passport_.SetInitialDetails(kUsername_, kPin_, &mid_name_,
+  EXPECT_EQ(kSuccess, passport_.SetInitialDetails(kUsername_,
+                                                  kPin_,
+                                                  &mid_name_,
                                                   &smid_name_));
-  EXPECT_EQ(kSuccess, passport_.InitialiseTmid(false, kEncryptedRidMain,
+  EXPECT_EQ(kSuccess, passport_.InitialiseTmid(false,
+                                               kEncryptedRidMain,
                                                &tmid_name));
-  EXPECT_EQ(kSuccess, passport_.InitialiseTmid(true, kEncryptedRidSurrogate,
+  EXPECT_EQ(kSuccess, passport_.InitialiseTmid(true,
+                                               kEncryptedRidSurrogate,
                                                &stmid_name));
   EXPECT_TRUE(passport_.GetPacket(TMID, false).get() != NULL);
   EXPECT_TRUE(passport_.GetPacket(STMID, false).get() != NULL);
-  EXPECT_EQ(kBadSerialisedTmidData, passport_.GetUserData(kPassword_, false, "",
-                                    &original_plain_text2));
-  EXPECT_EQ(kBadSerialisedStmidData, passport_.GetUserData(kPassword_, true, "",
-                                     &original_plain_text1));
+  EXPECT_EQ(kBadSerialisedTmidData,
+            passport_.GetUserData(kPassword_,
+                                  false,
+                                  "",
+                                  &original_plain_text2));
+  EXPECT_EQ(kBadSerialisedStmidData,
+            passport_.GetUserData(kPassword_,
+                                  true,
+                                  "",
+                                  &original_plain_text1));
 }
 
 enum ChangeType {
