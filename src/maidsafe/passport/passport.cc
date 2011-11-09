@@ -244,7 +244,8 @@ int Passport::InitialiseTmid(bool surrogate,
                      surrogate,
                      "",
                      ""));
-  bool success(!tmid->name().empty());
+//  bool success(!tmid->name().empty());
+  bool success(true);
   if (success) {
     success = packet_handler_.AddPendingPacket(tmid);
   } else {

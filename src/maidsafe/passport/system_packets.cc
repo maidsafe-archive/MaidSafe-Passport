@@ -412,17 +412,63 @@ void TmidPacket::Clear() {
 bool TmidPacket::Equals(const std::shared_ptr<pki::Packet> other) const {
   const std::shared_ptr<TmidPacket> tmid(
       std::static_pointer_cast<TmidPacket>(other));
-  return packet_type_ == tmid->packet_type_ &&
-         name_ == tmid->name_ &&
-         username_ == tmid->username_ &&
-         pin_ == tmid->pin_ &&
-         password_ == tmid->password_ &&
-         rid_ == tmid->rid_ &&
-         plain_text_master_data_ == tmid->plain_text_master_data_ &&
-         salt_ == tmid->salt_ &&
-         secure_key_ == tmid->secure_key_ &&
-         secure_iv_ == tmid->secure_iv_ &&
-         encrypted_master_data_ == tmid->encrypted_master_data_;
+//  return packet_type_ == tmid->packet_type_ &&
+//         name_ == tmid->name_ &&
+//         username_ == tmid->username_ &&
+//         pin_ == tmid->pin_ &&
+//         password_ == tmid->password_ &&
+//         rid_ == tmid->rid_ &&
+//         plain_text_master_data_ == tmid->plain_text_master_data_ &&
+//         salt_ == tmid->salt_ &&
+//         secure_key_ == tmid->secure_key_ &&
+//         secure_iv_ == tmid->secure_iv_ &&
+//         encrypted_master_data_ == tmid->encrypted_master_data_;
+  if (packet_type_ != tmid->packet_type_) {
+    DLOG(INFO) << "packet_type_";
+    return false;
+  }
+  if (name_ != tmid->name_) {
+    DLOG(INFO) << "name_";
+    return false;
+  }
+  if (username_ != tmid->username_) {
+    DLOG(INFO) << "username_";
+    return false;
+  }
+  if (pin_ != tmid->pin_) {
+    DLOG(INFO) << "pin_";
+    return false;
+  }
+  if (password_ != tmid->password_) {
+    DLOG(INFO) << "password_";
+    return false;
+  }
+  if (rid_ != tmid->rid_) {
+    DLOG(INFO) << "rid_";
+    return false;
+  }
+  if (plain_text_master_data_ != tmid->plain_text_master_data_) {
+    DLOG(INFO) << "plain_text_master_data_";
+    return false;
+  }
+  if (salt_ != tmid->salt_) {
+    DLOG(INFO) << "salt_";
+    return false;
+  }
+  if (secure_key_ != tmid->secure_key_) {
+    DLOG(INFO) << "secure_key_";
+    return false;
+  }
+  if (secure_iv_ != tmid->secure_iv_) {
+    DLOG(INFO) << "secure_iv_";
+    return false;
+  }
+  if (encrypted_master_data_ != tmid->encrypted_master_data_) {
+    DLOG(INFO) << "encrypted_master_data_";
+    return false;
+  }
+
+  return true;
 }
 
 }  // namespace passport
