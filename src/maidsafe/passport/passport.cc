@@ -25,6 +25,7 @@
 
 #include "maidsafe/common/utils.h"
 
+#include "maidsafe/passport/log.h"
 #include "maidsafe/passport/passport_config.h"
 #include "maidsafe/passport/system_packets.h"
 

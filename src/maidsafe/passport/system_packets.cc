@@ -21,22 +21,14 @@
 */
 
 #include "maidsafe/passport/system_packets.h"
+
 #include <cstdio>
+
 #include "boost/lexical_cast.hpp"
-#include "maidsafe/passport/log.h"
+
 #include "maidsafe/common/crypto.h"
 
-#ifdef __MSVC__
-#  pragma warning(push)
-#  pragma warning(disable: 4127 4244 4267 4512)
-#endif
-
-#include "maidsafe/passport/signature_packet.pb.h"
-
-#ifdef __MSVC__
-#  pragma warning(pop)
-#endif
-
+#include "maidsafe/passport/log.h"
 
 namespace maidsafe {
 

@@ -35,7 +35,6 @@
 
 #include "maidsafe/passport/system_packets.h"
 #include "maidsafe/passport/version.h"
-#include "maidsafe/passport/log.h"
 
 #if MAIDSAFE_PASSPORT_VERSION != 109
 #  error This API is not compatible with the installed library.\
