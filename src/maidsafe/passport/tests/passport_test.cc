@@ -27,6 +27,7 @@
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
+#include "maidsafe/passport/log.h"
 #include "maidsafe/passport/passport.h"
 
 namespace maidsafe {
@@ -46,6 +47,7 @@ class PassportTest : public testing::Test {
         kPin_(boost::lexical_cast<std::string>(RandomUint32())),
         kPassword_(RandomAlphaNumericString(20)),
         kPlainTextMasterData_(RandomString(10000)),
+        kSurrogatePlainTextMasterData_(RandomString(10000)),
         mid_name_(),
         smid_name_() {}
  protected:
@@ -82,7 +84,10 @@ class PassportTest : public testing::Test {
     if (passport_.SetInitialDetails(kUsername_, kPin_, &mid_name_, &smid_name_)
         != kSuccess)
       return false;
-    if (passport_.SetNewUserData(kPassword_, kPlainTextMasterData_, mid, smid,
+    if (passport_.SetNewUserData(kPassword_,
+                                 kPlainTextMasterData_,
+                                 kSurrogatePlainTextMasterData_,
+                                 mid, smid,
                                  tmid, stmid) != kSuccess)
       return false;
     if (passport_.ConfirmNewUserData(mid, smid, tmid, stmid) != kSuccess)
@@ -96,7 +101,8 @@ class PassportTest : public testing::Test {
   std::shared_ptr<boost::asio::io_service::work> work_;
   boost::thread_group threads_;
   Passport passport_;
-  const std::string kUsername_, kPin_, kPassword_, kPlainTextMasterData_;
+  const std::string kUsername_, kPin_, kPassword_, kPlainTextMasterData_,
+                    kSurrogatePlainTextMasterData_;
   std::string mid_name_, smid_name_;
 };
 
@@ -501,50 +507,62 @@ TEST_F(PassportTest, BEH_SetNewUserData) {
   MidPtr null_mid, mid(new MidPacket), null_smid, smid(new MidPacket);
   TmidPtr null_tmid, tmid(new TmidPacket), stmid(new TmidPacket);
 
-  EXPECT_EQ(kNoMid,
-            passport_.SetNewUserData(kPassword_, kPlainTextMasterData_, mid,
-                                     smid, tmid, stmid));
-  EXPECT_TRUE(mid->name().empty());
-  EXPECT_TRUE(smid->name().empty());
-  EXPECT_TRUE(tmid->name().empty());
+  ASSERT_EQ(kNoMid,
+            passport_.SetNewUserData(kPassword_,
+                                     kPlainTextMasterData_,
+                                     kSurrogatePlainTextMasterData_,
+                                     mid, smid, tmid, stmid));
+  ASSERT_TRUE(mid->name().empty());
+  ASSERT_TRUE(smid->name().empty());
+  ASSERT_TRUE(tmid->name().empty());
+  ASSERT_TRUE(stmid->name().empty());
 
-  EXPECT_EQ(kSuccess, passport_.SetInitialDetails(kUsername_, kPin_, &mid_name_,
+  ASSERT_EQ(kSuccess, passport_.SetInitialDetails(kUsername_, kPin_, &mid_name_,
                                                   &smid_name_));
-  EXPECT_EQ(kSuccess, passport_.packet_handler_.DeletePacket(SMID));
-  EXPECT_EQ(kNoSmid,
-            passport_.SetNewUserData(kPassword_, kPlainTextMasterData_, mid,
-                                     smid, tmid, stmid));
-  EXPECT_TRUE(mid->name().empty());
-  EXPECT_TRUE(smid->name().empty());
-  EXPECT_TRUE(tmid->name().empty());
+  ASSERT_EQ(kSuccess, passport_.packet_handler_.DeletePacket(SMID));
+  ASSERT_EQ(kNoSmid,
+            passport_.SetNewUserData(kPassword_,
+                                     kPlainTextMasterData_,
+                                     kSurrogatePlainTextMasterData_,
+                                     mid, smid, tmid, stmid));
+  ASSERT_TRUE(mid->name().empty());
+  ASSERT_TRUE(smid->name().empty());
+  ASSERT_TRUE(tmid->name().empty());
+  ASSERT_TRUE(stmid->name().empty());
 
-  EXPECT_EQ(kSuccess, passport_.SetInitialDetails(kUsername_, kPin_, &mid_name_,
+  ASSERT_EQ(kSuccess, passport_.SetInitialDetails(kUsername_, kPin_, &mid_name_,
                                                   &smid_name_));
-  EXPECT_EQ(kNullPointer,
+  ASSERT_EQ(kNullPointer,
             passport_.SetNewUserData(kPassword_, kPlainTextMasterData_,
+                                     kSurrogatePlainTextMasterData_,
                                      null_mid, smid, tmid, stmid));
-  EXPECT_TRUE(smid->name().empty());
-  EXPECT_TRUE(tmid->name().empty());
-  EXPECT_EQ(kNullPointer,
+
+  ASSERT_TRUE(smid->name().empty());
+  ASSERT_TRUE(tmid->name().empty());
+  ASSERT_EQ(kNullPointer,
             passport_.SetNewUserData(kPassword_, kPlainTextMasterData_,
+                                     kSurrogatePlainTextMasterData_,
                                      mid, null_smid, tmid, stmid));
-  EXPECT_TRUE(mid->name().empty());
-  EXPECT_TRUE(tmid->name().empty());
-  EXPECT_EQ(kNullPointer,
+  ASSERT_TRUE(mid->name().empty());
+  ASSERT_TRUE(tmid->name().empty());
+  ASSERT_EQ(kNullPointer,
             passport_.SetNewUserData(kPassword_, kPlainTextMasterData_,
+                                     kSurrogatePlainTextMasterData_,
                                      mid, smid, null_tmid, stmid));
-  EXPECT_TRUE(mid->name().empty());
-  EXPECT_TRUE(smid->name().empty());
-  EXPECT_EQ(kNullPointer,
+  ASSERT_TRUE(mid->name().empty());
+  ASSERT_TRUE(smid->name().empty());
+  ASSERT_EQ(kNullPointer,
             passport_.SetNewUserData(kPassword_, kPlainTextMasterData_,
+                                     kSurrogatePlainTextMasterData_,
                                      mid, smid, tmid, null_tmid));
-  EXPECT_TRUE(mid->name().empty());
-  EXPECT_TRUE(smid->name().empty());
+  ASSERT_TRUE(mid->name().empty());
+  ASSERT_TRUE(smid->name().empty());
 
   // Good initial data
-  EXPECT_EQ(kSuccess,
-            passport_.SetNewUserData(kPassword_, kPlainTextMasterData_, mid,
-                                     smid, tmid, stmid));
+  ASSERT_EQ(kSuccess,
+            passport_.SetNewUserData(kPassword_, kPlainTextMasterData_,
+                                     kSurrogatePlainTextMasterData_,
+                                     mid, smid, tmid, stmid));
   MidPtr pending_mid(std::static_pointer_cast<MidPacket>(
                      passport_.GetPacket(MID, false)));
   MidPtr pending_smid(std::static_pointer_cast<MidPacket>(
@@ -565,44 +583,49 @@ TEST_F(PassportTest, BEH_SetNewUserData) {
   ASSERT_TRUE(pending_smid.get() != NULL);
   ASSERT_TRUE(pending_tmid.get() != NULL);
   ASSERT_TRUE(pending_stmid.get() != NULL);
-  EXPECT_FALSE(confirmed_mid.get());
-  EXPECT_FALSE(confirmed_smid.get());
-  EXPECT_FALSE(confirmed_tmid.get());
-  EXPECT_FALSE(confirmed_stmid.get());
-  std::string mid_name(pending_mid->name()), smid_name(pending_smid->name());
+  ASSERT_FALSE(confirmed_mid.get());
+  ASSERT_FALSE(confirmed_smid.get());
+  ASSERT_FALSE(confirmed_tmid.get());
+  ASSERT_FALSE(confirmed_stmid.get());
+  std::string mid_name(pending_mid->name()),
+              smid_name(pending_smid->name());
   std::string tmid_name(pending_tmid->name()),
               stmid_name(pending_stmid->name());
-  EXPECT_FALSE(mid_name.empty());
-  EXPECT_FALSE(smid_name.empty());
-  EXPECT_FALSE(tmid_name.empty());
-  EXPECT_FALSE(stmid_name.empty());
-  EXPECT_TRUE(pending_mid->Equals(mid));
-  EXPECT_TRUE(pending_smid->Equals(smid));
-  EXPECT_TRUE(pending_tmid->Equals(tmid));
-  EXPECT_TRUE(pending_stmid->Equals(stmid));
-  EXPECT_EQ(kUsername_, pending_mid->username());
-  EXPECT_EQ(kUsername_, pending_smid->username());
-  EXPECT_EQ(kUsername_, pending_tmid->username());
-  EXPECT_EQ(kUsername_, pending_stmid->username());
-  EXPECT_EQ(kPin_, pending_mid->pin());
-  EXPECT_EQ(kPin_, pending_smid->pin());
-  EXPECT_EQ(kPin_, pending_tmid->pin());
-  EXPECT_EQ(kPin_, pending_stmid->pin());
-  EXPECT_FALSE(pending_mid->rid().empty());
-  EXPECT_FALSE(pending_smid->rid().empty());
-  EXPECT_EQ(kPassword_, pending_tmid->password());
-  EXPECT_EQ(kPassword_, pending_stmid->password());
+  ASSERT_FALSE(mid_name.empty());
+  ASSERT_FALSE(smid_name.empty());
+  ASSERT_FALSE(tmid_name.empty());
+  ASSERT_FALSE(stmid_name.empty());
+  ASSERT_TRUE(pending_mid->Equals(mid));
+  ASSERT_TRUE(pending_smid->Equals(smid));
+  ASSERT_TRUE(pending_tmid->Equals(tmid));
+  ASSERT_TRUE(pending_stmid->Equals(stmid));
+  ASSERT_EQ(kUsername_, pending_mid->username());
+  ASSERT_EQ(kUsername_, pending_smid->username());
+  ASSERT_EQ(kUsername_, pending_tmid->username());
+  ASSERT_EQ(kUsername_, pending_stmid->username());
+  ASSERT_EQ(kPin_, pending_mid->pin());
+  ASSERT_EQ(kPin_, pending_smid->pin());
+  ASSERT_EQ(kPin_, pending_tmid->pin());
+  ASSERT_EQ(kPin_, pending_stmid->pin());
+  ASSERT_FALSE(pending_mid->rid().empty());
+  ASSERT_FALSE(pending_smid->rid().empty());
+  ASSERT_EQ(kPassword_, pending_tmid->password());
+  ASSERT_EQ(kPassword_, pending_stmid->password());
   // Check *copies* of pointers are returned
-  EXPECT_EQ(1UL, mid.use_count());
-  EXPECT_EQ(1UL, smid.use_count());
-  EXPECT_EQ(1UL, tmid.use_count());
+  ASSERT_EQ(1UL, mid.use_count());
+  ASSERT_EQ(1UL, smid.use_count());
+  ASSERT_EQ(1UL, tmid.use_count());
 
   // Check retry with same data generates new rid and hence new tmid name
   MidPtr retry_mid(new MidPacket), retry_smid(new MidPacket);
   TmidPtr retry_tmid(new TmidPacket), retry_stmid(new TmidPacket);
-  EXPECT_EQ(kSuccess,
-            passport_.SetNewUserData(kPassword_, kPlainTextMasterData_ + "1",
-                                     retry_mid, retry_smid, retry_tmid,
+  ASSERT_EQ(kSuccess,
+            passport_.SetNewUserData(kPassword_,
+                                     kPlainTextMasterData_ + "1",
+                                     kPlainTextMasterData_,
+                                     retry_mid,
+                                     retry_smid,
+                                     retry_tmid,
                                      retry_stmid));
   pending_mid = std::static_pointer_cast<MidPacket>(
                 passport_.GetPacket(MID, false));
@@ -624,36 +647,36 @@ TEST_F(PassportTest, BEH_SetNewUserData) {
   ASSERT_TRUE(pending_smid.get() != NULL);
   ASSERT_TRUE(pending_tmid.get() != NULL);
   ASSERT_TRUE(pending_stmid.get() != NULL);
-  EXPECT_FALSE(confirmed_mid.get());
-  EXPECT_FALSE(confirmed_smid.get());
-  EXPECT_FALSE(confirmed_tmid.get());
-  EXPECT_FALSE(confirmed_stmid.get());
-  EXPECT_EQ(mid_name, pending_mid->name());
-  EXPECT_EQ(smid_name, pending_smid->name());
-  EXPECT_NE(tmid_name, pending_tmid->name());
-  EXPECT_NE(tmid_name, pending_stmid->name());
-  EXPECT_FALSE(pending_tmid->name().empty());
-  EXPECT_FALSE(pending_stmid->name().empty());
-  EXPECT_TRUE(pending_mid->Equals(retry_mid));
-  EXPECT_TRUE(pending_smid->Equals(retry_smid));
-  EXPECT_TRUE(pending_tmid->Equals(retry_tmid));
-  EXPECT_TRUE(pending_stmid->Equals(retry_stmid));
-  EXPECT_FALSE(pending_mid->Equals(mid));
-  EXPECT_FALSE(pending_smid->Equals(smid));
-  EXPECT_FALSE(pending_tmid->Equals(tmid));
-  EXPECT_FALSE(pending_stmid->Equals(stmid));
-  EXPECT_EQ(kUsername_, pending_mid->username());
-  EXPECT_EQ(kUsername_, pending_smid->username());
-  EXPECT_EQ(kUsername_, pending_tmid->username());
-  EXPECT_EQ(kUsername_, pending_stmid->username());
-  EXPECT_EQ(kPin_, pending_mid->pin());
-  EXPECT_EQ(kPin_, pending_smid->pin());
-  EXPECT_EQ(kPin_, pending_tmid->pin());
-  EXPECT_EQ(kPin_, pending_stmid->pin());
-  EXPECT_FALSE(pending_mid->rid().empty());
-  EXPECT_FALSE(pending_smid->rid().empty());
-  EXPECT_EQ(kPassword_, pending_tmid->password());
-  EXPECT_EQ(kPassword_, pending_stmid->password());
+  ASSERT_FALSE(confirmed_mid.get());
+  ASSERT_FALSE(confirmed_smid.get());
+  ASSERT_FALSE(confirmed_tmid.get());
+  ASSERT_FALSE(confirmed_stmid.get());
+  ASSERT_EQ(mid_name, pending_mid->name());
+  ASSERT_EQ(smid_name, pending_smid->name());
+  ASSERT_NE(tmid_name, pending_tmid->name());
+  ASSERT_NE(stmid_name, pending_stmid->name());
+  ASSERT_FALSE(pending_tmid->name().empty());
+  ASSERT_FALSE(pending_stmid->name().empty());
+  ASSERT_TRUE(pending_mid->Equals(retry_mid));
+  ASSERT_TRUE(pending_smid->Equals(retry_smid));
+  ASSERT_TRUE(pending_tmid->Equals(retry_tmid));
+  ASSERT_TRUE(pending_stmid->Equals(retry_stmid));
+  ASSERT_FALSE(pending_mid->Equals(mid));
+  ASSERT_FALSE(pending_smid->Equals(smid));
+  ASSERT_FALSE(pending_tmid->Equals(tmid));
+  ASSERT_FALSE(pending_stmid->Equals(stmid));
+  ASSERT_EQ(kUsername_, pending_mid->username());
+  ASSERT_EQ(kUsername_, pending_smid->username());
+  ASSERT_EQ(kUsername_, pending_tmid->username());
+  ASSERT_EQ(kUsername_, pending_stmid->username());
+  ASSERT_EQ(kPin_, pending_mid->pin());
+  ASSERT_EQ(kPin_, pending_smid->pin());
+  ASSERT_EQ(kPin_, pending_tmid->pin());
+  ASSERT_EQ(kPin_, pending_stmid->pin());
+  ASSERT_FALSE(pending_mid->rid().empty());
+  ASSERT_FALSE(pending_smid->rid().empty());
+  ASSERT_EQ(kPassword_, pending_tmid->password());
+  ASSERT_EQ(kPassword_, pending_stmid->password());
 }
 
 TEST_F(PassportTest, BEH_ConfirmNewUserData) {
@@ -663,17 +686,22 @@ TEST_F(PassportTest, BEH_ConfirmNewUserData) {
   TmidPtr null_stmid, different_username_stmid(new TmidPacket);
   EXPECT_EQ(kSuccess, passport_.SetInitialDetails("Different", kPin_,
                                                   &mid_name_, &smid_name_));
-  EXPECT_EQ(kSuccess, passport_.SetNewUserData(kPassword_,
-                      kPlainTextMasterData_, different_username_mid,
-                      different_username_smid, different_username_tmid,
-                      different_username_stmid));
+  EXPECT_EQ(kSuccess,
+            passport_.SetNewUserData(kPassword_,
+                                     kPlainTextMasterData_,
+                                     kSurrogatePlainTextMasterData_,
+                                     different_username_mid,
+                                     different_username_smid,
+                                     different_username_tmid,
+                                     different_username_stmid));
   MidPtr mid(new MidPacket), smid(new MidPacket);
   TmidPtr tmid(new TmidPacket), stmid(new TmidPacket);
   EXPECT_EQ(kSuccess, passport_.SetInitialDetails(kUsername_, kPin_, &mid_name_,
                                                   &smid_name_));
   EXPECT_EQ(kSuccess,
-            passport_.SetNewUserData(kPassword_, kPlainTextMasterData_, mid,
-                                     smid, tmid, stmid));
+            passport_.SetNewUserData(kPassword_, kPlainTextMasterData_,
+                                     kSurrogatePlainTextMasterData_,
+                                     mid, smid, tmid, stmid));
   MidPtr pending_mid(std::static_pointer_cast<MidPacket>(
                      passport_.GetPacket(MID, false)));
   MidPtr pending_smid(std::static_pointer_cast<MidPacket>(
@@ -1277,8 +1305,8 @@ TEST_F(PassportTest, BEH_Login) {
   ASSERT_FALSE(passport_.GetPacket(SMID, true).get());
   ASSERT_FALSE(passport_.GetPacket(TMID, true).get());
   ASSERT_FALSE(passport_.GetPacket(STMID, true).get());
-  ASSERT_TRUE(tmid_name.empty());
-  ASSERT_TRUE(stmid_name.empty());
+  ASSERT_FALSE(tmid_name.empty());
+  ASSERT_FALSE(stmid_name.empty());
 
   std::string original_plain_text1, original_plain_text2;
   ASSERT_EQ(kSuccess, passport_.GetUserData(kPassword_,
@@ -1452,8 +1480,8 @@ class PassportVPTest : public testing::TestWithParam<ChangeType> {
     std::string t;
     ASSERT_EQ(kSuccess, passport_.SetInitialDetails(kUsername_, kPin_, &t, &t));
     ASSERT_EQ(kSuccess,
-              passport_.SetNewUserData(kPassword_, "ab", mid, smid, tmid,
-                                       stmid));
+              passport_.SetNewUserData(kPassword_, "ab", "surrogate",
+                                       mid, smid, tmid, stmid));
     ASSERT_EQ(kSuccess, passport_.ConfirmNewUserData(mid, smid, tmid, stmid));
     ASSERT_EQ(kSuccess, passport_.UpdateMasterData(kPlainTextMasterDataStmid_,
               &t, &t, mid, smid, stmid_before_change_, tmid_for_deletion_));
@@ -1807,6 +1835,7 @@ TEST_P(PassportVPTest, BEH_ChangeUserDetails) {
     ASSERT_FALSE(passport_.GetPacket(MID, false).get());
     ASSERT_FALSE(passport_.GetPacket(SMID, false).get());
   } else {
+    DLOG(ERROR) << "\n\n\n";
     ASSERT_EQ(kSuccess,
               passport_.ChangeUserData(kNewUsername_,
                                        kNewPin_,
@@ -1821,6 +1850,10 @@ TEST_P(PassportVPTest, BEH_ChangeUserDetails) {
                                        stmid_after_change_));
     ASSERT_TRUE(passport_.GetPacket(MID, false).get() != NULL);
     ASSERT_TRUE(passport_.GetPacket(SMID, false).get() != NULL);
+//    ASSERT_EQ(passport_.GetPacket(MID, false)->value(),
+//              mid_after_change_->value());
+//    ASSERT_EQ(passport_.GetPacket(SMID, false)->value(),
+//              smid_after_change_->value());
     ASSERT_TRUE(passport_.GetPacket(MID, false)->Equals(mid_after_change_));
     ASSERT_TRUE(passport_.GetPacket(SMID, false)-> Equals(smid_after_change_));
   }

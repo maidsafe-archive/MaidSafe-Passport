@@ -140,25 +140,34 @@ void MidPacket::Initialise() {
 
 void MidPacket::SetRid(const std::string &rid) {
   rid_ = rid;
-  if (rid_.empty())
-    encrypted_rid_.clear();
-  else
-    encrypted_rid_ = crypto::SymmEncrypt(rid_, secure_key_, secure_iv_);
-  if (encrypted_rid_.empty())
+  if (rid_.empty()) {
+    DLOG(ERROR) << "Empty given RID";
     Clear();
+    return;
+  }
+
+  encrypted_rid_ = crypto::SymmEncrypt(rid_, secure_key_, secure_iv_);
+  if (encrypted_rid_.empty()) {
+    DLOG(ERROR) << "Failed to encrypt given RID";
+    Clear();
+  }
 }
 
 std::string MidPacket::DecryptRid(const std::string &encrypted_rid) {
   if (username_.empty() || pin_.empty() || encrypted_rid.empty()) {
     DLOG(ERROR) << "MidPacket::DecryptRid: Empty encrypted RID or user data.";
     Clear();
-    return 0;
+    return "";
   }
 
   encrypted_rid_ = encrypted_rid;
   rid_ = crypto::SymmDecrypt(encrypted_rid_, secure_key_, secure_iv_);
-  if (rid_.empty())
+  if (rid_.empty()) {
+    DLOG(ERROR) << "MidPacket::DecryptRid: Failed decryption.";
     Clear();
+    return "";
+  }
+
   return rid_;
 }
 

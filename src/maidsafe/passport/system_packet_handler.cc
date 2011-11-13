@@ -223,12 +223,14 @@ std::shared_ptr<pki::Packet> SystemPacketHandler::GetPacket(
                     << DebugString(retrieved_packet->packet_type())
                     << " type error."  << std::endl;
       }
+      DLOG(ERROR) << "Found packet by name "
+                  << DebugString(retrieved_packet->packet_type());
     }
   }
   if (!done) {
-    DLOG(ERROR) << "SystemPacketHandler::Packet: not "
-                << (confirmed ? "confirmed as stored." :
-                                "pending confirmation.")
+    DLOG(ERROR) << "SystemPacketHandler::Packet " << HexSubstr(packet_id)
+                << ": not " << (confirmed ? "confirmed as stored." :
+                                            "pending confirmation.")
                 << std::endl;
   }
   return packet;

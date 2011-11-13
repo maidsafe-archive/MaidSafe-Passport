@@ -66,6 +66,7 @@ int Passport::SetInitialDetails(const std::string &username,
 
 int Passport::SetNewUserData(const std::string &password,
                              const std::string &plain_text_master_data,
+                             const std::string &s_plain_text_master_data,
                              std::shared_ptr<MidPacket> mid,
                              std::shared_ptr<MidPacket> smid,
                              std::shared_ptr<TmidPacket> tmid,
@@ -85,10 +86,6 @@ int Passport::SetNewUserData(const std::string &password,
     StopCreatingKeyPairs();
     return kNoSmid;
   }
-  std::string rid(RandomString((RandomUint32() % 64) + 64));
-  std::string srid(RandomString((RandomUint32() % 64) + 64));
-  retrieved_pending_mid->SetRid(rid);
-  retrieved_pending_smid->SetRid(srid);
 
   // Create TMID
   std::shared_ptr<TmidPacket> new_tmid(
@@ -102,7 +99,11 @@ int Passport::SetNewUserData(const std::string &password,
                      retrieved_pending_mid->pin(),
                      true,
                      password,
-                     plain_text_master_data));
+                     s_plain_text_master_data));
+
+  retrieved_pending_mid->SetRid(new_tmid->name());
+  retrieved_pending_smid->SetRid(new_stmid->name());
+
   bool success(!retrieved_pending_mid->name().empty() &&
                !retrieved_pending_smid->name().empty() &&
                !new_tmid->name().empty() &&
@@ -120,9 +121,10 @@ int Passport::SetNewUserData(const std::string &password,
     *tmid = *new_tmid;
     *stmid = *new_stmid;
     return kSuccess;
-  } else {
-    return kPassportError;
   }
+
+  DLOG(ERROR) << "Failed to add pending packets";
+  return kPassportError;
 }
 
 int Passport::ConfirmNewUserData(std::shared_ptr<MidPacket> mid,
@@ -164,8 +166,6 @@ int Passport::UpdateMasterData(
     new_rid = RandomString((RandomUint32() % 64) + 64);
     ++retries;
   }
-  retrieved_mid->SetRid(new_rid);
-  retrieved_smid->SetRid(old_rid);
 
   // Confirmed STMID (which is to be deleted) won't exist if this is first ever
   // update.  Pending STMID won't exist unless this is a repeat attempt.
@@ -173,7 +173,6 @@ int Passport::UpdateMasterData(
   if (!retrieved_tmid)
     return kNoTmid;
   std::shared_ptr<TmidPacket> retrieved_stmid(Stmid());
-//  std::shared_ptr<TmidPacket> retrieved_pending_stmid(PendingStmid());
 
   std::shared_ptr<TmidPacket> tmid(
       new TmidPacket(retrieved_tmid->username(),
@@ -183,6 +182,9 @@ int Passport::UpdateMasterData(
                      plain_text_master_data));
   if (tmid->name().empty())
     return kPassportError;
+
+  retrieved_mid->SetRid(tmid->name());
+  retrieved_smid->SetRid(retrieved_tmid->name());
 
   retrieved_tmid->SetToSurrogate();
   bool success = packet_handler_.AddPendingPacket(retrieved_mid) &&
@@ -237,34 +239,31 @@ int Passport::InitialiseTmid(bool surrogate,
     return surrogate ? kNoPendingSmid : kNoPendingMid;
   }
 
-  if (retrieved_pending_mid->DecryptRid(encrypted_rid).empty())
+  *tmid_name = retrieved_pending_mid->DecryptRid(encrypted_rid);
+  if (tmid_name->empty()) {
+    DLOG(ERROR) << "Failed to decrypt (S)MID RID";
     return surrogate ? kBadSerialisedSmidRid : kBadSerialisedMidRid;
+  }
   std::shared_ptr<TmidPacket> tmid(
       new TmidPacket(retrieved_pending_mid->username(),
                      retrieved_pending_mid->pin(),
                      surrogate,
                      "",
                      ""));
-//  bool success(!tmid->name().empty());
-  bool success(true);
-  if (success) {
-    success = packet_handler_.AddPendingPacket(tmid);
-  } else {
-    DLOG(INFO) << "Tmid name empty.";
-  }
+
+  bool success(packet_handler_.AddPendingPacket(tmid));
   if (success) {
     success = packet_handler_.AddPendingPacket(retrieved_pending_mid);
   } else {
     DLOG(INFO) << "Failed to add tmid";
   }
-  if (success) {
-    *tmid_name = tmid->name();
+
+  if (success)
     return kSuccess;
-  } else {
-    DLOG(ERROR) << "Failed to add retrieved_pending_mid";
-    packet_handler_.RevertPacket(TMID);
-    return kPassportError;
-  }
+
+  DLOG(ERROR) << "Failed to add retrieved_pending_mid";
+  packet_handler_.RevertPacket(TMID);
+  return kPassportError;
 }
 
 int Passport::GetUserData(const std::string &password,
@@ -327,8 +326,9 @@ int Passport::ChangeUserData(
   std::shared_ptr<MidPacket> smid(new MidPacket(new_username,
                                                 new_pin,
                                                 kSmidAppendix_));
-  mid->SetRid(retrieved_mid->rid());
-  smid->SetRid(retrieved_smid->rid());
+//  DLOG(ERROR) << "\n\n\n" << mid->name() << " - " << smid->name() << " - "
+//              << retrieved_tmid->name();
+
   std::shared_ptr<TmidPacket> tmid(
       new TmidPacket(new_username,
                      new_pin,
@@ -339,13 +339,27 @@ int Passport::ChangeUserData(
       new TmidPacket(new_username,
                      new_pin,
                      true,
-                     retrieved_stmid->password(),
-                     plain_text_master_data));
+                     retrieved_tmid->password(),
+                     retrieved_tmid->DecryptPlainData(
+                         retrieved_tmid->password(),
+                         retrieved_tmid->value())));
+//  DLOG(ERROR) << "\n\n\n" << mid->name() << " - " << smid->name();
+//  *stmid = *retrieved_tmid;
+//  stmid->SetToSurrogate();
+//  DLOG(ERROR) << "\n\n\n" << mid->name() << " - " << smid->name();
+  mid->SetRid(tmid->name());
+  smid->SetRid(stmid->name());
+//  DLOG(ERROR) << "\n\n\n" << mid->name() << " - " << smid->name();
 
   if (mid->name().empty() ||
       smid->name().empty() ||
       tmid->name().empty() ||
       stmid->name().empty()) {
+    DLOG(ERROR) << "Packet name empty: "
+                << std::boolalpha << mid->name().empty() << " - "
+                << std::boolalpha << smid->name().empty() << " - "
+                << std::boolalpha << tmid->name().empty() << " - "
+                << std::boolalpha << stmid->name().empty();
     return kPassportError;
   }
 
@@ -358,8 +372,10 @@ int Passport::ChangeUserData(
     packet_handler_.RevertPacket(SMID);
     packet_handler_.RevertPacket(TMID);
     packet_handler_.RevertPacket(STMID);
+    DLOG(ERROR) << "Adding pending packets failed";
     return kPassportError;
   }
+
   *mid_for_deletion = *retrieved_mid;
   *smid_for_deletion = *retrieved_smid;
   *tmid_for_deletion = *retrieved_tmid;
@@ -457,10 +473,16 @@ int Passport::DoInitialiseSignaturePacket(
     const PacketType &packet_type,
     const std::string & /*public_name*/,
     std::shared_ptr<pki::SignaturePacket> signature_packet) {
-  if (!signature_packet)
+  if (!signature_packet) {
+    DLOG(ERROR) << "Null pointer";
     return kNullPointer;
-  if (!IsSignature(packet_type, false))
+  }
+
+  if (!IsSignature(packet_type, false)) {
+    DLOG(ERROR) << "Not signature packet";
     return kPassportError;
+  }
+
   PacketType signer_type(UNKNOWN);
   switch (packet_type) {
     case MPID:
@@ -476,27 +498,32 @@ int Passport::DoInitialiseSignaturePacket(
       break;
   }
 
-  std::string signer_private_key;
   if (signer_type != UNKNOWN) {
     std::shared_ptr<pki::SignaturePacket> signer =
         std::static_pointer_cast<pki::SignaturePacket>(GetPacket(signer_type,
                                                                  true));
-    if (!signer)
+    if (!signer) {
+      DLOG(ERROR) << "No signing packet";
       return kNoSigningPacket;
-    signer_private_key = signer->private_key();
+    }
+    *signature_packet = *pki::SignaturePacketPtr(
+                            new pki::SignaturePacket(signer->private_key()));
+  } else {
+    std::vector<pki::SignaturePacketPtr> packets;
+    if (pki::kSuccess != pki::CreateChainedId(&packets, 1))
+      return kPassportError;
+
+    *signature_packet = *packets.at(0);
   }
 
-  std::vector<pki::SignaturePacketPtr> packets;
-  if (pki::kSuccess != pki::CreateChainedId(&packets, 1))
-    return kPassportError;
-
-  *signature_packet = *packets.at(0);
   signature_packet->set_packet_type(packet_type);
   if (packet_handler_.AddPendingPacket(signature_packet)) {
     return kSuccess;
   } else {
     if (packet_type != MSID)
       packet_handler_.RevertPacket(packet_type);
+
+    DLOG(ERROR) << "Failure adding pending packet";
     return kPassportError;
   }
 }

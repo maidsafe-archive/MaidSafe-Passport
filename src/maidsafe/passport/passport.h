@@ -75,6 +75,7 @@ class Passport {
   // plain_text_master_data) in case generated tmid name is unsuitable.
   int SetNewUserData(const std::string &password,
                      const std::string &plain_text_master_data,
+                     const std::string &s_plain_text_master_data,
                      std::shared_ptr<MidPacket> mid,
                      std::shared_ptr<MidPacket> smid,
                      std::shared_ptr<TmidPacket> tmid,
