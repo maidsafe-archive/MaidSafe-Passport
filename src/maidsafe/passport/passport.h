@@ -195,10 +195,12 @@ class Passport {
   // kSuccess.
   int ChangePassword(const std::string &new_password,
                      const std::string &plain_text_master_data,
-                     std::string *tmid_old_value,
-                     std::string *stmid_old_value,
-                     std::shared_ptr<TmidPacket> updated_tmid,
-                     std::shared_ptr<TmidPacket> updated_stmid);
+                     std::shared_ptr<MidPacket> mid,
+                     std::shared_ptr<MidPacket> smid,
+                     std::shared_ptr<TmidPacket> tmid_for_deletion,
+                     std::shared_ptr<TmidPacket> stmid_for_deletion,
+                     std::shared_ptr<TmidPacket> new_tmid,
+                     std::shared_ptr<TmidPacket> new_stmid);
 
   // Used when amending user's password.
   // Confirms TMID and STMID are successfully stored.  tmid and stmid as set by

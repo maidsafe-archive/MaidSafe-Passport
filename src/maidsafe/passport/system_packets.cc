@@ -441,7 +441,7 @@ bool TmidPacket::Equals(const std::shared_ptr<pki::Packet> other) const {
     return false;
   }
   if (password_ != tmid->password_) {
-    DLOG(INFO) << "password_";
+    DLOG(INFO) << "password_ " << password_.size() << " vs. " << tmid->password_.size();
     return false;
   }
   if (rid_ != tmid->rid_) {

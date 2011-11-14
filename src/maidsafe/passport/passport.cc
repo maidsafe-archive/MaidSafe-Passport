@@ -398,12 +398,17 @@ int Passport::ConfirmUserDataChange(std::shared_ptr<MidPacket> mid,
 
 int Passport::ChangePassword(const std::string &new_password,
                              const std::string &plain_text_master_data,
-                             std::string *tmid_old_value,
-                             std::string *stmid_old_value,
-                             std::shared_ptr<TmidPacket> updated_tmid,
-                             std::shared_ptr<TmidPacket> updated_stmid) {
-  if (!tmid_old_value || !stmid_old_value || !updated_tmid || !updated_stmid)
+                             std::shared_ptr<MidPacket> mid,
+                             std::shared_ptr<MidPacket> smid,
+                             std::shared_ptr<TmidPacket> tmid_for_deletion,
+                             std::shared_ptr<TmidPacket> stmid_for_deletion,
+                             std::shared_ptr<TmidPacket> new_tmid,
+                             std::shared_ptr<TmidPacket> new_stmid) {
+  if (!mid || !smid || !tmid_for_deletion || !stmid_for_deletion ||
+      !new_tmid || !new_stmid) {
+    DLOG(ERROR) << "NULL pointer passed in";
     return kNullPointer;
+  }
   std::shared_ptr<MidPacket> retrieved_mid(Mid());
   if (!retrieved_mid)
     return kNoMid;
@@ -428,22 +433,40 @@ int Passport::ChangePassword(const std::string &new_password,
                      retrieved_stmid->pin(),
                      true,
                      new_password,
-                     plain_text_master_data));
+                     retrieved_tmid->DecryptPlainData(
+                         retrieved_tmid->password(),
+                         retrieved_tmid->value())));
 
-  if (tmid->name().empty() || stmid->name().empty())
-    return kPassportError;
-
-  bool success = packet_handler_.AddPendingPacket(tmid) &&
-                 packet_handler_.AddPendingPacket(stmid);
-  if (!success) {
-    packet_handler_.RevertPacket(TMID);
-    packet_handler_.RevertPacket(STMID);
+  if (tmid->name().empty() || stmid->name().empty()) {
+    DLOG(ERROR) << "Wrongly constructed (S)TMID";
     return kPassportError;
   }
-  *tmid_old_value = retrieved_tmid->value();
-  *stmid_old_value = retrieved_stmid->value();
-  *updated_tmid = *tmid;
-  *updated_stmid = *stmid;
+
+  *tmid_for_deletion = *retrieved_tmid;
+  *stmid_for_deletion = *retrieved_stmid;
+  *new_tmid = *tmid;
+  *new_stmid = *stmid;
+  *mid = *retrieved_mid;
+  *smid = *retrieved_smid;
+
+  std::shared_ptr<MidPacket> updated_mid(mid);
+  updated_mid->SetRid(new_tmid->name());
+  std::shared_ptr<MidPacket> updated_smid(smid);
+  updated_smid->SetRid(new_stmid->name());
+
+  bool success = packet_handler_.AddPendingPacket(updated_mid) &&
+                 packet_handler_.AddPendingPacket(updated_smid) &&
+                 packet_handler_.AddPendingPacket(new_tmid) &&
+                 packet_handler_.AddPendingPacket(new_stmid);
+  if (!success) {
+    packet_handler_.RevertPacket(MID);
+    packet_handler_.RevertPacket(SMID);
+    packet_handler_.RevertPacket(TMID);
+    packet_handler_.RevertPacket(STMID);
+    DLOG(ERROR) << "Failed to add new packets";
+    return kPassportError;
+  }
+
   return kSuccess;
 }
 

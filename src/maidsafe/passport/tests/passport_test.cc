@@ -1413,11 +1413,71 @@ TEST_F(PassportTest, BEH_Login) {
                                   &original_plain_text1));
 }
 
+TEST_F(PassportTest, FUNC_ChangePassword) {
+  // Setup
+  MidPtr original_mid(new MidPacket), original_smid(new MidPacket);
+  TmidPtr original_tmid(new TmidPacket), original_stmid(new TmidPacket);
+  ASSERT_TRUE(CreateUser(original_mid, original_smid, original_tmid,
+                         original_stmid));
+
+  MidPtr updated_mid(new MidPacket), updated_smid(new MidPacket);
+  TmidPtr new_tmid(new TmidPacket), new_stmid(new TmidPacket),
+          tmid_for_deletion(new TmidPacket), stmid_for_deletion(new TmidPacket);
+  const std::string kPlainTextMasterData(RandomString(1000));
+  ASSERT_EQ(kSuccess,passport_.ChangePassword(kPassword_ + "1",
+                                              kPlainTextMasterData,
+                                              updated_mid,
+                                              updated_smid,
+                                              tmid_for_deletion,
+                                              stmid_for_deletion,
+                                              new_tmid,
+                                              new_stmid));
+
+  ASSERT_EQ(original_mid->name(), updated_mid->name());
+  ASSERT_EQ(original_smid->name(), updated_smid->name());
+  ASSERT_NE(original_mid->value(), updated_mid->value());
+  ASSERT_NE(original_smid->value(), updated_smid->value());
+  ASSERT_EQ(original_tmid->password(), original_stmid->password());
+  ASSERT_EQ(kPassword_, original_stmid->password());
+  ASSERT_EQ(new_tmid->password(), new_stmid->password());
+  ASSERT_EQ(kPassword_ + "1", new_stmid->password());
+  ASSERT_NE(original_tmid->value(), new_tmid->value());
+  ASSERT_NE(original_stmid->value(), new_stmid->value());
+  ASSERT_EQ(original_tmid->DecryptPlainData(original_tmid->password(),
+                                            original_tmid->value()),
+            new_stmid->DecryptPlainData(new_stmid->password(),
+                                        new_stmid->value()));
+
+  // Packets to be deleted are the orginal ones
+  EXPECT_TRUE(tmid_for_deletion->Equals(original_tmid));
+  EXPECT_TRUE(stmid_for_deletion->Equals(original_stmid));
+
+  // Confirmed packets are the same
+  EXPECT_TRUE(passport_.GetPacket(MID, true)->Equals(original_mid));
+  EXPECT_TRUE(passport_.GetPacket(SMID, true)->Equals(original_smid));
+  EXPECT_TRUE(passport_.GetPacket(TMID, true)->Equals(original_tmid));
+  EXPECT_TRUE(passport_.GetPacket(STMID, true)->Equals(original_stmid));
+
+  // Pending packets are the new ones
+  EXPECT_TRUE(passport_.GetPacket(MID, false)->Equals(updated_mid));
+  EXPECT_TRUE(passport_.GetPacket(SMID, false)->Equals(updated_smid));
+  EXPECT_TRUE(passport_.GetPacket(TMID, false)->Equals(new_tmid));
+  EXPECT_TRUE(passport_.GetPacket(STMID, false)->Equals(new_stmid));
+
+  EXPECT_EQ(kSuccess, passport_.ConfirmUserDataChange(updated_mid,
+                                                      updated_smid,
+                                                      new_tmid,
+                                                      new_stmid));
+  EXPECT_TRUE(passport_.GetPacket(MID, true)->Equals(updated_mid));
+  EXPECT_TRUE(passport_.GetPacket(SMID, true)->Equals(updated_smid));
+  EXPECT_TRUE(passport_.GetPacket(TMID, true)->Equals(new_tmid));
+  EXPECT_TRUE(passport_.GetPacket(STMID, true)->Equals(new_stmid));
+}
+
 enum ChangeType {
   kChangeUsername,
   kChangePin,
-  kChangeUsernameAndPin,
-  kChangePassword
+  kChangeUsernameAndPin
 };
 
 class PassportVPTest : public testing::TestWithParam<ChangeType> {
@@ -1437,8 +1497,7 @@ class PassportVPTest : public testing::TestWithParam<ChangeType> {
                  GetParam() == kChangeUsernameAndPin) ?
                  boost::lexical_cast<std::string>(
                      boost::lexical_cast<uint32_t>(kPin_) + 1) : kPin_),
-        kNewPassword_(GetParam() == kChangePassword ? kPassword_ + "a" :
-                     kPassword_),
+        kNewPassword_(kPassword_),
         kPlainTextMasterDataTmid_(RandomString(10000)),
         kPlainTextMasterDataStmid_(RandomString(10000)),
         kPlainTextMasterDataAfterChange_(RandomString(10000)),
@@ -1454,7 +1513,7 @@ class PassportVPTest : public testing::TestWithParam<ChangeType> {
         smid_for_deletion_(new MidPacket),
         tmid_for_deletion_(new TmidPacket),
         stmid_for_deletion_(new TmidPacket),
-        kChangePassword_(GetParam() == kChangePassword) {}
+        kChangePassword_(false) {}
  protected:
   typedef std::shared_ptr<pki::Packet> PacketPtr;
   typedef std::shared_ptr<MidPacket> MidPtr;
@@ -1533,9 +1592,6 @@ TEST_P(PassportVPTest, BEH_ChangeUserDetails) {
     case kChangeUsernameAndPin:
       message += "USERNAME AND PIN.\n\n";
       break;
-    case kChangePassword:
-      message += "PASSWORD ONLY.\n\n";
-      break;
     default:
       break;
   }
@@ -1544,133 +1600,103 @@ TEST_P(PassportVPTest, BEH_ChangeUserDetails) {
   MidPtr null_mid;
   TmidPtr null_tmid;
   std::string temp;
-  if (kChangePassword_) {
-    ASSERT_EQ(kNullPointer,
-              passport_.ChangePassword(kNewPassword_,
-                                       kPlainTextMasterDataAfterChange_,
-                                       NULL,
-                                       &temp,
-                                       tmid_after_change_,
-                                       stmid_after_change_));
-    ASSERT_EQ(kNullPointer,
-              passport_.ChangePassword(kNewPassword_,
-                                       kPlainTextMasterDataAfterChange_,
-                                       &temp,
-                                       NULL,
-                                       tmid_after_change_,
-                                       stmid_after_change_));
-    ASSERT_EQ(kNullPointer,
-              passport_.ChangePassword(kNewPassword_,
-                                       kPlainTextMasterDataAfterChange_,
-                                       &temp,
-                                       &temp,
-                                       null_tmid,
-                                       stmid_after_change_));
-    ASSERT_EQ(kNullPointer,
-              passport_.ChangePassword(kNewPassword_,
-                                       kPlainTextMasterDataAfterChange_,
-                                       &temp,
-                                       &temp,
-                                       tmid_after_change_,
-                                       null_tmid));
-  } else {
-    ASSERT_EQ(kNullPointer,
-              passport_.ChangeUserData(kNewUsername_,
-                                       kNewPin_,
-                                       kPlainTextMasterDataAfterChange_,
-                                       null_mid,
-                                       smid_for_deletion_,
-                                       tmid_for_deletion_,
-                                       stmid_for_deletion_,
-                                       mid_after_change_,
-                                       smid_after_change_,
-                                       tmid_after_change_,
-                                       stmid_after_change_));
-    ASSERT_EQ(kNullPointer,
-              passport_.ChangeUserData(kNewUsername_,
-                                       kNewPin_,
-                                       kPlainTextMasterDataAfterChange_,
-                                       mid_for_deletion_,
-                                       null_mid,
-                                       tmid_for_deletion_,
-                                       stmid_for_deletion_,
-                                       mid_after_change_,
-                                       smid_after_change_,
-                                       tmid_after_change_,
-                                       stmid_after_change_));
-    ASSERT_EQ(kNullPointer,
-              passport_.ChangeUserData(kNewUsername_,
-                                       kNewPin_,
-                                       kPlainTextMasterDataAfterChange_,
-                                       mid_for_deletion_,
-                                       smid_for_deletion_,
-                                       null_tmid,
-                                       stmid_for_deletion_,
-                                       mid_after_change_,
-                                       smid_after_change_,
-                                       tmid_after_change_,
-                                       stmid_after_change_));
-    ASSERT_EQ(kNullPointer,
-              passport_.ChangeUserData(kNewUsername_,
-                                       kNewPin_,
-                                       kPlainTextMasterDataAfterChange_,
-                                       mid_for_deletion_,
-                                       smid_for_deletion_,
-                                       tmid_for_deletion_,
-                                       null_tmid,
-                                       mid_after_change_,
-                                       smid_after_change_,
-                                       tmid_after_change_,
-                                       stmid_after_change_));
-    ASSERT_EQ(kNullPointer,
-              passport_.ChangeUserData(kNewUsername_,
-                                       kNewPin_,
-                                       kPlainTextMasterDataAfterChange_,
-                                       mid_for_deletion_,
-                                       smid_for_deletion_,
-                                       tmid_for_deletion_,
-                                       stmid_for_deletion_,
-                                       null_mid,
-                                       smid_after_change_,
-                                       tmid_after_change_,
-                                       stmid_after_change_));
-    ASSERT_EQ(kNullPointer,
-              passport_.ChangeUserData(kNewUsername_,
-                                       kNewPin_,
-                                       kPlainTextMasterDataAfterChange_,
-                                       mid_for_deletion_,
-                                       smid_for_deletion_,
-                                       tmid_for_deletion_,
-                                       stmid_for_deletion_,
-                                       mid_after_change_,
-                                       null_mid,
-                                       tmid_after_change_,
-                                       stmid_after_change_));
-    ASSERT_EQ(kNullPointer,
-              passport_.ChangeUserData(kNewUsername_,
-                                       kNewPin_,
-                                       kPlainTextMasterDataAfterChange_,
-                                       mid_for_deletion_,
-                                       smid_for_deletion_,
-                                       tmid_for_deletion_,
-                                       stmid_for_deletion_,
-                                       mid_after_change_,
-                                       smid_after_change_,
-                                       null_tmid,
-                                       stmid_after_change_));
-    ASSERT_EQ(kNullPointer,
-              passport_.ChangeUserData(kNewUsername_,
-                                       kNewPin_,
-                                       kPlainTextMasterDataAfterChange_,
-                                       mid_for_deletion_,
-                                       smid_for_deletion_,
-                                       tmid_for_deletion_,
-                                       stmid_for_deletion_,
-                                       mid_after_change_,
-                                       smid_after_change_,
-                                       tmid_after_change_,
-                                       null_tmid));
-  }
+  ASSERT_EQ(kNullPointer,
+            passport_.ChangeUserData(kNewUsername_,
+                                     kNewPin_,
+                                     kPlainTextMasterDataAfterChange_,
+                                     null_mid,
+                                     smid_for_deletion_,
+                                     tmid_for_deletion_,
+                                     stmid_for_deletion_,
+                                     mid_after_change_,
+                                     smid_after_change_,
+                                     tmid_after_change_,
+                                     stmid_after_change_));
+  ASSERT_EQ(kNullPointer,
+            passport_.ChangeUserData(kNewUsername_,
+                                     kNewPin_,
+                                     kPlainTextMasterDataAfterChange_,
+                                     mid_for_deletion_,
+                                     null_mid,
+                                     tmid_for_deletion_,
+                                     stmid_for_deletion_,
+                                     mid_after_change_,
+                                     smid_after_change_,
+                                     tmid_after_change_,
+                                     stmid_after_change_));
+  ASSERT_EQ(kNullPointer,
+            passport_.ChangeUserData(kNewUsername_,
+                                     kNewPin_,
+                                     kPlainTextMasterDataAfterChange_,
+                                     mid_for_deletion_,
+                                     smid_for_deletion_,
+                                     null_tmid,
+                                     stmid_for_deletion_,
+                                     mid_after_change_,
+                                     smid_after_change_,
+                                     tmid_after_change_,
+                                     stmid_after_change_));
+  ASSERT_EQ(kNullPointer,
+            passport_.ChangeUserData(kNewUsername_,
+                                     kNewPin_,
+                                     kPlainTextMasterDataAfterChange_,
+                                     mid_for_deletion_,
+                                     smid_for_deletion_,
+                                     tmid_for_deletion_,
+                                     null_tmid,
+                                     mid_after_change_,
+                                     smid_after_change_,
+                                     tmid_after_change_,
+                                     stmid_after_change_));
+  ASSERT_EQ(kNullPointer,
+            passport_.ChangeUserData(kNewUsername_,
+                                     kNewPin_,
+                                     kPlainTextMasterDataAfterChange_,
+                                     mid_for_deletion_,
+                                     smid_for_deletion_,
+                                     tmid_for_deletion_,
+                                     stmid_for_deletion_,
+                                     null_mid,
+                                     smid_after_change_,
+                                     tmid_after_change_,
+                                     stmid_after_change_));
+  ASSERT_EQ(kNullPointer,
+            passport_.ChangeUserData(kNewUsername_,
+                                     kNewPin_,
+                                     kPlainTextMasterDataAfterChange_,
+                                     mid_for_deletion_,
+                                     smid_for_deletion_,
+                                     tmid_for_deletion_,
+                                     stmid_for_deletion_,
+                                     mid_after_change_,
+                                     null_mid,
+                                     tmid_after_change_,
+                                     stmid_after_change_));
+  ASSERT_EQ(kNullPointer,
+            passport_.ChangeUserData(kNewUsername_,
+                                     kNewPin_,
+                                     kPlainTextMasterDataAfterChange_,
+                                     mid_for_deletion_,
+                                     smid_for_deletion_,
+                                     tmid_for_deletion_,
+                                     stmid_for_deletion_,
+                                     mid_after_change_,
+                                     smid_after_change_,
+                                     null_tmid,
+                                     stmid_after_change_));
+  ASSERT_EQ(kNullPointer,
+            passport_.ChangeUserData(kNewUsername_,
+                                     kNewPin_,
+                                     kPlainTextMasterDataAfterChange_,
+                                     mid_for_deletion_,
+                                     smid_for_deletion_,
+                                     tmid_for_deletion_,
+                                     stmid_for_deletion_,
+                                     mid_after_change_,
+                                     smid_after_change_,
+                                     tmid_after_change_,
+                                     null_tmid));
+
   ASSERT_FALSE(passport_.GetPacket(ANMID, false).get());
   ASSERT_FALSE(passport_.GetPacket(ANSMID, false).get());
   ASSERT_FALSE(passport_.GetPacket(ANTMID, false).get());
@@ -1688,100 +1714,60 @@ TEST_P(PassportVPTest, BEH_ChangeUserDetails) {
 
   std::string serialised_keyring(passport_.SerialiseKeyring());
   ASSERT_EQ(kSuccess, passport_.DeletePacket(STMID));
-  if (kChangePassword_) {
-    ASSERT_EQ(kNoStmid,
-              passport_.ChangePassword(kNewPassword_,
-                                       kPlainTextMasterDataAfterChange_,
-                                       &temp,
-                                       &temp,
-                                       tmid_after_change_,
-                                       stmid_after_change_));
-  } else {
-    ASSERT_EQ(kNoStmid,
-              passport_.ChangeUserData(kNewUsername_,
-                                       kNewPin_,
-                                       kPlainTextMasterDataAfterChange_,
-                                       mid_for_deletion_,
-                                       smid_for_deletion_,
-                                       tmid_for_deletion_,
-                                       stmid_for_deletion_,
-                                       mid_after_change_,
-                                       smid_after_change_,
-                                       tmid_after_change_,
-                                       stmid_after_change_));
-  }
+  ASSERT_EQ(kNoStmid,
+            passport_.ChangeUserData(kNewUsername_,
+                                     kNewPin_,
+                                     kPlainTextMasterDataAfterChange_,
+                                     mid_for_deletion_,
+                                     smid_for_deletion_,
+                                     tmid_for_deletion_,
+                                     stmid_for_deletion_,
+                                     mid_after_change_,
+                                     smid_after_change_,
+                                     tmid_after_change_,
+                                     stmid_after_change_));
 
   ASSERT_EQ(kSuccess, passport_.DeletePacket(TMID));
-  if (kChangePassword_) {
-    ASSERT_EQ(kNoTmid,
-              passport_.ChangePassword(kNewPassword_,
-                                       kPlainTextMasterDataAfterChange_,
-                                       &temp,
-                                       &temp,
-                                       tmid_after_change_,
-                                       stmid_after_change_));
-  } else {
-    ASSERT_EQ(kNoTmid,
-              passport_.ChangeUserData(kNewUsername_,
-                                       kNewPin_,
-                                       kPlainTextMasterDataAfterChange_,
-                                       mid_for_deletion_,
-                                       smid_for_deletion_,
-                                       tmid_for_deletion_,
-                                       stmid_for_deletion_,
-                                       mid_after_change_,
-                                       smid_after_change_,
-                                       tmid_after_change_,
-                                       stmid_after_change_));
-  }
+  ASSERT_EQ(kNoTmid,
+            passport_.ChangeUserData(kNewUsername_,
+                                     kNewPin_,
+                                     kPlainTextMasterDataAfterChange_,
+                                     mid_for_deletion_,
+                                     smid_for_deletion_,
+                                     tmid_for_deletion_,
+                                     stmid_for_deletion_,
+                                     mid_after_change_,
+                                     smid_after_change_,
+                                     tmid_after_change_,
+                                     stmid_after_change_));
 
   ASSERT_EQ(kSuccess, passport_.DeletePacket(SMID));
-  if (kChangePassword_) {
-    ASSERT_EQ(kNoSmid,
-              passport_.ChangePassword(kNewPassword_,
-                                       kPlainTextMasterDataAfterChange_,
-                                       &temp,
-                                       &temp,
-                                       tmid_after_change_,
-                                       stmid_after_change_));
-  } else {
-    ASSERT_EQ(kNoSmid,
-              passport_.ChangeUserData(kNewUsername_,
-                                       kNewPin_,
-                                       kPlainTextMasterDataAfterChange_,
-                                       mid_for_deletion_,
-                                       smid_for_deletion_,
-                                       tmid_for_deletion_,
-                                       stmid_for_deletion_,
-                                       mid_after_change_,
-                                       smid_after_change_,
-                                       tmid_after_change_,
-                                       stmid_after_change_));
-  }
+  ASSERT_EQ(kNoSmid,
+            passport_.ChangeUserData(kNewUsername_,
+                                     kNewPin_,
+                                     kPlainTextMasterDataAfterChange_,
+                                     mid_for_deletion_,
+                                     smid_for_deletion_,
+                                     tmid_for_deletion_,
+                                     stmid_for_deletion_,
+                                     mid_after_change_,
+                                     smid_after_change_,
+                                     tmid_after_change_,
+                                     stmid_after_change_));
 
   ASSERT_EQ(kSuccess, passport_.DeletePacket(MID));
-  if (kChangePassword_) {
-    ASSERT_EQ(kNoMid,
-              passport_.ChangePassword(kNewPassword_,
-                                       kPlainTextMasterDataAfterChange_,
-                                       &temp,
-                                       &temp,
-                                       tmid_after_change_,
-                                       stmid_after_change_));
-  } else {
-    ASSERT_EQ(kNoMid,
-              passport_.ChangeUserData(kNewUsername_,
-                                       kNewPin_,
-                                       kPlainTextMasterDataAfterChange_,
-                                       mid_for_deletion_,
-                                       smid_for_deletion_,
-                                       tmid_for_deletion_,
-                                       stmid_for_deletion_,
-                                       mid_after_change_,
-                                       smid_after_change_,
-                                       tmid_after_change_,
-                                       stmid_after_change_));
-  }
+  ASSERT_EQ(kNoMid,
+            passport_.ChangeUserData(kNewUsername_,
+                                     kNewPin_,
+                                     kPlainTextMasterDataAfterChange_,
+                                     mid_for_deletion_,
+                                     smid_for_deletion_,
+                                     tmid_for_deletion_,
+                                     stmid_for_deletion_,
+                                     mid_after_change_,
+                                     smid_after_change_,
+                                     tmid_after_change_,
+                                     stmid_after_change_));
 
   // Reset passport and test with good data
   passport_.Clear();
@@ -1824,39 +1810,23 @@ TEST_P(PassportVPTest, BEH_ChangeUserDetails) {
             stmid_before_change_->value());
 
   std::string tmid_old_value, stmid_old_value;
-  if (kChangePassword_) {
-    ASSERT_EQ(kSuccess,
-              passport_.ChangePassword(kNewPassword_,
-                                       kPlainTextMasterDataAfterChange_,
-                                       &tmid_old_value,
-                                       &stmid_old_value,
-                                       tmid_after_change_,
-                                       stmid_after_change_));
-    ASSERT_FALSE(passport_.GetPacket(MID, false).get());
-    ASSERT_FALSE(passport_.GetPacket(SMID, false).get());
-  } else {
-    DLOG(ERROR) << "\n\n\n";
-    ASSERT_EQ(kSuccess,
-              passport_.ChangeUserData(kNewUsername_,
-                                       kNewPin_,
-                                       kPlainTextMasterDataAfterChange_,
-                                       mid_for_deletion_,
-                                       smid_for_deletion_,
-                                       tmid_for_deletion_,
-                                       stmid_for_deletion_,
-                                       mid_after_change_,
-                                       smid_after_change_,
-                                       tmid_after_change_,
-                                       stmid_after_change_));
-    ASSERT_TRUE(passport_.GetPacket(MID, false).get() != NULL);
-    ASSERT_TRUE(passport_.GetPacket(SMID, false).get() != NULL);
-//    ASSERT_EQ(passport_.GetPacket(MID, false)->value(),
-//              mid_after_change_->value());
-//    ASSERT_EQ(passport_.GetPacket(SMID, false)->value(),
-//              smid_after_change_->value());
-    ASSERT_TRUE(passport_.GetPacket(MID, false)->Equals(mid_after_change_));
-    ASSERT_TRUE(passport_.GetPacket(SMID, false)-> Equals(smid_after_change_));
-  }
+  ASSERT_EQ(kSuccess,
+            passport_.ChangeUserData(kNewUsername_,
+                                     kNewPin_,
+                                     kPlainTextMasterDataAfterChange_,
+                                     mid_for_deletion_,
+                                     smid_for_deletion_,
+                                     tmid_for_deletion_,
+                                     stmid_for_deletion_,
+                                     mid_after_change_,
+                                     smid_after_change_,
+                                     tmid_after_change_,
+                                     stmid_after_change_));
+  ASSERT_TRUE(passport_.GetPacket(MID, false).get() != NULL);
+  ASSERT_TRUE(passport_.GetPacket(SMID, false).get() != NULL);
+  ASSERT_TRUE(passport_.GetPacket(MID, false)->Equals(mid_after_change_));
+  ASSERT_TRUE(passport_.GetPacket(SMID, false)-> Equals(smid_after_change_));
+
   ASSERT_TRUE(passport_.GetPacket(TMID, false).get() != NULL);
   ASSERT_TRUE(passport_.GetPacket(STMID, false).get() != NULL);
   ASSERT_TRUE(passport_.GetPacket(MID, true).get() != NULL);
@@ -1872,21 +1842,15 @@ TEST_P(PassportVPTest, BEH_ChangeUserDetails) {
   ASSERT_EQ(passport_.GetPacket(STMID, true)->value(),
             stmid_before_change_->value());
 
-  if (kChangePassword_) {
-    ASSERT_EQ(tmid_before_change_->value(), tmid_old_value);
-    ASSERT_EQ(stmid_before_change_->value(), stmid_old_value);
-    tmid_old_value.clear();
-    stmid_old_value.clear();
-  } else {
-    ASSERT_TRUE(mid_before_change_->Equals(mid_for_deletion_));
-    ASSERT_TRUE(smid_before_change_->Equals(smid_for_deletion_));
-    ASSERT_EQ(tmid_before_change_->value(),
-              tmid_for_deletion_->value());
-    ASSERT_EQ(stmid_before_change_->value(),
-              stmid_for_deletion_->value());
-    ASSERT_FALSE(mid_before_change_->Equals(mid_after_change_));
-    ASSERT_FALSE(smid_before_change_->Equals(smid_after_change_));
-  }
+  ASSERT_TRUE(mid_before_change_->Equals(mid_for_deletion_));
+  ASSERT_TRUE(smid_before_change_->Equals(smid_for_deletion_));
+  ASSERT_EQ(tmid_before_change_->value(),
+            tmid_for_deletion_->value());
+  ASSERT_EQ(stmid_before_change_->value(),
+            stmid_for_deletion_->value());
+  ASSERT_FALSE(mid_before_change_->Equals(mid_after_change_));
+  ASSERT_FALSE(smid_before_change_->Equals(smid_after_change_));
+
   ASSERT_FALSE(tmid_before_change_->Equals(tmid_after_change_));
   ASSERT_FALSE(stmid_before_change_->Equals(stmid_after_change_));
   ASSERT_EQ(1UL, mid_for_deletion_.use_count());
@@ -1899,11 +1863,7 @@ TEST_P(PassportVPTest, BEH_ChangeUserDetails) {
   ASSERT_EQ(1UL, stmid_after_change_.use_count());
 
   // Revert
-  if (kChangePassword_) {
-    ASSERT_EQ(kSuccess, passport_.RevertPasswordChange());
-  } else {
-    ASSERT_EQ(kSuccess, passport_.RevertUserDataChange());
-  }
+  ASSERT_EQ(kSuccess, passport_.RevertUserDataChange());
   ASSERT_FALSE(passport_.GetPacket(MID, false).get());
   ASSERT_FALSE(passport_.GetPacket(SMID, false).get());
   ASSERT_FALSE(passport_.GetPacket(TMID, false).get());
@@ -1920,34 +1880,22 @@ TEST_P(PassportVPTest, BEH_ChangeUserDetails) {
             stmid_before_change_->value());
 
   // Reapply change
-  if (kChangePassword_) {
-    ASSERT_EQ(kSuccess,
-              passport_.ChangePassword(kNewPassword_,
-                                       kPlainTextMasterDataAfterChange_,
-                                       &tmid_old_value,
-                                       &stmid_old_value,
-                                       tmid_after_change_,
-                                       stmid_after_change_));
-    ASSERT_FALSE(passport_.GetPacket(MID, false).get());
-    ASSERT_FALSE(passport_.GetPacket(SMID, false).get());
-  } else {
-    ASSERT_EQ(kSuccess,
-              passport_.ChangeUserData(kNewUsername_,
-                                       kNewPin_,
-                                       kPlainTextMasterDataAfterChange_,
-                                       mid_for_deletion_,
-                                       smid_for_deletion_,
-                                       tmid_for_deletion_,
-                                       stmid_for_deletion_,
-                                       mid_after_change_,
-                                       smid_after_change_,
-                                       tmid_after_change_,
-                                       stmid_after_change_));
-    ASSERT_TRUE(passport_.GetPacket(MID, false).get() != NULL);
-    ASSERT_TRUE(passport_.GetPacket(SMID, false).get() != NULL);
-    ASSERT_TRUE(passport_.GetPacket(MID, false)->Equals(mid_after_change_));
-    ASSERT_TRUE(passport_.GetPacket(SMID, false)->Equals(smid_after_change_));
-  }
+  ASSERT_EQ(kSuccess,
+            passport_.ChangeUserData(kNewUsername_,
+                                     kNewPin_,
+                                     kPlainTextMasterDataAfterChange_,
+                                     mid_for_deletion_,
+                                     smid_for_deletion_,
+                                     tmid_for_deletion_,
+                                     stmid_for_deletion_,
+                                     mid_after_change_,
+                                     smid_after_change_,
+                                     tmid_after_change_,
+                                     stmid_after_change_));
+  ASSERT_TRUE(passport_.GetPacket(MID, false).get() != NULL);
+  ASSERT_TRUE(passport_.GetPacket(SMID, false).get() != NULL);
+  ASSERT_TRUE(passport_.GetPacket(MID, false)->Equals(mid_after_change_));
+  ASSERT_TRUE(passport_.GetPacket(SMID, false)->Equals(smid_after_change_));
   ASSERT_TRUE(passport_.GetPacket(TMID, false).get() != NULL);
   ASSERT_TRUE(passport_.GetPacket(STMID, false).get() != NULL);
   ASSERT_TRUE(passport_.GetPacket(MID, true).get() != NULL);
@@ -1964,39 +1912,31 @@ TEST_P(PassportVPTest, BEH_ChangeUserDetails) {
             stmid_before_change_->value());
 
   // Fail to confirm change
-  if (kChangePassword_) {
-    ASSERT_EQ(kNullPointer,
-              passport_.ConfirmPasswordChange(null_tmid, stmid_after_change_));
-    ASSERT_EQ(kNullPointer,
-              passport_.ConfirmPasswordChange(tmid_after_change_, null_tmid));
-    ASSERT_FALSE(passport_.GetPacket(MID, false).get());
-    ASSERT_FALSE(passport_.GetPacket(SMID, false).get());
-  } else {
-    ASSERT_EQ(kNullPointer,
-              passport_.ConfirmUserDataChange(null_mid,
-                                              smid_after_change_,
-                                              tmid_after_change_,
-                                              stmid_after_change_));
-    ASSERT_EQ(kNullPointer,
-              passport_.ConfirmUserDataChange(mid_after_change_,
-                                              null_mid,
-                                              tmid_after_change_,
-                                              stmid_after_change_));
-    ASSERT_EQ(kNullPointer,
-              passport_.ConfirmUserDataChange(mid_after_change_,
-                                              smid_after_change_,
-                                              null_tmid,
-                                              stmid_after_change_));
-    ASSERT_EQ(kNullPointer,
-              passport_.ConfirmUserDataChange(mid_after_change_,
-                                              smid_after_change_,
-                                              tmid_after_change_,
-                                              null_tmid));
-    ASSERT_TRUE(passport_.GetPacket(MID, false).get() != NULL);
-    ASSERT_TRUE(passport_.GetPacket(SMID, false).get() != NULL);
-    ASSERT_TRUE(passport_.GetPacket(MID, false)->Equals(mid_after_change_));
-    ASSERT_TRUE(passport_.GetPacket(SMID, false)->Equals(smid_after_change_));
-  }
+  ASSERT_EQ(kNullPointer,
+            passport_.ConfirmUserDataChange(null_mid,
+                                            smid_after_change_,
+                                            tmid_after_change_,
+                                            stmid_after_change_));
+  ASSERT_EQ(kNullPointer,
+            passport_.ConfirmUserDataChange(mid_after_change_,
+                                            null_mid,
+                                            tmid_after_change_,
+                                            stmid_after_change_));
+  ASSERT_EQ(kNullPointer,
+            passport_.ConfirmUserDataChange(mid_after_change_,
+                                            smid_after_change_,
+                                            null_tmid,
+                                            stmid_after_change_));
+  ASSERT_EQ(kNullPointer,
+            passport_.ConfirmUserDataChange(mid_after_change_,
+                                            smid_after_change_,
+                                            tmid_after_change_,
+                                            null_tmid));
+  ASSERT_TRUE(passport_.GetPacket(MID, false).get() != NULL);
+  ASSERT_TRUE(passport_.GetPacket(SMID, false).get() != NULL);
+  ASSERT_TRUE(passport_.GetPacket(MID, false)->Equals(mid_after_change_));
+  ASSERT_TRUE(passport_.GetPacket(SMID, false)->Equals(smid_after_change_));
+
   ASSERT_TRUE(passport_.GetPacket(TMID, false).get() != NULL);
   ASSERT_TRUE(passport_.GetPacket(STMID, false).get() != NULL);
   ASSERT_TRUE(passport_.GetPacket(MID, true).get() != NULL);
@@ -2012,67 +1952,34 @@ TEST_P(PassportVPTest, BEH_ChangeUserDetails) {
   ASSERT_EQ(passport_.GetPacket(STMID, true)->value(),
             stmid_before_change_->value());
 
-  if (!kChangePassword_) {
-    ASSERT_EQ(kPacketsNotEqual,
-              passport_.ConfirmUserDataChange(mid_before_change_,
-                                              smid_after_change_,
-                                              tmid_after_change_,
-                                              stmid_after_change_));
-    ASSERT_TRUE(passport_.GetPacket(MID, false).get() != NULL);
-    ASSERT_TRUE(passport_.GetPacket(SMID, false).get() != NULL);
-    ASSERT_TRUE(passport_.GetPacket(TMID, false).get() != NULL);
-    ASSERT_TRUE(passport_.GetPacket(STMID, false).get() != NULL);
-    ASSERT_EQ(kPacketsNotEqual,
-              passport_.ConfirmUserDataChange(mid_after_change_,
-                                              smid_before_change_,
-                                              tmid_after_change_,
-                                              stmid_after_change_));
-    ASSERT_FALSE(passport_.GetPacket(MID, false).get());
-    ASSERT_TRUE(passport_.GetPacket(SMID, false).get() != NULL);
-    ASSERT_TRUE(passport_.GetPacket(TMID, false).get() != NULL);
-    ASSERT_TRUE(passport_.GetPacket(STMID, false).get() != NULL);
-  }
+  ASSERT_EQ(kPacketsNotEqual,
+            passport_.ConfirmUserDataChange(mid_after_change_,
+                                            smid_after_change_,
+                                            tmid_before_change_,
+                                            stmid_after_change_));
 
-  if (kChangePassword_) {
-    ASSERT_EQ(kPacketsNotEqual,
-              passport_.ConfirmPasswordChange(tmid_before_change_,
-                                              stmid_after_change_));
-  } else {
-    ASSERT_EQ(kPacketsNotEqual,
-              passport_.ConfirmUserDataChange(mid_after_change_,
-                                              smid_after_change_,
-                                              tmid_before_change_,
-                                              stmid_after_change_));
-  }
   ASSERT_FALSE(passport_.GetPacket(MID, false).get());
   ASSERT_FALSE(passport_.GetPacket(SMID, false).get());
   ASSERT_TRUE(passport_.GetPacket(TMID, false).get() != NULL);
   ASSERT_TRUE(passport_.GetPacket(STMID, false).get() != NULL);
 
-  if (kChangePassword_) {
-    ASSERT_EQ(kPacketsNotEqual,
-              passport_.ConfirmPasswordChange(tmid_after_change_,
-                                              stmid_before_change_));
-  } else {
-    ASSERT_EQ(kPacketsNotEqual,
-              passport_.ConfirmUserDataChange(mid_after_change_,
-                                              smid_after_change_,
-                                              tmid_after_change_,
-                                              stmid_before_change_));
-  }
+  ASSERT_EQ(kPacketsNotEqual,
+            passport_.ConfirmUserDataChange(mid_after_change_,
+                                            smid_after_change_,
+                                            tmid_after_change_,
+                                            stmid_before_change_));
+
   ASSERT_FALSE(passport_.GetPacket(MID, false).get());
   ASSERT_FALSE(passport_.GetPacket(SMID, false).get());
   ASSERT_FALSE(passport_.GetPacket(TMID, false).get());
   ASSERT_TRUE(passport_.GetPacket(STMID, false).get() != NULL);
 
   // Confirm change
-  if (kChangePassword_) {
-    ASSERT_EQ(kSuccess, passport_.ConfirmPasswordChange(tmid_after_change_,
-                                                        stmid_after_change_));
-  } else {
-    ASSERT_EQ(kSuccess, passport_.ConfirmUserDataChange(mid_after_change_,
-        smid_after_change_, tmid_after_change_, stmid_after_change_));
-  }
+  ASSERT_EQ(kSuccess, passport_.ConfirmUserDataChange(mid_after_change_,
+                                                      smid_after_change_,
+                                                      tmid_after_change_,
+                                                      stmid_after_change_));
+
   ASSERT_FALSE(passport_.GetPacket(MID, false).get());
   ASSERT_FALSE(passport_.GetPacket(SMID, false).get());
   ASSERT_FALSE(passport_.GetPacket(TMID, false).get());
@@ -2081,25 +1988,18 @@ TEST_P(PassportVPTest, BEH_ChangeUserDetails) {
   ASSERT_TRUE(passport_.GetPacket(SMID, true).get() != NULL);
   ASSERT_TRUE(passport_.GetPacket(TMID, true).get() != NULL);
   ASSERT_TRUE(passport_.GetPacket(STMID, true).get() != NULL);
-  if (!kChangePassword_) {
-    ASSERT_TRUE(passport_.GetPacket(MID, true)->Equals(mid_after_change_));
-    ASSERT_TRUE(passport_.GetPacket(SMID, true)->Equals(smid_after_change_));
-  }
+  ASSERT_TRUE(passport_.GetPacket(MID, true)->Equals(mid_after_change_));
+  ASSERT_TRUE(passport_.GetPacket(SMID, true)->Equals(smid_after_change_));
   ASSERT_EQ(passport_.GetPacket(TMID, true)->value(),
             tmid_after_change_->value());
   ASSERT_EQ(passport_.GetPacket(STMID, true)->value(),
             stmid_after_change_->value());
 
   // Confirm same change
-  if (kChangePassword_) {
-    ASSERT_EQ(kSuccess, passport_.ConfirmPasswordChange(tmid_after_change_,
-                                                        stmid_after_change_));
-  } else {
-    ASSERT_EQ(kSuccess, passport_.ConfirmUserDataChange(mid_after_change_,
-                                                        smid_after_change_,
-                                                        tmid_after_change_,
-                                                        stmid_after_change_));
-  }
+  ASSERT_EQ(kSuccess, passport_.ConfirmUserDataChange(mid_after_change_,
+                                                      smid_after_change_,
+                                                      tmid_after_change_,
+                                                      stmid_after_change_));
   ASSERT_FALSE(passport_.GetPacket(MID, false).get());
   ASSERT_FALSE(passport_.GetPacket(SMID, false).get());
   ASSERT_FALSE(passport_.GetPacket(TMID, false).get());
@@ -2108,45 +2008,35 @@ TEST_P(PassportVPTest, BEH_ChangeUserDetails) {
   ASSERT_TRUE(passport_.GetPacket(SMID, true).get() != NULL);
   ASSERT_TRUE(passport_.GetPacket(TMID, true).get() != NULL);
   ASSERT_TRUE(passport_.GetPacket(STMID, true).get() != NULL);
-  if (!kChangePassword_) {
-    ASSERT_TRUE(passport_.GetPacket(MID, true)->Equals(mid_after_change_));
-    ASSERT_TRUE(passport_.GetPacket(SMID, true)->Equals(smid_after_change_));
-  }
+  ASSERT_TRUE(passport_.GetPacket(MID, true)->Equals(mid_after_change_));
+  ASSERT_TRUE(passport_.GetPacket(SMID, true)->Equals(smid_after_change_));
   ASSERT_EQ(passport_.GetPacket(TMID, true)->value(),
             tmid_after_change_->value());
   ASSERT_EQ(passport_.GetPacket(STMID, true)->value(),
             stmid_after_change_->value());
 
   // Confirm with missing pending packets
-  if (kChangePassword_) {
-    ASSERT_EQ(kNoPendingPacket,
-              passport_.ConfirmPasswordChange(tmid_before_change_,
-                                              stmid_after_change_));
-    ASSERT_EQ(kNoPendingPacket,
-              passport_.ConfirmPasswordChange(tmid_after_change_,
-                                              stmid_before_change_));
-  } else {
-    ASSERT_EQ(kNoPendingPacket,
-              passport_.ConfirmUserDataChange(mid_before_change_,
-                                              smid_after_change_,
-                                              tmid_after_change_,
-                                              stmid_after_change_));
-    ASSERT_EQ(kNoPendingPacket,
-              passport_.ConfirmUserDataChange(mid_after_change_,
-                                              smid_before_change_,
-                                              tmid_after_change_,
-                                              stmid_after_change_));
-    ASSERT_EQ(kNoPendingPacket,
-              passport_.ConfirmUserDataChange(mid_after_change_,
-                                              smid_after_change_,
-                                              tmid_before_change_,
-                                              stmid_after_change_));
-    ASSERT_EQ(kNoPendingPacket,
-              passport_.ConfirmUserDataChange(mid_after_change_,
-                                              smid_after_change_,
-                                              tmid_after_change_,
-                                              stmid_before_change_));
-  }
+  ASSERT_EQ(kNoPendingPacket,
+            passport_.ConfirmUserDataChange(mid_before_change_,
+                                            smid_after_change_,
+                                            tmid_after_change_,
+                                            stmid_after_change_));
+  ASSERT_EQ(kNoPendingPacket,
+            passport_.ConfirmUserDataChange(mid_after_change_,
+                                            smid_before_change_,
+                                            tmid_after_change_,
+                                            stmid_after_change_));
+  ASSERT_EQ(kNoPendingPacket,
+            passport_.ConfirmUserDataChange(mid_after_change_,
+                                            smid_after_change_,
+                                            tmid_before_change_,
+                                            stmid_after_change_));
+  ASSERT_EQ(kNoPendingPacket,
+            passport_.ConfirmUserDataChange(mid_after_change_,
+                                            smid_after_change_,
+                                            tmid_after_change_,
+                                            stmid_before_change_));
+
   ASSERT_FALSE(passport_.GetPacket(MID, false).get());
   ASSERT_FALSE(passport_.GetPacket(SMID, false).get());
   ASSERT_FALSE(passport_.GetPacket(TMID, false).get());
@@ -2155,10 +2045,8 @@ TEST_P(PassportVPTest, BEH_ChangeUserDetails) {
   ASSERT_TRUE(passport_.GetPacket(SMID, true).get() != NULL);
   ASSERT_TRUE(passport_.GetPacket(TMID, true).get() != NULL);
   ASSERT_TRUE(passport_.GetPacket(STMID, true).get() != NULL);
-  if (!kChangePassword_) {
-    ASSERT_TRUE(passport_.GetPacket(MID, true)->Equals(mid_after_change_));
-    ASSERT_TRUE(passport_.GetPacket(SMID, true)->Equals(smid_after_change_));
-  }
+  ASSERT_TRUE(passport_.GetPacket(MID, true)->Equals(mid_after_change_));
+  ASSERT_TRUE(passport_.GetPacket(SMID, true)->Equals(smid_after_change_));
   ASSERT_EQ(passport_.GetPacket(TMID, true)->value(),
             tmid_after_change_->value());
   ASSERT_EQ(passport_.GetPacket(STMID, true)->value(),
@@ -2169,8 +2057,7 @@ INSTANTIATE_TEST_CASE_P(VPTest,
                         PassportVPTest,
                         testing::Values(kChangeUsername,
                                         kChangePin,
-                                        kChangeUsernameAndPin,
-                                        kChangePassword));
+                                        kChangeUsernameAndPin));
 
 }  // namespace test
 
