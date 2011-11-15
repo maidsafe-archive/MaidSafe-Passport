@@ -35,6 +35,12 @@
 #include "maidsafe/passport/passport_config.h"
 
 
+
+// As we never save the SystemPacketMap via a pointer and we do it to/from the
+// stack, we're OK to not track it.  This removes MSVC warning C4308.
+BOOST_CLASS_TRACKING(maidsafe::passport::SystemPacketHandler::SystemPacketMap,
+                     boost::serialization::track_never)
+
 namespace maidsafe {
 
 namespace passport {

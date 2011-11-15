@@ -94,6 +94,9 @@ class SystemPacketHandler {
     friend class boost::serialization::access;
 
    private:
+#ifdef __MSVC__
+#  pragma warning(disable: 4127)
+#endif
     template<typename Archive>
     void serialize(Archive &archive, const unsigned int /*version*/) {  // NOLINT (Fraser)
       pki::SignaturePacket sig_packet;
@@ -106,9 +109,16 @@ class SystemPacketHandler {
         stored.reset(new pki::SignaturePacket(sig_packet));
         BOOST_ASSERT(IsSignature(stored->packet_type(), false));
       }
+#ifdef __MSVC__
+#  pragma warning(default: 4127)
+#endif
     }
   };
+
+ public:
   typedef std::map<PacketType, PacketInfo> SystemPacketMap;
+
+ private:
   SystemPacketHandler &operator=(const SystemPacketHandler&);
   SystemPacketHandler(const SystemPacketHandler&);
   bool IsConfirmed(SystemPacketMap::iterator it);
@@ -121,4 +131,3 @@ class SystemPacketHandler {
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_PASSPORT_SYSTEM_PACKET_HANDLER_H_
-
