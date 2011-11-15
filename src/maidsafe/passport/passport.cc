@@ -149,23 +149,21 @@ int Passport::UpdateMasterData(
     std::shared_ptr<TmidPacket> new_tmid,
     std::shared_ptr<TmidPacket> tmid_for_deletion) {
   if (!mid_old_value || !smid_old_value || !updated_mid || !updated_smid ||
-      !new_tmid || !tmid_for_deletion)
+      !new_tmid || !tmid_for_deletion) {
+    DLOG(ERROR) << "Null pointers";
     return kNullPointer;
+  }
+  if (plain_text_master_data.empty()) {
+    DLOG(ERROR) << "Empty master data";
+    return kPassportError;
+  }
+
   // Sets SMID's RID to MID's RID and generate new RID for MID
   std::shared_ptr<MidPacket> retrieved_mid(Mid()), retrieved_smid(Smid());
   if (!retrieved_mid)
     return kNoMid;
   if (!retrieved_smid)
     return kNoSmid;
-  *mid_old_value = retrieved_mid->value();
-  *smid_old_value = retrieved_smid->value();
-  std::string new_rid(RandomString((RandomUint32() % 64) + 64));
-  std::string old_rid(retrieved_mid->rid());
-  int retries(0), max_retries(3);
-  while (new_rid == old_rid && retries < max_retries) {
-    new_rid = RandomString((RandomUint32() % 64) + 64);
-    ++retries;
-  }
 
   // Confirmed STMID (which is to be deleted) won't exist if this is first ever
   // update.  Pending STMID won't exist unless this is a repeat attempt.
@@ -173,6 +171,8 @@ int Passport::UpdateMasterData(
   if (!retrieved_tmid)
     return kNoTmid;
   std::shared_ptr<TmidPacket> retrieved_stmid(Stmid());
+  if (!retrieved_stmid)
+    return kNoStmid;
 
   std::shared_ptr<TmidPacket> tmid(
       new TmidPacket(retrieved_tmid->username(),
@@ -180,8 +180,6 @@ int Passport::UpdateMasterData(
                      false,
                      retrieved_tmid->password(),
                      plain_text_master_data));
-  if (tmid->name().empty())
-    return kPassportError;
 
   retrieved_mid->SetRid(tmid->name());
   retrieved_smid->SetRid(retrieved_tmid->name());
@@ -206,13 +204,7 @@ int Passport::UpdateMasterData(
   *updated_smid = *retrieved_smid;
   *new_tmid = *tmid;
   *tmid_for_deletion = *retrieved_stmid;
-//  if (retrieved_stmid && (!(retrieved_pending_stmid &&
-//      retrieved_pending_stmid->Equals(retrieved_tmid.get())))) {
-//    *tmid_for_deletion = *retrieved_stmid;
-//  } else {
-//    std::shared_ptr<TmidPacket> empty_tmid(new TmidPacket);
-//    *tmid_for_deletion = *empty_tmid;
-//  }
+
   return kSuccess;
 }
 
