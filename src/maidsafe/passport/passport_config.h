@@ -32,7 +32,6 @@
 #endif
 
 
-// *** typedefs, enums and consts ***
 namespace maidsafe {
 
 namespace passport {
@@ -40,86 +39,36 @@ namespace passport {
 enum ReturnCode {
   kSuccess = 0,
   kPassportError = -100001,
-  kNoPendingMid = -100002,
-  kNoPendingSmid = -100003,
-  kNoPendingTmid = -100004,
-  kNoPendingStmid = -100005,
-  kNoPendingPacket = -100006,
-  kNoMid = -100007,
-  kNoSmid = -100008,
-  kNoTmid = -100009,
-  kNoStmid = -100010,
-  kNoSigningPacket = -100011,
-  kNoPacket = -100012,
-  kBadSerialisedMidRid = -100013,
-  kBadSerialisedSmidRid = -100014,
-  kBadSerialisedTmidData = -100015,
-  kBadSerialisedStmidData = -100016,
-  kBadSerialisedKeyring = -100017,
-  kKeyringNotEmpty = -100018,
-  kPacketsNotEqual = -100019,
-  kMissingDependentPackets = -100020,
-  kNullPointer = -100021
+  kNoPendingPacket = -100002,
+  kNoPacket = -100003,
+  kBadSerialisedKeyring = -100004,
+  kKeyringNotEmpty = -100005,
+  kPacketsNotEqual = -100006,
+  kMissingDependentPackets = -100007,
+  kNullPointer = -100008,
+  kEmptyParameter = -100009,
+  kFailedToCreatePacket = -100010,
+  kFailedToConfirmPacket = -100011,
+  kFailedToRevertPacket = -100012
 };
 
 enum PacketType {
-  UNKNOWN = -1,
-  ANMID,
-  ANSMID,
-  ANTMID,
-  ANMAID,
-  MAID,
-  PMID,
-  MID,
-  SMID,
-  TMID,
-  STMID,
-  ANMPID,
-  MPID,
-  MSID,
-  PD_DIR
+  kUnknown = -1,
+  kAnmid,
+  kAnsmid,
+  kAntmid,
+  kAnmaid,
+  kMaid,
+  kPmid,
+  kMid,
+  kSmid,
+  kTmid,
+  kStmid,
+  kAnmpid,
+  kMpid
 };
 
-const std::uint16_t kCryptoKeyBufferCount(6);
-
-}  // namespace passport
-
-}  // namespace maidsafe
-
-
-// *** Forward declarations ***
-namespace testing { class AssertionResult; }
-
-namespace maidsafe {
-
-namespace pki {
-class Packet;
-}  // namespace pki
-
-namespace passport {
-
-class MidPacket;
-class TmidPacket;
-class Key;
-class Passport;
-
-namespace test {
-testing::AssertionResult Empty(std::shared_ptr<pki::Packet> packet);
-class SystemPacketsTest_BEH_CreateSig_Test;
-class SystemPacketsTest_BEH_PutToAndGetFromKey_Test;
-struct ExpectedMidContent;
-testing::AssertionResult Equal(
-    std::shared_ptr<ExpectedMidContent> expected,
-    std::shared_ptr<MidPacket> mid);
-struct ExpectedTmidContent;
-testing::AssertionResult Equal(
-    std::shared_ptr<ExpectedTmidContent> expected,
-    std::shared_ptr<TmidPacket> mid);
-class SystemPacketHandlerTest_FUNC_All_Test;
-class PassportTest_BEH_SetNewUserData_Test;
-class PassportTest_BEH_ConfirmNewUserData_Test;
-class NewPassportTest;
-}  // namespace test
+const std::string g_smid_appendix("1");
 
 }  // namespace passport
 

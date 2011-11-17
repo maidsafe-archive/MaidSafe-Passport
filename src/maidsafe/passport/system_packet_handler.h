@@ -51,18 +51,18 @@ class SystemPacketHandler {
   SystemPacketHandler() : packets_(), mutex_() {}
   ~SystemPacketHandler() {}
   // Add packet which is pending confirmation of storing
-  bool AddPendingPacket(std::shared_ptr<pki::Packet> packet);
+  bool AddPendingPacket(PacketPtr packet);
   // Change packet from pending to stored
-  int ConfirmPacket(std::shared_ptr<pki::Packet> packet);
+  int ConfirmPacket(PacketPtr packet);
   // Removes a pending packet (leaving last stored copy)
   bool RevertPacket(const PacketType &packet_type);
   // Returns a *copy* of the confirmed or pending packet
-  std::shared_ptr<pki::Packet> GetPacket(const PacketType &packet_type,
-                                         bool confirmed);
-  std::shared_ptr<pki::Packet> GetPacket(const std::string &packet_id,
-                                         bool confirmed);
-  bool Confirmed(const PacketType &packet_type);
-  std::string SerialiseKeyring();
+  PacketPtr GetPacket(const PacketType &packet_type,
+                                         bool confirmed) const;
+  PacketPtr GetPacket(const std::string &packet_id,
+                                         bool confirmed) const;
+  bool Confirmed(const PacketType &packet_type) const;
+  std::string SerialiseKeyring() const;
   int ParseKeyring(const std::string &serialised_keyring);
   void ClearKeyring();
   int DeletePacket(const PacketType &packet_type);
@@ -72,15 +72,15 @@ class SystemPacketHandler {
  private:
   struct PacketInfo {
     PacketInfo() : pending(), stored() {}
-    explicit PacketInfo(std::shared_ptr<pki::Packet> pend)
+    explicit PacketInfo(PacketPtr pend)
         : pending(),
           stored() {
       if (pend) {
         // keep a copy of the contents
-        if (pend->packet_type() == TMID || pend->packet_type() == STMID) {
+        if (pend->packet_type() == kTmid || pend->packet_type() == kStmid) {
           pending = std::shared_ptr<TmidPacket>(new TmidPacket(
               *std::static_pointer_cast<TmidPacket>(pend)));
-        } else if (pend->packet_type() == MID || pend->packet_type() == SMID) {
+        } else if (pend->packet_type() == kMid || pend->packet_type() == kSmid) {
           pending = std::shared_ptr<MidPacket>(new MidPacket(
               *std::static_pointer_cast<MidPacket>(pend)));
         } else if (IsSignature(pend->packet_type(), false)) {
@@ -90,7 +90,7 @@ class SystemPacketHandler {
         }
       }
     }
-    std::shared_ptr<pki::Packet> pending, stored;
+    PacketPtr pending, stored;
     friend class boost::serialization::access;
 
    private:
@@ -121,9 +121,9 @@ class SystemPacketHandler {
  private:
   SystemPacketHandler &operator=(const SystemPacketHandler&);
   SystemPacketHandler(const SystemPacketHandler&);
-  bool IsConfirmed(SystemPacketMap::iterator it);
+  bool IsConfirmed(SystemPacketMap::const_iterator it) const;
   SystemPacketMap packets_;
-  boost::mutex mutex_;
+  mutable boost::mutex mutex_;
 };
 
 }  // namespace passport

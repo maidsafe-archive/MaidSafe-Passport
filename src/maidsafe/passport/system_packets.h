@@ -37,9 +37,43 @@
 #endif
 
 
+namespace testing { class AssertionResult; }
+
+
 namespace maidsafe {
 
 namespace passport {
+
+typedef std::shared_ptr<pki::Packet> PacketPtr;
+
+class MidPacket;
+class TmidPacket;
+class Key;
+class Passport;
+
+namespace test {
+
+testing::AssertionResult Empty(PacketPtr packet);
+class SystemPacketsTest_BEH_CreateSig_Test;
+class SystemPacketsTest_BEH_PutToAndGetFromKey_Test;
+struct ExpectedMidContent;
+testing::AssertionResult Equal(
+    std::shared_ptr<ExpectedMidContent> expected,
+    std::shared_ptr<MidPacket> mid);
+struct ExpectedTmidContent;
+testing::AssertionResult Equal(
+    std::shared_ptr<ExpectedTmidContent> expected,
+    std::shared_ptr<TmidPacket> mid);
+class SystemPacketHandlerTest_FUNC_All_Test;
+class PassportTest_BEH_SetNewUserData_Test;
+class PassportTest_BEH_ConfirmNewUserData_Test;
+class PassportTest;
+
+}  // namespace test
+
+std::string MidName(const std::string &username,
+                    const std::string &pin,
+                    const std::string &smid_appendix);
 
 std::string DebugString(const int &packet_type);
 
@@ -53,15 +87,14 @@ class MidPacket : public pki::Packet {
             const std::string &smid_appendix);
   ~MidPacket() {}
   std::string value() const { return encrypted_rid_; }
-  bool Equals(const std::shared_ptr<pki::Packet> other) const;
+  bool Equals(const PacketPtr other) const;
   void SetRid(const std::string &rid);
   std::string DecryptRid(const std::string &encrypted_rid);
   std::string username() const { return username_; }
   std::string pin() const { return pin_; }
   std::string rid() const { return rid_; }
  private:
-  friend testing::AssertionResult
-      test::Empty(std::shared_ptr<pki::Packet> packet);
+  friend testing::AssertionResult test::Empty(PacketPtr packet);
   friend testing::AssertionResult test::Equal(
       std::shared_ptr<ExpectedMidContent> expected,
       std::shared_ptr<MidPacket> mid);
@@ -81,16 +114,15 @@ class TmidPacket : public pki::Packet {
              const std::string &plain_text_master_data);
   ~TmidPacket() {}
   std::string value() const { return encrypted_master_data_; }
-  bool Equals(const std::shared_ptr<pki::Packet> other) const;
+  bool Equals(const PacketPtr other) const;
   std::string DecryptPlainData(const std::string &password,
                                const std::string &encrypted_master_data);
-  void SetToSurrogate() { packet_type_ = STMID; }
+  void SetToSurrogate() { packet_type_ = kStmid; }
   std::string username() const { return username_; }
   std::string pin() const { return pin_; }
   std::string password() const { return password_; }
  private:
-  friend testing::AssertionResult
-      test::Empty(std::shared_ptr<pki::Packet> packet);
+  friend testing::AssertionResult test::Empty(PacketPtr packet);
   friend testing::AssertionResult test::Equal(
       std::shared_ptr<ExpectedTmidContent> expected,
       std::shared_ptr<TmidPacket> mid);
@@ -110,4 +142,3 @@ class TmidPacket : public pki::Packet {
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_PASSPORT_SYSTEM_PACKETS_H_
-

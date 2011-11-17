@@ -137,12 +137,8 @@ FINAL_MESSAGE()
 
 SET(MAIDSAFE_PASSPORT_INSTALL_FILES
       ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/passport.h
-      ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/new_passport.h
       ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/passport_config.h
-      ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/system_packet_handler.h
-      ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/system_packets.h
-      ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/version.h
-      ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/crypto_key_pairs.h)
+      ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/version.h)
 FOREACH(MAIDSAFE_PASSPORT_INSTALL_FILE ${MAIDSAFE_PASSPORT_INSTALL_FILES})
   CHECK_INSTALL_HEADER_HAS_VERSION_GUARD(${MAIDSAFE_PASSPORT_INSTALL_FILE})
 ENDFOREACH()

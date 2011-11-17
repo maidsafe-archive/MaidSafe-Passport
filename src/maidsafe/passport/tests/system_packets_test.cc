@@ -56,29 +56,26 @@ class SystemPacketsTest : public testing::Test {
           std::bind(static_cast<size_t(boost::asio::io_service::*)()>(
               &boost::asio::io_service::run), &asio_service_));
     }
-    signature_packet_types_.push_back(MPID);
-    signature_packet_types_.push_back(PMID);
-    signature_packet_types_.push_back(MAID);
-    signature_packet_types_.push_back(ANMID);
-    signature_packet_types_.push_back(ANSMID);
-    signature_packet_types_.push_back(ANTMID);
-    signature_packet_types_.push_back(ANMPID);
-    signature_packet_types_.push_back(ANMAID);
-    signature_packet_types_.push_back(MSID);
-    packet_types_.push_back(MID);
-    packet_types_.push_back(SMID);
-    packet_types_.push_back(TMID);
-    packet_types_.push_back(STMID);
-    packet_types_.push_back(MPID);
-    packet_types_.push_back(PMID);
-    packet_types_.push_back(MAID);
-    packet_types_.push_back(ANMID);
-    packet_types_.push_back(ANSMID);
-    packet_types_.push_back(ANTMID);
-    packet_types_.push_back(ANMPID);
-    packet_types_.push_back(ANMAID);
-    packet_types_.push_back(MSID);
-    packet_types_.push_back(PD_DIR);
+    signature_packet_types_.push_back(kMpid);
+    signature_packet_types_.push_back(kPmid);
+    signature_packet_types_.push_back(kMaid);
+    signature_packet_types_.push_back(kAnmid);
+    signature_packet_types_.push_back(kAnsmid);
+    signature_packet_types_.push_back(kAntmid);
+    signature_packet_types_.push_back(kAnmpid);
+    signature_packet_types_.push_back(kAnmaid);
+    packet_types_.push_back(kMid);
+    packet_types_.push_back(kSmid);
+    packet_types_.push_back(kTmid);
+    packet_types_.push_back(kStmid);
+    packet_types_.push_back(kMpid);
+    packet_types_.push_back(kPmid);
+    packet_types_.push_back(kMaid);
+    packet_types_.push_back(kAnmid);
+    packet_types_.push_back(kAnsmid);
+    packet_types_.push_back(kAntmid);
+    packet_types_.push_back(kAnmpid);
+    packet_types_.push_back(kAnmaid);
   }
 
   void TearDown() {
@@ -106,37 +103,33 @@ class SystemPacketsTest : public testing::Test {
 
 TEST_F(SystemPacketsTest, BEH_IsSignature) {
   // Check for self-signers
-  EXPECT_FALSE(IsSignature(MID, true));
-  EXPECT_FALSE(IsSignature(SMID, true));
-  EXPECT_FALSE(IsSignature(TMID, true));
-  EXPECT_FALSE(IsSignature(STMID, true));
-  EXPECT_FALSE(IsSignature(MPID, true));
-  EXPECT_FALSE(IsSignature(PMID, true));
-  EXPECT_FALSE(IsSignature(MAID, true));
-  EXPECT_TRUE(IsSignature(ANMID, true));
-  EXPECT_TRUE(IsSignature(ANSMID, true));
-  EXPECT_TRUE(IsSignature(ANTMID, true));
-  EXPECT_TRUE(IsSignature(ANMPID, true));
-  EXPECT_TRUE(IsSignature(ANMAID, true));
-  EXPECT_TRUE(IsSignature(MSID, true));
-  EXPECT_FALSE(IsSignature(PD_DIR, true));
-  EXPECT_FALSE(IsSignature(UNKNOWN, true));
+  EXPECT_FALSE(IsSignature(kMid, true));
+  EXPECT_FALSE(IsSignature(kSmid, true));
+  EXPECT_FALSE(IsSignature(kTmid, true));
+  EXPECT_FALSE(IsSignature(kStmid, true));
+  EXPECT_FALSE(IsSignature(kMpid, true));
+  EXPECT_FALSE(IsSignature(kPmid, true));
+  EXPECT_FALSE(IsSignature(kMaid, true));
+  EXPECT_TRUE(IsSignature(kAnmid, true));
+  EXPECT_TRUE(IsSignature(kAnsmid, true));
+  EXPECT_TRUE(IsSignature(kAntmid, true));
+  EXPECT_TRUE(IsSignature(kAnmpid, true));
+  EXPECT_TRUE(IsSignature(kAnmaid, true));
+  EXPECT_FALSE(IsSignature(kUnknown, true));
   // Check for all signature types
-  EXPECT_FALSE(IsSignature(MID, false));
-  EXPECT_FALSE(IsSignature(SMID, false));
-  EXPECT_FALSE(IsSignature(TMID, false));
-  EXPECT_FALSE(IsSignature(STMID, false));
-  EXPECT_TRUE(IsSignature(MPID, false));
-  EXPECT_TRUE(IsSignature(PMID, false));
-  EXPECT_TRUE(IsSignature(MAID, false));
-  EXPECT_TRUE(IsSignature(ANMID, false));
-  EXPECT_TRUE(IsSignature(ANSMID, false));
-  EXPECT_TRUE(IsSignature(ANTMID, false));
-  EXPECT_TRUE(IsSignature(ANMPID, false));
-  EXPECT_TRUE(IsSignature(ANMAID, false));
-  EXPECT_TRUE(IsSignature(MSID, false));
-  EXPECT_FALSE(IsSignature(PD_DIR, false));
-  EXPECT_FALSE(IsSignature(UNKNOWN, false));
+  EXPECT_FALSE(IsSignature(kMid, false));
+  EXPECT_FALSE(IsSignature(kSmid, false));
+  EXPECT_FALSE(IsSignature(kTmid, false));
+  EXPECT_FALSE(IsSignature(kStmid, false));
+  EXPECT_TRUE(IsSignature(kMpid, false));
+  EXPECT_TRUE(IsSignature(kPmid, false));
+  EXPECT_TRUE(IsSignature(kMaid, false));
+  EXPECT_TRUE(IsSignature(kAnmid, false));
+  EXPECT_TRUE(IsSignature(kAnsmid, false));
+  EXPECT_TRUE(IsSignature(kAntmid, false));
+  EXPECT_TRUE(IsSignature(kAnmpid, false));
+  EXPECT_TRUE(IsSignature(kAnmaid, false));
+  EXPECT_FALSE(IsSignature(kUnknown, false));
 }
 
 testing::AssertionResult Empty(std::shared_ptr<pki::Packet> packet) {
@@ -154,7 +147,7 @@ testing::AssertionResult Empty(std::shared_ptr<pki::Packet> packet) {
       return testing::AssertionFailure() << "Packet private key not empty.";
     if (!sig_packet->signature().empty())
       return testing::AssertionFailure() << "Packet public key sig not empty.";
-  } else if (packet_type == MID || packet_type == SMID) {
+  } else if (packet_type == kMid || packet_type == kSmid) {
     std::shared_ptr<MidPacket> mid_packet =
         std::static_pointer_cast<MidPacket>(packet);
     if (!mid_packet->username_.empty())
@@ -173,7 +166,7 @@ testing::AssertionResult Empty(std::shared_ptr<pki::Packet> packet) {
       return testing::AssertionFailure() << "Packet secure key not empty.";
     if (!mid_packet->secure_iv_.empty())
       return testing::AssertionFailure() << "Packet secure IV not empty.";
-  } else if (packet_type == TMID || packet_type == STMID) {
+  } else if (packet_type == kTmid || packet_type == kStmid) {
     std::shared_ptr<TmidPacket> tmid_packet =
         std::static_pointer_cast<TmidPacket>(packet);
     if (!tmid_packet->username_.empty())
@@ -194,7 +187,7 @@ testing::AssertionResult Empty(std::shared_ptr<pki::Packet> packet) {
       return testing::AssertionFailure() << "Packet secure IV not empty.";
     if (!tmid_packet->encrypted_master_data_.empty())
       return testing::AssertionFailure() << "Packet encrypted data not empty.";
-  } else if (packet_type != UNKNOWN) {
+  } else if (packet_type != kUnknown) {
     return testing::AssertionFailure() << "Invalid packet type.";
   }
   return testing::AssertionSuccess();
@@ -230,7 +223,7 @@ struct ExpectedMidContent {
 testing::AssertionResult Equal(
     std::shared_ptr<ExpectedMidContent> expected,
     std::shared_ptr<MidPacket> mid) {
-  std::string dbg(expected->packet_type == MID ? "MID" : "SMID");
+  std::string dbg(expected->packet_type == kMid ? "kMid" : "kSmid");
   if (expected->mid_name != mid->name())
     return testing::AssertionFailure() << dbg << " name wrong.";
   if (expected->encrypted_rid != mid->value())
@@ -272,7 +265,7 @@ TEST_F(SystemPacketsTest, BEH_CreateMid) {
   mid.reset(new MidPacket(kUsername, "Non-number", ""));
   EXPECT_TRUE(Empty(mid));
 
-  // Check MID with valid inputs
+  // Check kMid with valid inputs
   std::string expected_salt = crypto::Hash<crypto::SHA512>(kPinStr + kUsername);
   std::string expected_secure_password(crypto::SecurePassword(kUsername,
                                                               expected_salt,
@@ -288,18 +281,18 @@ TEST_F(SystemPacketsTest, BEH_CreateMid) {
   std::shared_ptr<ExpectedMidContent> expected_mid_content(
       new ExpectedMidContent(expected_mid_name, "", kUsername, kPinStr, "",
                              expected_salt, expected_secure_key,
-                             expected_secure_iv, MID, ""));
+                             expected_secure_iv, kMid, ""));
   EXPECT_FALSE(Empty(mid));
   EXPECT_TRUE(Equal(expected_mid_content, mid));
 
-  // Check SMID with valid inputs
+  // Check kSmid with valid inputs
   std::string expected_smid_name(
         crypto::Hash<crypto::SHA512>(kUsername + kPinStr + kSmidAppendix));
   MidPtr smid(new MidPacket(kUsername, kPinStr, kSmidAppendix));
   std::shared_ptr<ExpectedMidContent> expected_smid_content(
       new ExpectedMidContent(expected_smid_name, "", kUsername, kPinStr,
                              kSmidAppendix, expected_salt, expected_secure_key,
-                             expected_secure_iv, SMID, ""));
+                             expected_secure_iv, kSmid, ""));
   EXPECT_FALSE(Empty(smid));
   EXPECT_TRUE(Equal(expected_smid_content, smid));
 }
@@ -322,7 +315,7 @@ TEST_F(SystemPacketsTest, BEH_SetAndDecryptRid) {
   EXPECT_TRUE(Empty(mid));
   EXPECT_TRUE(Empty(smid));
 
-  // Check MID SetRid with first valid input
+  // Check kMid SetRid with first valid input
   std::string expected_salt(crypto::Hash<crypto::SHA512>(kPinStr + kUsername));
   std::string expected_secure_password(crypto::SecurePassword(kUsername,
                                                               expected_salt,
@@ -346,36 +339,36 @@ TEST_F(SystemPacketsTest, BEH_SetAndDecryptRid) {
   std::shared_ptr<ExpectedMidContent> expected_mid_content(
       new ExpectedMidContent(expected_mid_name, expected_encrypted_rid1,
                              kUsername, kPinStr, "", expected_salt,
-                             expected_secure_key, expected_secure_iv, MID,
+                             expected_secure_key, expected_secure_iv, kMid,
                              kRid1));
   EXPECT_FALSE(Empty(mid));
   EXPECT_TRUE(Equal(expected_mid_content, mid));
 
-  // Check MID reset rid with second valid input
+  // Check kMid reset rid with second valid input
   mid->SetRid(kRid2);
   expected_mid_content->encrypted_rid = expected_encrypted_rid2;
   expected_mid_content->rid = kRid2;
   EXPECT_FALSE(Empty(mid));
   EXPECT_TRUE(Equal(expected_mid_content, mid));
 
-  // Check MID reset rid with invalid input
+  // Check kMid reset rid with invalid input
   mid->SetRid("");
   EXPECT_TRUE(Empty(mid));
 
-  // Check MID decrypt valid encrypted second rid
+  // Check kMid decrypt valid encrypted second rid
   mid.reset(new MidPacket(kUsername, kPinStr, ""));
   EXPECT_EQ(kRid2, mid->DecryptRid(expected_encrypted_rid2));
   EXPECT_FALSE(Empty(mid));
   EXPECT_TRUE(Equal(expected_mid_content, mid));
 
-  // Check MID decrypt valid encrypted first rid
+  // Check kMid decrypt valid encrypted first rid
   EXPECT_EQ(kRid1, mid->DecryptRid(expected_encrypted_rid1));
   expected_mid_content->encrypted_rid = expected_encrypted_rid1;
   expected_mid_content->rid = kRid1;
   EXPECT_FALSE(Empty(mid));
   EXPECT_TRUE(Equal(expected_mid_content, mid));
 
-  // Check SMID SetRid with first valid input
+  // Check kSmid SetRid with first valid input
   std::string expected_smid_name(
       crypto::Hash<crypto::SHA512>(kUsername + kPinStr + kSmidAppendix));
   smid.reset(new MidPacket(kUsername, kPinStr, kSmidAppendix));
@@ -383,29 +376,29 @@ TEST_F(SystemPacketsTest, BEH_SetAndDecryptRid) {
   std::shared_ptr<ExpectedMidContent> expected_smid_content(
       new ExpectedMidContent(expected_smid_name, expected_encrypted_rid1,
                              kUsername, kPinStr, kSmidAppendix, expected_salt,
-                             expected_secure_key, expected_secure_iv, SMID,
+                             expected_secure_key, expected_secure_iv, kSmid,
                              kRid1));
   EXPECT_FALSE(Empty(smid));
   EXPECT_TRUE(Equal(expected_smid_content, smid));
 
-  // Check SMID reset rid with second valid input
+  // Check kSmid reset rid with second valid input
   smid->SetRid(kRid2);
   expected_smid_content->encrypted_rid = expected_encrypted_rid2;
   expected_smid_content->rid = kRid2;
   EXPECT_FALSE(Empty(smid));
   EXPECT_TRUE(Equal(expected_smid_content, smid));
 
-  // Check SMID reset rid with invalid input
+  // Check kSmid reset rid with invalid input
   smid->SetRid("");
   EXPECT_TRUE(Empty(smid));
 
-  // Check SMID decrypt valid encrypted second rid
+  // Check kSmid decrypt valid encrypted second rid
   smid.reset(new MidPacket(kUsername, kPinStr, kSmidAppendix));
   EXPECT_EQ(kRid2, smid->DecryptRid(expected_encrypted_rid2));
   EXPECT_FALSE(Empty(smid));
   EXPECT_TRUE(Equal(expected_smid_content, smid));
 
-  // Check SMID decrypt valid encrypted first rid
+  // Check kSmid decrypt valid encrypted first rid
   EXPECT_EQ(kRid1, smid->DecryptRid(expected_encrypted_rid1));
   expected_smid_content->encrypted_rid = expected_encrypted_rid1;
   expected_smid_content->rid = kRid1;
@@ -445,7 +438,7 @@ struct ExpectedTmidContent {
 testing::AssertionResult Equal(
     std::shared_ptr<ExpectedTmidContent> expected,
     std::shared_ptr<TmidPacket> tmid) {
-  std::string dbg(expected->packet_type == TMID ? "TMID" : "STMID");
+  std::string dbg(expected->packet_type == kTmid ? "kTmid" : "kStmid");
   if (tmid->password().empty() || tmid->plain_text_master_data_.empty()) {
     if (!tmid->name().empty())
       return testing::AssertionFailure() << dbg << " name should be empty.";
@@ -506,12 +499,12 @@ TEST_F(SystemPacketsTest, BEH_CreateTmid) {
   tmid.reset(new TmidPacket(kUsername, kPinStr, false, "", ""));
   std::shared_ptr<ExpectedTmidContent> expected_tmid_content(
       new ExpectedTmidContent(expected_tmid_name, "", kUsername, kPinStr, "",
-                              "", "", "", "", TMID, kRid));
+                              "", "", "", "", kTmid, kRid));
   EXPECT_FALSE(Empty(tmid));
   EXPECT_TRUE(Equal(expected_tmid_content, tmid));
 
   tmid->SetToSurrogate();
-  expected_tmid_content->packet_type = STMID;
+  expected_tmid_content->packet_type = kStmid;
   tmid.reset(new TmidPacket(kUsername, kPinStr, true, "", ""));
   EXPECT_TRUE(Equal(expected_tmid_content, tmid));
 
@@ -532,7 +525,7 @@ TEST_F(SystemPacketsTest, BEH_CreateTmid) {
                                        substr(crypto::AES256_KeySize,
                                               crypto::AES256_IVSize);
   tmid.reset(new TmidPacket(kUsername, kPinStr, false, kPassword, ""));
-  expected_tmid_content->packet_type = TMID;
+  expected_tmid_content->packet_type = kTmid;
   expected_tmid_content->password = kPassword;
   expected_tmid_content->salt = expected_salt;
   expected_tmid_content->secure_key = expected_secure_key;
@@ -605,11 +598,11 @@ TEST_F(SystemPacketsTest, BEH_SetAndDecryptData) {
       new ExpectedTmidContent(expected_tmid_name, expected_encrypted_data,
                               kUsername, kPinStr, kPassword, kPlainData,
                               expected_salt, expected_secure_key,
-                              expected_secure_iv, TMID, kRid));
+                              expected_secure_iv, kTmid, kRid));
   EXPECT_FALSE(Empty(tmid));
   EXPECT_TRUE(Equal(expected_tmid_content, tmid));
   tmid->SetToSurrogate();
-  expected_tmid_content->packet_type = STMID;
+  expected_tmid_content->packet_type = kStmid;
   EXPECT_TRUE(Equal(expected_tmid_content, tmid));
   tmid.reset(new TmidPacket(kUsername, kPinStr, true, kPassword,
                             kPlainData));
@@ -617,7 +610,7 @@ TEST_F(SystemPacketsTest, BEH_SetAndDecryptData) {
 
   // Decrypt invalid data
   tmid.reset(new TmidPacket(kUsername, kPinStr, false, "", ""));
-  expected_tmid_content->packet_type = TMID;
+  expected_tmid_content->packet_type = kTmid;
   EXPECT_FALSE(Empty(tmid));
   expected_tmid_content->encrypted_data.clear();
   expected_tmid_content->password.clear();

@@ -34,38 +34,40 @@ namespace maidsafe {
 
 namespace passport {
 
+std::string MidName(const std::string &username,
+                    const std::string &pin,
+                    const std::string &smid_appendix) {
+  return crypto::Hash<crypto::SHA512>(username + pin + smid_appendix);
+}
+
 std::string DebugString(const int &packet_type) {
   switch (packet_type) {
-    case UNKNOWN:
+    case kUnknown:
       return "unknown";
-    case MID:
+    case kMid:
       return "MID";
-    case SMID:
+    case kSmid:
       return "SMID";
-    case TMID:
+    case kTmid:
       return "TMID";
-    case STMID:
+    case kStmid:
       return "STMID";
-    case MPID:
+    case kMpid:
       return "MPID";
-    case PMID:
+    case kPmid:
       return "PMID";
-    case MAID:
+    case kMaid:
       return "MAID";
-    case ANMID:
+    case kAnmid:
       return "ANMID";
-    case ANSMID:
+    case kAnsmid:
       return "ANSMID";
-    case ANTMID:
+    case kAntmid:
       return "ANTMID";
-    case ANMPID:
+    case kAnmpid:
       return "ANMPID";
-    case ANMAID:
-      return "ANMAID";
-    case MSID:
-      return "MSID";
-    case PD_DIR:
-      return "PD_DIR";
+    case kAnmaid:
+      return "ANMIAD";
     default:
       return "error";
   }
@@ -73,16 +75,15 @@ std::string DebugString(const int &packet_type) {
 
 bool IsSignature(const int &packet_type, bool check_for_self_signer) {
   switch (packet_type) {
-    case MPID:
-    case PMID:
-    case MAID:
+    case kMpid:
+    case kPmid:
+    case kMaid:
       return !check_for_self_signer;
-    case ANMID:
-    case ANSMID:
-    case ANTMID:
-    case ANMPID:
-    case ANMAID:
-    case MSID:
+    case kAnmid:
+    case kAnsmid:
+    case kAntmid:
+    case kAnmpid:
+    case kAnmaid:
       return true;
     default:
       return false;
@@ -91,7 +92,7 @@ bool IsSignature(const int &packet_type, bool check_for_self_signer) {
 
 
 MidPacket::MidPacket()
-    : pki::Packet(UNKNOWN),
+    : pki::Packet(kUnknown),
       username_(),
       pin_(),
       smid_appendix_(),
@@ -104,7 +105,7 @@ MidPacket::MidPacket()
 MidPacket::MidPacket(const std::string &username,
                      const std::string &pin,
                      const std::string &smid_appendix)
-    : pki::Packet(smid_appendix.empty() ? MID : SMID),
+    : pki::Packet(smid_appendix.empty() ? kMid : kSmid),
       username_(username),
       pin_(pin),
       smid_appendix_(smid_appendix),
@@ -133,7 +134,7 @@ void MidPacket::Initialise() {
   secure_key_ = secure_password.substr(0, crypto::AES256_KeySize);
   secure_iv_ = secure_password.substr(crypto::AES256_KeySize,
                                       crypto::AES256_IVSize);
-  name_ = crypto::Hash<crypto::SHA512>(username_ + pin_ + smid_appendix_);
+  name_ = MidName(username_, pin_, smid_appendix_);
   if (name_.empty())
     Clear();
 }
@@ -183,7 +184,7 @@ void MidPacket::Clear() {
   rid_.clear();
 }
 
-bool MidPacket::Equals(const std::shared_ptr<pki::Packet> other) const {
+bool MidPacket::Equals(const PacketPtr other) const {
   const std::shared_ptr<MidPacket> mid(
       std::static_pointer_cast<MidPacket>(other));
   return packet_type_ == mid->packet_type_ &&
@@ -200,7 +201,7 @@ bool MidPacket::Equals(const std::shared_ptr<pki::Packet> other) const {
 
 
 TmidPacket::TmidPacket()
-    : pki::Packet(UNKNOWN),
+    : pki::Packet(kUnknown),
       username_(),
       pin_(),
       password_(),
@@ -218,7 +219,7 @@ TmidPacket::TmidPacket(const std::string &username,
                        bool surrogate,
                        const std::string &password,
                        const std::string &plain_text_master_data)
-    : pki::Packet(surrogate ? STMID : TMID),
+    : pki::Packet(surrogate ? kStmid : kTmid),
       username_(username),
       pin_(pin),
       password_(password),
@@ -254,7 +255,7 @@ void TmidPacket::Initialise() {
 
   name_ = crypto::Hash<crypto::SHA512>(encrypted_master_data_);
   if (name_.empty())
-    DLOG(ERROR) << "TmidPacket::Initialise: Empty TMID name";
+    DLOG(ERROR) << "TmidPacket::Initialise: Empty kTmid name";
 }
 
 bool TmidPacket::SetPassword() {
@@ -410,7 +411,7 @@ void TmidPacket::Clear() {
   obfuscation_salt_.clear();
 }
 
-bool TmidPacket::Equals(const std::shared_ptr<pki::Packet> other) const {
+bool TmidPacket::Equals(const PacketPtr other) const {
   const std::shared_ptr<TmidPacket> tmid(
       std::static_pointer_cast<TmidPacket>(other));
 //  return packet_type_ == tmid->packet_type_ &&

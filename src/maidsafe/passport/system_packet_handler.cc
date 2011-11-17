@@ -45,8 +45,7 @@ namespace maidsafe {
 
 namespace passport {
 
-bool SystemPacketHandler::AddPendingPacket(
-    std::shared_ptr<pki::Packet> packet) {
+bool SystemPacketHandler::AddPendingPacket(PacketPtr packet) {
   if (!packet)
     return false;
   boost::mutex::scoped_lock lock(mutex_);
@@ -69,8 +68,7 @@ bool SystemPacketHandler::AddPendingPacket(
   }
 }
 
-int SystemPacketHandler::ConfirmPacket(
-    std::shared_ptr<pki::Packet> packet) {
+int SystemPacketHandler::ConfirmPacket(PacketPtr packet) {
   if (!packet)
     return kNullPointer;
   PacketType packet_type = static_cast<PacketType>(packet->packet_type());
@@ -90,31 +88,31 @@ int SystemPacketHandler::ConfirmPacket(
   }
   bool dependencies_confirmed(true);
   switch (packet_type) {
-    case MID:
-      dependencies_confirmed = IsConfirmed(packets_.find(ANMID));
+    case kMid:
+      dependencies_confirmed = IsConfirmed(packets_.find(kAnmid));
       break;
-    case SMID:
-      dependencies_confirmed = IsConfirmed(packets_.find(ANSMID));
+    case kSmid:
+      dependencies_confirmed = IsConfirmed(packets_.find(kAnsmid));
       break;
-    case TMID:
-      dependencies_confirmed = IsConfirmed(packets_.find(ANTMID)) &&
-                               IsConfirmed(packets_.find(MID)) &&
-                               IsConfirmed(packets_.find(ANMID));
+    case kTmid:
+      dependencies_confirmed = IsConfirmed(packets_.find(kAntmid)) &&
+                               IsConfirmed(packets_.find(kMid)) &&
+                               IsConfirmed(packets_.find(kAnmid));
       break;
-    case STMID:
-      dependencies_confirmed = IsConfirmed(packets_.find(ANTMID)) &&
-                               IsConfirmed(packets_.find(SMID)) &&
-                               IsConfirmed(packets_.find(ANSMID));
+    case kStmid:
+      dependencies_confirmed = IsConfirmed(packets_.find(kAntmid)) &&
+                               IsConfirmed(packets_.find(kSmid)) &&
+                               IsConfirmed(packets_.find(kAnsmid));
       break;
-    case MPID:
-      dependencies_confirmed = IsConfirmed(packets_.find(ANMPID));
+    case kMpid:
+      dependencies_confirmed = IsConfirmed(packets_.find(kAnmpid));
       break;
-    case PMID:
-      dependencies_confirmed = IsConfirmed(packets_.find(MAID)) &&
-                               IsConfirmed(packets_.find(ANMAID));
+    case kPmid:
+      dependencies_confirmed = IsConfirmed(packets_.find(kMaid)) &&
+                               IsConfirmed(packets_.find(kAnmaid));
       break;
-    case MAID:
-      dependencies_confirmed = IsConfirmed(packets_.find(ANMAID));
+    case kMaid:
+      dependencies_confirmed = IsConfirmed(packets_.find(kAnmaid));
       break;
     default:
       break;
@@ -150,17 +148,16 @@ bool SystemPacketHandler::RevertPacket(const PacketType &packet_type) {
   }
 }
 
-std::shared_ptr<pki::Packet> SystemPacketHandler::GetPacket(
-    const PacketType &packet_type,
-    bool confirmed) {
-  std::shared_ptr<pki::Packet> packet;
+PacketPtr SystemPacketHandler::GetPacket(const PacketType &packet_type,
+                                         bool confirmed) const {
+  PacketPtr packet;
   boost::mutex::scoped_lock lock(mutex_);
-  SystemPacketMap::iterator it = packets_.find(packet_type);
+  SystemPacketMap::const_iterator it = packets_.find(packet_type);
   if (it == packets_.end()) {
     DLOG(ERROR) << "SystemPacketHandler::Packet: Missing "
                 << DebugString(packet_type) << std::endl;
   } else {
-    std::shared_ptr<pki::Packet> retrieved_packet;
+    PacketPtr retrieved_packet;
     if (confirmed && (*it).second.stored) {
       retrieved_packet = (*it).second.stored;
     } else if (!confirmed && (*it).second.pending) {
@@ -168,10 +165,10 @@ std::shared_ptr<pki::Packet> SystemPacketHandler::GetPacket(
     }
     if (retrieved_packet) {
       // return a copy of the contents
-      if (packet_type == TMID || packet_type == STMID) {
+      if (packet_type == kTmid || packet_type == kStmid) {
         packet = std::shared_ptr<TmidPacket>(new TmidPacket(
             *std::static_pointer_cast<TmidPacket>(retrieved_packet)));
-      } else if (packet_type == MID || packet_type == SMID) {
+      } else if (packet_type == kMid || packet_type == kSmid) {
         packet = std::shared_ptr<MidPacket>(new MidPacket(
             *std::static_pointer_cast<MidPacket>(retrieved_packet)));
       } else if (IsSignature(packet_type, false)) {
@@ -192,15 +189,14 @@ std::shared_ptr<pki::Packet> SystemPacketHandler::GetPacket(
   return packet;
 }
 
-std::shared_ptr<pki::Packet> SystemPacketHandler::GetPacket(
-    const std::string &packet_id,
-    bool confirmed) {
-  std::shared_ptr<pki::Packet> packet;
+PacketPtr SystemPacketHandler::GetPacket(const std::string &packet_id,
+                                         bool confirmed) const {
+  PacketPtr packet;
   boost::mutex::scoped_lock lock(mutex_);
   auto it = packets_.begin();
   bool done(false);
   for (; it != packets_.end() && !done; ++it) {
-    std::shared_ptr<pki::Packet> retrieved_packet;
+    PacketPtr retrieved_packet;
     if ((*it).second.stored &&
         (*it).second.stored->name() == packet_id &&
         confirmed) {
@@ -213,12 +209,12 @@ std::shared_ptr<pki::Packet> SystemPacketHandler::GetPacket(
     if (retrieved_packet) {
       // return a copy of the contents
       done = true;
-      if (retrieved_packet->packet_type() == TMID ||
-          retrieved_packet->packet_type() == STMID) {
+      if (retrieved_packet->packet_type() == kTmid ||
+          retrieved_packet->packet_type() == kStmid) {
         packet = std::shared_ptr<TmidPacket>(new TmidPacket(
             *std::static_pointer_cast<TmidPacket>(retrieved_packet)));
-      } else if (retrieved_packet->packet_type() == MID ||
-                 retrieved_packet->packet_type() == SMID) {
+      } else if (retrieved_packet->packet_type() == kMid ||
+                 retrieved_packet->packet_type() == kSmid) {
         packet = std::shared_ptr<MidPacket>(new MidPacket(
             *std::static_pointer_cast<MidPacket>(retrieved_packet)));
       } else if (IsSignature(retrieved_packet->packet_type(), false)) {
@@ -242,20 +238,21 @@ std::shared_ptr<pki::Packet> SystemPacketHandler::GetPacket(
   return packet;
 }
 
-bool SystemPacketHandler::Confirmed(const PacketType &packet_type) {
+bool SystemPacketHandler::Confirmed(const PacketType &packet_type) const {
   boost::mutex::scoped_lock lock(mutex_);
   return IsConfirmed(packets_.find(packet_type));
 }
 
-bool SystemPacketHandler::IsConfirmed(SystemPacketMap::iterator it) {
+bool SystemPacketHandler::IsConfirmed(
+    SystemPacketMap::const_iterator it) const {
   return (it != packets_.end() && !(*it).second.pending && (*it).second.stored);
 }
 
-std::string SystemPacketHandler::SerialiseKeyring() {
+std::string SystemPacketHandler::SerialiseKeyring() const {
   std::ostringstream key_chain(std::ios_base::binary);
   boost::archive::text_oarchive output_archive(key_chain);
   boost::mutex::scoped_lock lock(mutex_);
-  SystemPacketMap::iterator it = packets_.begin();
+  SystemPacketMap::const_iterator it = packets_.begin();
   SystemPacketMap spm;
   while (it != packets_.end()) {
     if (IsSignature((*it).first, false) && (*it).second.stored)
