@@ -34,11 +34,11 @@ namespace maidsafe {
 namespace passport {
 
 void Passport::Init() {
-  crypto_key_pairs_.CreateKeyPairs(kCryptoKeyBufferCount);
+//  crypto_key_pairs_.CreateKeyPairs(kCryptoKeyBufferCount);
 }
 
 void Passport::StopCreatingKeyPairs() {
-  crypto_key_pairs_.Stop();
+//  crypto_key_pairs_.Stop();
 }
 
 int Passport::SetInitialDetails(const std::string &username,

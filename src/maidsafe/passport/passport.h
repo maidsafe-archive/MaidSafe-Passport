@@ -43,9 +43,8 @@ namespace passport {
 class Passport {
  public:
   // Size to generate RSA keys in bits.
-  Passport(AsioService &asio_service, const uint16_t &rsa_key_size)  // NOLINT (Fraser)
-      : crypto_key_pairs_(asio_service, rsa_key_size),
-        packet_handler_(),
+  Passport(AsioService &/*asio_service*/, const uint16_t &/*rsa_key_size*/)  // NOLINT (Fraser)
+      : packet_handler_(),
         kSmidAppendix_("1"),
         pending_public_name_(),
         public_name_() {}
@@ -267,9 +266,6 @@ class Passport {
 
   // Removes all packets from packet_handler_ and clears public name
   void Clear();
-
- protected:
-  CryptoKeyPairs crypto_key_pairs_;
 
  private:
   friend class test::PassportTest_BEH_SetNewUserData_Test;

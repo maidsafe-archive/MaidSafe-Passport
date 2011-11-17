@@ -137,6 +137,7 @@ FINAL_MESSAGE()
 
 SET(MAIDSAFE_PASSPORT_INSTALL_FILES
       ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/passport.h
+      ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/new_passport.h
       ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/passport_config.h
       ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/system_packet_handler.h
       ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/system_packets.h

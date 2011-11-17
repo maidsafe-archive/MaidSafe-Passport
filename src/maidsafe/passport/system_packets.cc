@@ -234,7 +234,7 @@ TmidPacket::TmidPacket(const std::string &username,
 }
 
 void TmidPacket::Initialise() {
-  if (username_.empty() || pin_.empty()/* || rid_.empty()*/) {
+  if (username_.empty() || pin_.empty() || rid_.empty()) {
     DLOG(ERROR) << "TmidPacket::Initialise: Empty uname/pin";
     return Clear();
   }

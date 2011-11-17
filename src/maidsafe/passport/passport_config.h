@@ -64,18 +64,18 @@ enum ReturnCode {
 
 enum PacketType {
   UNKNOWN = -1,
+  ANMID,
+  ANSMID,
+  ANTMID,
+  ANMAID,
+  MAID,
+  PMID,
   MID,
   SMID,
   TMID,
   STMID,
-  MPID,
-  MAID,
-  PMID,
-  ANMID,
-  ANSMID,
-  ANTMID,
   ANMPID,
-  ANMAID,
+  MPID,
   MSID,
   PD_DIR
 };
@@ -91,6 +91,10 @@ const std::uint16_t kCryptoKeyBufferCount(6);
 namespace testing { class AssertionResult; }
 
 namespace maidsafe {
+
+namespace pki {
+class Packet;
+}  // namespace pki
 
 namespace passport {
 
@@ -114,6 +118,7 @@ testing::AssertionResult Equal(
 class SystemPacketHandlerTest_FUNC_All_Test;
 class PassportTest_BEH_SetNewUserData_Test;
 class PassportTest_BEH_ConfirmNewUserData_Test;
+class NewPassportTest;
 }  // namespace test
 
 }  // namespace passport
