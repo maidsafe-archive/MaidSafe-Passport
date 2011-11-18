@@ -24,6 +24,8 @@
 #ifndef MAIDSAFE_PASSPORT_PASSPORT_CONFIG_H_
 #define MAIDSAFE_PASSPORT_PASSPORT_CONFIG_H_
 
+#include <string>
+
 #include "maidsafe/passport/version.h"
 
 #if MAIDSAFE_PASSPORT_VERSION != 109

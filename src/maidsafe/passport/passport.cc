@@ -33,22 +33,32 @@ namespace passport {
 std::string MidName(const std::string &username,
                     const std::string &pin,
                     bool surrogate) {
-  if (surrogate)
-    return MidName(username, pin, g_smid_appendix);
-  else
-    return MidName(username, pin, "");
+  return GetMidName(username, pin, surrogate ? g_smid_appendix : "");
 }
 
 std::string DecryptRid(const std::string &username,
                        const std::string &pin,
-                       const std::string &encrypted_rid,
-                       bool surrogate) {
+                       const std::string &encrypted_rid) {
   if (username.empty() || pin.empty() || encrypted_rid.empty()) {
     DLOG(ERROR) << "Empty encrypted RID or user data.";
     return "";
   }
-  MidPacket mid(username, pin, (surrogate ? g_smid_appendix : ""));
+  MidPacket mid(username, pin, "");
   return mid.DecryptRid(encrypted_rid);
+}
+
+std::string DecryptMasterData(const std::string &username,
+                              const std::string &pin,
+                              const std::string &password,
+                              const std::string &encrypted_master_data) {
+  if (username.empty() || pin.empty() || password.empty() ||
+      encrypted_master_data.empty()) {
+    DLOG(ERROR) << "Empty encrypted data or user data.";
+    return "";
+  }
+
+  TmidPacket decrypting_tmid(username, pin, false, password, "");
+  return decrypting_tmid.DecryptMasterData(password, encrypted_master_data);
 }
 
 std::string PacketDebugString(const int &packet_type) {
@@ -251,7 +261,7 @@ std::string Passport::PacketSignature(PacketType packet_type,
   pki::SignaturePacketPtr signing_packet(
       std::static_pointer_cast<pki::SignaturePacket>(
           handler_->GetPacket(signing_packet_type, confirmed)));
-  
+
   if (!signing_packet || signing_packet->private_key().empty()) {
     DLOG(ERROR) << "Packet " << DebugString(packet_type) << " in state "
                 << std::boolalpha << confirmed << " doesn't have a signer";

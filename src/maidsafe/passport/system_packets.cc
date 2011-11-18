@@ -34,9 +34,9 @@ namespace maidsafe {
 
 namespace passport {
 
-std::string MidName(const std::string &username,
-                    const std::string &pin,
-                    const std::string &smid_appendix) {
+std::string GetMidName(const std::string &username,
+                       const std::string &pin,
+                       const std::string &smid_appendix) {
   return crypto::Hash<crypto::SHA512>(username + pin + smid_appendix);
 }
 
@@ -67,7 +67,7 @@ std::string DebugString(const int &packet_type) {
     case kAnmpid:
       return "ANMPID";
     case kAnmaid:
-      return "ANMIAD";
+      return "ANMAID";
     default:
       return "error";
   }
@@ -134,7 +134,7 @@ void MidPacket::Initialise() {
   secure_key_ = secure_password.substr(0, crypto::AES256_KeySize);
   secure_iv_ = secure_password.substr(crypto::AES256_KeySize,
                                       crypto::AES256_IVSize);
-  name_ = MidName(username_, pin_, smid_appendix_);
+  name_ = GetMidName(username_, pin_, smid_appendix_);
   if (name_.empty())
     Clear();
 }
@@ -365,17 +365,17 @@ bool TmidPacket::ClarifyObfuscatedData() {
   return true;
 }
 
-std::string TmidPacket::DecryptPlainData(
+std::string TmidPacket::DecryptMasterData(
     const std::string &password,
     const std::string &encrypted_master_data) {
   password_ = password;
   if (!SetPassword()) {
-    DLOG(ERROR) << "TmidPacket::DecryptPlainData: failed to set password.";
+    DLOG(ERROR) << "TmidPacket::DecryptMasterData: failed to set password.";
     return "";
   }
 
   if (encrypted_master_data.empty()) {
-    DLOG(ERROR) << "TmidPacket::DecryptPlainData: bad encrypted data.";
+    DLOG(ERROR) << "TmidPacket::DecryptMasterData: bad encrypted data.";
     password_.clear();
     salt_.clear();
     secure_key_.clear();
@@ -442,7 +442,7 @@ bool TmidPacket::Equals(const PacketPtr other) const {
     return false;
   }
   if (password_ != tmid->password_) {
-    DLOG(INFO) << "password_ " << password_.size() << " vs. " << tmid->password_.size();
+    DLOG(INFO) << "password_";
     return false;
   }
   if (rid_ != tmid->rid_) {

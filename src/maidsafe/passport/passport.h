@@ -45,8 +45,12 @@ std::string MidName(const std::string &username,
 
 std::string DecryptRid(const std::string &username,
                        const std::string &pin,
-                       const std::string &encrypted_rid,
-                       bool surrogate);
+                       const std::string &encrypted_rid);
+
+std::string DecryptMasterData(const std::string &username,
+                              const std::string &pin,
+                              const std::string &password,
+                              const std::string &encrypted_master_data);
 
 std::string PacketDebugString(const int &packet_type);
 
@@ -76,7 +80,7 @@ class Passport {
   std::string PacketSignature(PacketType packet_type, bool confirmed) const;
 
   friend class test::PassportTest;
- 
+
  private:
   Passport(const Passport&);
   Passport& operator=(const Passport&);

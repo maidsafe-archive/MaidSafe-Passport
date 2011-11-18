@@ -619,11 +619,11 @@ TEST_F(SystemPacketsTest, BEH_SetAndDecryptData) {
   expected_tmid_content->secure_key.clear();
   expected_tmid_content->secure_iv.clear();
   EXPECT_TRUE(Equal(expected_tmid_content, tmid));
-  EXPECT_TRUE(tmid->DecryptPlainData("", "").empty());
+  EXPECT_TRUE(tmid->DecryptMasterData("", "").empty());
   EXPECT_TRUE(Equal(expected_tmid_content, tmid));
-  EXPECT_TRUE(tmid->DecryptPlainData("", expected_encrypted_data).empty());
+  EXPECT_TRUE(tmid->DecryptMasterData("", expected_encrypted_data).empty());
   EXPECT_TRUE(Equal(expected_tmid_content, tmid));
-  EXPECT_TRUE(tmid->DecryptPlainData(kPassword, "").empty());
+  EXPECT_TRUE(tmid->DecryptMasterData(kPassword, "").empty());
   EXPECT_TRUE(Equal(expected_tmid_content, tmid));
 
   // Decrypt valid data
@@ -638,8 +638,8 @@ TEST_F(SystemPacketsTest, BEH_SetAndDecryptData) {
   expected_tmid_content->salt = expected_salt;
   expected_tmid_content->secure_key = expected_secure_key;
   expected_tmid_content->secure_iv = expected_secure_iv;
-  EXPECT_EQ(kPlainData, tmid->DecryptPlainData(kPassword,
-                                               expected_encrypted_data));
+  EXPECT_EQ(kPlainData, tmid->DecryptMasterData(kPassword,
+                                                expected_encrypted_data));
   EXPECT_TRUE(Equal(expected_tmid_content, tmid));
 }
 

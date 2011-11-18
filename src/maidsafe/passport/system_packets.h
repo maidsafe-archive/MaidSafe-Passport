@@ -71,9 +71,9 @@ class PassportTest;
 
 }  // namespace test
 
-std::string MidName(const std::string &username,
-                    const std::string &pin,
-                    const std::string &smid_appendix);
+std::string GetMidName(const std::string &username,
+                       const std::string &pin,
+                       const std::string &smid_appendix);
 
 std::string DebugString(const int &packet_type);
 
@@ -115,8 +115,8 @@ class TmidPacket : public pki::Packet {
   ~TmidPacket() {}
   std::string value() const { return encrypted_master_data_; }
   bool Equals(const PacketPtr other) const;
-  std::string DecryptPlainData(const std::string &password,
-                               const std::string &encrypted_master_data);
+  std::string DecryptMasterData(const std::string &password,
+                                const std::string &encrypted_master_data);
   void SetToSurrogate() { packet_type_ = kStmid; }
   std::string username() const { return username_; }
   std::string pin() const { return pin_; }

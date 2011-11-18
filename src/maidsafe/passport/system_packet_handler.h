@@ -80,7 +80,8 @@ class SystemPacketHandler {
         if (pend->packet_type() == kTmid || pend->packet_type() == kStmid) {
           pending = std::shared_ptr<TmidPacket>(new TmidPacket(
               *std::static_pointer_cast<TmidPacket>(pend)));
-        } else if (pend->packet_type() == kMid || pend->packet_type() == kSmid) {
+        } else if (pend->packet_type() == kMid ||
+                   pend->packet_type() == kSmid) {
           pending = std::shared_ptr<MidPacket>(new MidPacket(
               *std::static_pointer_cast<MidPacket>(pend)));
         } else if (IsSignature(pend->packet_type(), false)) {

@@ -46,7 +46,7 @@ class PassportTest : public testing::Test {
         password_(RandomAlphaNumericString(8)),
         master_data_(RandomString(1000)),
         surrogate_data_(RandomString(1000)),
-        appendix_(passport_.kSmidAppendix_) {}
+        appendix_(g_smid_appendix) {}
 
  protected:
   typedef std::shared_ptr<MidPacket> MidPacketPtr;
@@ -176,10 +176,10 @@ class PassportTest : public testing::Test {
                              passport_.handler_->GetPacket(kTmid, true)));
     TmidPacketPtr p_stmid(std::static_pointer_cast<TmidPacket>(
                               passport_.handler_->GetPacket(kStmid, false)));
-    if (p_stmid->DecryptPlainData(password_,
-                                  passport_.PacketValue(kStmid, false)) !=
-        c_tmid->DecryptPlainData(password_,
-                                 passport_.PacketValue(kTmid, true))) {
+    if (p_stmid->DecryptMasterData(password_,
+                                   passport_.PacketValue(kStmid, false)) !=
+        c_tmid->DecryptMasterData(password_,
+                                  passport_.PacketValue(kTmid, true))) {
       DLOG(ERROR) << "New kStmid plain value is not old kTmid plain value";
       return false;
     }
@@ -210,10 +210,10 @@ class PassportTest : public testing::Test {
                              passport_.handler_->GetPacket(kTmid, true)));
     TmidPacketPtr p_stmid(std::static_pointer_cast<TmidPacket>(
                               passport_.handler_->GetPacket(kStmid, false)));
-    if (p_stmid->DecryptPlainData(new_password,
-                                  passport_.PacketValue(kStmid, false)) !=
-        c_tmid->DecryptPlainData(password_,
-                                 passport_.PacketValue(kTmid, true))) {
+    if (p_stmid->DecryptMasterData(new_password,
+                                   passport_.PacketValue(kStmid, false)) !=
+        c_tmid->DecryptMasterData(password_,
+                                  passport_.PacketValue(kTmid, true))) {
       DLOG(ERROR) << "New kStmid plain value is not old kTmid plain value";
       return false;
     }
@@ -294,19 +294,19 @@ TEST_F(PassportTest, BEH_ChangingIdentityPackets) {
   ASSERT_EQ(kSuccess, passport_.CreateSigningPackets());
   ASSERT_EQ(kSuccess, passport_.ConfirmSigningPackets());
   ASSERT_EQ(kSuccess, passport_.SetIdentityPackets(username_,
-                                                      pin_,
-                                                      password_,
-                                                      master_data_,
-                                                      surrogate_data_));
+                                                   pin_,
+                                                   password_,
+                                                   master_data_,
+                                                   surrogate_data_));
   ASSERT_EQ(kSuccess, passport_.ConfirmIdentityPackets());
 
   // Save session
   std::string next_surrogate1(RandomString(1000));
   ASSERT_EQ(kSuccess, passport_.SetIdentityPackets(username_,
-                                                      pin_,
-                                                      password_,
-                                                      next_surrogate1,
-                                                      master_data_));
+                                                   pin_,
+                                                   password_,
+                                                   next_surrogate1,
+                                                   master_data_));
   ASSERT_TRUE(VerifySaveSession());
   ASSERT_EQ(kSuccess, passport_.ConfirmIdentityPackets());
 
@@ -314,10 +314,10 @@ TEST_F(PassportTest, BEH_ChangingIdentityPackets) {
   std::string new_username(RandomAlphaNumericString(6)), new_pin("2222"),
               next_surrogate2(RandomString(1000));
   ASSERT_EQ(kSuccess, passport_.SetIdentityPackets(new_username,
-                                                      new_pin,
-                                                      password_,
-                                                      next_surrogate2,
-                                                      next_surrogate1));
+                                                   new_pin,
+                                                   password_,
+                                                   next_surrogate2,
+                                                   next_surrogate1));
   ASSERT_TRUE(VerifyChangeDetails(new_username, new_pin));
   ASSERT_EQ(kSuccess, passport_.ConfirmIdentityPackets());
 
@@ -325,12 +325,43 @@ TEST_F(PassportTest, BEH_ChangingIdentityPackets) {
   std::string next_surrogate3(RandomString(1000)),
               new_password(RandomAlphaNumericString(8));
   ASSERT_EQ(kSuccess, passport_.SetIdentityPackets(new_username,
-                                                      new_pin,
-                                                      new_password,
-                                                      next_surrogate3,
-                                                      next_surrogate2));
+                                                   new_pin,
+                                                   new_password,
+                                                   next_surrogate3,
+                                                   next_surrogate2));
   ASSERT_TRUE(VerifyChangePassword(new_password));
   ASSERT_EQ(kSuccess, passport_.ConfirmIdentityPackets());
+}
+
+TEST_F(PassportTest, BEH_FreeFunctions) {
+  // MID & SMID name
+  MidPacket mid(username_, pin_, "");
+  ASSERT_EQ(mid.name(), MidName(username_, pin_, false));
+  MidPacket smid(username_, pin_, appendix_);
+  ASSERT_EQ(smid.name(), MidName(username_, pin_, true));
+  ASSERT_NE(MidName(username_, pin_, false), MidName(username_, pin_, true));
+
+  // Decrypt Rid
+  std::string plain_rid(RandomString(64));
+  mid.SetRid(plain_rid);
+  std::string encrypted_rid(mid.value());
+  ASSERT_EQ("", DecryptRid("", pin_, encrypted_rid));
+  ASSERT_EQ("", DecryptRid(username_, "", encrypted_rid));
+  ASSERT_EQ("", DecryptRid(username_, pin_, ""));
+  ASSERT_EQ(plain_rid, DecryptRid(username_, pin_, encrypted_rid));
+
+  // DecryptMasterData
+  TmidPacket tmid(username_, pin_, false, password_, master_data_);
+  std::string encrypted_master_data(tmid.value());
+  ASSERT_EQ("", DecryptMasterData("", pin_, password_, encrypted_master_data));
+  ASSERT_EQ("",
+            DecryptMasterData(username_, "", password_, encrypted_master_data));
+  ASSERT_EQ("", DecryptMasterData(username_, pin_, "", encrypted_master_data));
+  ASSERT_EQ("", DecryptMasterData(username_, pin_, password_, ""));
+  ASSERT_EQ(master_data_, DecryptMasterData(username_,
+                                            pin_,
+                                            password_,
+                                            encrypted_master_data));
 }
 
 }  // namespace test
