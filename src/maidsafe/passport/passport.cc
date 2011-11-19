@@ -258,9 +258,10 @@ std::string Passport::PacketSignature(PacketType packet_type,
   else if (packet_type == kTmid || packet_type == kStmid)
     signing_packet_type = kAntmid;
 
+  // Must use confirmed signing packets for signing ID packets.
   pki::SignaturePacketPtr signing_packet(
       std::static_pointer_cast<pki::SignaturePacket>(
-          handler_->GetPacket(signing_packet_type, confirmed)));
+          handler_->GetPacket(signing_packet_type, true)));
 
   if (!signing_packet || signing_packet->private_key().empty()) {
     DLOG(ERROR) << "Packet " << DebugString(packet_type) << " in state "
