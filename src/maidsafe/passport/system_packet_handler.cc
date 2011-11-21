@@ -59,7 +59,7 @@ bool SystemPacketHandler::AddPendingPacket(PacketPtr packet) {
 #ifdef DEBUG
     if (!result.second)
       DLOG(ERROR) << "SystemPacketHandler::AddPacket: Failed for "
-                  << DebugString(packet->packet_type()) << std::endl;
+                  << DebugString(packet->packet_type());
 #endif
     return result.second;
   } else {
@@ -76,14 +76,14 @@ int SystemPacketHandler::ConfirmPacket(PacketPtr packet) {
   SystemPacketMap::iterator it = packets_.find(packet_type);
   if (it == packets_.end()) {
      DLOG(ERROR) << "SystemPacketHandler::ConfirmPacket: Missing "
-                 << DebugString(packet_type) << std::endl;
+                 << DebugString(packet_type);
     return kNoPendingPacket;
   }
   if (!(*it).second.pending) {
     if ((*it).second.stored && (*it).second.stored->Equals(packet))
       return kSuccess;
     DLOG(ERROR) << "SystemPacketHandler::ConfirmPacket: Missing "
-                << DebugString(packet_type) << std::endl;
+                << DebugString(packet_type);
     return kNoPendingPacket;
   }
   bool dependencies_confirmed(true);
@@ -119,13 +119,13 @@ int SystemPacketHandler::ConfirmPacket(PacketPtr packet) {
   }
   if (!dependencies_confirmed) {
     DLOG(ERROR) << "SystemPacketHandler::ConfirmPacket: dependencies for "
-                << DebugString(packet_type) << " not confirmed" << std::endl;
+                << DebugString(packet_type) << " not confirmed";
     return kMissingDependentPackets;
   } else {
     if (!(*it).second.pending->Equals(packet)) {
       DLOG(ERROR) << "SystemPacketHandler::ConfirmPacket: input "
                   << DebugString(packet_type) << " != pending "
-                  << DebugString(packet_type) << std::endl;
+                  << DebugString(packet_type);
 
       return kPacketsNotEqual;
     }
@@ -140,7 +140,7 @@ bool SystemPacketHandler::RevertPacket(const PacketType &packet_type) {
   SystemPacketMap::iterator it = packets_.find(packet_type);
   if (it == packets_.end()) {
     DLOG(ERROR) << "SystemPacketHandler::RevertPacket: Missing "
-                << DebugString(packet_type) << std::endl;
+                << DebugString(packet_type);
     return false;
   } else {
     (*it).second.pending.reset();
@@ -155,7 +155,7 @@ PacketPtr SystemPacketHandler::GetPacket(const PacketType &packet_type,
   SystemPacketMap::const_iterator it = packets_.find(packet_type);
   if (it == packets_.end()) {
     DLOG(ERROR) << "SystemPacketHandler::Packet: Missing "
-                << DebugString(packet_type) << std::endl;
+                << DebugString(packet_type);
   } else {
     PacketPtr retrieved_packet;
     if (confirmed && (*it).second.stored) {
@@ -176,14 +176,12 @@ PacketPtr SystemPacketHandler::GetPacket(const PacketType &packet_type,
             *std::static_pointer_cast<pki::SignaturePacket>(retrieved_packet)));
       } else {
         DLOG(ERROR) << "SystemPacketHandler::Packet: "
-                    << DebugString(packet_type) << " type error."  << std::endl;
+                    << DebugString(packet_type) << " type error." ;
       }
     } else {
       DLOG(ERROR) << "SystemPacketHandler::Packet: " << DebugString(packet_type)
-                  << " not "
-                  << (confirmed ? "confirmed as stored." :
-                                  "pending confirmation.")
-                  << std::endl;
+                  << " not " << (confirmed ? "confirmed as stored." :
+                                             "pending confirmation.");
     }
   }
   return packet;
@@ -223,17 +221,16 @@ PacketPtr SystemPacketHandler::GetPacket(const std::string &packet_id,
       } else {
         DLOG(ERROR) << "SystemPacketHandler::Packet: "
                     << DebugString(retrieved_packet->packet_type())
-                    << " type error."  << std::endl;
+                    << " type error." ;
       }
       DLOG(ERROR) << "Found packet by name "
                   << DebugString(retrieved_packet->packet_type());
     }
   }
   if (!done) {
-    DLOG(ERROR) << "SystemPacketHandler::Packet " << HexSubstr(packet_id)
+    DLOG(ERROR) << "SystemPacketHandler::Packet " << Base32Substr(packet_id)
                 << ": not " << (confirmed ? "confirmed as stored." :
-                                            "pending confirmation.")
-                << std::endl;
+                                            "pending confirmation.");
   }
   return packet;
 }
@@ -271,7 +268,7 @@ int SystemPacketHandler::ParseKeyring(const std::string &serialised_keyring) {
   SystemPacketMap spm;
   input_archive >> spm;
   if (spm.empty()) {
-    DLOG(ERROR) << "SystemPacketHandler::ParseKeyring failed." << std::endl;
+    DLOG(ERROR) << "SystemPacketHandler::ParseKeyring failed.";
     return kBadSerialisedKeyring;
   }
 
@@ -305,7 +302,7 @@ int SystemPacketHandler::DeletePacket(const PacketType &packet_type) {
   size_t deleted_count = packets_.erase(packet_type);
   if (deleted_count == 0U) {
     DLOG(ERROR) << "SystemPacketHandler::DeletePacket: Missing "
-                << DebugString(packet_type) << std::endl;
+                << DebugString(packet_type);
     return kNoPacket;
   } else {
     return kSuccess;
