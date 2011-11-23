@@ -192,9 +192,9 @@ void MidPacket::Clear() {
   rid_.clear();
 }
 
-bool MidPacket::Equals(const std::shared_ptr<const Packet> other) const {
-  const std::shared_ptr<const MidPacket> mid(
-      std::static_pointer_cast<const MidPacket>(other));
+bool MidPacket::Equals(const std::shared_ptr<Packet> other) const {
+  const std::shared_ptr<MidPacket> mid(
+      std::static_pointer_cast<MidPacket>(other));
   return packet_type_ == mid->packet_type_ &&
          name_ == mid->name_ &&
          username_ == mid->username_ &&
@@ -434,9 +434,9 @@ void TmidPacket::Clear() {
   obfuscation_salt_.clear();
 }
 
-bool TmidPacket::Equals(const std::shared_ptr<const Packet> other) const {
-  const std::shared_ptr<const TmidPacket> tmid(
-      std::static_pointer_cast<const TmidPacket>(other));
+bool TmidPacket::Equals(const std::shared_ptr<Packet> other) const {
+  const std::shared_ptr<TmidPacket> tmid(
+      std::static_pointer_cast<TmidPacket>(other));
 //  return packet_type_ == tmid->packet_type_ &&
 //         name_ == tmid->name_ &&
 //         username_ == tmid->username_ &&

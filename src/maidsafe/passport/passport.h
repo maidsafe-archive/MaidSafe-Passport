@@ -80,10 +80,14 @@ class Passport {
 
   // Getters
   std::string PacketName(PacketType packet_type, bool confirmed) const;
-  asymm::PublicKey SigningPacketValue(PacketType packet_type,
+  asymm::PublicKey SignaturePacketValue(PacketType packet_type,
                                       bool confirmed) const;
   std::string IdentityPacketValue(PacketType packet_type, bool confirmed) const;
   std::string PacketSignature(PacketType packet_type, bool confirmed) const;
+
+  // Selectable Identity (MPID)
+  int CreateSelectableIdentity();
+  int ConfirmSelectableIdentity();
 
   friend class test::PassportTest;
 

@@ -226,7 +226,7 @@ std::string Passport::PacketName(PacketType packet_type, bool confirmed) const {
   return packet->name();
 }
 
-asymm::PublicKey Passport::SigningPacketValue(PacketType packet_type,
+asymm::PublicKey Passport::SignaturePacketValue(PacketType packet_type,
                                               bool confirmed) const {
   if (!IsSignature(packet_type, false)) {
     DLOG(ERROR) << "Packet " << DebugString(packet_type)
@@ -305,6 +305,39 @@ std::string Passport::PacketSignature(PacketType packet_type,
   std::string signature;
   asymm::Sign(value, signing_packet->private_key(), &signature);
   return signature;
+}
+
+// Selectable Identity (MPID)
+int Passport::CreateSelectableIdentity() {
+  std::vector<pki::SignaturePacketPtr> packets;
+  if (pki::CreateChainedId(&packets, 2) != kSuccess || packets.size() != 2U) {
+    DLOG(ERROR) << "Failed to create kAnmpid";
+    return kFailedToCreatePacket;
+  }
+  packets.at(0)->set_packet_type(kAnmpid);
+  packets.at(1)->set_packet_type(kMpid);
+  if (!handler_->AddPendingPacket(packets.at(0)) ||
+      !handler_->AddPendingPacket(packets.at(1))) {
+    DLOG(ERROR) << "Failed to add pending kAnmpid/kMpid";
+    return kFailedToCreatePacket;
+  }
+
+  return kSuccess;
+}
+
+int Passport::ConfirmSelectableIdentity() {
+  if (handler_->ConfirmPacket(handler_->GetPacket(kAnmpid, false)) !=
+      kSuccess) {
+    DLOG(ERROR) << "Failed confirming packet " << DebugString(kAnmpid);
+    return kFailedToConfirmPacket;
+  }
+
+  if (handler_->ConfirmPacket(handler_->GetPacket(kMpid, false)) != kSuccess) {
+    DLOG(ERROR) << "Failed confirming packet " << DebugString(kMpid);
+    return kFailedToConfirmPacket;
+  }
+
+  return kSuccess;
 }
 
 }  // namespace passport

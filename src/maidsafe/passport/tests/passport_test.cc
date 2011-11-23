@@ -51,9 +51,11 @@ class PassportTest : public testing::Test {
  protected:
   typedef std::shared_ptr<MidPacket> MidPacketPtr;
   typedef std::shared_ptr<TmidPacket> TmidPacketPtr;
+
   bool VerifySignatures() {
     for (int pt(kAnmid); pt != kMid; ++pt) {
       PacketType casted(static_cast<PacketType>(pt)), signer;
+      DLOG(ERROR) << "0. Packet: " << DebugString(casted);
       if (casted == kMaid)
         signer = kAnmaid;
       else if (casted == kPmid)
@@ -61,8 +63,8 @@ class PassportTest : public testing::Test {
       else
         signer = casted;
       pki::SignaturePacketPtr signing_packet(
-            std::static_pointer_cast<pki::SignaturePacket>(
-                passport_.handler_->GetPacket(signer, true)));
+          std::static_pointer_cast<pki::SignaturePacket>(
+              passport_.handler_->GetPacket(signer, true)));
       if (!signing_packet) {
         DLOG(ERROR) << "1. Packet: " << DebugString(casted) << ", Signer: "
                     << DebugString(signer);
@@ -75,13 +77,16 @@ class PassportTest : public testing::Test {
         return false;
       }
 
-//      if (!crypto::AsymCheckSig(passport_.PacketValue(casted, true),
-//                                passport_.PacketSignature(casted, true),
-//                                signing_packet->value())) {
-//        DLOG(ERROR) << "2. Packet: " << DebugString(casted) << ", Signer: "
-//                    << DebugString(signer);
-//        return false;
-//      }
+      std::string string_value;
+      asymm::EncodePublicKey(passport_.SignaturePacketValue(casted, true),
+                             &string_value);
+      if (!asymm::Validate(string_value,
+                           passport_.PacketSignature(casted, true),
+                           signing_packet->value())) {
+        DLOG(ERROR) << "2. Packet: " << DebugString(casted) << ", Signer: "
+                    << DebugString(signer);
+        return false;
+      }
     }
     return true;
   }
@@ -233,7 +238,7 @@ TEST_F(PassportTest, BEH_SigningPackets) {
   for (int pt(kAnmid); pt != kMid; ++pt) {
     PacketType casted(static_cast<PacketType>(pt));
     std::string pub;
-    asymm::EncodePublicKey(passport_.SigningPacketValue(casted, false), &pub);
+    asymm::EncodePublicKey(passport_.SignaturePacketValue(casted, false), &pub);
     ASSERT_EQ(passport_.PacketName(casted, false),
               crypto::Hash<crypto::SHA512>(
                   pub + passport_.PacketSignature(casted, false)));
@@ -245,7 +250,7 @@ TEST_F(PassportTest, BEH_SigningPackets) {
   for (int pt(kAnmid); pt != kMid; ++pt) {
     PacketType casted(static_cast<PacketType>(pt));
     std::string pub;
-    asymm::EncodePublicKey(passport_.SigningPacketValue(casted, true), &pub);
+    asymm::EncodePublicKey(passport_.SignaturePacketValue(casted, true), &pub);
     ASSERT_TRUE(passport_.PacketName(casted, false).empty());
     ASSERT_EQ(passport_.PacketName(casted, true),
               crypto::Hash<crypto::SHA512>(
@@ -366,6 +371,45 @@ TEST_F(PassportTest, BEH_FreeFunctions) {
                                             pin_,
                                             password_,
                                             encrypted_master_data));
+}
+
+TEST_F(PassportTest, BEH_SelectableIdentity) {
+  ASSERT_EQ("", passport_.PacketName(kAnmpid, true));
+  ASSERT_EQ("", passport_.PacketName(kAnmpid, false));
+  ASSERT_EQ("", passport_.PacketName(kMpid, true));
+  ASSERT_EQ("", passport_.PacketName(kMpid, false));
+
+  // Packets pending
+  ASSERT_EQ(kFailedToConfirmPacket, passport_.ConfirmSelectableIdentity());
+  ASSERT_EQ(kSuccess, passport_.CreateSelectableIdentity());
+  ASSERT_EQ("", passport_.PacketName(kAnmpid, true));
+  ASSERT_NE("", passport_.PacketName(kAnmpid, false));
+  ASSERT_EQ("", passport_.PacketName(kMpid, true));
+  ASSERT_NE("", passport_.PacketName(kMpid, false));
+
+  // Packets from pending to confirmed
+  ASSERT_EQ(kSuccess, passport_.ConfirmSelectableIdentity());
+  ASSERT_NE("", passport_.PacketName(kAnmpid, true));
+  ASSERT_EQ("", passport_.PacketName(kAnmpid, false));
+  ASSERT_NE("", passport_.PacketName(kMpid, true));
+  ASSERT_EQ("", passport_.PacketName(kMpid, false));
+
+  // Check name
+  std::string pub_key;
+  asymm::EncodePublicKey(passport_.SignaturePacketValue(kAnmpid, true),
+                         &pub_key);
+  ASSERT_EQ(passport_.PacketName(kAnmpid, true),
+            crypto::Hash<crypto::SHA512>(pub_key +
+                                         passport_.PacketSignature(kAnmpid,
+                                                                   true)));
+
+  pub_key.clear();
+  asymm::EncodePublicKey(passport_.SignaturePacketValue(kMpid, true),
+                         &pub_key);
+  ASSERT_EQ(passport_.PacketName(kMpid, true),
+            crypto::Hash<crypto::SHA512>(pub_key +
+                                         passport_.PacketSignature(kMpid,
+                                                                   true)));
 }
 
 }  // namespace test

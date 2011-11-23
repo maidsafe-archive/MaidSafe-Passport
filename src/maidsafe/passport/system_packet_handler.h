@@ -57,10 +57,8 @@ class SystemPacketHandler {
   // Removes a pending packet (leaving last stored copy)
   bool RevertPacket(const PacketType &packet_type);
   // Returns a *copy* of the confirmed or pending packet
-  PacketPtr GetPacket(const PacketType &packet_type,
-                                         bool confirmed) const;
-  PacketPtr GetPacket(const std::string &packet_id,
-                                         bool confirmed) const;
+  PacketPtr GetPacket(const PacketType &packet_type, bool confirmed) const;
+  PacketPtr GetPacket(const std::string &packet_id, bool confirmed) const;
   bool Confirmed(const PacketType &packet_type) const;
   std::string SerialiseKeyring() const;
   int ParseKeyring(const std::string &serialised_keyring);
