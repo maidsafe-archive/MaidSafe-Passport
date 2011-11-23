@@ -24,7 +24,7 @@
 
 #include "maidsafe/passport/crypto_key_pairs.h"
 #include <functional>
-#include "maidsafe/common/crypto.h"
+#include "maidsafe/common/rsa.h"
 
 namespace maidsafe {
 
@@ -61,16 +61,16 @@ void CryptoKeyPairs::CreateKeyPair() {
       return;
     }
   }
-  crypto::RsaKeyPair rsakp;
-  rsakp.GenerateKeys(kRsaKeySize_);
+  asymm::Keys keys;
+  asymm::GenerateKeyPair(&keys);
   boost::mutex::scoped_lock lock(mutex_);
   if (!stopping_)
-    keypairs_.push_back(rsakp);
+    keypairs_.push_back(keys);
   --keypairs_todo_;
   cond_var_.notify_all();
 }
 
-bool CryptoKeyPairs::GetKeyPair(crypto::RsaKeyPair *keypair) {
+bool CryptoKeyPairs::GetKeyPair(asymm::Keys *keypair) {
   if (!keypair)
     return false;
 

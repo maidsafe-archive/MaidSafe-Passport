@@ -226,8 +226,33 @@ std::string Passport::PacketName(PacketType packet_type, bool confirmed) const {
   return packet->name();
 }
 
-std::string Passport::PacketValue(PacketType packet_type,
-                                  bool confirmed) const {
+asymm::PublicKey Passport::SigningPacketValue(PacketType packet_type,
+                                              bool confirmed) const {
+  if (!IsSignature(packet_type, false)) {
+    DLOG(ERROR) << "Packet " << DebugString(packet_type)
+                << " is not a signing packet.";
+    return asymm::PublicKey();
+  }
+
+  PacketPtr packet(handler_->GetPacket(packet_type, confirmed));
+  if (!packet) {
+    DLOG(ERROR) << "Packet " << DebugString(packet_type) << " in state "
+                << std::boolalpha << confirmed << " not found";
+    return asymm::PublicKey();
+  }
+
+  return std::static_pointer_cast<pki::SignaturePacket>(packet)->value();
+}
+
+std::string Passport::IdentityPacketValue(PacketType packet_type,
+                                          bool confirmed) const {
+  if (packet_type != kMid && packet_type != kSmid &&
+      packet_type != kTmid && packet_type != kStmid) {
+    DLOG(ERROR) << "Packet " << DebugString(packet_type)
+                << " is not an identity packet.";
+    return "";
+  }
+
   PacketPtr packet(handler_->GetPacket(packet_type, confirmed));
   if (!packet) {
     DLOG(ERROR) << "Packet " << DebugString(packet_type) << " in state "
@@ -235,7 +260,10 @@ std::string Passport::PacketValue(PacketType packet_type,
     return "";
   }
 
-  return packet->value();
+  if (packet_type == kMid || packet_type == kSmid)
+    return std::static_pointer_cast<MidPacket>(packet)->value();
+  else
+    return std::static_pointer_cast<TmidPacket>(packet)->value();
 }
 
 std::string Passport::PacketSignature(PacketType packet_type,
@@ -250,26 +278,33 @@ std::string Passport::PacketSignature(PacketType packet_type,
   if (IsSignature(packet_type, false))
     return std::static_pointer_cast<pki::SignaturePacket>(packet)->signature();
 
+  std::string value;
   PacketType signing_packet_type;
-  if (packet_type == kMid)
+  if (packet_type == kMid) {
+    value = std::static_pointer_cast<MidPacket>(packet)->value();
     signing_packet_type = kAnmid;
-  else if (packet_type == kSmid)
+  } else if (packet_type == kSmid) {
+    value = std::static_pointer_cast<MidPacket>(packet)->value();
     signing_packet_type = kAnsmid;
-  else if (packet_type == kTmid || packet_type == kStmid)
+  } else if (packet_type == kTmid || packet_type == kStmid) {
+    value = std::static_pointer_cast<TmidPacket>(packet)->value();
     signing_packet_type = kAntmid;
+  }
 
   // Must use confirmed signing packets for signing ID packets.
   pki::SignaturePacketPtr signing_packet(
       std::static_pointer_cast<pki::SignaturePacket>(
           handler_->GetPacket(signing_packet_type, true)));
 
-  if (!signing_packet || signing_packet->private_key().empty()) {
+  if (!signing_packet || !asymm::ValidateKey(signing_packet->private_key())) {
     DLOG(ERROR) << "Packet " << DebugString(packet_type) << " in state "
                 << std::boolalpha << confirmed << " doesn't have a signer";
     return "";
   }
 
-  return crypto::AsymSign(packet->value(), signing_packet->private_key());
+  std::string signature;
+  asymm::Sign(value, signing_packet->private_key(), &signature);
+  return signature;
 }
 
 }  // namespace passport

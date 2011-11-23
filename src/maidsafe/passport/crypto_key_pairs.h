@@ -41,7 +41,8 @@
 
 namespace maidsafe {
 
-namespace crypto { class RsaKeyPair; }
+namespace rsa { struct Keys; }
+namespace asymm = rsa;
 
 namespace passport {
 
@@ -55,7 +56,7 @@ class CryptoKeyPairs {
                  const uint16_t &rsa_key_size);
   ~CryptoKeyPairs();
   void CreateKeyPairs(const int16_t &no_of_keypairs);
-  bool GetKeyPair(crypto::RsaKeyPair *keypair);
+  bool GetKeyPair(asymm::Keys *keypair);
   void Stop();
   friend class test::CachePassport;
  private:
@@ -67,7 +68,7 @@ class CryptoKeyPairs {
   AsioService &asio_service_;
   const uint16_t kRsaKeySize_;
   int16_t keypairs_todo_;
-  std::list<crypto::RsaKeyPair> keypairs_;
+  std::list<asymm::Keys> keypairs_;
   boost::mutex mutex_;
   boost::condition_variable cond_var_;
   bool stopping_;

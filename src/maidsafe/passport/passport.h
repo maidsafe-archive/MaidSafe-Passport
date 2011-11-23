@@ -26,6 +26,8 @@
 #include <memory>
 #include <string>
 
+#include "maidsafe/common/rsa.h"
+
 #include "maidsafe/passport/passport_config.h"
 #include "maidsafe/passport/version.h"
 
@@ -36,6 +38,8 @@
 
 
 namespace maidsafe {
+
+namespace asymm = rsa;
 
 namespace passport {
 
@@ -76,7 +80,9 @@ class Passport {
 
   // Getters
   std::string PacketName(PacketType packet_type, bool confirmed) const;
-  std::string PacketValue(PacketType packet_type, bool confirmed) const;
+  asymm::PublicKey SigningPacketValue(PacketType packet_type,
+                                      bool confirmed) const;
+  std::string IdentityPacketValue(PacketType packet_type, bool confirmed) const;
   std::string PacketSignature(PacketType packet_type, bool confirmed) const;
 
   friend class test::PassportTest;

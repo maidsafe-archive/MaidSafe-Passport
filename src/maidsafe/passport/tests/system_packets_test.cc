@@ -136,20 +136,20 @@ testing::AssertionResult Empty(std::shared_ptr<pki::Packet> packet) {
   PacketType packet_type = static_cast<PacketType>(packet->packet_type());
   if (!packet->name().empty())
     return testing::AssertionFailure() << "Packet name not empty.";
-  if (!packet->value().empty())
-    return testing::AssertionFailure() << "Packet value not empty.";
   if (IsSignature(packet_type, false)) {
     std::shared_ptr<pki::SignaturePacket> sig_packet =
         std::static_pointer_cast<pki::SignaturePacket>(packet);
-    if (!sig_packet->value().empty())
+    if (asymm::ValidateKey(sig_packet->value()))
       return testing::AssertionFailure() << "Packet public key not empty.";
-    if (!sig_packet->private_key().empty())
+    if (asymm::ValidateKey(sig_packet->private_key()))
       return testing::AssertionFailure() << "Packet private key not empty.";
     if (!sig_packet->signature().empty())
       return testing::AssertionFailure() << "Packet public key sig not empty.";
   } else if (packet_type == kMid || packet_type == kSmid) {
     std::shared_ptr<MidPacket> mid_packet =
         std::static_pointer_cast<MidPacket>(packet);
+    if (!mid_packet->value().empty())
+      return testing::AssertionFailure() << "Packet value not empty.";
     if (!mid_packet->username_.empty())
       return testing::AssertionFailure() << "Packet username not empty.";
     if (!mid_packet->pin_.empty())
@@ -169,6 +169,8 @@ testing::AssertionResult Empty(std::shared_ptr<pki::Packet> packet) {
   } else if (packet_type == kTmid || packet_type == kStmid) {
     std::shared_ptr<TmidPacket> tmid_packet =
         std::static_pointer_cast<TmidPacket>(packet);
+    if (!tmid_packet->value().empty())
+      return testing::AssertionFailure() << "Packet value not empty.";
     if (!tmid_packet->username_.empty())
       return testing::AssertionFailure() << "Packet username not empty.";
     if (!tmid_packet->pin_.empty())
@@ -267,9 +269,9 @@ TEST_F(SystemPacketsTest, BEH_CreateMid) {
 
   // Check kMid with valid inputs
   std::string expected_salt = crypto::Hash<crypto::SHA512>(kPinStr + kUsername);
-  std::string expected_secure_password(crypto::SecurePassword(kUsername,
-                                                              expected_salt,
-                                                              kPin));
+  std::string expected_secure_password;
+  EXPECT_EQ(kSuccess, crypto::SecurePassword(kUsername, expected_salt, kPin,
+                                             &expected_secure_password));
   std::string expected_secure_key = expected_secure_password.
                                         substr(0, crypto::AES256_KeySize);
   std::string expected_secure_iv = expected_secure_password.
@@ -317,9 +319,9 @@ TEST_F(SystemPacketsTest, BEH_SetAndDecryptRid) {
 
   // Check kMid SetRid with first valid input
   std::string expected_salt(crypto::Hash<crypto::SHA512>(kPinStr + kUsername));
-  std::string expected_secure_password(crypto::SecurePassword(kUsername,
-                                                              expected_salt,
-                                                              kPin));
+  std::string expected_secure_password;
+  EXPECT_EQ(kSuccess, crypto::SecurePassword(kUsername, expected_salt, kPin,
+                                             &expected_secure_password));
   std::string expected_secure_key = expected_secure_password.
                                         substr(0, crypto::AES256_KeySize);
   std::string expected_secure_iv = expected_secure_password.
@@ -517,8 +519,11 @@ TEST_F(SystemPacketsTest, BEH_CreateTmid) {
     random_no_from_rid += (temp * a);
     a *= 256;
   }
-  std::string expected_secure_password(
-      crypto::SecurePassword(kPassword, expected_salt, random_no_from_rid));
+  std::string expected_secure_password;
+  EXPECT_EQ(kSuccess, crypto::SecurePassword(kPassword,
+                                             expected_salt,
+                                             random_no_from_rid,
+                                             &expected_secure_password));
   std::string expected_secure_key = expected_secure_password.
                                         substr(0, crypto::AES256_KeySize);
   std::string expected_secure_iv = expected_secure_password.
@@ -556,10 +561,12 @@ TEST_F(SystemPacketsTest, BEH_SetAndDecryptData) {
   uint32_t numerical_pin(boost::lexical_cast<uint32_t>(kPin));
   uint32_t rounds(numerical_pin / 2 == 0 ?
                   numerical_pin * 3 / 2 : numerical_pin / 2);
-  std::string obfuscation_str =
-      crypto::SecurePassword(kUsername,
-                             crypto::Hash<crypto::SHA512>(kPassword + kRid),
-                             rounds);
+  std::string obfuscation_str;
+  EXPECT_EQ(kSuccess, crypto::SecurePassword(
+      kUsername,
+      crypto::Hash<crypto::SHA512>(kPassword + kRid),
+      rounds,
+      &obfuscation_str));
 
   // make the obfuscation_str of same size for XOR
   if (kPlainData.size() < obfuscation_str.size()) {
@@ -580,8 +587,12 @@ TEST_F(SystemPacketsTest, BEH_SetAndDecryptData) {
     random_no_from_rid += (temp * a);
     a *= 256;
   }
-  std::string expected_secure_password =
-      crypto::SecurePassword(kPassword, expected_salt, random_no_from_rid);
+  std::string expected_secure_password;
+  EXPECT_EQ(kSuccess, crypto::SecurePassword(kPassword,
+                                             expected_salt,
+                                             random_no_from_rid,
+                                             &expected_secure_password));
+
   std::string expected_secure_key = expected_secure_password.
                                         substr(0, crypto::AES256_KeySize);
   std::string expected_secure_iv = expected_secure_password.

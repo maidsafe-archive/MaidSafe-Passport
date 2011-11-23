@@ -214,10 +214,10 @@ class SystemPacketHandlerTest : public testing::Test {
   const std::string kPassword1_, kPassword2_, kPublicName1_, kPublicName2_;
   const std::string kMidPlainTextMasterData1_, kMidPlainTextMasterData2_;
   const std::string kSmidPlainTextMasterData1_, kSmidPlainTextMasterData2_;
-  crypto::RsaKeyPair mpid_keys1_, mpid_keys2_, maid_keys1_, maid_keys2_;
-  crypto::RsaKeyPair pmid_keys1_, pmid_keys2_, anmid_keys1_, anmid_keys2_;
-  crypto::RsaKeyPair ansmid_keys1_, ansmid_keys2_, antmid_keys1_, antmid_keys2_;
-  crypto::RsaKeyPair anmpid_keys1_, anmpid_keys2_, anmaid_keys1_, anmaid_keys2_;
+  asymm::Keys mpid_keys1_, mpid_keys2_, maid_keys1_, maid_keys2_;
+  asymm::Keys pmid_keys1_, pmid_keys2_, anmid_keys1_, anmid_keys2_;
+  asymm::Keys ansmid_keys1_, ansmid_keys2_, antmid_keys1_, antmid_keys2_;
+  asymm::Keys anmpid_keys1_, anmpid_keys2_, anmaid_keys1_, anmaid_keys2_;
   std::vector<std::shared_ptr<pki::Packet>> packets1_, packets2_;
 };
 

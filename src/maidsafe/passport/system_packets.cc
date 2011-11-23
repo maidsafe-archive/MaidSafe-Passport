@@ -27,6 +27,7 @@
 #include "boost/lexical_cast.hpp"
 
 #include "maidsafe/common/crypto.h"
+#include "maidsafe/common/rsa.h"
 
 #include "maidsafe/passport/log.h"
 
@@ -130,7 +131,14 @@ void MidPacket::Initialise() {
     DLOG(ERROR) << "MidPacket::Initialise: Bad pin:" << e.what();
     return Clear();
   }
-  std::string secure_password = crypto::SecurePassword(username_, salt_, pin);
+
+  std::string secure_password;
+  int result = crypto::SecurePassword(username_, salt_, pin, &secure_password);
+  if (result != kSuccess) {
+    DLOG(ERROR) << "Failed to create secure pasword.  Result: " << result;
+    return Clear();
+  }
+
   secure_key_ = secure_password.substr(0, crypto::AES256_KeySize);
   secure_iv_ = secure_password.substr(crypto::AES256_KeySize,
                                       crypto::AES256_IVSize);
@@ -184,9 +192,9 @@ void MidPacket::Clear() {
   rid_.clear();
 }
 
-bool MidPacket::Equals(const PacketPtr other) const {
-  const std::shared_ptr<MidPacket> mid(
-      std::static_pointer_cast<MidPacket>(other));
+bool MidPacket::Equals(const std::shared_ptr<const Packet> other) const {
+  const std::shared_ptr<const MidPacket> mid(
+      std::static_pointer_cast<const MidPacket>(other));
   return packet_type_ == mid->packet_type_ &&
          name_ == mid->name_ &&
          username_ == mid->username_ &&
@@ -282,9 +290,14 @@ bool TmidPacket::SetPassword() {
     a *= 256;
   }
 
-  std::string secure_password = crypto::SecurePassword(password_,
-                                                       salt_,
-                                                       random_no_from_rid);
+  std::string secure_password;
+  int result = crypto::SecurePassword(password_, salt_, random_no_from_rid,
+                                      &secure_password);
+  if (result != kSuccess) {
+    Clear();
+    DLOG(ERROR) << "Failed to create secure pasword.  Result: " << result;
+    return false;
+  }
   secure_key_ = secure_password.substr(0, crypto::AES256_KeySize);
   secure_iv_ = secure_password.substr(crypto::AES256_KeySize,
                                       crypto::AES256_IVSize);
@@ -305,9 +318,13 @@ bool TmidPacket::ObfuscatePlainData() {
   uint32_t numerical_pin(boost::lexical_cast<uint32_t>(pin_));
   uint32_t rounds(numerical_pin / 2 == 0 ? numerical_pin * 3 / 2 :
                                            numerical_pin / 2);
-  std::string obfuscation_str = crypto::SecurePassword(username_,
-                                                       obfuscation_salt_,
-                                                       rounds);
+  std::string obfuscation_str;
+  int result = crypto::SecurePassword(username_, obfuscation_salt_, rounds,
+                                      &obfuscation_str);
+  if (result != kSuccess) {
+    DLOG(ERROR) << "Failed to create secure pasword.  Result: " << result;
+    return false;
+  }
 
   // make the obfuscation_str of same size for XOR
   if (plain_text_master_data_.size() < obfuscation_str.size()) {
@@ -346,10 +363,16 @@ bool TmidPacket::ClarifyObfuscatedData() {
   uint32_t numerical_pin(boost::lexical_cast<uint32_t>(pin_));
   uint32_t rounds(numerical_pin / 2 == 0 ?
                   numerical_pin * 3 / 2 : numerical_pin / 2);
-  std::string obfuscation_str =
+  std::string obfuscation_str;
+  int result =
       crypto::SecurePassword(username_,
                              crypto::Hash<crypto::SHA512>(password_ + rid_),
-                             rounds);
+                             rounds,
+                             &obfuscation_str);
+  if (result != kSuccess) {
+    DLOG(ERROR) << "Failed to create secure pasword.  Result: " << result;
+    return false;
+  }
 
   // make the obfuscation_str of same sizer for XOR
   if (obfuscated_master_data_.size() < obfuscation_str.size()) {
@@ -411,9 +434,9 @@ void TmidPacket::Clear() {
   obfuscation_salt_.clear();
 }
 
-bool TmidPacket::Equals(const PacketPtr other) const {
-  const std::shared_ptr<TmidPacket> tmid(
-      std::static_pointer_cast<TmidPacket>(other));
+bool TmidPacket::Equals(const std::shared_ptr<const Packet> other) const {
+  const std::shared_ptr<const TmidPacket> tmid(
+      std::static_pointer_cast<const TmidPacket>(other));
 //  return packet_type_ == tmid->packet_type_ &&
 //         name_ == tmid->name_ &&
 //         username_ == tmid->username_ &&

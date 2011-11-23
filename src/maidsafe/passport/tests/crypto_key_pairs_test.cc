@@ -25,6 +25,7 @@
 #include <cstdint>
 #include "boost/scoped_ptr.hpp"
 #include "maidsafe/common/crypto.h"
+#include "maidsafe/common/rsa.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 #include "maidsafe/passport/crypto_key_pairs.h"
@@ -66,41 +67,47 @@ class CryptoKeyPairsTest : public testing::Test {
 };
 
 TEST_F(CryptoKeyPairsTest, BEH_GetCryptoKey) {
-  crypto::RsaKeyPair rsa_key_pair;
+  asymm::Keys rsa_key_pair;
   ASSERT_FALSE(crypto_key_pairs_.GetKeyPair(&rsa_key_pair));
   crypto_key_pairs_.CreateKeyPairs(1);
   ASSERT_TRUE(crypto_key_pairs_.GetKeyPair(&rsa_key_pair));
-  ASSERT_FALSE(rsa_key_pair.public_key().empty());
-  ASSERT_FALSE(rsa_key_pair.private_key().empty());
+  ASSERT_TRUE(asymm::ValidateKey(rsa_key_pair.public_key));
+  ASSERT_TRUE(asymm::ValidateKey(rsa_key_pair.private_key));
 }
 
 TEST_F(CryptoKeyPairsTest, FUNC_GetMultipleCryptoKeys) {
   int16_t no_of_keys = 20;
-  std::vector<crypto::RsaKeyPair> rsa_key_pairs;
+  std::vector<asymm::Keys> rsa_key_pairs;
   crypto_key_pairs_.CreateKeyPairs(no_of_keys / 2);
   crypto_key_pairs_.CreateKeyPairs(no_of_keys - (no_of_keys / 2));
-  crypto::RsaKeyPair rsa_key_pair;
+  asymm::Keys rsa_key_pair;
   while (crypto_key_pairs_.GetKeyPair(&rsa_key_pair)) {
     rsa_key_pairs.push_back(rsa_key_pair);
-    ASSERT_FALSE(rsa_key_pair.public_key().empty());
-    ASSERT_FALSE(rsa_key_pair.private_key().empty());
-    rsa_key_pair.ClearKeys();
+    ASSERT_TRUE(asymm::ValidateKey(rsa_key_pair.public_key));
+    ASSERT_TRUE(asymm::ValidateKey(rsa_key_pair.private_key));
+    rsa_key_pair.identity.clear();
+    rsa_key_pair.private_key = asymm::PrivateKey();
+    rsa_key_pair.public_key = asymm::PublicKey();
+    rsa_key_pair.validation_token.clear();
   }
   ASSERT_EQ(static_cast<size_t>(no_of_keys), rsa_key_pairs.size());
 }
 
 TEST_F(CryptoKeyPairsTest, FUNC_ReuseObject) {
   int16_t no_of_keys(5);
-  std::vector<crypto::RsaKeyPair> rsa_key_pairs;
+  std::vector<asymm::Keys> rsa_key_pairs;
   crypto_key_pairs_.CreateKeyPairs(no_of_keys);
 
-  crypto::RsaKeyPair rsa_key_pair;
+  asymm::Keys rsa_key_pair;
   int16_t i(0), keys_rec(3);
   while (i != keys_rec && crypto_key_pairs_.GetKeyPair(&rsa_key_pair)) {
     rsa_key_pairs.push_back(rsa_key_pair);
-    ASSERT_FALSE(rsa_key_pair.public_key().empty());
-    ASSERT_FALSE(rsa_key_pair.private_key().empty());
-    rsa_key_pair.ClearKeys();
+    ASSERT_TRUE(asymm::ValidateKey(rsa_key_pair.public_key));
+    ASSERT_TRUE(asymm::ValidateKey(rsa_key_pair.private_key));
+    rsa_key_pair.identity.clear();
+    rsa_key_pair.private_key = asymm::PrivateKey();
+    rsa_key_pair.public_key = asymm::PublicKey();
+    rsa_key_pair.validation_token.clear();
     ++i;
   }
 
@@ -108,9 +115,12 @@ TEST_F(CryptoKeyPairsTest, FUNC_ReuseObject) {
 
   while (crypto_key_pairs_.GetKeyPair(&rsa_key_pair)) {
     rsa_key_pairs.push_back(rsa_key_pair);
-    ASSERT_FALSE(rsa_key_pair.public_key().empty());
-    ASSERT_FALSE(rsa_key_pair.private_key().empty());
-    rsa_key_pair.ClearKeys();
+    ASSERT_TRUE(asymm::ValidateKey(rsa_key_pair.public_key));
+    ASSERT_TRUE(asymm::ValidateKey(rsa_key_pair.private_key));
+    rsa_key_pair.identity.clear();
+    rsa_key_pair.private_key = asymm::PrivateKey();
+    rsa_key_pair.public_key = asymm::PublicKey();
+    rsa_key_pair.validation_token.clear();
   }
   ASSERT_EQ(static_cast<size_t>(2 * no_of_keys), rsa_key_pairs.size());
 }
@@ -119,17 +129,17 @@ void GetKeys(CryptoKeyPairs *crypto_key_pairs,
              int *counter,
              const int16_t &total) {
   for (int i = 0; i < total; ++i) {
-    crypto::RsaKeyPair rsa_key_pair;
+    asymm::Keys rsa_key_pair;
     EXPECT_TRUE(crypto_key_pairs->GetKeyPair(&rsa_key_pair));
-    ASSERT_FALSE(rsa_key_pair.private_key().empty());
-    ASSERT_FALSE(rsa_key_pair.public_key().empty());
+    ASSERT_TRUE(asymm::ValidateKey(rsa_key_pair.public_key));
+    ASSERT_TRUE(asymm::ValidateKey(rsa_key_pair.private_key));
     ++(*counter);
   }
 }
 
 TEST_F(CryptoKeyPairsTest, FUNC_AccessFromDifferentThreads) {
   int16_t no_of_keys(6), no_of_threads(4);
-  std::vector<crypto::RsaKeyPair> rsa_key_pairs;
+  std::vector<asymm::Keys> rsa_key_pairs;
   crypto_key_pairs_.CreateKeyPairs(no_of_keys * no_of_threads);
   boost::thread_group threads;
   std::vector<int> keys_gen(no_of_threads, 0);
@@ -151,10 +161,10 @@ TEST_F(CryptoKeyPairsTest, BEH_DestroyObjectWhileGeneratingKeys) {
 
 void GetKeyPair(std::shared_ptr<CryptoKeyPairs> crypto_key_pairs,
                 int *counter) {
-  crypto::RsaKeyPair rsa_key_pair;
+  asymm::Keys rsa_key_pair;
   if (crypto_key_pairs->GetKeyPair(&rsa_key_pair)) {
-    ASSERT_FALSE(rsa_key_pair.private_key().empty());
-    ASSERT_FALSE(rsa_key_pair.public_key().empty());
+    ASSERT_TRUE(asymm::ValidateKey(rsa_key_pair.public_key));
+    ASSERT_TRUE(asymm::ValidateKey(rsa_key_pair.private_key));
     ++(*counter);
   }
 }

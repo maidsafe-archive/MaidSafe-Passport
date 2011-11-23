@@ -176,7 +176,7 @@ PacketPtr SystemPacketHandler::GetPacket(const PacketType &packet_type,
             *std::static_pointer_cast<pki::SignaturePacket>(retrieved_packet)));
       } else {
         DLOG(ERROR) << "SystemPacketHandler::Packet: "
-                    << DebugString(packet_type) << " type error." ;
+                    << DebugString(packet_type) << " type error.";
       }
     } else {
       DLOG(ERROR) << "SystemPacketHandler::Packet: " << DebugString(packet_type)
@@ -221,7 +221,7 @@ PacketPtr SystemPacketHandler::GetPacket(const std::string &packet_id,
       } else {
         DLOG(ERROR) << "SystemPacketHandler::Packet: "
                     << DebugString(retrieved_packet->packet_type())
-                    << " type error." ;
+                    << " type error.";
       }
       DLOG(ERROR) << "Found packet by name "
                   << DebugString(retrieved_packet->packet_type());
