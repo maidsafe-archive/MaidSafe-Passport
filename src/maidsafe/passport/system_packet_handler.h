@@ -46,28 +46,46 @@ namespace maidsafe {
 
 namespace passport {
 
+namespace test {
+class SystemPacketHandlerTest;
+class SystemPacketHandlerTest_FUNC_SigningAndIdentityPackets_Test;
+}  // namespace test
+
 class SystemPacketHandler {
  public:
-  SystemPacketHandler() : packets_(), mutex_() {}
-  ~SystemPacketHandler() {}
-  // Add packet which is pending confirmation of storing
+  SystemPacketHandler();
+  ~SystemPacketHandler();
+
+  // Identity & signature packets
   bool AddPendingPacket(PacketPtr packet);
-  // Change packet from pending to stored
   int ConfirmPacket(PacketPtr packet);
-  // Removes a pending packet (leaving last stored copy)
   bool RevertPacket(const PacketType &packet_type);
-  // Returns a *copy* of the confirmed or pending packet
   PacketPtr GetPacket(const PacketType &packet_type, bool confirmed) const;
   PacketPtr GetPacket(const std::string &packet_id, bool confirmed) const;
+  int DeletePacket(const PacketType &packet_type);
   bool Confirmed(const PacketType &packet_type) const;
+
+  // Selectable identities
+  int AddPendingSelectableIdentity(const std::string &chosen_identity,
+                                   SignaturePacketPtr identity,
+                                   SignaturePacketPtr signer);
+  int ConfirmSelectableIdentity(const std::string &chosen_identity);
+  int DeleteSelectableIdentity(const std::string &chosen_identity);
+
+  // Whole keyring
   std::string SerialiseKeyring() const;
   int ParseKeyring(const std::string &serialised_keyring);
   void ClearKeyring();
-  int DeletePacket(const PacketType &packet_type);
+
   void Clear();
-  friend class test::SystemPacketHandlerTest_FUNC_All_Test;
+  friend class test::SystemPacketHandlerTest;
+  friend class
+      test::SystemPacketHandlerTest_FUNC_SigningAndIdentityPackets_Test;
 
  private:
+  SystemPacketHandler &operator=(const SystemPacketHandler&);
+  SystemPacketHandler(const SystemPacketHandler&);
+
   struct PacketInfo {
     PacketInfo() : pending(), stored() {}
     explicit PacketInfo(PacketPtr pend)
@@ -116,13 +134,16 @@ class SystemPacketHandler {
 
  public:
   typedef std::map<PacketType, PacketInfo> SystemPacketMap;
+  typedef std::map<std::string,
+                   std::pair<PacketInfo, PacketInfo>>
+          SelectableIdentitiesMap;
 
  private:
-  SystemPacketHandler &operator=(const SystemPacketHandler&);
-  SystemPacketHandler(const SystemPacketHandler&);
   bool IsConfirmed(SystemPacketMap::const_iterator it) const;
+
   SystemPacketMap packets_;
-  mutable boost::mutex mutex_;
+  SelectableIdentitiesMap selectable_ids_;
+  mutable boost::mutex mutex_, selectable_ids_mutex_;
 };
 
 }  // namespace passport

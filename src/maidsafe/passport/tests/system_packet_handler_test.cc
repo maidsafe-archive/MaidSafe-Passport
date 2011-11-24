@@ -51,10 +51,6 @@ class SystemPacketHandlerTest : public testing::Test {
   typedef std::shared_ptr<TmidPacket> TmidPtr;
   SystemPacketHandlerTest()
       : packet_handler_(),
-        asio_service_(),
-        work_(new boost::asio::io_service::work(asio_service_)),
-        threads_(),
-        crypto_key_pairs_(asio_service_, 4096),
         kUsername1_(RandomAlphaNumericString(20)),
         kUsername2_(RandomAlphaNumericString(20)),
         kPin1_(boost::lexical_cast<std::string>(NonZeroRnd())),
@@ -71,51 +67,11 @@ class SystemPacketHandlerTest : public testing::Test {
         kMidPlainTextMasterData2_(RandomString(10000)),
         kSmidPlainTextMasterData1_(RandomString(10000)),
         kSmidPlainTextMasterData2_(RandomString(10000)),
-        mpid_keys1_(),
-        mpid_keys2_(),
-        maid_keys1_(),
-        maid_keys2_(),
-        pmid_keys1_(),
-        pmid_keys2_(),
-        anmid_keys1_(),
-        anmid_keys2_(),
-        ansmid_keys1_(),
-        ansmid_keys2_(),
-        antmid_keys1_(),
-        antmid_keys2_(),
-        anmpid_keys1_(),
-        anmpid_keys2_(),
-        anmaid_keys1_(),
-        anmaid_keys2_(),
         packets1_(),
         packets2_() {}
+
  protected:
-  virtual void SetUp() {
-    for (int i(0); i != 5; ++i) {
-      threads_.create_thread(
-          std::bind(static_cast<size_t(boost::asio::io_service::*)()>(
-              &boost::asio::io_service::run), &asio_service_));
-    }
-    crypto_key_pairs_.CreateKeyPairs(16);
-
-
-    ASSERT_TRUE(crypto_key_pairs_.GetKeyPair(&mpid_keys1_));
-    ASSERT_TRUE(crypto_key_pairs_.GetKeyPair(&mpid_keys2_));
-    ASSERT_TRUE(crypto_key_pairs_.GetKeyPair(&maid_keys1_));
-    ASSERT_TRUE(crypto_key_pairs_.GetKeyPair(&maid_keys2_));
-    ASSERT_TRUE(crypto_key_pairs_.GetKeyPair(&pmid_keys1_));
-    ASSERT_TRUE(crypto_key_pairs_.GetKeyPair(&pmid_keys2_));
-    ASSERT_TRUE(crypto_key_pairs_.GetKeyPair(&anmid_keys1_));
-    ASSERT_TRUE(crypto_key_pairs_.GetKeyPair(&anmid_keys2_));
-    ASSERT_TRUE(crypto_key_pairs_.GetKeyPair(&ansmid_keys1_));
-    ASSERT_TRUE(crypto_key_pairs_.GetKeyPair(&ansmid_keys2_));
-    ASSERT_TRUE(crypto_key_pairs_.GetKeyPair(&antmid_keys1_));
-    ASSERT_TRUE(crypto_key_pairs_.GetKeyPair(&antmid_keys2_));
-    ASSERT_TRUE(crypto_key_pairs_.GetKeyPair(&anmpid_keys1_));
-    ASSERT_TRUE(crypto_key_pairs_.GetKeyPair(&anmpid_keys2_));
-    ASSERT_TRUE(crypto_key_pairs_.GetKeyPair(&anmaid_keys1_));
-    ASSERT_TRUE(crypto_key_pairs_.GetKeyPair(&anmaid_keys2_));
-
+  void InitialiseSigningIndentityPackets() {
     // kAnmid
     std::vector<pki::SignaturePacketPtr> packets;
     ASSERT_EQ(pki::kSuccess, pki::CreateChainedId(&packets, 1));
@@ -199,29 +155,64 @@ class SystemPacketHandlerTest : public testing::Test {
                                kPassword2_, kSmidPlainTextMasterData2_));
     packets2_.push_back(stmid);
   }
-  void TearDown() {
-    work_.reset();
-    asio_service_.stop();
-    threads_.join_all();
+
+  bool VerifySelectableIdContainerSize(size_t compare_size) {
+    return packet_handler_.selectable_ids_.size() == compare_size;
   }
+
+  bool VerifySelectableIdContents(const std::string &chosen_identity,
+                                  SignaturePacketPtr confirmed_identity,
+                                  SignaturePacketPtr confirmed_signer,
+                                  bool confirmed,
+                                  SignaturePacketPtr pending_identity,
+                                  SignaturePacketPtr pending_signer,
+                                  bool pending) {
+    auto it = packet_handler_.selectable_ids_.find(chosen_identity);
+    if (it == packet_handler_.selectable_ids_.end()) {
+      DLOG(ERROR) << "Found nothing";
+      return false;
+    }
+
+    if (confirmed) {
+      if (!confirmed_identity->Equals((*it).second.first.stored) ||
+          !confirmed_signer->Equals((*it).second.second.stored)) {
+        DLOG(ERROR) << "Different packets";
+        return false;
+      }
+    } else {
+       if ((*it).second.first.stored || (*it).second.second.stored) {
+        DLOG(ERROR) << "Stored packets shouldn't exist";
+        return false;
+      }
+    }
+
+    if (pending) {
+      if (!pending_identity->Equals((*it).second.first.pending) ||
+          !pending_signer->Equals((*it).second.second.pending)) {
+        DLOG(ERROR) << "Different packets";
+        return false;
+      }
+    } else {
+       if ((*it).second.first.pending || (*it).second.second.pending) {
+        DLOG(ERROR) << "Pending packets shouldn't exist";
+        return false;
+      }
+    }
+
+    return true;
+  }
+
   SystemPacketHandler packet_handler_;
-  AsioService asio_service_;
-  std::shared_ptr<boost::asio::io_service::work> work_;
-  boost::thread_group threads_;
-  CryptoKeyPairs crypto_key_pairs_;
   const std::string kUsername1_, kUsername2_, kPin1_, kPin2_;
   const std::string kMidRid1_, kMidRid2_, kSmidRid1_, kSmidRid2_;
   const std::string kPassword1_, kPassword2_, kPublicName1_, kPublicName2_;
   const std::string kMidPlainTextMasterData1_, kMidPlainTextMasterData2_;
   const std::string kSmidPlainTextMasterData1_, kSmidPlainTextMasterData2_;
-  asymm::Keys mpid_keys1_, mpid_keys2_, maid_keys1_, maid_keys2_;
-  asymm::Keys pmid_keys1_, pmid_keys2_, anmid_keys1_, anmid_keys2_;
-  asymm::Keys ansmid_keys1_, ansmid_keys2_, antmid_keys1_, antmid_keys2_;
-  asymm::Keys anmpid_keys1_, anmpid_keys2_, anmaid_keys1_, anmaid_keys2_;
   std::vector<std::shared_ptr<pki::Packet>> packets1_, packets2_;
 };
 
-TEST_F(SystemPacketHandlerTest, FUNC_All) {
+TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
+  InitialiseSigningIndentityPackets();
   // *********************** Test AddPendingPacket *****************************
   // Add pending for each packet type
   auto packets1_itr = packets1_.begin();
@@ -485,6 +476,172 @@ TEST_F(SystemPacketHandlerTest, FUNC_All) {
     EXPECT_EQ(kNoPacket, packet_handler_.DeletePacket(static_cast<PacketType>(
         (*packets1_itr++)->packet_type())));
   }
+}
+
+TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
+  DLOG(ERROR) << "\t\t\t\tStarting";
+  std::vector<SignaturePacketPtr> packets1;
+  pki::CreateChainedId(&packets1, 2);
+  std::vector<SignaturePacketPtr> packets2;
+  pki::CreateChainedId(&packets2, 2);
+  DLOG(ERROR) << "\t\t\t\tFinished creating packets";
+
+  std::string chosen_name(RandomAlphaNumericString(8));
+  ASSERT_EQ(kFailedToAddSelectableIdentity,
+            packet_handler_.AddPendingSelectableIdentity("",
+                                                         packets1.at(1),
+                                                         packets1.at(0)));
+  ASSERT_TRUE(VerifySelectableIdContainerSize(0));
+  ASSERT_FALSE(VerifySelectableIdContents(chosen_name,
+                                          SignaturePacketPtr(),
+                                          SignaturePacketPtr(),
+                                          false,
+                                          packets1.at(1),
+                                          packets1.at(0),
+                                          false));
+
+  ASSERT_EQ(kFailedToAddSelectableIdentity,
+            packet_handler_.AddPendingSelectableIdentity(chosen_name,
+                                                         SignaturePacketPtr(),
+                                                         packets1.at(0)));
+  ASSERT_TRUE(VerifySelectableIdContainerSize(0));
+
+  ASSERT_EQ(kFailedToAddSelectableIdentity,
+            packet_handler_.AddPendingSelectableIdentity(chosen_name,
+                                                         packets1.at(1),
+                                                         SignaturePacketPtr()));
+  ASSERT_TRUE(VerifySelectableIdContainerSize(0));
+
+  ASSERT_EQ(kSuccess,
+            packet_handler_.AddPendingSelectableIdentity(chosen_name,
+                                                         packets1.at(1),
+                                                         packets1.at(0)));
+  ASSERT_TRUE(VerifySelectableIdContainerSize(1));
+  ASSERT_TRUE(VerifySelectableIdContents(chosen_name,
+                                         SignaturePacketPtr(),
+                                         SignaturePacketPtr(),
+                                         false,
+                                         packets1.at(1),
+                                         packets1.at(0),
+                                         true));
+
+  ASSERT_EQ(kSuccess,
+            packet_handler_.AddPendingSelectableIdentity(chosen_name,
+                                                         packets2.at(1),
+                                                         packets2.at(0)));
+  ASSERT_TRUE(VerifySelectableIdContainerSize(1));
+  ASSERT_TRUE(VerifySelectableIdContents(chosen_name,
+                                         SignaturePacketPtr(),
+                                         SignaturePacketPtr(),
+                                         false,
+                                         packets2.at(1),
+                                         packets2.at(0),
+                                         true));
+
+  ASSERT_EQ(kSuccess,
+            packet_handler_.AddPendingSelectableIdentity(chosen_name,
+                                                         packets1.at(1),
+                                                         packets1.at(0)));
+  ASSERT_TRUE(VerifySelectableIdContainerSize(1));
+  ASSERT_TRUE(VerifySelectableIdContents(chosen_name,
+                                         SignaturePacketPtr(),
+                                         SignaturePacketPtr(),
+                                         false,
+                                         packets1.at(1),
+                                         packets1.at(0),
+                                         true));
+  DLOG(ERROR) << "\t\t\t\tFinished testing addition";
+
+  std::string inexistent_chosen_name(chosen_name + "1");
+  ASSERT_EQ(kFailedToConfirmSelectableIdentity,
+            packet_handler_.ConfirmSelectableIdentity(""));
+  ASSERT_TRUE(VerifySelectableIdContainerSize(1));
+  ASSERT_TRUE(VerifySelectableIdContents(chosen_name,
+                                         SignaturePacketPtr(),
+                                         SignaturePacketPtr(),
+                                         false,
+                                         packets1.at(1),
+                                         packets1.at(0),
+                                         true));
+  ASSERT_EQ(kFailedToConfirmSelectableIdentity,
+            packet_handler_.ConfirmSelectableIdentity(inexistent_chosen_name));
+  ASSERT_TRUE(VerifySelectableIdContainerSize(1));
+  ASSERT_TRUE(VerifySelectableIdContents(chosen_name,
+                                         SignaturePacketPtr(),
+                                         SignaturePacketPtr(),
+                                         false,
+                                         packets1.at(1),
+                                         packets1.at(0),
+                                         true));
+  ASSERT_EQ(kSuccess, packet_handler_.ConfirmSelectableIdentity(chosen_name));
+  ASSERT_TRUE(VerifySelectableIdContainerSize(1));
+  ASSERT_TRUE(VerifySelectableIdContents(chosen_name,
+                                         packets1.at(1),
+                                         packets1.at(0),
+                                         true,
+                                         SignaturePacketPtr(),
+                                         SignaturePacketPtr(),
+                                         false));
+  ASSERT_EQ(kSuccess,
+            packet_handler_.AddPendingSelectableIdentity(chosen_name,
+                                                         packets2.at(1),
+                                                         packets2.at(0)));
+  ASSERT_TRUE(VerifySelectableIdContainerSize(1));
+  ASSERT_TRUE(VerifySelectableIdContents(chosen_name,
+                                         packets1.at(1),
+                                         packets1.at(0),
+                                         true,
+                                         packets2.at(1),
+                                         packets2.at(0),
+                                         true));
+
+  ASSERT_EQ(kSuccess, packet_handler_.ConfirmSelectableIdentity(chosen_name));
+  ASSERT_TRUE(VerifySelectableIdContainerSize(1));
+  ASSERT_TRUE(VerifySelectableIdContents(chosen_name,
+                                         packets2.at(1),
+                                         packets2.at(0),
+                                         true,
+                                         SignaturePacketPtr(),
+                                         SignaturePacketPtr(),
+                                         false));
+
+  ASSERT_EQ(kSuccess,
+            packet_handler_.AddPendingSelectableIdentity(chosen_name,
+                                                         packets1.at(1),
+                                                         packets1.at(0)));
+  ASSERT_TRUE(VerifySelectableIdContainerSize(1));
+  ASSERT_TRUE(VerifySelectableIdContents(chosen_name,
+                                         packets2.at(1),
+                                         packets2.at(0),
+                                         true,
+                                         packets1.at(1),
+                                         packets1.at(0),
+                                         true));
+  DLOG(ERROR) << "\t\t\t\tFinished testing confirmation";
+
+  ASSERT_EQ(kFailedToDeleteSelectableIdentity,
+            packet_handler_.DeleteSelectableIdentity(""));
+  ASSERT_TRUE(VerifySelectableIdContainerSize(1));
+  ASSERT_TRUE(VerifySelectableIdContents(chosen_name,
+                                         packets2.at(1),
+                                         packets2.at(0),
+                                         true,
+                                         packets1.at(1),
+                                         packets1.at(0),
+                                         true));
+  ASSERT_EQ(kFailedToDeleteSelectableIdentity,
+            packet_handler_.DeleteSelectableIdentity(inexistent_chosen_name));
+  ASSERT_TRUE(VerifySelectableIdContainerSize(1));
+  ASSERT_TRUE(VerifySelectableIdContents(chosen_name,
+                                         packets2.at(1),
+                                         packets2.at(0),
+                                         true,
+                                         packets1.at(1),
+                                         packets1.at(0),
+                                         true));
+  ASSERT_EQ(kSuccess, packet_handler_.DeleteSelectableIdentity(chosen_name));
+  ASSERT_TRUE(VerifySelectableIdContainerSize(0));
+  DLOG(ERROR) << "\t\t\t\tFinished testing deletion";
 }
 
 }  // namespace test

@@ -51,7 +51,10 @@ enum ReturnCode {
   kEmptyParameter = -100009,
   kFailedToCreatePacket = -100010,
   kFailedToConfirmPacket = -100011,
-  kFailedToRevertPacket = -100012
+  kFailedToRevertPacket = -100012,
+  kFailedToAddSelectableIdentity = -100013,
+  kFailedToConfirmSelectableIdentity = -100014,
+  kFailedToDeleteSelectableIdentity = -100015
 };
 
 enum PacketType {

@@ -45,6 +45,7 @@ namespace maidsafe {
 namespace passport {
 
 typedef std::shared_ptr<pki::Packet> PacketPtr;
+typedef std::shared_ptr<pki::SignaturePacket> SignaturePacketPtr;
 
 class MidPacket;
 class TmidPacket;
@@ -57,14 +58,11 @@ testing::AssertionResult Empty(PacketPtr packet);
 class SystemPacketsTest_BEH_CreateSig_Test;
 class SystemPacketsTest_BEH_PutToAndGetFromKey_Test;
 struct ExpectedMidContent;
-testing::AssertionResult Equal(
-    std::shared_ptr<ExpectedMidContent> expected,
-    std::shared_ptr<MidPacket> mid);
+testing::AssertionResult Equal(std::shared_ptr<ExpectedMidContent> expected,
+                               std::shared_ptr<MidPacket> mid);
 struct ExpectedTmidContent;
-testing::AssertionResult Equal(
-    std::shared_ptr<ExpectedTmidContent> expected,
-    std::shared_ptr<TmidPacket> mid);
-class SystemPacketHandlerTest_FUNC_All_Test;
+testing::AssertionResult Equal(std::shared_ptr<ExpectedTmidContent> expected,
+                               std::shared_ptr<TmidPacket> mid);
 class PassportTest_BEH_SetNewUserData_Test;
 class PassportTest_BEH_ConfirmNewUserData_Test;
 class PassportTest;

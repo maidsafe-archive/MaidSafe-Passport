@@ -45,6 +45,14 @@ namespace maidsafe {
 
 namespace passport {
 
+SystemPacketHandler::SystemPacketHandler()
+    : packets_(),
+      selectable_ids_(),
+      mutex_(),
+      selectable_ids_mutex_() {}
+
+SystemPacketHandler::~SystemPacketHandler() {}
+
 bool SystemPacketHandler::AddPendingPacket(PacketPtr packet) {
   if (!packet)
     return false;
@@ -304,14 +312,82 @@ int SystemPacketHandler::DeletePacket(const PacketType &packet_type) {
     DLOG(ERROR) << "SystemPacketHandler::DeletePacket: Missing "
                 << DebugString(packet_type);
     return kNoPacket;
-  } else {
-    return kSuccess;
   }
+
+  return kSuccess;
 }
 
 void SystemPacketHandler::Clear() {
   boost::mutex::scoped_lock lock(mutex_);
   packets_.clear();
+}
+
+int SystemPacketHandler::AddPendingSelectableIdentity(
+    const std::string &chosen_identity,
+    SignaturePacketPtr identity,
+    SignaturePacketPtr signer) {
+  if (chosen_identity.empty() || !identity || !signer) {
+    DLOG(ERROR) << "Empty chosen identity or null pointers";
+    return kFailedToAddSelectableIdentity;
+  }
+
+  SelectableIdentitiesMap::mapped_type packets(
+      std::make_pair(PacketInfo(identity), PacketInfo(signer)));
+
+  boost::mutex::scoped_lock loch_an_ruathair(selectable_ids_mutex_);
+  auto it = selectable_ids_.find(chosen_identity);
+  if (it == selectable_ids_.end()) {
+    std::pair<SelectableIdentitiesMap::iterator, bool> result =
+        selectable_ids_.insert(std::make_pair(chosen_identity, packets));
+    if (!result.second) {
+      DLOG(ERROR) << "Failed for " << chosen_identity;
+      return kFailedToAddSelectableIdentity;
+    }
+  } else {
+    (*it).second.first.pending = identity;
+    (*it).second.second.pending = signer;
+  }
+
+  return kSuccess;
+}
+
+int SystemPacketHandler::ConfirmSelectableIdentity(
+    const std::string &chosen_identity) {
+  if (chosen_identity.empty()) {
+    DLOG(ERROR) << "Empty chosen identity";
+    return kFailedToConfirmSelectableIdentity;
+  }
+
+  boost::mutex::scoped_lock loch_arichlinie(selectable_ids_mutex_);
+  auto it = selectable_ids_.find(chosen_identity);
+  if (it == selectable_ids_.end()) {
+    DLOG(ERROR) << "Chosen identity to be confirmed not found";
+    return kFailedToConfirmSelectableIdentity;
+  }
+
+  (*it).second.first.stored = (*it).second.first.pending;
+  (*it).second.first.pending.reset();
+  (*it).second.second.stored = (*it).second.second.pending;
+  (*it).second.second.pending.reset();
+
+  return kSuccess;
+}
+
+int SystemPacketHandler::DeleteSelectableIdentity(
+    const std::string &chosen_identity) {
+  if (chosen_identity.empty()) {
+    DLOG(ERROR) << "Empty chosen identity";
+    return kFailedToDeleteSelectableIdentity;
+  }
+
+  boost::mutex::scoped_lock loch_eribol(selectable_ids_mutex_);
+  size_t deleted_count = selectable_ids_.erase(chosen_identity);
+  if (deleted_count == 0U) {
+    DLOG(ERROR) << "Missing selectable ID: " << chosen_identity;
+    return kFailedToDeleteSelectableIdentity;
+  }
+
+  return kSuccess;
 }
 
 }  // namespace passport
