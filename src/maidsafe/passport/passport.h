@@ -75,8 +75,10 @@ class Passport {
   int ConfirmIdentityPackets();
 
   // Serialisation
-  std::string SerialiseKeyring() const;
-  int ParseKeyring(const std::string &serialised_keyring);
+  void SerialiseKeyChain(std::string *key_chain,
+                         std::string *selectables) const;
+  int ParseKeyChain(const std::string &serialised_keychain,
+                    const std::string &serialised_selectables);
 
   // Getters
   std::string PacketName(PacketType packet_type, bool confirmed) const;
@@ -85,9 +87,10 @@ class Passport {
   std::string IdentityPacketValue(PacketType packet_type, bool confirmed) const;
   std::string PacketSignature(PacketType packet_type, bool confirmed) const;
 
-  // Selectable Identity (MPID)
-  int CreateSelectableIdentity();
-  int ConfirmSelectableIdentity();
+  // Selectable Identity (aka MPID)
+  int CreateSelectableIdentity(const std::string &chosen_name);
+  int ConfirmSelectableIdentity(const std::string &chosen_name);
+  int DeleteSelectableIdentity(const std::string &chosen_name);
 
   friend class test::PassportTest;
 

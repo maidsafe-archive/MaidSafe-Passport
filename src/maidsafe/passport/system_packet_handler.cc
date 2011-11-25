@@ -24,6 +24,7 @@
 
 #include <cstdio>
 #include <sstream>
+#include <vector>
 
 #include "boost/archive/text_oarchive.hpp"
 #include "boost/archive/text_iarchive.hpp"
@@ -253,47 +254,111 @@ bool SystemPacketHandler::IsConfirmed(
   return (it != packets_.end() && !(*it).second.pending && (*it).second.stored);
 }
 
-std::string SystemPacketHandler::SerialiseKeyring() const {
-  std::ostringstream key_chain(std::ios_base::binary);
-  boost::archive::text_oarchive output_archive(key_chain);
-  boost::mutex::scoped_lock lock(mutex_);
-  SystemPacketMap::const_iterator it = packets_.begin();
+void SystemPacketHandler::SerialiseKeyChain(std::string *key_chain,
+                                            std::string *selectables) const {
+  std::ostringstream key_chain_stream(std::ios_base::binary);
+  boost::archive::text_oarchive kc_output_archive(key_chain_stream);
   SystemPacketMap spm;
-  while (it != packets_.end()) {
-    if (IsSignature((*it).first, false) && (*it).second.stored)
-      spm.insert(*it);
-    ++it;
+  {
+    boost::mutex::scoped_lock lock(mutex_);
+    SystemPacketMap::const_iterator it = packets_.begin();
+    while (it != packets_.end()) {
+      if (IsSignature((*it).first, false) && (*it).second.stored)
+        spm.insert(*it);
+      ++it;
+    }
   }
-  // Serialise map
-  output_archive << spm;
-  return key_chain.str();
+  if (spm.empty()) {
+    *key_chain = "";
+  } else {
+    kc_output_archive << spm;
+    *key_chain = key_chain_stream.str();
+  }
+
+  std::ostringstream selectables_stream(std::ios_base::binary);
+  boost::archive::text_oarchive selectables_output_archive(selectables_stream);
+  SelectableIdentitiesSerialiser sis;
+  {
+    boost::mutex::scoped_lock loch_a_garbh_bhaid_mor(selectable_ids_mutex_);
+    auto it = selectable_ids_.begin();
+    while (it != selectable_ids_.end()) {
+      if ((*it).second.first.stored && (*it).second.second.stored) {
+        auto p =
+        sis.insert(std::make_pair(
+            (*it).first,
+            std::make_pair(*std::static_pointer_cast<pki::SignaturePacket>(
+                               (*it).second.first.stored),
+                           *std::static_pointer_cast<pki::SignaturePacket>(
+                               (*it).second.second.stored))));
+        if (!p.second)
+          DLOG(ERROR) << "Failed to add " << (*it).first << " to SIS";
+      }
+      ++it;
+    }
+  }
+  if (sis.empty()) {
+    *selectables = "";
+  } else {
+    selectables_output_archive << sis;
+    *selectables = selectables_stream.str();
+  }
 }
 
-int SystemPacketHandler::ParseKeyring(const std::string &serialised_keyring) {
-  std::istringstream key_chain(serialised_keyring, std::ios_base::binary);
-  boost::archive::text_iarchive input_archive(key_chain);
+int SystemPacketHandler::ParseKeyChain(
+    const std::string &serialised_keychain,
+    const std::string &serialised_selectables) {
+  if (!serialised_keychain.empty()) {
+    std::istringstream key_chain(serialised_keychain, std::ios_base::binary);
+    boost::archive::text_iarchive kc_input_archive(key_chain);
 
-  SystemPacketMap spm;
-  input_archive >> spm;
-  if (spm.empty()) {
-    DLOG(ERROR) << "SystemPacketHandler::ParseKeyring failed.";
-    return kBadSerialisedKeyring;
+    SystemPacketMap spm;
+    kc_input_archive >> spm;
+    if (spm.empty()) {
+      DLOG(ERROR) << "SystemPacketHandler::ParseKeyChain failed.";
+      return kBadSerialisedKeyChain;
+    }
+
+    {
+      boost::mutex::scoped_lock lock(mutex_);
+      for (auto it(spm.begin()); it != spm.end(); ++it) {
+        auto result = packets_.insert(*it);
+        if (!result.second) {
+          DLOG(ERROR) << "SystemPacketHandler::ParseKeyChain: Failed for "
+                      << DebugString((*it).second.stored->packet_type());
+          return kKeyChainNotEmpty;
+        }
+      }
+    }
   }
 
-  boost::mutex::scoped_lock lock(mutex_);
-  for (auto it(spm.begin()); it != spm.end(); ++it) {
-    auto result = packets_.insert(*it);
-    if (!result.second) {
-      DLOG(ERROR) << "SystemPacketHandler::ParseKeyring: Failed for "
-                  << DebugString((*it).second.stored->packet_type());
-      return kKeyringNotEmpty;
+  if (!serialised_selectables.empty()) {
+    std::istringstream serialisables(serialised_selectables,
+                                     std::ios_base::binary);
+    boost::archive::text_iarchive s_input_archive(serialisables);
+    SelectableIdentitiesSerialiser sis;
+    s_input_archive >> sis;
+
+    for (auto it(sis.begin()); it != sis.end(); ++it) {
+      if (kSuccess != AddPendingSelectableIdentity(
+                          (*it).first,
+                          SignaturePacketPtr(
+                              new pki::SignaturePacket((*it).second.first)),
+                          SignaturePacketPtr(
+                              new pki::SignaturePacket((*it).second.second)))) {
+        DLOG(ERROR) << "Failed adding pending " << (*it).first;
+        return kFailedToAddSelectableIdentity;
+      }
+      if (kSuccess != ConfirmSelectableIdentity((*it).first)) {
+        DLOG(ERROR) << "Failed adding pending " << (*it).first;
+        return kFailedToConfirmSelectableIdentity;
+      }
     }
   }
 
   return kSuccess;
 }
 
-void SystemPacketHandler::ClearKeyring() {
+void SystemPacketHandler::ClearKeyChain() {
   boost::mutex::scoped_lock lock(mutex_);
   SystemPacketMap::iterator it = packets_.begin();
   while (it != packets_.end()) {
@@ -388,6 +453,19 @@ int SystemPacketHandler::DeleteSelectableIdentity(
   }
 
   return kSuccess;
+}
+
+void SystemPacketHandler::SelectableIdentitiesList(
+    std::vector<std::string> *selectables) const {
+  BOOST_ASSERT(selectables);
+  selectables->clear();
+  boost::mutex::scoped_lock loch_na_tuadh(selectable_ids_mutex_);
+  SelectableIdentitiesMap::const_iterator it(selectable_ids_.begin());
+  while (it != selectable_ids_.end()) {
+    if ((*it).second.first.stored && (*it).second.second.stored)
+      selectables->push_back((*it).first);
+    ++it;
+  }
 }
 
 }  // namespace passport

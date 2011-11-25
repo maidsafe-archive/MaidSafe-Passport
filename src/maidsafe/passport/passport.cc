@@ -196,20 +196,25 @@ int Passport::ConfirmIdentityPackets() {
   return result;
 }
 
-std::string Passport::SerialiseKeyring() const {
-  return handler_->SerialiseKeyring();
+void Passport::SerialiseKeyChain(std::string *key_chain,
+                                 std::string *selectables) const {
+  return handler_->SerialiseKeyChain(key_chain, selectables);
 }
 
-int Passport::ParseKeyring(const std::string &serialised_keyring) {
-  int result = handler_->ParseKeyring(serialised_keyring);
+int Passport::ParseKeyChain(const std::string &serialised_keychain,
+                            const std::string &serialised_selectables) {
+  int result = handler_->ParseKeyChain(serialised_keychain,
+                                       serialised_selectables);
   if (result != kSuccess) {
     DLOG(ERROR) << "Failed parsing keyring";
     return result;
   }
 
   result = ConfirmIdentityPackets();
-  if (result != kSuccess)
-    DLOG(ERROR) << "Failed parsing keyring";
+  if (result != kSuccess) {
+    DLOG(ERROR) << "Failed confirming identity packets";
+    return result;
+  }
 
   return result;
 }
@@ -227,7 +232,7 @@ std::string Passport::PacketName(PacketType packet_type, bool confirmed) const {
 }
 
 asymm::PublicKey Passport::SignaturePacketValue(PacketType packet_type,
-                                              bool confirmed) const {
+                                                bool confirmed) const {
   if (!IsSignature(packet_type, false)) {
     DLOG(ERROR) << "Packet " << DebugString(packet_type)
                 << " is not a signing packet.";
@@ -308,36 +313,30 @@ std::string Passport::PacketSignature(PacketType packet_type,
 }
 
 // Selectable Identity (MPID)
-int Passport::CreateSelectableIdentity() {
+int Passport::CreateSelectableIdentity(const std::string &chosen_name) {
   std::vector<pki::SignaturePacketPtr> packets;
   if (pki::CreateChainedId(&packets, 2) != kSuccess || packets.size() != 2U) {
     DLOG(ERROR) << "Failed to create kAnmpid";
     return kFailedToCreatePacket;
   }
-  packets.at(0)->set_packet_type(kAnmpid);
-  packets.at(1)->set_packet_type(kMpid);
-  if (!handler_->AddPendingPacket(packets.at(0)) ||
-      !handler_->AddPendingPacket(packets.at(1))) {
-    DLOG(ERROR) << "Failed to add pending kAnmpid/kMpid";
+
+
+  if (kSuccess != handler_->AddPendingSelectableIdentity(chosen_name,
+                                                         packets.at(1),
+                                                         packets.at(0))) {
+    DLOG(ERROR) << "Failed to add pending selectable";
     return kFailedToCreatePacket;
   }
 
   return kSuccess;
 }
 
-int Passport::ConfirmSelectableIdentity() {
-  if (handler_->ConfirmPacket(handler_->GetPacket(kAnmpid, false)) !=
-      kSuccess) {
-    DLOG(ERROR) << "Failed confirming packet " << DebugString(kAnmpid);
-    return kFailedToConfirmPacket;
-  }
+int Passport::ConfirmSelectableIdentity(const std::string &chosen_name) {
+  return handler_->ConfirmSelectableIdentity(chosen_name);
+}
 
-  if (handler_->ConfirmPacket(handler_->GetPacket(kMpid, false)) != kSuccess) {
-    DLOG(ERROR) << "Failed confirming packet " << DebugString(kMpid);
-    return kFailedToConfirmPacket;
-  }
-
-  return kSuccess;
+int Passport::DeleteSelectableIdentity(const std::string &chosen_name) {
+  return handler_->DeleteSelectableIdentity(chosen_name);
 }
 
 }  // namespace passport

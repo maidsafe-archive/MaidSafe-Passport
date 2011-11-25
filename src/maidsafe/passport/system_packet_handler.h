@@ -26,6 +26,7 @@
 #include <memory>
 #include <map>
 #include <string>
+#include <vector>
 
 #include "boost/thread/mutex.hpp"
 #include "boost/archive/text_oarchive.hpp"
@@ -71,11 +72,14 @@ class SystemPacketHandler {
                                    SignaturePacketPtr signer);
   int ConfirmSelectableIdentity(const std::string &chosen_identity);
   int DeleteSelectableIdentity(const std::string &chosen_identity);
+  void SelectableIdentitiesList(std::vector<std::string> *selectables) const;
 
   // Whole keyring
-  std::string SerialiseKeyring() const;
-  int ParseKeyring(const std::string &serialised_keyring);
-  void ClearKeyring();
+  void SerialiseKeyChain(std::string *key_chain,
+                         std::string *selectables) const;
+  int ParseKeyChain(const std::string &serialised_keychain,
+                    const std::string &serialised_selectables);
+  void ClearKeyChain();
 
   void Clear();
   friend class test::SystemPacketHandlerTest;
@@ -137,6 +141,9 @@ class SystemPacketHandler {
   typedef std::map<std::string,
                    std::pair<PacketInfo, PacketInfo>>
           SelectableIdentitiesMap;
+  typedef std::map<std::string,
+                   std::pair<pki::SignaturePacket, pki::SignaturePacket>>
+          SelectableIdentitiesSerialiser;
 
  private:
   bool IsConfirmed(SystemPacketMap::const_iterator it) const;

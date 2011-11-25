@@ -373,45 +373,6 @@ TEST_F(PassportTest, BEH_FreeFunctions) {
                                             encrypted_master_data));
 }
 
-TEST_F(PassportTest, BEH_SelectableIdentity) {
-  ASSERT_EQ("", passport_.PacketName(kAnmpid, true));
-  ASSERT_EQ("", passport_.PacketName(kAnmpid, false));
-  ASSERT_EQ("", passport_.PacketName(kMpid, true));
-  ASSERT_EQ("", passport_.PacketName(kMpid, false));
-
-  // Packets pending
-  ASSERT_EQ(kFailedToConfirmPacket, passport_.ConfirmSelectableIdentity());
-  ASSERT_EQ(kSuccess, passport_.CreateSelectableIdentity());
-  ASSERT_EQ("", passport_.PacketName(kAnmpid, true));
-  ASSERT_NE("", passport_.PacketName(kAnmpid, false));
-  ASSERT_EQ("", passport_.PacketName(kMpid, true));
-  ASSERT_NE("", passport_.PacketName(kMpid, false));
-
-  // Packets from pending to confirmed
-  ASSERT_EQ(kSuccess, passport_.ConfirmSelectableIdentity());
-  ASSERT_NE("", passport_.PacketName(kAnmpid, true));
-  ASSERT_EQ("", passport_.PacketName(kAnmpid, false));
-  ASSERT_NE("", passport_.PacketName(kMpid, true));
-  ASSERT_EQ("", passport_.PacketName(kMpid, false));
-
-  // Check name
-  std::string pub_key;
-  asymm::EncodePublicKey(passport_.SignaturePacketValue(kAnmpid, true),
-                         &pub_key);
-  ASSERT_EQ(passport_.PacketName(kAnmpid, true),
-            crypto::Hash<crypto::SHA512>(pub_key +
-                                         passport_.PacketSignature(kAnmpid,
-                                                                   true)));
-
-  pub_key.clear();
-  asymm::EncodePublicKey(passport_.SignaturePacketValue(kMpid, true),
-                         &pub_key);
-  ASSERT_EQ(passport_.PacketName(kMpid, true),
-            crypto::Hash<crypto::SHA512>(pub_key +
-                                         passport_.PacketSignature(kMpid,
-                                                                   true)));
-}
-
 }  // namespace test
 
 }  // namespace passport

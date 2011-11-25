@@ -217,33 +217,33 @@ TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
   // Add pending for each packet type
   auto packets1_itr = packets1_.begin();
   while (packets1_itr != packets1_.end())
-    EXPECT_TRUE(packet_handler_.AddPendingPacket(*packets1_itr++));
+    ASSERT_TRUE(packet_handler_.AddPendingPacket(*packets1_itr++));
   ASSERT_EQ(packets1_.size(), packet_handler_.packets_.size());
   auto it = packet_handler_.packets_.begin();
   packets1_itr = packets1_.begin();
   while (packets1_itr != packets1_.end()) {
-    EXPECT_EQ((*packets1_itr)->packet_type(),
+    ASSERT_EQ((*packets1_itr)->packet_type(),
               (*it).second.pending->packet_type());
-    EXPECT_TRUE((*packets1_itr++)->Equals((*it).second.pending));
-    EXPECT_TRUE((*it++).second.stored.get() == NULL);
+    ASSERT_TRUE((*packets1_itr++)->Equals((*it).second.pending));
+    ASSERT_TRUE((*it++).second.stored.get() == NULL);
   }
 
   // Overwrite pending for each packet type
   auto packets2_itr = packets2_.begin();
   while (packets2_itr != packets2_.end())
-    EXPECT_TRUE(packet_handler_.AddPendingPacket(*packets2_itr++));
+    ASSERT_TRUE(packet_handler_.AddPendingPacket(*packets2_itr++));
   ASSERT_EQ(packets2_.size(), packet_handler_.packets_.size());
   it = packet_handler_.packets_.begin();
   packets1_itr = packets1_.begin();
   packets2_itr = packets2_.begin();
   while (packets2_itr != packets2_.end()) {
-    EXPECT_EQ((*packets1_itr)->packet_type(),
+    ASSERT_EQ((*packets1_itr)->packet_type(),
               (*it).second.pending->packet_type());
-    EXPECT_EQ((*packets2_itr)->packet_type(),
+    ASSERT_EQ((*packets2_itr)->packet_type(),
               (*it).second.pending->packet_type());
-    EXPECT_FALSE((*packets1_itr++)->Equals((*it).second.pending));
-    EXPECT_TRUE((*packets2_itr++)->Equals((*it).second.pending));
-    EXPECT_TRUE((*it++).second.stored.get() == NULL);
+    ASSERT_FALSE((*packets1_itr++)->Equals((*it).second.pending));
+    ASSERT_TRUE((*packets2_itr++)->Equals((*it).second.pending));
+    ASSERT_TRUE((*it++).second.stored.get() == NULL);
   }
 
   // *********************** Test ConfirmPacket ********************************
@@ -251,14 +251,14 @@ TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
   // Check confirm fails when packet not in packethandler
   packets1_itr = packets1_.begin();
   while (packets1_itr != packets1_.end())
-    EXPECT_EQ(kNoPendingPacket, packet_handler_.ConfirmPacket(*packets1_itr++));
+    ASSERT_EQ(kNoPendingPacket, packet_handler_.ConfirmPacket(*packets1_itr++));
 
   // Check confirm fails when dependencies missing
   packets1_itr = packets1_.begin();
   packets1_itr += 6;
   while (packets1_itr != packets1_.end()) {
-    EXPECT_TRUE(packet_handler_.AddPendingPacket(*packets1_itr));
-    EXPECT_EQ(kMissingDependentPackets,
+    ASSERT_TRUE(packet_handler_.AddPendingPacket(*packets1_itr));
+    ASSERT_EQ(kMissingDependentPackets,
               packet_handler_.ConfirmPacket(*packets1_itr++));
   }
 
@@ -268,9 +268,9 @@ TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
   packets2_itr = packets2_.begin();
   int count(0);
   while (count++ < 6) {
-    EXPECT_TRUE(packet_handler_.AddPendingPacket(*packets1_itr));
-    EXPECT_EQ(kPacketsNotEqual, packet_handler_.ConfirmPacket(*packets2_itr++));
-    EXPECT_EQ(kSuccess, packet_handler_.ConfirmPacket(*packets1_itr++));
+    ASSERT_TRUE(packet_handler_.AddPendingPacket(*packets1_itr));
+    ASSERT_EQ(kPacketsNotEqual, packet_handler_.ConfirmPacket(*packets2_itr++));
+    ASSERT_EQ(kSuccess, packet_handler_.ConfirmPacket(*packets1_itr++));
   }
 
   // Check remaining packets fail when different version in packethandler,
@@ -280,23 +280,23 @@ TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
   packets2_itr = packets2_.begin();
   packets2_itr += 6;
   while (packets1_itr != packets1_.end()) {
-    EXPECT_EQ(kPacketsNotEqual, packet_handler_.ConfirmPacket(*packets2_itr++));
-    EXPECT_EQ(kSuccess, packet_handler_.ConfirmPacket(*packets1_itr++));
+    ASSERT_EQ(kPacketsNotEqual, packet_handler_.ConfirmPacket(*packets2_itr++));
+    ASSERT_EQ(kSuccess, packet_handler_.ConfirmPacket(*packets1_itr++));
   }
 
   // Check confirm succeeds when packets no longer pending
   packets1_itr = packets1_.begin();
   packets2_itr = packets2_.begin();
   while (packets1_itr != packets1_.end()) {
-    EXPECT_EQ(kNoPendingPacket, packet_handler_.ConfirmPacket(*packets2_itr++));
-    EXPECT_EQ(kSuccess, packet_handler_.ConfirmPacket(*packets1_itr++));
+    ASSERT_EQ(kNoPendingPacket, packet_handler_.ConfirmPacket(*packets2_itr++));
+    ASSERT_EQ(kSuccess, packet_handler_.ConfirmPacket(*packets1_itr++));
   }
 
   // *********************** Test Getters and Reverting ************************
   // Add pending as well confirmed packets
   packets2_itr = packets2_.begin();
   while (packets2_itr != packets2_.end())
-    EXPECT_TRUE(packet_handler_.AddPendingPacket(*packets2_itr++));
+    ASSERT_TRUE(packet_handler_.AddPendingPacket(*packets2_itr++));
 
   // Check Packet returns confirmed and PendingPacket returns pending
   packets1_itr = packets1_.begin();
@@ -304,18 +304,18 @@ TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
   while (packets1_itr != packets1_.end()) {
     PacketType packet_type(static_cast<PacketType>(
         (*packets1_itr)->packet_type()));
-    EXPECT_FALSE(packet_handler_.Confirmed(packet_type));
+    ASSERT_FALSE(packet_handler_.Confirmed(packet_type));
     PacketPtr confirmed(packet_handler_.GetPacket(packet_type, true));
     PacketPtr pending(packet_handler_.GetPacket(packet_type, false));
-    EXPECT_TRUE((*packets1_itr)->Equals(confirmed));
-    EXPECT_TRUE((*packets2_itr)->Equals(pending));
+    ASSERT_TRUE((*packets1_itr)->Equals(confirmed));
+    ASSERT_TRUE((*packets2_itr)->Equals(pending));
     // Check copies returned
     confirmed.reset();
     pending.reset();
     PacketPtr confirmed1(packet_handler_.GetPacket(packet_type, true));
     PacketPtr pending1(packet_handler_.GetPacket(packet_type, false));
-    EXPECT_TRUE((*packets1_itr++)->Equals(confirmed1));
-    EXPECT_TRUE((*packets2_itr++)->Equals(pending1));
+    ASSERT_TRUE((*packets1_itr++)->Equals(confirmed1));
+    ASSERT_TRUE((*packets2_itr++)->Equals(pending1));
   }
 
   // Revert all pending packets and use getters
@@ -323,12 +323,12 @@ TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
   while (packets1_itr != packets1_.end()) {
     PacketType packet_type(static_cast<PacketType>(
         (*packets1_itr)->packet_type()));
-    EXPECT_TRUE(packet_handler_.RevertPacket(packet_type));
-    EXPECT_TRUE(packet_handler_.Confirmed(packet_type));
+    ASSERT_TRUE(packet_handler_.RevertPacket(packet_type));
+    ASSERT_TRUE(packet_handler_.Confirmed(packet_type));
     PacketPtr confirmed(packet_handler_.GetPacket(packet_type, true));
     PacketPtr pending(packet_handler_.GetPacket(packet_type, false));
-    EXPECT_TRUE((*packets1_itr++)->Equals(confirmed));
-    EXPECT_TRUE(pending.get() == NULL);
+    ASSERT_TRUE((*packets1_itr++)->Equals(confirmed));
+    ASSERT_TRUE(pending.get() == NULL);
   }
 
   // Revert all again - should succeed
@@ -336,11 +336,11 @@ TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
   while (packets1_itr != packets1_.end()) {
     PacketType packet_type(static_cast<PacketType>(
         (*packets1_itr)->packet_type()));
-    EXPECT_TRUE(packet_handler_.RevertPacket(packet_type));
+    ASSERT_TRUE(packet_handler_.RevertPacket(packet_type));
     PacketPtr confirmed(packet_handler_.GetPacket(packet_type, true));
     PacketPtr pending(packet_handler_.GetPacket(packet_type, false));
-    EXPECT_TRUE((*packets1_itr++)->Equals(confirmed));
-    EXPECT_TRUE(pending.get() == NULL);
+    ASSERT_TRUE((*packets1_itr++)->Equals(confirmed));
+    ASSERT_TRUE(pending.get() == NULL);
   }
 
   // Check when packets missing
@@ -349,54 +349,46 @@ TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
   while (packets1_itr != packets1_.end()) {
     PacketType packet_type(static_cast<PacketType>(
         (*packets1_itr++)->packet_type()));
-    EXPECT_FALSE(packet_handler_.RevertPacket(packet_type));
-    EXPECT_TRUE(packet_handler_.GetPacket(packet_type, true).get() == NULL);
-    EXPECT_TRUE(packet_handler_.GetPacket(packet_type, false).get() == NULL);
+    ASSERT_FALSE(packet_handler_.RevertPacket(packet_type));
+    ASSERT_TRUE(packet_handler_.GetPacket(packet_type, true).get() == NULL);
+    ASSERT_TRUE(packet_handler_.GetPacket(packet_type, false).get() == NULL);
   }
 
-  // *********************** Test Serialising and Parsing Keyring **************
+  // *********************** Test Serialising and Parsing KeyChain *************
   // Check with empty packethandler
   const std::string kPublicName("Name");
   std::string retrieved_public_name("AnotherName");
-//  std::string empty_keyring(packet_handler_.SerialiseKeyring(""));
-//  EXPECT_TRUE(empty_keyring.empty());
-//  EXPECT_EQ(kBadSerialisedKeyring,
-//      packet_handler_.ParseKeyring(empty_keyring, &retrieved_public_name));
-//  EXPECT_EQ("AnotherName", retrieved_public_name);
 
   // Check with only pending packets
   packets1_itr = packets1_.begin();
   while (packets1_itr != packets1_.end())
-    EXPECT_TRUE(packet_handler_.AddPendingPacket(*packets1_itr++));
-//  empty_keyring = packet_handler_.SerialiseKeyring("");
-//  EXPECT_TRUE(empty_keyring.empty());
-//  EXPECT_EQ(kBadSerialisedKeyring,
-//      packet_handler_.ParseKeyring(empty_keyring, &retrieved_public_name));
-//  EXPECT_EQ("AnotherName", retrieved_public_name);
+    ASSERT_TRUE(packet_handler_.AddPendingPacket(*packets1_itr++));
 
   // Check serialisation with confirmed packets
   packets1_itr = packets1_.begin();
   while (packets1_itr != packets1_.end())
-    EXPECT_EQ(kSuccess, packet_handler_.ConfirmPacket(*packets1_itr++));
-  std::string keyring1(packet_handler_.SerialiseKeyring());
-  EXPECT_FALSE(keyring1.empty());
+    ASSERT_EQ(kSuccess, packet_handler_.ConfirmPacket(*packets1_itr++));
+  std::string keyring1, selectables1;
+  packet_handler_.SerialiseKeyChain(&keyring1, &selectables1);
+  ASSERT_FALSE(keyring1.empty());
 
   // Check serialisation with different confirmed packets
   packets2_itr = packets2_.begin();
   while (packets2_itr != packets2_.end()) {
-    EXPECT_TRUE(packet_handler_.AddPendingPacket(*packets2_itr));
-    EXPECT_EQ(kSuccess, packet_handler_.ConfirmPacket(*packets2_itr++));
+    ASSERT_TRUE(packet_handler_.AddPendingPacket(*packets2_itr));
+    ASSERT_EQ(kSuccess, packet_handler_.ConfirmPacket(*packets2_itr++));
   }
-  std::string keyring2(packet_handler_.SerialiseKeyring());
-  EXPECT_FALSE(keyring2.empty());
-  EXPECT_NE(keyring1, keyring2);
+  std::string keyring2, selectables2;
+  packet_handler_.SerialiseKeyChain(&keyring2, &selectables2);
+  ASSERT_FALSE(keyring2.empty());
+  ASSERT_NE(keyring1, keyring2);
 
   // Check parsing fails to alter already-polpulated packethandler
   packets1_itr = packets1_.begin();
   while (packets1_itr != packets1_.end())
-    EXPECT_TRUE(packet_handler_.AddPendingPacket(*packets1_itr++));
-  EXPECT_EQ(kKeyringNotEmpty, packet_handler_.ParseKeyring(keyring1));
-//  EXPECT_EQ("AnotherName", retrieved_public_name);
+    ASSERT_TRUE(packet_handler_.AddPendingPacket(*packets1_itr++));
+  ASSERT_EQ(kKeyChainNotEmpty, packet_handler_.ParseKeyChain(keyring1,
+                                                           selectables1));
   packets1_itr = packets1_.begin();
   packets2_itr = packets2_.begin();
   while (packets1_itr != packets1_.end()) {
@@ -404,13 +396,13 @@ TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
         (*packets1_itr)->packet_type()));
     PacketPtr confirmed(packet_handler_.GetPacket(packet_type, true));
     PacketPtr pending(packet_handler_.GetPacket(packet_type, false));
-    EXPECT_TRUE((*packets2_itr++)->Equals(confirmed));
-    EXPECT_TRUE((*packets1_itr++)->Equals(pending));
+    ASSERT_TRUE((*packets2_itr++)->Equals(confirmed));
+    ASSERT_TRUE((*packets1_itr++)->Equals(pending));
   }
 
-  // Check ClearKeyring only removes signature packets
-  packet_handler_.ClearKeyring();
-  EXPECT_EQ(4U, packet_handler_.packets_.size());
+  // Check ClearKeyChain only removes signature packets
+  packet_handler_.ClearKeyChain();
+  ASSERT_EQ(4U, packet_handler_.packets_.size());
   packets1_itr = packets1_.begin();
   packets1_itr += 6;
   packets2_itr = packets2_.begin();
@@ -420,8 +412,8 @@ TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
         (*packets1_itr)->packet_type()));
     PacketPtr confirmed(packet_handler_.GetPacket(packet_type, true));
     PacketPtr pending(packet_handler_.GetPacket(packet_type, false));
-    EXPECT_TRUE((*packets2_itr++)->Equals(confirmed));
-    EXPECT_TRUE((*packets1_itr++)->Equals(pending));
+    ASSERT_TRUE((*packets2_itr++)->Equals(confirmed));
+    ASSERT_TRUE((*packets1_itr++)->Equals(pending));
   }
 
   count = 0;
@@ -429,14 +421,13 @@ TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
   while (count++ < 6) {
     PacketType packet_type(static_cast<PacketType>(
         (*packets1_itr++)->packet_type()));
-    EXPECT_TRUE(packet_handler_.GetPacket(packet_type, true).get() == NULL);
-    EXPECT_TRUE(packet_handler_.GetPacket(packet_type, false).get() == NULL);
+    ASSERT_TRUE(packet_handler_.GetPacket(packet_type, true).get() == NULL);
+    ASSERT_TRUE(packet_handler_.GetPacket(packet_type, false).get() == NULL);
   }
 
   // Check parsing succeeds to packethandler without signature packets
-  EXPECT_EQ(kSuccess, packet_handler_.ParseKeyring(keyring2));
-//  EXPECT_EQ(kPublicName, retrieved_public_name);
-  EXPECT_EQ(10U, packet_handler_.packets_.size());
+  ASSERT_EQ(kSuccess, packet_handler_.ParseKeyChain(keyring2, selectables2));
+  ASSERT_EQ(10U, packet_handler_.packets_.size());
   packets1_itr = packets1_.begin();
   packets1_itr += 6;
   packets2_itr = packets2_.begin();
@@ -446,8 +437,8 @@ TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
         (*packets1_itr)->packet_type()));
     PacketPtr confirmed(packet_handler_.GetPacket(packet_type, true));
     PacketPtr pending(packet_handler_.GetPacket(packet_type, false));
-    EXPECT_TRUE((*packets2_itr++)->Equals(confirmed));
-    EXPECT_TRUE((*packets1_itr++)->Equals(pending));
+    ASSERT_TRUE((*packets2_itr++)->Equals(confirmed));
+    ASSERT_TRUE((*packets1_itr++)->Equals(pending));
   }
   count = 0;
   packets1_itr = packets1_.begin();
@@ -457,34 +448,33 @@ TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
         (*packets1_itr++)->packet_type()));
     PacketPtr confirmed(packet_handler_.GetPacket(packet_type, true));
     DLOG(INFO) << "Checking - " << DebugString(confirmed->packet_type());
-    EXPECT_TRUE((*packets2_itr++)->Equals(confirmed));
-    EXPECT_TRUE(packet_handler_.GetPacket(packet_type, false).get() == NULL);
+    ASSERT_TRUE((*packets2_itr++)->Equals(confirmed));
+    ASSERT_TRUE(packet_handler_.GetPacket(packet_type, false).get() == NULL);
   }
 
   // Check serialising unaffected by pending packets existence
   packets1_itr = packets1_.begin();
   while (packets1_itr != packets1_.end())
-    EXPECT_TRUE(packet_handler_.AddPendingPacket(*packets1_itr++));
-  std::string keyring3(packet_handler_.SerialiseKeyring());
-  EXPECT_EQ(keyring2, keyring3);
+    ASSERT_TRUE(packet_handler_.AddPendingPacket(*packets1_itr++));
+  std::string keyring3, selectables3;
+  packet_handler_.SerialiseKeyChain(&keyring3, &selectables3);
+  ASSERT_EQ(keyring2, keyring3);
 
   // *********************** Test Delete Packet ********************************
   packets1_itr = packets1_.begin();
   while (packets1_itr != packets1_.end()) {
-    EXPECT_EQ(kSuccess, packet_handler_.DeletePacket(static_cast<PacketType>(
+    ASSERT_EQ(kSuccess, packet_handler_.DeletePacket(static_cast<PacketType>(
         (*packets1_itr)->packet_type())));
-    EXPECT_EQ(kNoPacket, packet_handler_.DeletePacket(static_cast<PacketType>(
+    ASSERT_EQ(kNoPacket, packet_handler_.DeletePacket(static_cast<PacketType>(
         (*packets1_itr++)->packet_type())));
   }
 }
 
 TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
-  DLOG(ERROR) << "\t\t\t\tStarting";
   std::vector<SignaturePacketPtr> packets1;
   pki::CreateChainedId(&packets1, 2);
   std::vector<SignaturePacketPtr> packets2;
   pki::CreateChainedId(&packets2, 2);
-  DLOG(ERROR) << "\t\t\t\tFinished creating packets";
 
   std::string chosen_name(RandomAlphaNumericString(8));
   ASSERT_EQ(kFailedToAddSelectableIdentity,
@@ -524,6 +514,9 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
                                          packets1.at(1),
                                          packets1.at(0),
                                          true));
+  std::vector<std::string> selectables;
+  packet_handler_.SelectableIdentitiesList(&selectables);
+  ASSERT_TRUE(selectables.empty());
 
   ASSERT_EQ(kSuccess,
             packet_handler_.AddPendingSelectableIdentity(chosen_name,
@@ -537,6 +530,8 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
                                          packets2.at(1),
                                          packets2.at(0),
                                          true));
+  packet_handler_.SelectableIdentitiesList(&selectables);
+  ASSERT_TRUE(selectables.empty());
 
   ASSERT_EQ(kSuccess,
             packet_handler_.AddPendingSelectableIdentity(chosen_name,
@@ -550,7 +545,8 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
                                          packets1.at(1),
                                          packets1.at(0),
                                          true));
-  DLOG(ERROR) << "\t\t\t\tFinished testing addition";
+  packet_handler_.SelectableIdentitiesList(&selectables);
+  ASSERT_TRUE(selectables.empty());
 
   std::string inexistent_chosen_name(chosen_name + "1");
   ASSERT_EQ(kFailedToConfirmSelectableIdentity,
@@ -582,6 +578,9 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
                                          SignaturePacketPtr(),
                                          SignaturePacketPtr(),
                                          false));
+  packet_handler_.SelectableIdentitiesList(&selectables);
+  ASSERT_EQ(1U, selectables.size());
+  ASSERT_EQ(chosen_name, selectables.at(0));
   ASSERT_EQ(kSuccess,
             packet_handler_.AddPendingSelectableIdentity(chosen_name,
                                                          packets2.at(1),
@@ -594,6 +593,9 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
                                          packets2.at(1),
                                          packets2.at(0),
                                          true));
+  packet_handler_.SelectableIdentitiesList(&selectables);
+  ASSERT_EQ(1U, selectables.size());
+  ASSERT_EQ(chosen_name, selectables.at(0));
 
   ASSERT_EQ(kSuccess, packet_handler_.ConfirmSelectableIdentity(chosen_name));
   ASSERT_TRUE(VerifySelectableIdContainerSize(1));
@@ -604,6 +606,9 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
                                          SignaturePacketPtr(),
                                          SignaturePacketPtr(),
                                          false));
+  packet_handler_.SelectableIdentitiesList(&selectables);
+  ASSERT_EQ(1U, selectables.size());
+  ASSERT_EQ(chosen_name, selectables.at(0));
 
   ASSERT_EQ(kSuccess,
             packet_handler_.AddPendingSelectableIdentity(chosen_name,
@@ -617,7 +622,9 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
                                          packets1.at(1),
                                          packets1.at(0),
                                          true));
-  DLOG(ERROR) << "\t\t\t\tFinished testing confirmation";
+  packet_handler_.SelectableIdentitiesList(&selectables);
+  ASSERT_EQ(1U, selectables.size());
+  ASSERT_EQ(chosen_name, selectables.at(0));
 
   ASSERT_EQ(kFailedToDeleteSelectableIdentity,
             packet_handler_.DeleteSelectableIdentity(""));
@@ -641,7 +648,114 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
                                          true));
   ASSERT_EQ(kSuccess, packet_handler_.DeleteSelectableIdentity(chosen_name));
   ASSERT_TRUE(VerifySelectableIdContainerSize(0));
-  DLOG(ERROR) << "\t\t\t\tFinished testing deletion";
+  packet_handler_.SelectableIdentitiesList(&selectables);
+  ASSERT_TRUE(selectables.empty());
+}
+
+TEST_F(SystemPacketHandlerTest, FUNC_SerialisationAndParsing) {
+  std::vector<SignaturePacketPtr> packets1;
+  pki::CreateChainedId(&packets1, 2);
+
+  ASSERT_TRUE(VerifySelectableIdContainerSize(0));
+  std::string identities, selectables;
+  packet_handler_.SerialiseKeyChain(&identities, &selectables);
+  ASSERT_TRUE(identities.empty());
+  ASSERT_TRUE(selectables.empty());
+  ASSERT_EQ(kSuccess, packet_handler_.ParseKeyChain(identities, selectables));
+  ASSERT_TRUE(VerifySelectableIdContainerSize(0));
+
+  std::string chosen_name(RandomAlphaNumericString(8));
+  ASSERT_EQ(kSuccess,
+            packet_handler_.AddPendingSelectableIdentity(chosen_name,
+                                                         packets1.at(1),
+                                                         packets1.at(0)));
+  ASSERT_TRUE(VerifySelectableIdContainerSize(1));
+
+  packet_handler_.SerialiseKeyChain(&identities, &selectables);
+  ASSERT_TRUE(identities.empty());
+  ASSERT_TRUE(selectables.empty());
+
+  ASSERT_EQ(kSuccess, packet_handler_.DeleteSelectableIdentity(chosen_name));
+  ASSERT_TRUE(VerifySelectableIdContainerSize(0));
+  ASSERT_EQ(kSuccess, packet_handler_.ParseKeyChain(identities, selectables));
+  ASSERT_TRUE(VerifySelectableIdContainerSize(0));
+
+  ASSERT_EQ(kSuccess,
+            packet_handler_.AddPendingSelectableIdentity(chosen_name,
+                                                         packets1.at(1),
+                                                         packets1.at(0)));
+  ASSERT_EQ(kSuccess, packet_handler_.ConfirmSelectableIdentity(chosen_name));
+  ASSERT_TRUE(VerifySelectableIdContainerSize(1));
+  ASSERT_TRUE(VerifySelectableIdContents(chosen_name,
+                                         packets1.at(1),
+                                         packets1.at(0),
+                                         true,
+                                         SignaturePacketPtr(),
+                                         SignaturePacketPtr(),
+                                         false));
+
+  packet_handler_.SerialiseKeyChain(&identities, &selectables);
+  ASSERT_TRUE(identities.empty());
+  ASSERT_FALSE(selectables.empty());
+
+  ASSERT_EQ(kSuccess, packet_handler_.DeleteSelectableIdentity(chosen_name));
+  ASSERT_TRUE(VerifySelectableIdContainerSize(0));
+  ASSERT_EQ(kSuccess, packet_handler_.ParseKeyChain(identities, selectables));
+  ASSERT_TRUE(VerifySelectableIdContainerSize(1));
+  ASSERT_TRUE(VerifySelectableIdContents(chosen_name,
+                                         packets1.at(1),
+                                         packets1.at(0),
+                                         true,
+                                         SignaturePacketPtr(),
+                                         SignaturePacketPtr(),
+                                         false));
+
+  ASSERT_EQ(kSuccess, packet_handler_.DeleteSelectableIdentity(chosen_name));
+  ASSERT_TRUE(VerifySelectableIdContainerSize(0));
+  std::vector<std::string> chosens;
+  std::vector<std::vector<SignaturePacketPtr>> packeteers;
+  for (int n(0); n < 10; ++n) {
+    chosens.push_back(RandomAlphaNumericString(8 + n));
+    packets1.clear();
+    pki::CreateChainedId(&packets1, 2);
+    ASSERT_EQ(kSuccess,
+              packet_handler_.AddPendingSelectableIdentity(chosens.at(n),
+                                                           packets1.at(1),
+                                                           packets1.at(0)));
+    ASSERT_EQ(kSuccess,
+              packet_handler_.ConfirmSelectableIdentity(chosens.at(n)));
+    packeteers.push_back(packets1);
+  }
+  ASSERT_TRUE(VerifySelectableIdContainerSize(chosens.size()));
+
+  identities.clear();
+  selectables.clear();
+  packet_handler_.SerialiseKeyChain(&identities, &selectables);
+  ASSERT_TRUE(identities.empty());
+  ASSERT_FALSE(selectables.empty());
+
+  for (size_t a(0); a < chosens.size(); ++a)
+    ASSERT_EQ(kSuccess,
+              packet_handler_.DeleteSelectableIdentity(chosens.at(a)));
+  ASSERT_TRUE(VerifySelectableIdContainerSize(0));
+
+  ASSERT_EQ(kSuccess, packet_handler_.ParseKeyChain(identities, selectables));
+  ASSERT_TRUE(VerifySelectableIdContainerSize(chosens.size()));
+  for (size_t y(0); y < chosens.size(); ++y) {
+    ASSERT_TRUE(VerifySelectableIdContents(chosens.at(y),
+                                           packeteers.at(y).at(1),
+                                           packeteers.at(y).at(0),
+                                           true,
+                                           SignaturePacketPtr(),
+                                           SignaturePacketPtr(),
+                                           false));
+  }
+  std::vector<std::string> selectables_vector;
+  packet_handler_.SelectableIdentitiesList(&selectables_vector);
+  ASSERT_EQ(chosens.size(), selectables_vector.size());
+  ASSERT_EQ(std::set<std::string>(chosens.begin(), chosens.end()),
+            std::set<std::string>(selectables_vector.begin(),
+                                  selectables_vector.end()));
 }
 
 }  // namespace test
