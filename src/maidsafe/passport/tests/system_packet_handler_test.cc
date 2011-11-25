@@ -24,11 +24,11 @@
 
 #include "boost/lexical_cast.hpp"
 
+#include "maidsafe/common/crypto_key_pairs.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
 #include "maidsafe/passport/system_packet_handler.h"
-#include "maidsafe/passport/crypto_key_pairs.h"
 #include "maidsafe/passport/log.h"
 
 namespace maidsafe {

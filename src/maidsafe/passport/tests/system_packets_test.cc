@@ -24,12 +24,13 @@
 #include <cstdint>
 
 #include "boost/lexical_cast.hpp"
+
+#include "maidsafe/common/crypto_key_pairs.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
 #include "maidsafe/passport/log.h"
 #include "maidsafe/passport/system_packets.h"
-#include "maidsafe/passport/crypto_key_pairs.h"
 
 namespace maidsafe {
 
