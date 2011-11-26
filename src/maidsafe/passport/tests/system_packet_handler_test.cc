@@ -24,7 +24,6 @@
 
 #include "boost/lexical_cast.hpp"
 
-#include "maidsafe/common/crypto_key_pairs.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 

@@ -25,7 +25,6 @@
 
 #include "boost/lexical_cast.hpp"
 
-#include "maidsafe/common/crypto_key_pairs.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
@@ -44,19 +43,10 @@ class SystemPacketsTest : public testing::Test {
   typedef std::shared_ptr<MidPacket> MidPtr;
   typedef std::shared_ptr<TmidPacket> TmidPtr;
   SystemPacketsTest()
-      : asio_service_(),
-        work_(new boost::asio::io_service::work(asio_service_)),
-        threads_(),
-        crypto_key_pairs_(asio_service_, 4096),
-        signature_packet_types_(),
+      : signature_packet_types_(),
         packet_types_() {}
  protected:
   virtual void SetUp() {
-    for (int i(0); i != 5; ++i) {
-      threads_.create_thread(
-          std::bind(static_cast<size_t(boost::asio::io_service::*)()>(
-              &boost::asio::io_service::run), &asio_service_));
-    }
     signature_packet_types_.push_back(kMpid);
     signature_packet_types_.push_back(kPmid);
     signature_packet_types_.push_back(kMaid);
@@ -79,11 +69,7 @@ class SystemPacketsTest : public testing::Test {
     packet_types_.push_back(kAnmaid);
   }
 
-  void TearDown() {
-    work_.reset();
-    asio_service_.stop();
-    threads_.join_all();
-  }
+  void TearDown() {}
 
   bool GetRids(std::string *rid1, std::string *rid2) {
     *rid1 = RandomString(64);
@@ -95,10 +81,6 @@ class SystemPacketsTest : public testing::Test {
     return (!rid1->empty() && !rid2->empty() && *rid1 != *rid2);
   }
 
-  AsioService asio_service_;
-  std::shared_ptr<boost::asio::io_service::work> work_;
-  boost::thread_group threads_;
-  CryptoKeyPairs crypto_key_pairs_;
   std::vector<PacketType> signature_packet_types_, packet_types_;
 };
 
