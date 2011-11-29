@@ -162,9 +162,11 @@ class SystemPacketHandlerTest : public testing::Test {
   bool VerifySelectableIdContents(const std::string &chosen_identity,
                                   SignaturePacketPtr confirmed_identity,
                                   SignaturePacketPtr confirmed_signer,
+                                  SignaturePacketPtr confirmed_inbox,
                                   bool confirmed,
                                   SignaturePacketPtr pending_identity,
                                   SignaturePacketPtr pending_signer,
+                                  SignaturePacketPtr pending_inbox,
                                   bool pending) {
     auto it = packet_handler_.selectable_ids_.find(chosen_identity);
     if (it == packet_handler_.selectable_ids_.end()) {
@@ -173,26 +175,32 @@ class SystemPacketHandlerTest : public testing::Test {
     }
 
     if (confirmed) {
-      if (!confirmed_identity->Equals((*it).second.first.stored) ||
-          !confirmed_signer->Equals((*it).second.second.stored)) {
+      if (!confirmed_identity->Equals((*it).second.mpid.stored) ||
+          !confirmed_signer->Equals((*it).second.anmpid.stored) ||
+          !confirmed_inbox->Equals((*it).second.mmid.stored)) {
         DLOG(ERROR) << "Different packets";
         return false;
       }
     } else {
-       if ((*it).second.first.stored || (*it).second.second.stored) {
+       if ((*it).second.mpid.stored ||
+           (*it).second.anmpid.stored ||
+           (*it).second.mmid.stored) {
         DLOG(ERROR) << "Stored packets shouldn't exist";
         return false;
       }
     }
 
     if (pending) {
-      if (!pending_identity->Equals((*it).second.first.pending) ||
-          !pending_signer->Equals((*it).second.second.pending)) {
+      if (!pending_identity->Equals((*it).second.mpid.pending) ||
+          !pending_signer->Equals((*it).second.anmpid.pending) ||
+          !pending_inbox->Equals((*it).second.mmid.pending)) {
         DLOG(ERROR) << "Different packets";
         return false;
       }
     } else {
-       if ((*it).second.first.pending || (*it).second.second.pending) {
+       if ((*it).second.mpid.pending ||
+           (*it).second.anmpid.pending ||
+           (*it).second.mmid.pending) {
         DLOG(ERROR) << "Pending packets shouldn't exist";
         return false;
       }
@@ -470,48 +478,65 @@ TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
 }
 
 TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
-  std::vector<SignaturePacketPtr> packets1;
+  std::vector<SignaturePacketPtr> packets1, mmid1;
   pki::CreateChainedId(&packets1, 2);
-  std::vector<SignaturePacketPtr> packets2;
+  pki::CreateChainedId(&mmid1, 1);
+  std::vector<SignaturePacketPtr> packets2, mmid2;
   pki::CreateChainedId(&packets2, 2);
+  pki::CreateChainedId(&mmid2, 1);
 
   std::string chosen_name(RandomAlphaNumericString(8));
   ASSERT_EQ(kFailedToAddSelectableIdentity,
             packet_handler_.AddPendingSelectableIdentity("",
                                                          packets1.at(1),
-                                                         packets1.at(0)));
+                                                         packets1.at(0),
+                                                         mmid1.at(0)));
   ASSERT_TRUE(VerifySelectableIdContainerSize(0));
   ASSERT_FALSE(VerifySelectableIdContents(chosen_name,
+                                          SignaturePacketPtr(),
                                           SignaturePacketPtr(),
                                           SignaturePacketPtr(),
                                           false,
                                           packets1.at(1),
                                           packets1.at(0),
+                                          mmid1.at(0),
                                           false));
 
   ASSERT_EQ(kFailedToAddSelectableIdentity,
             packet_handler_.AddPendingSelectableIdentity(chosen_name,
                                                          SignaturePacketPtr(),
-                                                         packets1.at(0)));
+                                                         packets1.at(0),
+                                                         mmid1.at(0)));
   ASSERT_TRUE(VerifySelectableIdContainerSize(0));
 
   ASSERT_EQ(kFailedToAddSelectableIdentity,
             packet_handler_.AddPendingSelectableIdentity(chosen_name,
                                                          packets1.at(1),
+                                                         SignaturePacketPtr(),
+                                                         mmid1.at(0)));
+  ASSERT_TRUE(VerifySelectableIdContainerSize(0));
+
+  ASSERT_EQ(kFailedToAddSelectableIdentity,
+            packet_handler_.AddPendingSelectableIdentity(chosen_name,
+                                                         packets1.at(1),
+                                                         packets1.at(0),
                                                          SignaturePacketPtr()));
   ASSERT_TRUE(VerifySelectableIdContainerSize(0));
 
   ASSERT_EQ(kSuccess,
             packet_handler_.AddPendingSelectableIdentity(chosen_name,
                                                          packets1.at(1),
-                                                         packets1.at(0)));
+                                                         packets1.at(0),
+                                                         mmid1.at(0)));
   ASSERT_TRUE(VerifySelectableIdContainerSize(1));
   ASSERT_TRUE(VerifySelectableIdContents(chosen_name,
+                                         SignaturePacketPtr(),
                                          SignaturePacketPtr(),
                                          SignaturePacketPtr(),
                                          false,
                                          packets1.at(1),
                                          packets1.at(0),
+                                         mmid1.at(0),
                                          true));
   std::vector<std::string> selectables;
   packet_handler_.SelectableIdentitiesList(&selectables);
@@ -520,14 +545,17 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
   ASSERT_EQ(kSuccess,
             packet_handler_.AddPendingSelectableIdentity(chosen_name,
                                                          packets2.at(1),
-                                                         packets2.at(0)));
+                                                         packets2.at(0),
+                                                         mmid2.at(0)));
   ASSERT_TRUE(VerifySelectableIdContainerSize(1));
   ASSERT_TRUE(VerifySelectableIdContents(chosen_name,
+                                         SignaturePacketPtr(),
                                          SignaturePacketPtr(),
                                          SignaturePacketPtr(),
                                          false,
                                          packets2.at(1),
                                          packets2.at(0),
+                                         mmid2.at(0),
                                          true));
   packet_handler_.SelectableIdentitiesList(&selectables);
   ASSERT_TRUE(selectables.empty());
@@ -535,14 +563,17 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
   ASSERT_EQ(kSuccess,
             packet_handler_.AddPendingSelectableIdentity(chosen_name,
                                                          packets1.at(1),
-                                                         packets1.at(0)));
+                                                         packets1.at(0),
+                                                         mmid1.at(0)));
   ASSERT_TRUE(VerifySelectableIdContainerSize(1));
   ASSERT_TRUE(VerifySelectableIdContents(chosen_name,
+                                         SignaturePacketPtr(),
                                          SignaturePacketPtr(),
                                          SignaturePacketPtr(),
                                          false,
                                          packets1.at(1),
                                          packets1.at(0),
+                                         mmid1.at(0),
                                          true));
   packet_handler_.SelectableIdentitiesList(&selectables);
   ASSERT_TRUE(selectables.empty());
@@ -554,9 +585,11 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
   ASSERT_TRUE(VerifySelectableIdContents(chosen_name,
                                          SignaturePacketPtr(),
                                          SignaturePacketPtr(),
+                                         SignaturePacketPtr(),
                                          false,
                                          packets1.at(1),
                                          packets1.at(0),
+                                         mmid1.at(0),
                                          true));
   ASSERT_EQ(kFailedToConfirmSelectableIdentity,
             packet_handler_.ConfirmSelectableIdentity(inexistent_chosen_name));
@@ -564,16 +597,20 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
   ASSERT_TRUE(VerifySelectableIdContents(chosen_name,
                                          SignaturePacketPtr(),
                                          SignaturePacketPtr(),
+                                         SignaturePacketPtr(),
                                          false,
                                          packets1.at(1),
                                          packets1.at(0),
+                                         mmid1.at(0),
                                          true));
   ASSERT_EQ(kSuccess, packet_handler_.ConfirmSelectableIdentity(chosen_name));
   ASSERT_TRUE(VerifySelectableIdContainerSize(1));
   ASSERT_TRUE(VerifySelectableIdContents(chosen_name,
                                          packets1.at(1),
                                          packets1.at(0),
+                                         mmid1.at(0),
                                          true,
+                                         SignaturePacketPtr(),
                                          SignaturePacketPtr(),
                                          SignaturePacketPtr(),
                                          false));
@@ -583,14 +620,17 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
   ASSERT_EQ(kSuccess,
             packet_handler_.AddPendingSelectableIdentity(chosen_name,
                                                          packets2.at(1),
-                                                         packets2.at(0)));
+                                                         packets2.at(0),
+                                                         mmid2.at(0)));
   ASSERT_TRUE(VerifySelectableIdContainerSize(1));
   ASSERT_TRUE(VerifySelectableIdContents(chosen_name,
                                          packets1.at(1),
                                          packets1.at(0),
+                                         mmid1.at(0),
                                          true,
                                          packets2.at(1),
                                          packets2.at(0),
+                                         mmid2.at(0),
                                          true));
   packet_handler_.SelectableIdentitiesList(&selectables);
   ASSERT_EQ(1U, selectables.size());
@@ -601,7 +641,9 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
   ASSERT_TRUE(VerifySelectableIdContents(chosen_name,
                                          packets2.at(1),
                                          packets2.at(0),
+                                         mmid2.at(0),
                                          true,
+                                         SignaturePacketPtr(),
                                          SignaturePacketPtr(),
                                          SignaturePacketPtr(),
                                          false));
@@ -612,14 +654,17 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
   ASSERT_EQ(kSuccess,
             packet_handler_.AddPendingSelectableIdentity(chosen_name,
                                                          packets1.at(1),
-                                                         packets1.at(0)));
+                                                         packets1.at(0),
+                                                         mmid1.at(0)));
   ASSERT_TRUE(VerifySelectableIdContainerSize(1));
   ASSERT_TRUE(VerifySelectableIdContents(chosen_name,
                                          packets2.at(1),
                                          packets2.at(0),
+                                         mmid2.at(0),
                                          true,
                                          packets1.at(1),
                                          packets1.at(0),
+                                         mmid1.at(0),
                                          true));
   packet_handler_.SelectableIdentitiesList(&selectables);
   ASSERT_EQ(1U, selectables.size());
@@ -631,9 +676,11 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
   ASSERT_TRUE(VerifySelectableIdContents(chosen_name,
                                          packets2.at(1),
                                          packets2.at(0),
+                                         mmid2.at(0),
                                          true,
                                          packets1.at(1),
                                          packets1.at(0),
+                                         mmid1.at(0),
                                          true));
   ASSERT_EQ(kFailedToDeleteSelectableIdentity,
             packet_handler_.DeleteSelectableIdentity(inexistent_chosen_name));
@@ -641,9 +688,11 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
   ASSERT_TRUE(VerifySelectableIdContents(chosen_name,
                                          packets2.at(1),
                                          packets2.at(0),
+                                         mmid2.at(0),
                                          true,
                                          packets1.at(1),
                                          packets1.at(0),
+                                         mmid1.at(0),
                                          true));
   ASSERT_EQ(kSuccess, packet_handler_.DeleteSelectableIdentity(chosen_name));
   ASSERT_TRUE(VerifySelectableIdContainerSize(0));
@@ -652,8 +701,9 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
 }
 
 TEST_F(SystemPacketHandlerTest, FUNC_SerialisationAndParsing) {
-  std::vector<SignaturePacketPtr> packets1;
+  std::vector<SignaturePacketPtr> packets1, mmid1;
   pki::CreateChainedId(&packets1, 2);
+  pki::CreateChainedId(&mmid1, 1);
 
   ASSERT_TRUE(VerifySelectableIdContainerSize(0));
   std::string identities, selectables;
@@ -667,7 +717,8 @@ TEST_F(SystemPacketHandlerTest, FUNC_SerialisationAndParsing) {
   ASSERT_EQ(kSuccess,
             packet_handler_.AddPendingSelectableIdentity(chosen_name,
                                                          packets1.at(1),
-                                                         packets1.at(0)));
+                                                         packets1.at(0),
+                                                         mmid1.at(0)));
   ASSERT_TRUE(VerifySelectableIdContainerSize(1));
 
   packet_handler_.SerialiseKeyChain(&identities, &selectables);
@@ -682,13 +733,16 @@ TEST_F(SystemPacketHandlerTest, FUNC_SerialisationAndParsing) {
   ASSERT_EQ(kSuccess,
             packet_handler_.AddPendingSelectableIdentity(chosen_name,
                                                          packets1.at(1),
-                                                         packets1.at(0)));
+                                                         packets1.at(0),
+                                                         mmid1.at(0)));
   ASSERT_EQ(kSuccess, packet_handler_.ConfirmSelectableIdentity(chosen_name));
   ASSERT_TRUE(VerifySelectableIdContainerSize(1));
   ASSERT_TRUE(VerifySelectableIdContents(chosen_name,
                                          packets1.at(1),
                                          packets1.at(0),
+                                         mmid1.at(0),
                                          true,
+                                         SignaturePacketPtr(),
                                          SignaturePacketPtr(),
                                          SignaturePacketPtr(),
                                          false));
@@ -704,7 +758,9 @@ TEST_F(SystemPacketHandlerTest, FUNC_SerialisationAndParsing) {
   ASSERT_TRUE(VerifySelectableIdContents(chosen_name,
                                          packets1.at(1),
                                          packets1.at(0),
+                                         mmid1.at(0),
                                          true,
+                                         SignaturePacketPtr(),
                                          SignaturePacketPtr(),
                                          SignaturePacketPtr(),
                                          false));
@@ -712,18 +768,22 @@ TEST_F(SystemPacketHandlerTest, FUNC_SerialisationAndParsing) {
   ASSERT_EQ(kSuccess, packet_handler_.DeleteSelectableIdentity(chosen_name));
   ASSERT_TRUE(VerifySelectableIdContainerSize(0));
   std::vector<std::string> chosens;
-  std::vector<std::vector<SignaturePacketPtr>> packeteers;
+  std::vector<std::vector<SignaturePacketPtr>> packeteers, mmideers;
   for (int n(0); n < 10; ++n) {
     chosens.push_back(RandomAlphaNumericString(8 + n));
     packets1.clear();
+    mmid1.clear();
     pki::CreateChainedId(&packets1, 2);
+    pki::CreateChainedId(&mmid1, 1);
     ASSERT_EQ(kSuccess,
               packet_handler_.AddPendingSelectableIdentity(chosens.at(n),
                                                            packets1.at(1),
-                                                           packets1.at(0)));
+                                                           packets1.at(0),
+                                                           mmid1.at(0)));
     ASSERT_EQ(kSuccess,
               packet_handler_.ConfirmSelectableIdentity(chosens.at(n)));
     packeteers.push_back(packets1);
+    mmideers.push_back(mmid1);
   }
   ASSERT_TRUE(VerifySelectableIdContainerSize(chosens.size()));
 
@@ -744,7 +804,9 @@ TEST_F(SystemPacketHandlerTest, FUNC_SerialisationAndParsing) {
     ASSERT_TRUE(VerifySelectableIdContents(chosens.at(y),
                                            packeteers.at(y).at(1),
                                            packeteers.at(y).at(0),
+                                           mmideers.at(y).at(0),
                                            true,
+                                           SignaturePacketPtr(),
                                            SignaturePacketPtr(),
                                            SignaturePacketPtr(),
                                            false));

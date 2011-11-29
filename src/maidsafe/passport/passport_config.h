@@ -70,7 +70,9 @@ enum PacketType {
   kTmid,
   kStmid,
   kAnmpid,
-  kMpid
+  kMpid,
+  kMmid,
+  kMcid
 };
 
 const std::string g_smid_appendix("1");

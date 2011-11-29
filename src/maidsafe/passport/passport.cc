@@ -320,10 +320,16 @@ int Passport::CreateSelectableIdentity(const std::string &chosen_name) {
     return kFailedToCreatePacket;
   }
 
+  std::vector<pki::SignaturePacketPtr> mmid_packet;
+  if (pki::CreateChainedId(&packets, 1) != kSuccess || packets.size() != 1U) {
+    DLOG(ERROR) << "Failed to create kAnmpid";
+    return kFailedToCreatePacket;
+  }
 
   if (kSuccess != handler_->AddPendingSelectableIdentity(chosen_name,
                                                          packets.at(1),
-                                                         packets.at(0))) {
+                                                         packets.at(0),
+                                                         mmid_packet.at(0))) {
     DLOG(ERROR) << "Failed to add pending selectable";
     return kFailedToCreatePacket;
   }

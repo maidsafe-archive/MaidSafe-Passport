@@ -23,6 +23,7 @@
 #ifndef MAIDSAFE_PASSPORT_SYSTEM_PACKET_HANDLER_H_
 #define MAIDSAFE_PASSPORT_SYSTEM_PACKET_HANDLER_H_
 
+#include <tuple>
 #include <memory>
 #include <map>
 #include <string>
@@ -69,7 +70,8 @@ class SystemPacketHandler {
   // Selectable identities
   int AddPendingSelectableIdentity(const std::string &chosen_identity,
                                    SignaturePacketPtr identity,
-                                   SignaturePacketPtr signer);
+                                   SignaturePacketPtr signer,
+                                   SignaturePacketPtr inbox);
   int ConfirmSelectableIdentity(const std::string &chosen_identity);
   int DeleteSelectableIdentity(const std::string &chosen_identity);
   void SelectableIdentitiesList(std::vector<std::string> *selectables) const;
@@ -136,16 +138,46 @@ class SystemPacketHandler {
     }
   };
 
+  struct SelectableIdentity {
+    SelectableIdentity(SignaturePacketPtr identity,
+                       SignaturePacketPtr signer,
+                       SignaturePacketPtr inbox)
+        : anmpid(signer), mpid(identity), mmid(inbox) {}
+    PacketInfo anmpid, mpid, mmid;
+  };
+  struct SerialisableSelectableIdentity {
+    SerialisableSelectableIdentity()
+       : anmpid(), mpid(), mmid() {}
+    SerialisableSelectableIdentity(SignaturePacketPtr identity,
+                                   SignaturePacketPtr signer,
+                                   SignaturePacketPtr inbox)
+       : anmpid(*signer), mpid(*identity), mmid(*inbox) {}
+    pki::SignaturePacket anmpid, mpid, mmid;
+    friend class boost::serialization::access;
+
+   private:
+#ifdef __MSVC__
+#  pragma warning(disable: 4127)
+#endif
+    template<typename Archive>
+    void serialize(Archive &archive, const unsigned int /*version*/) {  // NOLINT (Fraser)
+      archive &anmpid;
+      archive &mpid;
+      archive &mmid;
+#ifdef __MSVC__
+#  pragma warning(default: 4127)
+#endif
+    }
+  };
+
  public:
   typedef std::map<PacketType, PacketInfo> SystemPacketMap;
-  typedef std::map<std::string,
-                   std::pair<PacketInfo, PacketInfo>>
-          SelectableIdentitiesMap;
-  typedef std::map<std::string,
-                   std::pair<pki::SignaturePacket, pki::SignaturePacket>>
+  typedef std::map<std::string, SerialisableSelectableIdentity>
           SelectableIdentitiesSerialiser;
 
  private:
+  typedef std::map<std::string, SelectableIdentity> SelectableIdentitiesMap;
+
   bool IsConfirmed(SystemPacketMap::const_iterator it) const;
 
   SystemPacketMap packets_;

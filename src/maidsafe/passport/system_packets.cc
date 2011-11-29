@@ -45,6 +45,18 @@ std::string DebugString(const int &packet_type) {
   switch (packet_type) {
     case kUnknown:
       return "unknown";
+    case kAnmid:
+      return "ANMID";
+    case kAnsmid:
+      return "ANSMID";
+    case kAntmid:
+      return "ANTMID";
+    case kAnmaid:
+      return "ANMAID";
+    case kMaid:
+      return "MAID";
+    case kPmid:
+      return "PMID";
     case kMid:
       return "MID";
     case kSmid:
@@ -53,22 +65,14 @@ std::string DebugString(const int &packet_type) {
       return "TMID";
     case kStmid:
       return "STMID";
-    case kMpid:
-      return "MPID";
-    case kPmid:
-      return "PMID";
-    case kMaid:
-      return "MAID";
-    case kAnmid:
-      return "ANMID";
-    case kAnsmid:
-      return "ANSMID";
-    case kAntmid:
-      return "ANTMID";
     case kAnmpid:
       return "ANMPID";
-    case kAnmaid:
-      return "ANMAID";
+    case kMpid:
+      return "MPID";
+    case kMmid:
+      return "MMID";
+    case kMcid:
+      return "MCID";
     default:
       return "error";
   }
@@ -192,7 +196,7 @@ void MidPacket::Clear() {
   rid_.clear();
 }
 
-bool MidPacket::Equals(const std::shared_ptr<Packet> other) const {
+bool MidPacket::Equals(const std::shared_ptr<pki::Packet> other) const {
   const std::shared_ptr<MidPacket> mid(
       std::static_pointer_cast<MidPacket>(other));
   return packet_type_ == mid->packet_type_ &&
@@ -434,7 +438,7 @@ void TmidPacket::Clear() {
   obfuscation_salt_.clear();
 }
 
-bool TmidPacket::Equals(const std::shared_ptr<Packet> other) const {
+bool TmidPacket::Equals(const std::shared_ptr<pki::Packet> other) const {
   const std::shared_ptr<TmidPacket> tmid(
       std::static_pointer_cast<TmidPacket>(other));
 //  return packet_type_ == tmid->packet_type_ &&
@@ -495,6 +499,10 @@ bool TmidPacket::Equals(const std::shared_ptr<Packet> other) const {
 
   return true;
 }
+
+
+
+McidPacket::McidPacket() : pki::Packet(kMcid) {}
 
 }  // namespace passport
 

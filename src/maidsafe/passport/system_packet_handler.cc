@@ -41,6 +41,9 @@
 // stack, we're OK to not track it.  This removes MSVC warning C4308.
 BOOST_CLASS_TRACKING(maidsafe::passport::SystemPacketHandler::SystemPacketMap,
                      boost::serialization::track_never)
+BOOST_CLASS_TRACKING(
+  maidsafe::passport::SystemPacketHandler::SelectableIdentitiesSerialiser,
+  boost::serialization::track_never)
 
 namespace maidsafe {
 
@@ -269,7 +272,7 @@ void SystemPacketHandler::SerialiseKeyChain(std::string *key_chain,
     }
   }
   if (spm.empty()) {
-    *key_chain = "";
+    key_chain->clear();
   } else {
     kc_output_archive << spm;
     *key_chain = key_chain_stream.str();
@@ -282,14 +285,19 @@ void SystemPacketHandler::SerialiseKeyChain(std::string *key_chain,
     boost::mutex::scoped_lock loch_a_garbh_bhaid_mor(selectable_ids_mutex_);
     auto it = selectable_ids_.begin();
     while (it != selectable_ids_.end()) {
-      if ((*it).second.first.stored && (*it).second.second.stored) {
+      if ((*it).second.mpid.stored &&
+          (*it).second.anmpid.stored &&
+          (*it).second.mmid.stored) {
         auto p =
-        sis.insert(std::make_pair(
-            (*it).first,
-            std::make_pair(*std::static_pointer_cast<pki::SignaturePacket>(
-                               (*it).second.first.stored),
-                           *std::static_pointer_cast<pki::SignaturePacket>(
-                               (*it).second.second.stored))));
+            sis.insert(std::make_pair(
+                (*it).first,
+                SerialisableSelectableIdentity(
+                    std::static_pointer_cast<pki::SignaturePacket>(
+                                   (*it).second.mpid.stored),
+                    std::static_pointer_cast<pki::SignaturePacket>(
+                                   (*it).second.anmpid.stored),
+                    std::static_pointer_cast<pki::SignaturePacket>(
+                                   (*it).second.mmid.stored))));
         if (!p.second)
           DLOG(ERROR) << "Failed to add " << (*it).first << " to SIS";
       }
@@ -342,9 +350,11 @@ int SystemPacketHandler::ParseKeyChain(
       if (kSuccess != AddPendingSelectableIdentity(
                           (*it).first,
                           SignaturePacketPtr(
-                              new pki::SignaturePacket((*it).second.first)),
+                              new pki::SignaturePacket((*it).second.mpid)),
                           SignaturePacketPtr(
-                              new pki::SignaturePacket((*it).second.second)))) {
+                              new pki::SignaturePacket((*it).second.anmpid)),
+                          SignaturePacketPtr(
+                              new pki::SignaturePacket((*it).second.mmid)))) {
         DLOG(ERROR) << "Failed adding pending " << (*it).first;
         return kFailedToAddSelectableIdentity;
       }
@@ -390,15 +400,14 @@ void SystemPacketHandler::Clear() {
 int SystemPacketHandler::AddPendingSelectableIdentity(
     const std::string &chosen_identity,
     SignaturePacketPtr identity,
-    SignaturePacketPtr signer) {
-  if (chosen_identity.empty() || !identity || !signer) {
+    SignaturePacketPtr signer,
+    SignaturePacketPtr inbox) {
+  if (chosen_identity.empty() || !identity || !signer || !inbox) {
     DLOG(ERROR) << "Empty chosen identity or null pointers";
     return kFailedToAddSelectableIdentity;
   }
 
-  SelectableIdentitiesMap::mapped_type packets(
-      std::make_pair(PacketInfo(identity), PacketInfo(signer)));
-
+  SelectableIdentity packets(identity, signer, inbox);
   boost::mutex::scoped_lock loch_an_ruathair(selectable_ids_mutex_);
   auto it = selectable_ids_.find(chosen_identity);
   if (it == selectable_ids_.end()) {
@@ -409,8 +418,9 @@ int SystemPacketHandler::AddPendingSelectableIdentity(
       return kFailedToAddSelectableIdentity;
     }
   } else {
-    (*it).second.first.pending = identity;
-    (*it).second.second.pending = signer;
+    (*it).second.mpid.pending = identity;
+    (*it).second.anmpid.pending = signer;
+    (*it).second.mmid.pending = inbox;
   }
 
   return kSuccess;
@@ -430,10 +440,12 @@ int SystemPacketHandler::ConfirmSelectableIdentity(
     return kFailedToConfirmSelectableIdentity;
   }
 
-  (*it).second.first.stored = (*it).second.first.pending;
-  (*it).second.first.pending.reset();
-  (*it).second.second.stored = (*it).second.second.pending;
-  (*it).second.second.pending.reset();
+  (*it).second.mpid.stored = (*it).second.mpid.pending;
+  (*it).second.mpid.pending.reset();
+  (*it).second.anmpid.stored = (*it).second.anmpid.pending;
+  (*it).second.anmpid.pending.reset();
+  (*it).second.mmid.stored = (*it).second.mmid.pending;
+  (*it).second.mmid.pending.reset();
 
   return kSuccess;
 }
@@ -462,7 +474,9 @@ void SystemPacketHandler::SelectableIdentitiesList(
   boost::mutex::scoped_lock loch_na_tuadh(selectable_ids_mutex_);
   SelectableIdentitiesMap::const_iterator it(selectable_ids_.begin());
   while (it != selectable_ids_.end()) {
-    if ((*it).second.first.stored && (*it).second.second.stored)
+    if ((*it).second.mpid.stored &&
+        (*it).second.anmpid.stored &&
+        (*it).second.mmid.stored)
       selectables->push_back((*it).first);
     ++it;
   }

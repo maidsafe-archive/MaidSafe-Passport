@@ -39,8 +39,6 @@
 
 namespace maidsafe {
 
-namespace asymm = rsa;
-
 namespace passport {
 
 std::string MidName(const std::string &username,
