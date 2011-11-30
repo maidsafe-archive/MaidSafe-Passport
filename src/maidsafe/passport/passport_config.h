@@ -24,7 +24,10 @@
 #ifndef MAIDSAFE_PASSPORT_PASSPORT_CONFIG_H_
 #define MAIDSAFE_PASSPORT_PASSPORT_CONFIG_H_
 
+#include <tuple>
 #include <string>
+
+#include "maidsafe/common/rsa.h"
 
 #include "maidsafe/passport/version.h"
 
@@ -76,6 +79,10 @@ enum PacketType {
 };
 
 const std::string g_smid_appendix("1");
+
+typedef std::tuple<std::string, std::string, asymm::PrivateKey>
+        SelectableIdData;
+
 
 }  // namespace passport
 

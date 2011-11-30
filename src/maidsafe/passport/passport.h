@@ -82,7 +82,7 @@ class Passport {
   // Getters
   std::string PacketName(PacketType packet_type, bool confirmed) const;
   asymm::PublicKey SignaturePacketValue(PacketType packet_type,
-                                      bool confirmed) const;
+                                        bool confirmed) const;
   std::string IdentityPacketValue(PacketType packet_type, bool confirmed) const;
   std::string PacketSignature(PacketType packet_type, bool confirmed) const;
 
@@ -90,7 +90,8 @@ class Passport {
   int CreateSelectableIdentity(const std::string &chosen_name);
   int ConfirmSelectableIdentity(const std::string &chosen_name);
   int DeleteSelectableIdentity(const std::string &chosen_name);
-  void SelectableIdentitiesList(std::vector<std::string> *selectables) const;
+  void SelectableIdentitiesList(
+      std::vector<SelectableIdData> *selectables) const;
 
   friend class test::PassportTest;
 

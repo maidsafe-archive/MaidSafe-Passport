@@ -23,7 +23,6 @@
 #ifndef MAIDSAFE_PASSPORT_SYSTEM_PACKET_HANDLER_H_
 #define MAIDSAFE_PASSPORT_SYSTEM_PACKET_HANDLER_H_
 
-#include <tuple>
 #include <memory>
 #include <map>
 #include <string>
@@ -74,7 +73,8 @@ class SystemPacketHandler {
                                    SignaturePacketPtr inbox);
   int ConfirmSelectableIdentity(const std::string &chosen_identity);
   int DeleteSelectableIdentity(const std::string &chosen_identity);
-  void SelectableIdentitiesList(std::vector<std::string> *selectables) const;
+  void SelectableIdentitiesList(
+      std::vector<SelectableIdData> *selectables) const;
 
   // Whole keyring
   void SerialiseKeyChain(std::string *key_chain,
@@ -86,7 +86,7 @@ class SystemPacketHandler {
   void Clear();
   friend class test::SystemPacketHandlerTest;
   friend class
-      test::SystemPacketHandlerTest_FUNC_SigningAndIdentityPackets_Test;
+         test::SystemPacketHandlerTest_FUNC_SigningAndIdentityPackets_Test;
 
  private:
   SystemPacketHandler &operator=(const SystemPacketHandler&);

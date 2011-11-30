@@ -468,7 +468,7 @@ int SystemPacketHandler::DeleteSelectableIdentity(
 }
 
 void SystemPacketHandler::SelectableIdentitiesList(
-    std::vector<std::string> *selectables) const {
+    std::vector<SelectableIdData> *selectables) const {
   BOOST_ASSERT(selectables);
   selectables->clear();
   boost::mutex::scoped_lock loch_na_tuadh(selectable_ids_mutex_);
@@ -476,11 +476,18 @@ void SystemPacketHandler::SelectableIdentitiesList(
   while (it != selectable_ids_.end()) {
     if ((*it).second.mpid.stored &&
         (*it).second.anmpid.stored &&
-        (*it).second.mmid.stored)
-      selectables->push_back((*it).first);
+        (*it).second.mmid.stored) {
+      SignaturePacketPtr mpid(std::static_pointer_cast<pki::SignaturePacket>(
+          (*it).second.mpid.stored));
+      selectables->push_back(std::make_tuple((*it).first,
+                                             (*it).second.mmid.stored->name(),
+                                             mpid->private_key()));
+    }
     ++it;
   }
 }
+
+
 
 }  // namespace passport
 

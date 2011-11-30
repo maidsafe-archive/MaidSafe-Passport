@@ -36,6 +36,14 @@ namespace passport {
 
 namespace test {
 
+namespace {
+
+bool Less(const SelectableIdData &id_data1, const SelectableIdData &id_data2) {
+  return std::get<0>(id_data1) < std::get<0>(id_data2);
+}
+
+}  // unnamed namespace
+
 uint32_t NonZeroRnd() {
   uint32_t result = RandomUint32();
   while (result == 0)
@@ -538,7 +546,7 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
                                          packets1.at(0),
                                          mmid1.at(0),
                                          true));
-  std::vector<std::string> selectables;
+  std::vector<SelectableIdData> selectables;
   packet_handler_.SelectableIdentitiesList(&selectables);
   ASSERT_TRUE(selectables.empty());
 
@@ -616,7 +624,7 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
                                          false));
   packet_handler_.SelectableIdentitiesList(&selectables);
   ASSERT_EQ(1U, selectables.size());
-  ASSERT_EQ(chosen_name, selectables.at(0));
+  ASSERT_EQ(chosen_name, std::get<0>(selectables.at(0)));
   ASSERT_EQ(kSuccess,
             packet_handler_.AddPendingSelectableIdentity(chosen_name,
                                                          packets2.at(1),
@@ -634,7 +642,7 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
                                          true));
   packet_handler_.SelectableIdentitiesList(&selectables);
   ASSERT_EQ(1U, selectables.size());
-  ASSERT_EQ(chosen_name, selectables.at(0));
+  ASSERT_EQ(chosen_name, std::get<0>(selectables.at(0)));
 
   ASSERT_EQ(kSuccess, packet_handler_.ConfirmSelectableIdentity(chosen_name));
   ASSERT_TRUE(VerifySelectableIdContainerSize(1));
@@ -649,7 +657,7 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
                                          false));
   packet_handler_.SelectableIdentitiesList(&selectables);
   ASSERT_EQ(1U, selectables.size());
-  ASSERT_EQ(chosen_name, selectables.at(0));
+  ASSERT_EQ(chosen_name, std::get<0>(selectables.at(0)));
 
   ASSERT_EQ(kSuccess,
             packet_handler_.AddPendingSelectableIdentity(chosen_name,
@@ -668,7 +676,7 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
                                          true));
   packet_handler_.SelectableIdentitiesList(&selectables);
   ASSERT_EQ(1U, selectables.size());
-  ASSERT_EQ(chosen_name, selectables.at(0));
+  ASSERT_EQ(chosen_name, std::get<0>(selectables.at(0)));
 
   ASSERT_EQ(kFailedToDeleteSelectableIdentity,
             packet_handler_.DeleteSelectableIdentity(""));
@@ -767,21 +775,23 @@ TEST_F(SystemPacketHandlerTest, FUNC_SerialisationAndParsing) {
 
   ASSERT_EQ(kSuccess, packet_handler_.DeleteSelectableIdentity(chosen_name));
   ASSERT_TRUE(VerifySelectableIdContainerSize(0));
-  std::vector<std::string> chosens;
+  std::vector<SelectableIdData> chosens;
   std::vector<std::vector<SignaturePacketPtr>> packeteers, mmideers;
   for (int n(0); n < 10; ++n) {
-    chosens.push_back(RandomAlphaNumericString(8 + n));
     packets1.clear();
     mmid1.clear();
     pki::CreateChainedId(&packets1, 2);
     pki::CreateChainedId(&mmid1, 1);
+    chosens.push_back(std::make_tuple(RandomAlphaNumericString(8 + n),
+                                      mmid1.at(0)->name(),
+                                      packets1.at(1)->private_key()));
     ASSERT_EQ(kSuccess,
-              packet_handler_.AddPendingSelectableIdentity(chosens.at(n),
-                                                           packets1.at(1),
-                                                           packets1.at(0),
-                                                           mmid1.at(0)));
+        packet_handler_.AddPendingSelectableIdentity(std::get<0>(chosens.at(n)),
+                                                     packets1.at(1),
+                                                     packets1.at(0),
+                                                     mmid1.at(0)));
     ASSERT_EQ(kSuccess,
-              packet_handler_.ConfirmSelectableIdentity(chosens.at(n)));
+        packet_handler_.ConfirmSelectableIdentity(std::get<0>(chosens.at(n))));
     packeteers.push_back(packets1);
     mmideers.push_back(mmid1);
   }
@@ -795,13 +805,13 @@ TEST_F(SystemPacketHandlerTest, FUNC_SerialisationAndParsing) {
 
   for (size_t a(0); a < chosens.size(); ++a)
     ASSERT_EQ(kSuccess,
-              packet_handler_.DeleteSelectableIdentity(chosens.at(a)));
+        packet_handler_.DeleteSelectableIdentity(std::get<0>(chosens.at(a))));
   ASSERT_TRUE(VerifySelectableIdContainerSize(0));
 
   ASSERT_EQ(kSuccess, packet_handler_.ParseKeyChain(identities, selectables));
   ASSERT_TRUE(VerifySelectableIdContainerSize(chosens.size()));
   for (size_t y(0); y < chosens.size(); ++y) {
-    ASSERT_TRUE(VerifySelectableIdContents(chosens.at(y),
+    ASSERT_TRUE(VerifySelectableIdContents(std::get<0>(chosens.at(y)),
                                            packeteers.at(y).at(1),
                                            packeteers.at(y).at(0),
                                            mmideers.at(y).at(0),
@@ -811,12 +821,23 @@ TEST_F(SystemPacketHandlerTest, FUNC_SerialisationAndParsing) {
                                            SignaturePacketPtr(),
                                            false));
   }
-  std::vector<std::string> selectables_vector;
+  std::vector<SelectableIdData> selectables_vector;
   packet_handler_.SelectableIdentitiesList(&selectables_vector);
   ASSERT_EQ(chosens.size(), selectables_vector.size());
-  ASSERT_EQ(std::set<std::string>(chosens.begin(), chosens.end()),
-            std::set<std::string>(selectables_vector.begin(),
-                                  selectables_vector.end()));
+  std::sort(chosens.begin(), chosens.end(), Less);
+  for (size_t i(0); i < chosens.size(); ++i) {
+    EXPECT_EQ(std::get<0>(chosens.at(i)),
+              std::get<0>(selectables_vector.at(i)));
+    EXPECT_EQ(std::get<1>(chosens.at(i)),
+              std::get<1>(selectables_vector.at(i)));
+    std::string encoded_chosen, encoded_selectable;
+    asymm::EncodePrivateKey(std::get<2>(chosens.at(i)), &encoded_chosen);
+    asymm::EncodePrivateKey(std::get<2>(selectables_vector.at(i)),
+                            &encoded_selectable);
+    EXPECT_FALSE(encoded_chosen.empty());
+    EXPECT_FALSE(encoded_selectable.empty());
+    EXPECT_EQ(encoded_chosen, encoded_selectable);
+  }
 }
 
 }  // namespace test
