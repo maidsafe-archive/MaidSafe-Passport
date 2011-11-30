@@ -345,6 +345,12 @@ int Passport::DeleteSelectableIdentity(const std::string &chosen_name) {
   return handler_->DeleteSelectableIdentity(chosen_name);
 }
 
+void Passport::SelectableIdentitiesList(
+    std::vector<std::string> *selectables) const {
+  handler_->SelectableIdentitiesList(selectables);
+}
+
+
 }  // namespace passport
 
 }  // namespace maidsafe

@@ -25,6 +25,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "maidsafe/common/rsa.h"
 
@@ -89,6 +90,7 @@ class Passport {
   int CreateSelectableIdentity(const std::string &chosen_name);
   int ConfirmSelectableIdentity(const std::string &chosen_name);
   int DeleteSelectableIdentity(const std::string &chosen_name);
+  void SelectableIdentitiesList(std::vector<std::string> *selectables) const;
 
   friend class test::PassportTest;
 
