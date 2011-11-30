@@ -502,7 +502,7 @@ bool TmidPacket::Equals(const std::shared_ptr<pki::Packet> other) const {
 
 
 
-McidPacket::McidPacket() : pki::Packet(kMcid) {}
+McidPacket::McidPacket() : pki::Packet(kMcid), value_() {}
 
 }  // namespace passport
 

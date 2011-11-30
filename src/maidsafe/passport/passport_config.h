@@ -57,7 +57,8 @@ enum ReturnCode {
   kFailedToRevertPacket = -100012,
   kFailedToAddSelectableIdentity = -100013,
   kFailedToConfirmSelectableIdentity = -100014,
-  kFailedToDeleteSelectableIdentity = -100015
+  kFailedToDeleteSelectableIdentity = -100015,
+  kFailedToGetSelectableIdentityData = -100016
 };
 
 enum PacketType {
@@ -82,6 +83,8 @@ const std::string g_smid_appendix("1");
 
 typedef std::tuple<std::string, std::string, asymm::PrivateKey>
         SelectableIdData;
+typedef std::vector<std::tuple<std::string, asymm::PublicKey, std::string>>
+        SelectableIdentityData;
 
 
 }  // namespace passport

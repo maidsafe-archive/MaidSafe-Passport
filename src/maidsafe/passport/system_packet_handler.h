@@ -75,6 +75,9 @@ class SystemPacketHandler {
   int DeleteSelectableIdentity(const std::string &chosen_identity);
   void SelectableIdentitiesList(
       std::vector<SelectableIdData> *selectables) const;
+  int GetSelectableIdentityData(const std::string &chosen_identity,
+                                bool confirmed,
+                                SelectableIdentityData *data);
 
   // Whole keyring
   void SerialiseKeyChain(std::string *key_chain,

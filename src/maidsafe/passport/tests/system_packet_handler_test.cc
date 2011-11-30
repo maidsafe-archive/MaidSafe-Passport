@@ -217,6 +217,13 @@ class SystemPacketHandlerTest : public testing::Test {
     return true;
   }
 
+  bool KeysEqual(asymm::PublicKey left, asymm::PublicKey right) {
+    std::string encoded_left, encoded_right;
+    asymm::EncodePublicKey(left, &encoded_left);
+    asymm::EncodePublicKey(right, &encoded_right);
+    return encoded_left == encoded_right;
+  }
+
   SystemPacketHandler packet_handler_;
   const std::string kUsername1_, kUsername2_, kPin1_, kPin2_;
   const std::string kMidRid1_, kMidRid2_, kSmidRid1_, kSmidRid2_;
@@ -785,12 +792,14 @@ TEST_F(SystemPacketHandlerTest, FUNC_SerialisationAndParsing) {
     chosens.push_back(std::make_tuple(RandomAlphaNumericString(8 + n),
                                       mmid1.at(0)->name(),
                                       packets1.at(1)->private_key()));
-    ASSERT_EQ(kSuccess,
+    ASSERT_EQ(
+        kSuccess,
         packet_handler_.AddPendingSelectableIdentity(std::get<0>(chosens.at(n)),
                                                      packets1.at(1),
                                                      packets1.at(0),
                                                      mmid1.at(0)));
-    ASSERT_EQ(kSuccess,
+    ASSERT_EQ(
+        kSuccess,
         packet_handler_.ConfirmSelectableIdentity(std::get<0>(chosens.at(n))));
     packeteers.push_back(packets1);
     mmideers.push_back(mmid1);
@@ -837,6 +846,108 @@ TEST_F(SystemPacketHandlerTest, FUNC_SerialisationAndParsing) {
     EXPECT_FALSE(encoded_chosen.empty());
     EXPECT_FALSE(encoded_selectable.empty());
     EXPECT_EQ(encoded_chosen, encoded_selectable);
+  }
+}
+
+TEST_F(SystemPacketHandlerTest, BEH_GetSelectableIdentityData) {
+  std::vector<SignaturePacketPtr> packets1, mmid1;
+  ASSERT_TRUE(VerifySelectableIdContainerSize(0));
+  std::vector<SelectableIdData> chosens;
+  std::vector<std::vector<SignaturePacketPtr>> packeteers, mmideers;
+
+  SelectableIdentityData data;
+  ASSERT_EQ(kFailedToGetSelectableIdentityData,
+            packet_handler_.GetSelectableIdentityData("Made up id",
+                                                      false,
+                                                      &data));
+  ASSERT_EQ(0, data.size());
+
+  for (int n(0); n < 10; ++n) {
+    packets1.clear();
+    mmid1.clear();
+    pki::CreateChainedId(&packets1, 2);
+    pki::CreateChainedId(&mmid1, 1);
+    chosens.push_back(std::make_tuple(RandomAlphaNumericString(8 + n),
+                                      mmid1.at(0)->name(),
+                                      packets1.at(1)->private_key()));
+    ASSERT_EQ(
+        kSuccess,
+        packet_handler_.AddPendingSelectableIdentity(std::get<0>(chosens.at(n)),
+                                                     packets1.at(1),
+                                                     packets1.at(0),
+                                                     mmid1.at(0)));
+    packeteers.push_back(packets1);
+    mmideers.push_back(mmid1);
+    DLOG(ERROR) << "Created #" << n;
+  }
+  ASSERT_TRUE(VerifySelectableIdContainerSize(chosens.size()));
+
+  for (size_t a(0); a < chosens.size(); ++a) {
+    data.clear();
+    ASSERT_EQ(kFailedToGetSelectableIdentityData,
+              packet_handler_.GetSelectableIdentityData(
+                  std::get<0>(chosens.at(a)),
+                  true,
+                  &data));
+    ASSERT_EQ(0, data.size());
+    ASSERT_EQ(kFailedToGetSelectableIdentityData,
+              packet_handler_.GetSelectableIdentityData("Made up id",
+                                                        false,
+                                                        &data));
+    ASSERT_EQ(0, data.size());
+    ASSERT_EQ(kSuccess,
+              packet_handler_.GetSelectableIdentityData(
+                  std::get<0>(chosens.at(a)),
+                  false,
+                  &data));
+    ASSERT_EQ(3U, data.size());
+
+    ASSERT_EQ(packeteers.at(a).at(0)->name(), std::get<0>(data.at(0)));
+    ASSERT_TRUE(KeysEqual(packeteers.at(a).at(0)->value(),
+                          std::get<1>(data.at(0))));
+    ASSERT_EQ(packeteers.at(a).at(0)->signature(), std::get<2>(data.at(0)));
+    ASSERT_EQ(packeteers.at(a).at(1)->name(), std::get<0>(data.at(1)));
+    ASSERT_TRUE(KeysEqual(packeteers.at(a).at(1)->value(),
+                          std::get<1>(data.at(1))));
+    ASSERT_EQ(packeteers.at(a).at(1)->signature(), std::get<2>(data.at(1)));
+    ASSERT_EQ(mmideers.at(a).at(0)->name(), std::get<0>(data.at(2)));
+    ASSERT_TRUE(KeysEqual(mmideers.at(a).at(0)->value(),
+                          std::get<1>(data.at(2))));
+    ASSERT_EQ(mmideers.at(a).at(0)->signature(), std::get<2>(data.at(2)));
+    DLOG(ERROR) << "Verified #" << a;
+  }
+
+  for (size_t y(0); y < chosens.size(); ++y) {
+    data.clear();
+    ASSERT_EQ(
+        kSuccess,
+        packet_handler_.ConfirmSelectableIdentity(std::get<0>(chosens.at(y))));
+    ASSERT_EQ(kFailedToGetSelectableIdentityData,
+              packet_handler_.GetSelectableIdentityData(
+                  std::get<0>(chosens.at(y)),
+                  false,
+                  &data));
+    ASSERT_EQ(0, data.size());
+    ASSERT_EQ(kSuccess,
+              packet_handler_.GetSelectableIdentityData(
+                  std::get<0>(chosens.at(y)),
+                  true,
+                  &data));
+    ASSERT_EQ(3U, data.size());
+
+    ASSERT_EQ(packeteers.at(y).at(0)->name(), std::get<0>(data.at(0)));
+    ASSERT_TRUE(KeysEqual(packeteers.at(y).at(0)->value(),
+                          std::get<1>(data.at(0))));
+    ASSERT_EQ(packeteers.at(y).at(0)->signature(), std::get<2>(data.at(0)));
+    ASSERT_EQ(packeteers.at(y).at(1)->name(), std::get<0>(data.at(1)));
+    ASSERT_TRUE(KeysEqual(packeteers.at(y).at(1)->value(),
+                          std::get<1>(data.at(1))));
+    ASSERT_EQ(packeteers.at(y).at(1)->signature(), std::get<2>(data.at(1)));
+    ASSERT_EQ(mmideers.at(y).at(0)->name(), std::get<0>(data.at(2)));
+    ASSERT_TRUE(KeysEqual(mmideers.at(y).at(0)->value(),
+                          std::get<1>(data.at(2))));
+    ASSERT_EQ(mmideers.at(y).at(0)->signature(), std::get<2>(data.at(2)));
+    DLOG(ERROR) << "Re-verified #" << y;
   }
 }
 

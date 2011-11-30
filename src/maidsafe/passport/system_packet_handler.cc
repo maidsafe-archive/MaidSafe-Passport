@@ -22,6 +22,8 @@
 
 #include "maidsafe/passport/system_packet_handler.h"
 
+#include <tuple>
+
 #include <cstdio>
 #include <sstream>
 #include <vector>
@@ -487,7 +489,67 @@ void SystemPacketHandler::SelectableIdentitiesList(
   }
 }
 
+int SystemPacketHandler::GetSelectableIdentityData(
+    const std::string &chosen_identity,
+    bool confirmed,
+    SelectableIdentityData *data) {
+  boost::mutex::scoped_lock loch_na_beinne_baine(selectable_ids_mutex_);
+  auto it = selectable_ids_.find(chosen_identity);
+  if (it == selectable_ids_.end()) {
+    DLOG(ERROR) << "Chosen identity not found";
+    return kFailedToGetSelectableIdentityData;
+  }
 
+  if (confirmed) {
+    if ((*it).second.anmpid.stored &&
+        (*it).second.mpid.stored &&
+        (*it).second.mmid.stored) {
+      SignaturePacketPtr anmpid(std::static_pointer_cast<pki::SignaturePacket>(
+          (*it).second.anmpid.stored));
+      SignaturePacketPtr mpid(std::static_pointer_cast<pki::SignaturePacket>(
+          (*it).second.mpid.stored));
+      SignaturePacketPtr mmid(std::static_pointer_cast<pki::SignaturePacket>(
+          (*it).second.mmid.stored));
+      data->push_back(std::make_tuple(anmpid->name(),
+                                      anmpid->value(),
+                                      anmpid->signature()));
+      data->push_back(std::make_tuple(mpid->name(),
+                                      mpid->value(),
+                                      mpid->signature()));
+      data->push_back(std::make_tuple(mmid->name(),
+                                      mmid->value(),
+                                      mmid->signature()));
+    } else {
+      DLOG(ERROR) << "No confirmed details";
+      return kFailedToGetSelectableIdentityData;
+    }
+  } else {
+    if ((*it).second.anmpid.pending &&
+        (*it).second.mpid.pending &&
+        (*it).second.mmid.pending) {
+      SignaturePacketPtr anmpid(std::static_pointer_cast<pki::SignaturePacket>(
+          (*it).second.anmpid.pending));
+      SignaturePacketPtr mpid(std::static_pointer_cast<pki::SignaturePacket>(
+          (*it).second.mpid.pending));
+      SignaturePacketPtr mmid(std::static_pointer_cast<pki::SignaturePacket>(
+          (*it).second.mmid.pending));
+      data->push_back(std::make_tuple(anmpid->name(),
+                                      anmpid->value(),
+                                      anmpid->signature()));
+      data->push_back(std::make_tuple(mpid->name(),
+                                      mpid->value(),
+                                      mpid->signature()));
+      data->push_back(std::make_tuple(mmid->name(),
+                                      mmid->value(),
+                                      mmid->signature()));
+    } else {
+      DLOG(ERROR) << "No unconfirmed details";
+      return kFailedToGetSelectableIdentityData;
+    }
+  }
+
+  return kSuccess;
+}
 
 }  // namespace passport
 

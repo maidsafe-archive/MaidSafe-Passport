@@ -350,6 +350,14 @@ void Passport::SelectableIdentitiesList(
   handler_->SelectableIdentitiesList(selectables);
 }
 
+int Passport::GetSelectableIdentityData(const std::string &chosen_identity,
+                                        bool confirmed,
+                                        SelectableIdentityData *data) {
+  BOOST_ASSERT(data);
+  data->clear();
+  return handler_->GetSelectableIdentityData(chosen_identity, confirmed, data);
+}
+
 }  // namespace passport
 
 }  // namespace maidsafe

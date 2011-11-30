@@ -92,6 +92,9 @@ class Passport {
   int DeleteSelectableIdentity(const std::string &chosen_name);
   void SelectableIdentitiesList(
       std::vector<SelectableIdData> *selectables) const;
+  int GetSelectableIdentityData(const std::string &chosen_identity,
+                                bool confirmed,
+                                SelectableIdentityData *data);
 
   friend class test::PassportTest;
 
