@@ -25,7 +25,9 @@
 #define MAIDSAFE_PASSPORT_PASSPORT_CONFIG_H_
 
 #include <tuple>
+
 #include <string>
+#include <vector>
 
 #include "maidsafe/common/rsa.h"
 
