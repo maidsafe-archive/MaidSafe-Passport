@@ -81,8 +81,10 @@ class Passport {
 
   // Getters
   std::string PacketName(PacketType packet_type, bool confirmed) const;
-  asymm::PublicKey SignaturePacketValue(PacketType packet_type,
-                                        bool confirmed) const;
+  asymm::PublicKey SignaturePacketValue(
+      PacketType packet_type,
+      bool confirmed,
+      const std::string &chosen_name = "") const;
   std::string IdentityPacketValue(PacketType packet_type, bool confirmed) const;
   std::string PacketSignature(PacketType packet_type, bool confirmed) const;
 

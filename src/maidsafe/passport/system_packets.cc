@@ -89,6 +89,7 @@ bool IsSignature(const int &packet_type, bool check_for_self_signer) {
     case kAntmid:
     case kAnmpid:
     case kAnmaid:
+    case kMmid:
       return true;
     default:
       return false;

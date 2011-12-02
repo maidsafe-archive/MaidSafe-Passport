@@ -951,6 +951,109 @@ TEST_F(SystemPacketHandlerTest, BEH_GetSelectableIdentityData) {
   }
 }
 
+TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityValue) {
+  std::vector<SignaturePacketPtr> packets1, mmid1;
+  ASSERT_TRUE(VerifySelectableIdContainerSize(0));
+  std::vector<SelectableIdData> chosens;
+  std::vector<std::vector<SignaturePacketPtr>> packeteers, mmideers;
+
+  for (int n(0); n < 10; ++n) {
+    packets1.clear();
+    mmid1.clear();
+    pki::CreateChainedId(&packets1, 2);
+    pki::CreateChainedId(&mmid1, 1);
+    chosens.push_back(std::make_tuple(RandomAlphaNumericString(8 + n),
+                                      mmid1.at(0)->name(),
+                                      packets1.at(1)->private_key()));
+    ASSERT_EQ(
+        kSuccess,
+        packet_handler_.AddPendingSelectableIdentity(std::get<0>(chosens.at(n)),
+                                                     packets1.at(1),
+                                                     packets1.at(0),
+                                                     mmid1.at(0)));
+    packeteers.push_back(packets1);
+    mmideers.push_back(mmid1);
+    DLOG(ERROR) << "Created #" << n;
+  }
+  ASSERT_TRUE(VerifySelectableIdContainerSize(chosens.size()));
+
+  for (size_t a(0); a < chosens.size(); ++a) {
+    ASSERT_FALSE(packet_handler_.GetPacket(kAnmpid,
+                                           true,
+                                           std::get<0>(chosens.at(a))));
+    SignaturePacketPtr anmpid(
+        std::static_pointer_cast<pki::SignaturePacket>(
+            packet_handler_.GetPacket(kAnmpid,
+                                      false,
+                                      std::get<0>(chosens.at(a)))));
+    ASSERT_TRUE(anmpid.get() != NULL);
+    ASSERT_TRUE(anmpid->Equals(packeteers.at(a).at(0)));
+
+    ASSERT_FALSE(packet_handler_.GetPacket(kMpid,
+                                           true,
+                                           std::get<0>(chosens.at(a))));
+    SignaturePacketPtr mpid(
+        std::static_pointer_cast<pki::SignaturePacket>(
+            packet_handler_.GetPacket(kMpid,
+                                      false,
+                                      std::get<0>(chosens.at(a)))));
+    ASSERT_TRUE(mpid.get() != NULL);
+    ASSERT_TRUE(mpid->Equals(packeteers.at(a).at(1)));
+
+    ASSERT_FALSE(packet_handler_.GetPacket(kMmid,
+                                           true,
+                                           std::get<0>(chosens.at(a))));
+    SignaturePacketPtr mmid(
+        std::static_pointer_cast<pki::SignaturePacket>(
+            packet_handler_.GetPacket(kMmid,
+                                      false,
+                                      std::get<0>(chosens.at(a)))));
+    ASSERT_TRUE(mmid.get() != NULL);
+    ASSERT_TRUE(mmid->Equals(mmideers.at(a).at(0)));
+    DLOG(ERROR) << "Verified #" << a;
+  }
+
+  for (size_t y(0); y < chosens.size(); ++y) {
+    ASSERT_EQ(
+        kSuccess,
+        packet_handler_.ConfirmSelectableIdentity(std::get<0>(chosens.at(y))));
+
+    ASSERT_FALSE(packet_handler_.GetPacket(kAnmpid,
+                                           false,
+                                           std::get<0>(chosens.at(y))));
+    SignaturePacketPtr anmpid(
+        std::static_pointer_cast<pki::SignaturePacket>(
+            packet_handler_.GetPacket(kAnmpid,
+                                      true,
+                                      std::get<0>(chosens.at(y)))));
+    ASSERT_TRUE(anmpid.get() != NULL);
+    ASSERT_TRUE(anmpid->Equals(packeteers.at(y).at(0)));
+
+    ASSERT_FALSE(packet_handler_.GetPacket(kMpid,
+                                           false,
+                                           std::get<0>(chosens.at(y))));
+    SignaturePacketPtr mpid(
+        std::static_pointer_cast<pki::SignaturePacket>(
+            packet_handler_.GetPacket(kMpid,
+                                      true,
+                                      std::get<0>(chosens.at(y)))));
+    ASSERT_TRUE(mpid.get() != NULL);
+    ASSERT_TRUE(mpid->Equals(packeteers.at(y).at(1)));
+
+    ASSERT_FALSE(packet_handler_.GetPacket(kMmid,
+                                           false,
+                                           std::get<0>(chosens.at(y))));
+    SignaturePacketPtr mmid(
+        std::static_pointer_cast<pki::SignaturePacket>(
+            packet_handler_.GetPacket(kMmid,
+                                      true,
+                                      std::get<0>(chosens.at(y)))));
+    ASSERT_TRUE(mmid.get() != NULL);
+    ASSERT_TRUE(mmid->Equals(mmideers.at(y).at(0)));
+    DLOG(ERROR) << "Re-verified #" << y;
+  }
+}
+
 }  // namespace test
 
 }  // namespace passport

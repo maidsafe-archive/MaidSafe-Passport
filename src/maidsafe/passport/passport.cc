@@ -231,15 +231,17 @@ std::string Passport::PacketName(PacketType packet_type, bool confirmed) const {
   return packet->name();
 }
 
-asymm::PublicKey Passport::SignaturePacketValue(PacketType packet_type,
-                                                bool confirmed) const {
+asymm::PublicKey Passport::SignaturePacketValue(
+    PacketType packet_type,
+    bool confirmed,
+    const std::string &chosen_name) const {
   if (!IsSignature(packet_type, false)) {
     DLOG(ERROR) << "Packet " << DebugString(packet_type)
                 << " is not a signing packet.";
     return asymm::PublicKey();
   }
 
-  PacketPtr packet(handler_->GetPacket(packet_type, confirmed));
+  PacketPtr packet(handler_->GetPacket(packet_type, confirmed, chosen_name));
   if (!packet) {
     DLOG(ERROR) << "Packet " << DebugString(packet_type) << " in state "
                 << std::boolalpha << confirmed << " not found";
@@ -321,8 +323,9 @@ int Passport::CreateSelectableIdentity(const std::string &chosen_name) {
   }
 
   std::vector<pki::SignaturePacketPtr> mmid_packet;
-  if (pki::CreateChainedId(&packets, 1) != kSuccess || packets.size() != 1U) {
-    DLOG(ERROR) << "Failed to create kAnmpid";
+  if (pki::CreateChainedId(&mmid_packet, 1) != kSuccess ||
+      mmid_packet.size() != 1U) {
+    DLOG(ERROR) << "Failed to create kMmid";
     return kFailedToCreatePacket;
   }
 

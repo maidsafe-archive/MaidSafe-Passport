@@ -162,40 +162,95 @@ bool SystemPacketHandler::RevertPacket(const PacketType &packet_type) {
   }
 }
 
-PacketPtr SystemPacketHandler::GetPacket(const PacketType &packet_type,
-                                         bool confirmed) const {
+PacketPtr SystemPacketHandler::GetPacket(
+    const PacketType &packet_type,
+    bool confirmed,
+    const std::string &chosen_identity) const {
   PacketPtr packet;
-  boost::mutex::scoped_lock lock(mutex_);
-  SystemPacketMap::const_iterator it = packets_.find(packet_type);
-  if (it == packets_.end()) {
-    DLOG(ERROR) << "SystemPacketHandler::Packet: Missing "
-                << DebugString(packet_type);
-  } else {
-    PacketPtr retrieved_packet;
-    if (confirmed && (*it).second.stored) {
-      retrieved_packet = (*it).second.stored;
-    } else if (!confirmed && (*it).second.pending) {
-      retrieved_packet = (*it).second.pending;
-    }
-    if (retrieved_packet) {
-      // return a copy of the contents
-      if (packet_type == kTmid || packet_type == kStmid) {
-        packet = std::shared_ptr<TmidPacket>(new TmidPacket(
-            *std::static_pointer_cast<TmidPacket>(retrieved_packet)));
-      } else if (packet_type == kMid || packet_type == kSmid) {
-        packet = std::shared_ptr<MidPacket>(new MidPacket(
-            *std::static_pointer_cast<MidPacket>(retrieved_packet)));
-      } else if (IsSignature(packet_type, false)) {
-        packet = std::shared_ptr<pki::SignaturePacket>(new pki::SignaturePacket(
-            *std::static_pointer_cast<pki::SignaturePacket>(retrieved_packet)));
+  if (chosen_identity.empty()) {
+    boost::mutex::scoped_lock lock(mutex_);
+    SystemPacketMap::const_iterator it = packets_.find(packet_type);
+    if (it == packets_.end()) {
+      DLOG(ERROR) << "SystemPacketHandler::Packet: Missing "
+                  << DebugString(packet_type);
+    } else {
+      PacketPtr retrieved_packet;
+      if (confirmed && (*it).second.stored) {
+        retrieved_packet = (*it).second.stored;
+      } else if (!confirmed && (*it).second.pending) {
+        retrieved_packet = (*it).second.pending;
+      }
+      if (retrieved_packet) {
+        // return a copy of the contents
+        if (packet_type == kTmid || packet_type == kStmid) {
+          packet = std::shared_ptr<TmidPacket>(new TmidPacket(
+              *std::static_pointer_cast<TmidPacket>(retrieved_packet)));
+        } else if (packet_type == kMid || packet_type == kSmid) {
+          packet = std::shared_ptr<MidPacket>(new MidPacket(
+              *std::static_pointer_cast<MidPacket>(retrieved_packet)));
+        } else if (IsSignature(packet_type, false)) {
+          packet = std::shared_ptr<pki::SignaturePacket>(
+              new pki::SignaturePacket(
+                  *std::static_pointer_cast<pki::SignaturePacket>(
+                      retrieved_packet)));
+        } else {
+          DLOG(ERROR) << "SystemPacketHandler::Packet: "
+                      << DebugString(packet_type) << " type error.";
+        }
       } else {
         DLOG(ERROR) << "SystemPacketHandler::Packet: "
-                    << DebugString(packet_type) << " type error.";
+                    << DebugString(packet_type) << " not "
+                    << (confirmed ? "confirmed as stored." :
+                                    "pending confirmation.");
+      }
+    }
+  } else {
+    if (packet_type != kAnmpid &&
+        packet_type != kMpid &&
+        packet_type != kMmid) {
+      DLOG(ERROR) << "Wrong type to use chosen identity search";
+      return packet;
+    }
+    boost::mutex::scoped_lock lock(selectable_ids_mutex_);
+    auto it = selectable_ids_.find(chosen_identity);
+    if (it == selectable_ids_.end()) {
+      DLOG(ERROR) << "Failed to find chosen identity";
+      return packet;
+    }
+    if (confirmed) {
+      if (packet_type == kAnmpid && (*it).second.anmpid.stored) {
+        packet = std::shared_ptr<pki::SignaturePacket>(
+                     new pki::SignaturePacket(
+                         *std::static_pointer_cast<pki::SignaturePacket>(
+                             (*it).second.anmpid.stored)));
+      } else if (packet_type == kMpid && (*it).second.mpid.stored) {
+        packet = std::shared_ptr<pki::SignaturePacket>(
+                     new pki::SignaturePacket(
+                         *std::static_pointer_cast<pki::SignaturePacket>(
+                             (*it).second.mpid.stored)));
+      } else if (packet_type == kMmid && (*it).second.mmid.stored) {
+        packet = std::shared_ptr<pki::SignaturePacket>(
+                     new pki::SignaturePacket(
+                         *std::static_pointer_cast<pki::SignaturePacket>(
+                             (*it).second.mmid.stored)));
       }
     } else {
-      DLOG(ERROR) << "SystemPacketHandler::Packet: " << DebugString(packet_type)
-                  << " not " << (confirmed ? "confirmed as stored." :
-                                             "pending confirmation.");
+      if (packet_type == kAnmpid && (*it).second.anmpid.pending) {
+        packet = std::shared_ptr<pki::SignaturePacket>(
+                     new pki::SignaturePacket(
+                         *std::static_pointer_cast<pki::SignaturePacket>(
+                             (*it).second.anmpid.pending)));
+      } else if (packet_type == kMpid && (*it).second.mpid.pending) {
+        packet = std::shared_ptr<pki::SignaturePacket>(
+                     new pki::SignaturePacket(
+                         *std::static_pointer_cast<pki::SignaturePacket>(
+                             (*it).second.mpid.pending)));
+      } else if (packet_type == kMmid && (*it).second.mmid.pending) {
+        packet = std::shared_ptr<pki::SignaturePacket>(
+                     new pki::SignaturePacket(
+                         *std::static_pointer_cast<pki::SignaturePacket>(
+                             (*it).second.mmid.pending)));
+      }
     }
   }
   return packet;

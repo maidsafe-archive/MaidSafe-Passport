@@ -61,7 +61,9 @@ class SystemPacketHandler {
   bool AddPendingPacket(PacketPtr packet);
   int ConfirmPacket(PacketPtr packet);
   bool RevertPacket(const PacketType &packet_type);
-  PacketPtr GetPacket(const PacketType &packet_type, bool confirmed) const;
+  PacketPtr GetPacket(const PacketType &packet_type,
+                      bool confirmed,
+                      const std::string &chosen_identity = "") const;
   PacketPtr GetPacket(const std::string &packet_id, bool confirmed) const;
   int DeletePacket(const PacketType &packet_type);
   bool Confirmed(const PacketType &packet_type) const;
