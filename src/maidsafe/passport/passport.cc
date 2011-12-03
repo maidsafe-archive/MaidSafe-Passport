@@ -251,6 +251,26 @@ asymm::PublicKey Passport::SignaturePacketValue(
   return std::static_pointer_cast<pki::SignaturePacket>(packet)->value();
 }
 
+asymm::PrivateKey Passport::PacketPrivateKey(
+    PacketType packet_type,
+    bool confirmed,
+    const std::string &chosen_name = "") const {
+  if (!IsSignature(packet_type, false)) {
+    DLOG(ERROR) << "Packet " << DebugString(packet_type)
+                << " is not a signing packet.";
+    return asymm::PrivateKey();
+  }
+
+  PacketPtr packet(handler_->GetPacket(packet_type, confirmed, chosen_name));
+  if (!packet) {
+    DLOG(ERROR) << "Packet " << DebugString(packet_type) << " in state "
+                << std::boolalpha << confirmed << " not found";
+    return asymm::PrivateKey();
+  }
+
+  return std::static_pointer_cast<pki::SignaturePacket>(packet)->private_key();
+}
+
 std::string Passport::IdentityPacketValue(PacketType packet_type,
                                           bool confirmed) const {
   if (packet_type != kMid && packet_type != kSmid &&
