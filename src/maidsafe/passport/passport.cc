@@ -254,7 +254,7 @@ asymm::PublicKey Passport::SignaturePacketValue(
 asymm::PrivateKey Passport::PacketPrivateKey(
     PacketType packet_type,
     bool confirmed,
-    const std::string &chosen_name = "") const {
+    const std::string &chosen_name) const {
   if (!IsSignature(packet_type, false)) {
     DLOG(ERROR) << "Packet " << DebugString(packet_type)
                 << " is not a signing packet.";
