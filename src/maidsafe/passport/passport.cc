@@ -129,10 +129,15 @@ int Passport::CreateSigningPackets() {
 int Passport::ConfirmSigningPackets() {
   int result(kSuccess);
   for (int pt(kAnmid); pt != kMid; ++pt) {
-    if (handler_->ConfirmPacket(handler_->GetPacket(
-          static_cast<PacketType>(pt), false)) != kSuccess) {
-      DLOG(ERROR) << "Failed confirming packet " << DebugString(pt);
+    PacketPtr p(handler_->GetPacket(static_cast<PacketType>(pt), false));
+    if (!p) {
+      DLOG(ERROR) << "Failed getting pending packet " << DebugString(pt);
       result = kFailedToConfirmPacket;
+      break;
+    }
+    if (handler_->ConfirmPacket(p) != kSuccess) {
+      DLOG(ERROR) << "Failed confirming packet " << DebugString(pt);
+      result = pt;
       break;
     }
   }
@@ -147,7 +152,12 @@ int Passport::SetIdentityPackets(const std::string &username,
                                  const std::string &surrogate_data) {
   if (username.empty() || pin.empty() || password.empty() ||
       master_data.empty() || surrogate_data.empty()) {
-    DLOG(ERROR) << "At least one empty parameter passed in";
+    DLOG(ERROR) << "At least one empty parameter passed in "
+                << std::boolalpha << username.empty() << " - "
+                << std::boolalpha << pin.empty() << " - "
+                << std::boolalpha << password.empty() << " - "
+                << std::boolalpha << master_data.empty() << " - "
+                << std::boolalpha << surrogate_data.empty();
     return kEmptyParameter;
   }
 
@@ -203,20 +213,21 @@ void Passport::SerialiseKeyChain(std::string *key_chain,
 
 int Passport::ParseKeyChain(const std::string &serialised_keychain,
                             const std::string &serialised_selectables) {
-  int result = handler_->ParseKeyChain(serialised_keychain,
-                                       serialised_selectables);
-  if (result != kSuccess) {
-    DLOG(ERROR) << "Failed parsing keyring";
-    return result;
+  if (serialised_keychain.empty()) {
+    std::cout << "Empty keychain" << std::endl;
+    return kPassportError;
   }
 
-  result = ConfirmIdentityPackets();
-  if (result != kSuccess) {
-    DLOG(ERROR) << "Failed confirming identity packets";
-    return result;
-  }
+  return handler_->ParseKeyChain(serialised_keychain, serialised_selectables);
+}
 
-  return result;
+void Passport::ClearKeyChain(bool signature, bool identity, bool selectable) {
+  if (signature)
+    handler_->ClearKeySignatures();
+  if (identity)
+    handler_->ClearKeyIdentities();
+  if (selectable)
+    handler_->ClearKeySelectables();
 }
 
 // Getters

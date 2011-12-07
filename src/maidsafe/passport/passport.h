@@ -78,6 +78,7 @@ class Passport {
                          std::string *selectables) const;
   int ParseKeyChain(const std::string &serialised_keychain,
                     const std::string &serialised_selectables);
+  void ClearKeyChain(bool signature, bool identity, bool selectable);
 
   // Getters
   std::string PacketName(PacketType packet_type, bool confirmed) const;

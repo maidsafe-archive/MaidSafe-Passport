@@ -86,7 +86,9 @@ class SystemPacketHandler {
                          std::string *selectables) const;
   int ParseKeyChain(const std::string &serialised_keychain,
                     const std::string &serialised_selectables);
-  void ClearKeyChain();
+  void ClearKeySignatures();
+  void ClearKeyIdentities();
+  void ClearKeySelectables();
 
   void Clear();
   friend class test::SystemPacketHandlerTest;

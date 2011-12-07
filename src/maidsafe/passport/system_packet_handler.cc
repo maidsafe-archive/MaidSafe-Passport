@@ -391,6 +391,9 @@ int SystemPacketHandler::ParseKeyChain(
           DLOG(ERROR) << "SystemPacketHandler::ParseKeyChain: Failed for "
                       << DebugString((*it).second.stored->packet_type());
           return kKeyChainNotEmpty;
+        } else {
+          DLOG(ERROR) << "Added "
+                      << DebugString((*it).second.stored->packet_type());
         }
       }
     }
@@ -425,7 +428,7 @@ int SystemPacketHandler::ParseKeyChain(
   return kSuccess;
 }
 
-void SystemPacketHandler::ClearKeyChain() {
+void SystemPacketHandler::ClearKeySignatures() {
   boost::mutex::scoped_lock lock(mutex_);
   SystemPacketMap::iterator it = packets_.begin();
   while (it != packets_.end()) {
@@ -435,6 +438,23 @@ void SystemPacketHandler::ClearKeyChain() {
       ++it;
     }
   }
+}
+
+void SystemPacketHandler::ClearKeyIdentities() {
+  boost::mutex::scoped_lock lock(mutex_);
+  SystemPacketMap::iterator it = packets_.begin();
+  while (it != packets_.end()) {
+    if (!IsSignature((*it).first, false)) {
+      packets_.erase(it++);
+    } else {
+      ++it;
+    }
+  }
+}
+
+void SystemPacketHandler::ClearKeySelectables() {
+  boost::mutex::scoped_lock lock(selectable_ids_mutex_);
+  selectable_ids_.clear();
 }
 
 int SystemPacketHandler::DeletePacket(const PacketType &packet_type) {
@@ -465,6 +485,12 @@ int SystemPacketHandler::AddPendingSelectableIdentity(
   }
 
   SelectableIdentity packets(identity, signer, inbox);
+  if (!packets.anmpid.pending)
+    DLOG(ERROR) << "0. No unconfirmed ANMPID";
+  if (!packets.mpid.pending)
+    DLOG(ERROR) << "0. No unconfirmed MPID";
+  if (!packets.mmid.pending)
+    DLOG(ERROR) << "0. No unconfirmed MMID";
   boost::mutex::scoped_lock loch_an_ruathair(selectable_ids_mutex_);
   auto it = selectable_ids_.find(chosen_identity);
   if (it == selectable_ids_.end()) {
@@ -473,6 +499,19 @@ int SystemPacketHandler::AddPendingSelectableIdentity(
     if (!result.second) {
       DLOG(ERROR) << "Failed for " << chosen_identity;
       return kFailedToAddSelectableIdentity;
+    } else {
+      DLOG(ERROR) << "Added pending packets for " << chosen_identity;
+      auto it1 = selectable_ids_.find(chosen_identity);
+      if (it1 == selectable_ids_.end()) {
+        DLOG(ERROR) << "Chosen identity not found";
+        return kFailedToGetSelectableIdentityData;
+      }
+      if (!(*it1).second.anmpid.pending)
+        DLOG(ERROR) << "1. No unconfirmed ANMPID";
+      if (!(*it1).second.mpid.pending)
+        DLOG(ERROR) << "1. No unconfirmed MPID";
+      if (!(*it1).second.mmid.pending)
+        DLOG(ERROR) << "1. No unconfirmed MMID";
     }
   } else {
     (*it).second.mpid.pending = identity;
@@ -598,7 +637,19 @@ int SystemPacketHandler::GetSelectableIdentityData(
                                       mmid->value(),
                                       mmid->signature()));
     } else {
-      DLOG(ERROR) << "No unconfirmed details";
+      if (!(*it).second.anmpid.pending)
+        DLOG(ERROR) << "No unconfirmed ANMPID";
+      if (!(*it).second.mpid.pending)
+        DLOG(ERROR) << "No unconfirmed MPID";
+      if (!(*it).second.mmid.pending)
+        DLOG(ERROR) << "No unconfirmed MMID";
+      if (!(*it).second.anmpid.stored)
+        DLOG(ERROR) << "No confirmed ANMPID";
+      if (!(*it).second.mpid.stored)
+        DLOG(ERROR) << "No confirmed MPID";
+      if (!(*it).second.mmid.stored)
+        DLOG(ERROR) << "No confirmed MMID";
+      DLOG(ERROR) << "No unconfirmed details " << (*it).first;
       return kFailedToGetSelectableIdentityData;
     }
   }

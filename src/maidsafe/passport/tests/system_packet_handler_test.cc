@@ -423,7 +423,7 @@ TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
   }
 
   // Check ClearKeyChain only removes signature packets
-  packet_handler_.ClearKeyChain();
+  packet_handler_.ClearKeySignatures();
   ASSERT_EQ(4U, packet_handler_.packets_.size());
   packets1_itr = packets1_.begin();
   packets1_itr += 6;
