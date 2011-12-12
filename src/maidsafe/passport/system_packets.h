@@ -29,12 +29,6 @@
 
 #include "maidsafe/pki/packet.h"
 #include "maidsafe/passport/passport_config.h"
-#include "maidsafe/passport/version.h"
-
-#if MAIDSAFE_PASSPORT_VERSION != 109
-#  error This API is not compatible with the installed library.\
-    Please update the maidsafe-passport library.
-#endif
 
 
 namespace testing { class AssertionResult; }
