@@ -1,10 +1,39 @@
-v0.01.08 (WIP)
+v0.01.10 (WIP)
 --------------
+
+
+v0.01.09
+--------
+* Changed to match updated CMake modules.
+* Added clearing of all parts of key chain
+* Added getter for signature packet private keys.
+* Changes to obtain data from selectable ids by chosen name
+* Data available for selectable ids: name, value, signature
+* Exposed getter for SelectableIdentitiesList.
+* Added MMID packet.
+* Removed includes to crypto_key_pairs.h
+* Fixed changed header paths.
+* Moved rsa key pair generator to common from passport
+* Work done for new selectable identities. Changed keys to match new RSA types
+* Functions for selectable identities. Serialisation and parsing missing.
+* Updated to use RSA keys.
+* Added function to expose TMID decryption of encrypted master data
+* New passport operations. Missing serialisation.
+* Changed password proceedings
+* Username and PIN change procedure amended
+* Removed unnecessary protocol buffer
+* Removed public name from serialise and parse functions
+* Added packet serialisation and refactored tests after moving SignaturePacket
+  to PKI.
+* SignaturePacket now moved to PKI.
+
+v0.01.08
+--------
+* Updated to match changes in Common
 
 v0.01.07
 --------
 * Minor bugfixes.
-
 
 v0.01.06
 --------
