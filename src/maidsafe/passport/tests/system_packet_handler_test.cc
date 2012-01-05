@@ -555,7 +555,8 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
                                          true));
   std::vector<SelectableIdData> selectables;
   packet_handler_.SelectableIdentitiesList(&selectables);
-  ASSERT_TRUE(selectables.empty());
+  ASSERT_EQ(1U, selectables.size());
+  ASSERT_FALSE(std::get<3>(selectables.at(0)));
 
   ASSERT_EQ(kSuccess,
             packet_handler_.AddPendingSelectableIdentity(chosen_name,
@@ -573,7 +574,8 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
                                          mmid2.at(0),
                                          true));
   packet_handler_.SelectableIdentitiesList(&selectables);
-  ASSERT_TRUE(selectables.empty());
+  ASSERT_EQ(1U, selectables.size());
+  ASSERT_FALSE(std::get<3>(selectables.at(0)));
 
   ASSERT_EQ(kSuccess,
             packet_handler_.AddPendingSelectableIdentity(chosen_name,
@@ -591,7 +593,8 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
                                          mmid1.at(0),
                                          true));
   packet_handler_.SelectableIdentitiesList(&selectables);
-  ASSERT_TRUE(selectables.empty());
+  ASSERT_EQ(1U, selectables.size());
+  ASSERT_FALSE(std::get<3>(selectables.at(0)));
 
   std::string inexistent_chosen_name(chosen_name + "1");
   ASSERT_EQ(kFailedToConfirmSelectableIdentity,
@@ -650,6 +653,7 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityPackets) {
   packet_handler_.SelectableIdentitiesList(&selectables);
   ASSERT_EQ(1U, selectables.size());
   ASSERT_EQ(chosen_name, std::get<0>(selectables.at(0)));
+  ASSERT_TRUE(std::get<3>(selectables.at(0)));
 
   ASSERT_EQ(kSuccess, packet_handler_.ConfirmSelectableIdentity(chosen_name));
   ASSERT_TRUE(VerifySelectableIdContainerSize(1));
@@ -791,7 +795,8 @@ TEST_F(SystemPacketHandlerTest, FUNC_SerialisationAndParsing) {
     pki::CreateChainedId(&mmid1, 1);
     chosens.push_back(std::make_tuple(RandomAlphaNumericString(8 + n),
                                       mmid1.at(0)->name(),
-                                      packets1.at(1)->private_key()));
+                                      packets1.at(1)->private_key(),
+                                      false));
     ASSERT_EQ(
         kSuccess,
         packet_handler_.AddPendingSelectableIdentity(std::get<0>(chosens.at(n)),
@@ -869,7 +874,8 @@ TEST_F(SystemPacketHandlerTest, BEH_GetSelectableIdentityData) {
     pki::CreateChainedId(&mmid1, 1);
     chosens.push_back(std::make_tuple(RandomAlphaNumericString(8 + n),
                                       mmid1.at(0)->name(),
-                                      packets1.at(1)->private_key()));
+                                      packets1.at(1)->private_key(),
+                                      false));
     ASSERT_EQ(
         kSuccess,
         packet_handler_.AddPendingSelectableIdentity(std::get<0>(chosens.at(n)),
@@ -964,7 +970,8 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityValue) {
     pki::CreateChainedId(&mmid1, 1);
     chosens.push_back(std::make_tuple(RandomAlphaNumericString(8 + n),
                                       mmid1.at(0)->name(),
-                                      packets1.at(1)->private_key()));
+                                      packets1.at(1)->private_key(),
+                                      false));
     ASSERT_EQ(
         kSuccess,
         packet_handler_.AddPendingSelectableIdentity(std::get<0>(chosens.at(n)),

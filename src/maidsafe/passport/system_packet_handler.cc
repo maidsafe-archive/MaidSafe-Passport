@@ -26,6 +26,7 @@
 
 #include <cstdio>
 #include <sstream>
+#include <utility>
 #include <vector>
 
 #include "boost/archive/text_oarchive.hpp"
@@ -577,7 +578,17 @@ void SystemPacketHandler::SelectableIdentitiesList(
           (*it).second.mpid.stored));
       selectables->push_back(std::make_tuple((*it).first,
                                              (*it).second.mmid.stored->name(),
-                                             mpid->private_key()));
+                                             mpid->private_key(),
+                                             true));
+    } else if ((*it).second.mpid.pending &&
+               (*it).second.anmpid.pending &&
+               (*it).second.mmid.pending) {
+      SignaturePacketPtr mpid(std::static_pointer_cast<pki::SignaturePacket>(
+          (*it).second.mpid.pending));
+      selectables->push_back(std::make_tuple((*it).first,
+                                             (*it).second.mmid.pending->name(),
+                                             mpid->private_key(),
+                                             false));
     }
     ++it;
   }

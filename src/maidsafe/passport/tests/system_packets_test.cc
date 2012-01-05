@@ -45,6 +45,7 @@ class SystemPacketsTest : public testing::Test {
   SystemPacketsTest()
       : signature_packet_types_(),
         packet_types_() {}
+
  protected:
   virtual void SetUp() {
     signature_packet_types_.push_back(kMpid);

@@ -113,6 +113,7 @@ class TmidPacket : public pki::Packet {
   std::string username() const { return username_; }
   std::string pin() const { return pin_; }
   std::string password() const { return password_; }
+
  private:
   friend testing::AssertionResult test::Empty(PacketPtr packet);
   friend testing::AssertionResult test::Equal(
