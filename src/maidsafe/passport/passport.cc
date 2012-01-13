@@ -392,6 +392,60 @@ int Passport::GetSelectableIdentityData(const std::string &chosen_identity,
   return handler_->GetSelectableIdentityData(chosen_identity, confirmed, data);
 }
 
+int Passport::MoveMaidsafeInbox(const std::string &chosen_identity,
+                                PacketData *current_data,
+                                PacketData *new_data) {
+  if (!handler_->SelectableIdentityExists(chosen_identity)) {
+    DLOG(ERROR) << "Failed to find " << chosen_identity;
+    return kFailedToFindSelectableIdentity;
+  }
+
+  SelectableIdentityData sid;
+  int result(GetSelectableIdentityData(chosen_identity, true, &sid));
+  if (result != kSuccess) {
+    DLOG(ERROR) << "Failed to obtain current MMID details";
+    return result;
+  }
+
+  std::vector<pki::SignaturePacketPtr> mmid_packet;
+  while (mmid_packet.empty() ||
+         !mmid_packet.front() ||
+         mmid_packet.front()->name() == std::get<0>(sid.at(2))) {
+    if (pki::CreateChainedId(&mmid_packet, 1) != kSuccess ||
+        mmid_packet.size() != 1U) {
+      DLOG(ERROR) << "Failed to create new MMID";
+      return kFailedToCreatePacket;
+    }
+  }
+
+  result = handler_->ChangeSelectableIdentityPacket(chosen_identity,
+                                                    kMmid,
+                                                    mmid_packet.front());
+  if (result != kSuccess) {
+    DLOG(ERROR) << "Failed to change MMID pending packet";
+    return result;
+  }
+
+  *current_data = std::make_tuple(std::get<0>(sid.at(2)),
+                                  std::get<1>(sid.at(2)),
+                                  std::get<2>(sid.at(2)));
+  *new_data = std::make_tuple(mmid_packet.front()->name(),
+                              mmid_packet.front()->value(),
+                              mmid_packet.front()->signature());
+  return kSuccess;
+}
+
+int Passport::ConfirmMovedMaidsafeInbox(const std::string &chosen_identity) {
+  int result(handler_->ConfirmSelectableIdentityPacket(chosen_identity,
+                                                      kMmid));
+  if (result != kSuccess) {
+    DLOG(ERROR) << "Failed to change MMID pending packet";
+    return result;
+  }
+
+  return kSuccess;
+}
+
 }  // namespace passport
 
 }  // namespace maidsafe

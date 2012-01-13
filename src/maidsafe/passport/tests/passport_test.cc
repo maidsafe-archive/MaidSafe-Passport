@@ -226,6 +226,20 @@ class PassportTest : public testing::Test {
     return true;
   }
 
+  bool GetPendingMmid(const std::string &public_username,
+                      pki::SignaturePacketPtr *pending_mmid) {
+    std::shared_ptr<pki::Packet> mmid(
+        passport_.handler_->GetPacket(kMmid, false, public_username));
+    if (!mmid) {
+      DLOG(ERROR) << "Packet MMID pending not found";
+      return false;
+    }
+
+    *pending_mmid = std::static_pointer_cast<pki::SignaturePacket>(mmid);
+
+    return true;
+  }
+
   Passport passport_;
   std::string username_, pin_, password_, master_data_, surrogate_data_,
               appendix_;
@@ -371,6 +385,53 @@ TEST_F(PassportTest, BEH_FreeFunctions) {
                                             pin_,
                                             password_,
                                             encrypted_master_data));
+}
+
+TEST_F(PassportTest, BEH_MoveMaidsafeInbox) {  // AKA MMID
+  std::string public_username(RandomString(8));
+  ASSERT_EQ(kSuccess, passport_.CreateSelectableIdentity(public_username));
+  ASSERT_EQ(kSuccess, passport_.ConfirmSelectableIdentity(public_username));
+
+  SelectableIdentityData sid;
+  ASSERT_EQ(kSuccess,
+            passport_.GetSelectableIdentityData(public_username, true, &sid));
+
+  asymm::Identity current_identity(std::get<0>(sid.at(2)));
+  asymm::PublicKey current_public_key(std::get<1>(sid.at(2)));
+  asymm::Signature current_signature(std::get<2>(sid.at(2)));
+  asymm::PrivateKey current_private_key(
+      passport_.PacketPrivateKey(kMmid, true, public_username));
+
+  PacketData current_mmid, new_mmid;
+  ASSERT_EQ(kSuccess, passport_.MoveMaidsafeInbox(public_username,
+                                                  &current_mmid,
+                                                  &new_mmid));
+
+  ASSERT_EQ(current_identity, std::get<0>(current_mmid));
+  ASSERT_TRUE(asymm::MatchingPublicKeys(current_public_key,
+                                        std::get<1>(current_mmid)));
+  ASSERT_EQ(current_signature, std::get<2>(current_mmid));
+  ASSERT_NE(current_identity, std::get<0>(new_mmid));
+  ASSERT_FALSE(asymm::MatchingPublicKeys(current_public_key,
+                                         std::get<1>(new_mmid)));
+  ASSERT_NE(current_signature, std::get<2>(new_mmid));
+
+  pki::SignaturePacketPtr pending_mmid;
+  ASSERT_TRUE(GetPendingMmid(public_username, &pending_mmid));
+  ASSERT_EQ(pending_mmid->name(), std::get<0>(new_mmid));
+  ASSERT_TRUE(asymm::MatchingPublicKeys(pending_mmid->value(),
+                                        std::get<1>(new_mmid)));
+  ASSERT_EQ(pending_mmid->signature(), std::get<2>(new_mmid));
+
+  ASSERT_EQ(kSuccess, passport_.ConfirmMovedMaidsafeInbox(public_username));
+  ASSERT_NE(kSuccess,
+            passport_.GetSelectableIdentityData(public_username, false, &sid));
+  ASSERT_EQ(kSuccess,
+            passport_.GetSelectableIdentityData(public_username, true, &sid));
+  ASSERT_EQ(std::get<0>(new_mmid), std::get<0>(sid.at(2)));
+  ASSERT_TRUE(asymm::MatchingPublicKeys(std::get<1>(new_mmid),
+                                        std::get<1>(sid.at(2))));
+  ASSERT_EQ(std::get<2>(new_mmid), std::get<2>(sid.at(2)));
 }
 
 }  // namespace test

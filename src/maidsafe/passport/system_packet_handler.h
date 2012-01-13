@@ -42,6 +42,7 @@ namespace maidsafe {
 namespace passport {
 
 namespace test {
+class PassportTest;
 class SystemPacketHandlerTest;
 class SystemPacketHandlerTest_FUNC_SigningAndIdentityPackets_Test;
 }  // namespace test
@@ -63,6 +64,7 @@ class SystemPacketHandler {
   bool Confirmed(const PacketType &packet_type) const;
 
   // Selectable identities
+  bool SelectableIdentityExists(const std::string &chosen_identity);
   int AddPendingSelectableIdentity(const std::string &chosen_identity,
                                    SignaturePacketPtr identity,
                                    SignaturePacketPtr signer,
@@ -74,6 +76,11 @@ class SystemPacketHandler {
   int GetSelectableIdentityData(const std::string &chosen_identity,
                                 bool confirmed,
                                 SelectableIdentityData *data);
+  int ChangeSelectableIdentityPacket(const std::string &chosen_identity,
+                                     const PacketType &packet_type,
+                                     SignaturePacketPtr packet);
+  int ConfirmSelectableIdentityPacket(const std::string &chosen_identity,
+                                      const PacketType &packet_type);
 
   // Whole keyring
   void SerialiseKeyChain(std::string *key_chain,
@@ -85,6 +92,7 @@ class SystemPacketHandler {
   void ClearKeySelectables();
 
   void Clear();
+  friend class test::PassportTest;
   friend class test::SystemPacketHandlerTest;
   friend class
          test::SystemPacketHandlerTest_FUNC_SigningAndIdentityPackets_Test;

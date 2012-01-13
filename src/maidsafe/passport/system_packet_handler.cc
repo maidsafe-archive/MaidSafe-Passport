@@ -475,6 +475,13 @@ void SystemPacketHandler::Clear() {
   packets_.clear();
 }
 
+bool SystemPacketHandler::SelectableIdentityExists(
+    const std::string &chosen_identity) {
+  boost::mutex::scoped_lock loch_an_ruathair(selectable_ids_mutex_);
+  auto it = selectable_ids_.find(chosen_identity);
+  return it != selectable_ids_.end();
+}
+
 int SystemPacketHandler::AddPendingSelectableIdentity(
     const std::string &chosen_identity,
     SignaturePacketPtr identity,
@@ -649,20 +656,80 @@ int SystemPacketHandler::GetSelectableIdentityData(
                                       mmid->signature()));
     } else {
       if (!(*it).second.anmpid.pending)
-        DLOG(ERROR) << "No unconfirmed ANMPID";
+        DLOG(INFO) << "No unconfirmed ANMPID";
       if (!(*it).second.mpid.pending)
-        DLOG(ERROR) << "No unconfirmed MPID";
+        DLOG(INFO) << "No unconfirmed MPID";
       if (!(*it).second.mmid.pending)
-        DLOG(ERROR) << "No unconfirmed MMID";
+        DLOG(INFO) << "No unconfirmed MMID";
       if (!(*it).second.anmpid.stored)
-        DLOG(ERROR) << "No confirmed ANMPID";
+        DLOG(INFO) << "No confirmed ANMPID";
       if (!(*it).second.mpid.stored)
-        DLOG(ERROR) << "No confirmed MPID";
+        DLOG(INFO) << "No confirmed MPID";
       if (!(*it).second.mmid.stored)
-        DLOG(ERROR) << "No confirmed MMID";
+        DLOG(INFO) << "No confirmed MMID";
       DLOG(ERROR) << "No unconfirmed details " << (*it).first;
       return kFailedToGetSelectableIdentityData;
     }
+  }
+
+  return kSuccess;
+}
+
+int SystemPacketHandler::ChangeSelectableIdentityPacket(
+    const std::string &chosen_identity,
+    const PacketType &packet_type,
+    SignaturePacketPtr packet) {
+  boost::mutex::scoped_lock loch_an_ruathair(selectable_ids_mutex_);
+  auto it = selectable_ids_.find(chosen_identity);
+  if (it == selectable_ids_.end()) {
+    DLOG(ERROR) << "No such selectable identities";
+    return -7;
+  }
+
+  switch (packet_type) {
+    case kAnmpid:
+        (*it).second.anmpid.pending = packet;
+        break;
+    case kMpid:
+        (*it).second.mpid.pending = packet;
+        break;
+    case kMmid:
+        (*it).second.mmid.pending = packet;
+        break;
+    default:
+        DLOG(ERROR) << "Type not defined for selectable identities";
+        return -7;
+  }
+
+  return kSuccess;
+}
+
+int SystemPacketHandler::ConfirmSelectableIdentityPacket(
+    const std::string &chosen_identity,
+    const PacketType &packet_type) {
+  boost::mutex::scoped_lock loch_an_ruathair(selectable_ids_mutex_);
+  auto it = selectable_ids_.find(chosen_identity);
+  if (it == selectable_ids_.end()) {
+    DLOG(ERROR) << "No such selectable identities";
+    return -7;
+  }
+
+  switch (packet_type) {
+    case kAnmpid:
+        (*it).second.anmpid.stored = (*it).second.anmpid.pending;
+        (*it).second.anmpid.pending.reset();
+        break;
+    case kMpid:
+        (*it).second.mpid.stored = (*it).second.mpid.pending;
+        (*it).second.mpid.pending.reset();
+        break;
+    case kMmid:
+        (*it).second.mmid.stored = (*it).second.mmid.pending;
+        (*it).second.mmid.pending.reset();
+        break;
+    default:
+        DLOG(ERROR) << "Type not defined for selectable identities";
+        return -7;
   }
 
   return kSuccess;

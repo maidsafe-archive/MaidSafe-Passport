@@ -102,6 +102,10 @@ class Passport {
   int GetSelectableIdentityData(const std::string &chosen_identity,
                                 bool confirmed,
                                 SelectableIdentityData *data);
+  int MoveMaidsafeInbox(const std::string &chosen_identity,
+                        PacketData *current_data,
+                        PacketData *new_data);
+  int ConfirmMovedMaidsafeInbox(const std::string &chosen_identity);
 
   friend class test::PassportTest;
 
