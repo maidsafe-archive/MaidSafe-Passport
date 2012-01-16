@@ -689,11 +689,17 @@ int SystemPacketHandler::ChangeSelectableIdentityPacket(
   switch (packet_type) {
     case kAnmpid:
         (*it).second.anmpid.pending = packet;
+        (*it).second.mpid.pending.reset(new pki::SignaturePacket);
+        (*it).second.mmid.pending.reset(new pki::SignaturePacket);
         break;
     case kMpid:
+        (*it).second.anmpid.pending.reset(new pki::SignaturePacket);
         (*it).second.mpid.pending = packet;
+        (*it).second.mmid.pending.reset(new pki::SignaturePacket);
         break;
     case kMmid:
+        (*it).second.anmpid.pending.reset(new pki::SignaturePacket);
+        (*it).second.mpid.pending.reset(new pki::SignaturePacket);
         (*it).second.mmid.pending = packet;
         break;
     default:
@@ -718,13 +724,19 @@ int SystemPacketHandler::ConfirmSelectableIdentityPacket(
     case kAnmpid:
         (*it).second.anmpid.stored = (*it).second.anmpid.pending;
         (*it).second.anmpid.pending.reset();
+        (*it).second.mpid.pending.reset();
+        (*it).second.mmid.pending.reset();
         break;
     case kMpid:
         (*it).second.mpid.stored = (*it).second.mpid.pending;
+        (*it).second.anmpid.pending.reset();
         (*it).second.mpid.pending.reset();
+        (*it).second.mmid.pending.reset();
         break;
     case kMmid:
         (*it).second.mmid.stored = (*it).second.mmid.pending;
+        (*it).second.anmpid.pending.reset();
+        (*it).second.mpid.pending.reset();
         (*it).second.mmid.pending.reset();
         break;
     default:
