@@ -49,7 +49,6 @@ SET(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE_DIR} CACHE INTERNAL "Except for MSVC, th
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build)
 INCLUDE(maidsafe_find_common)
 ADD_MAIDSAFE_LIBRARY(MaidSafe-PKI)
-ADD_MAIDSAFE_LIBRARY(MaidSafe-DHT)
 
 
 ###################################################################################################
