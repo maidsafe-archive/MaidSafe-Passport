@@ -81,7 +81,9 @@ class Passport {
   void ClearKeyChain(bool signature, bool identity, bool selectable);
 
   // Getters
-  std::string PacketName(PacketType packet_type, bool confirmed) const;
+  std::string PacketName(PacketType packet_type,
+                         bool confirmed,
+                         const std::string &chosen_name = "") const;
   asymm::PublicKey SignaturePacketValue(
       PacketType packet_type,
       bool confirmed,
@@ -91,7 +93,9 @@ class Passport {
       bool confirmed,
       const std::string &chosen_name = "") const;
   std::string IdentityPacketValue(PacketType packet_type, bool confirmed) const;
-  std::string PacketSignature(PacketType packet_type, bool confirmed) const;
+  std::string PacketSignature(PacketType packet_type,
+                              bool confirmed,
+                              const std::string &chosen_name = "") const;
 
   // Selectable Identity (aka MPID)
   int CreateSelectableIdentity(const std::string &chosen_name);

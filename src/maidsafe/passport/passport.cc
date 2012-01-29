@@ -231,8 +231,10 @@ void Passport::ClearKeyChain(bool signature, bool identity, bool selectable) {
 }
 
 // Getters
-std::string Passport::PacketName(PacketType packet_type, bool confirmed) const {
-  PacketPtr packet(handler_->GetPacket(packet_type, confirmed));
+std::string Passport::PacketName(PacketType packet_type,
+                                 bool confirmed,
+                                 const std::string &chosen_name) const {
+  PacketPtr packet(handler_->GetPacket(packet_type, confirmed, chosen_name));
   if (!packet) {
     DLOG(ERROR) << "Packet " << DebugString(packet_type) << " in state "
                 << std::boolalpha << confirmed << " not found";
@@ -305,8 +307,9 @@ std::string Passport::IdentityPacketValue(PacketType packet_type,
 }
 
 std::string Passport::PacketSignature(PacketType packet_type,
-                                      bool confirmed) const {
-  PacketPtr packet(handler_->GetPacket(packet_type, confirmed));
+                                      bool confirmed,
+                                      const std::string &chosen_name) const {
+  PacketPtr packet(handler_->GetPacket(packet_type, confirmed, chosen_name));
   if (!packet) {
     DLOG(ERROR) << "Packet " << DebugString(packet_type) << " in state "
                 << std::boolalpha << confirmed << " not found";
