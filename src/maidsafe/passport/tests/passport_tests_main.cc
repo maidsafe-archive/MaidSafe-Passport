@@ -27,7 +27,7 @@
 
 int main(int argc, char **argv) {
   // Initialising logging
-  google::InitGoogleLogging(argv[0]);
+  maidsafe::InitLogging(argv[0]);
   // Choose to direct output to stderr or not.
   FLAGS_logtostderr = true;
   // If Google logging is linked in, log messages at or above this level.
