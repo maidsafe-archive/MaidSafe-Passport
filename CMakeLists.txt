@@ -1,6 +1,6 @@
 #==============================================================================#
 #                                                                              #
-#  Copyright (c) 2011 MaidSafe.net limited                                     #
+#  Copyright (c) 2012 MaidSafe.net limited                                     #
 #                                                                              #
 #  The following source code is property of MaidSafe.net limited and is not    #
 #  meant for external use.  The use of this code is governed by the license    #
@@ -13,51 +13,18 @@
 #==============================================================================#
 
 
-set(MS_PROJECT_NAME maidsafe_passport)
+set(CMAKE_DISABLE_SOURCE_CHANGES ON)
+set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 
-cmake_minimum_required(VERSION 2.8.4 FATAL_ERROR)
-message("================================================================================\n")
+cmake_minimum_required(VERSION 2.8.7 FATAL_ERROR)
+project(passport)
 
-get_filename_component(CMAKE_BUILD_TYPE_DIR ${CMAKE_BINARY_DIR} NAME)
-
-# Variable MSVC is not set until after "PROJECT" command below
-if(CMAKE_BUILD_TYPE_DIR MATCHES "Win_MSVC")
-  set(CMAKE_BUILD_TYPE_DIR Release)
-elseif(CMAKE_BUILD_TYPE_DIR MATCHES "kdev")
-  set(CMAKE_BUILD_TYPE_DIR Debug)
-  set(KDEV 1)
-endif()
-
-if(NOT ${CMAKE_C_COMPILER_WORKS})
-  message(FATAL_ERROR "No generator previously specified.\nTo see a full list of generators, run:\n\tcmake --help\n")
-endif()
-
-# This "PROJECT" command resets CMAKE_BUILD_TYPE, hence it's copied from CMAKE_BUILD_TYPE_DIR which is set above.
-if((CMAKE_BUILD_TYPE_DIR MATCHES "Release") OR (DEFINED ${KDEV}))
-  project(${MS_PROJECT_NAME})
-else()
-  string(TOLOWER ${CMAKE_BUILD_TYPE_DIR} MS_PROJECT_NAME_APPENDIX)
-  project(${MS_PROJECT_NAME}_${MS_PROJECT_NAME_APPENDIX})
-endif()
-
-set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE_DIR} CACHE INTERNAL "Except for MSVC, the build type is set by running cmake from the appropriate build subdirectory e.g. for a Debug build, \"cd build/Linux/Debug && cmake ../../..\"." FORCE)
-
-
-###################################################################################################
-# MaidSafe Common, PKI and DHT library search                                                     #
-###################################################################################################
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/build)
-include(maidsafe_find_common)
-add_maidsafe_library(MaidSafe-PKI)
-
-
-###################################################################################################
-# Standard setup                                                                                  #
-###################################################################################################
 set(PROTO_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src)
 file(GLOB PROTO_FILES RELATIVE ${PROTO_SOURCE_DIR} "${PROTO_SOURCE_DIR}/maidsafe/passport/*.proto")
-include(maidsafe_standard_setup)
-handle_versions(${PROJECT_SOURCE_DIR}/src/maidsafe/passport/version.h)
+include(../../cmake_modules/maidsafe_standard_setup.cmake)
+
+include_directories(${common_SOURCE_DIR}/include)
+include_directories(${pki_SOURCE_DIR}/include)
 
 
 ###################################################################################################
@@ -83,23 +50,20 @@ list(REMOVE_ITEM STYLE_PASSPORT "${PROJECT_SOURCE_DIR}/src/maidsafe/passport/sig
 ###################################################################################################
 # Define MaidSafe libraries and executables                                                       #
 ###################################################################################################
-ms_add_static_library(${MS_PROJECT_NAME} ${ALL_FILES_PASSPORT_DIR})
+ms_add_static_library(passport ${ALL_FILES_PASSPORT_DIR})
 ms_add_executable(TESTpassport Tests ${ALL_FILES_PASSPORT_TESTS_DIR})
 
-target_link_libraries(maidsafe_passport_static maidsafe_pki_static protobuf_static)
-target_link_libraries(TESTpassport maidsafe_passport_static gtest_static)
+target_link_libraries(maidsafe_passport maidsafe_pki)
+target_link_libraries(TESTpassport maidsafe_passport)
+
+rename_outdated_built_exes()
 
 
 ###################################################################################################
 # Set compiler and linker flags                                                                   #
 ###################################################################################################
 include(maidsafe_standard_flags)
-
-if(MSVC)
-  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/maidsafe/passport/signature_packet.pb.cc PROPERTIES COMPILE_FLAGS "/W0")
-elseif(UNIX)
-  set_source_files_properties(${PROJECT_SOURCE_DIR}/src/maidsafe/passport/signature_packet.pb.cc PROPERTIES COMPILE_FLAGS "-Wno-effc++")
-endif()
+ms_disable_warnings(${PROJECT_SOURCE_DIR}/src/maidsafe/passport/signature_packet.pb.cc)
 
 
 ###################################################################################################
@@ -108,19 +72,3 @@ endif()
 add_style_test(${STYLE_PASSPORT})
 add_gtests(TESTpassport)
 test_summary_output()
-
-
-###################################################################################################
-# Install details                                                                                 #
-###################################################################################################
-final_message()
-rename_outdated_built_exes()
-
-set(MAIDSAFE_PASSPORT_INSTALL_FILES
-      ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/passport.h
-      ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/passport_config.h
-      ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/version.h)
-
-ms_install_libs(maidsafe_passport_static)
-ms_install_headers(passport ${MAIDSAFE_PASSPORT_INSTALL_FILES})
-ms_install_export()
