@@ -88,7 +88,7 @@ class MidPacket : public pki::Packet {
  private:
   friend testing::AssertionResult test::Empty(PacketPtr packet);
   friend testing::AssertionResult test::Equal(
-      std::shared_ptr<ExpectedMidContent> expected,
+      std::shared_ptr<test::ExpectedMidContent> expected,
       std::shared_ptr<MidPacket> mid);
   void Initialise();
   void Clear();
@@ -117,8 +117,8 @@ class TmidPacket : public pki::Packet {
  private:
   friend testing::AssertionResult test::Empty(PacketPtr packet);
   friend testing::AssertionResult test::Equal(
-      std::shared_ptr<ExpectedTmidContent> expected,
-      std::shared_ptr<TmidPacket> mid);
+      std::shared_ptr<test::ExpectedTmidContent> expected,
+      std::shared_ptr<TmidPacket> tmid);
   void Initialise();
   bool SetPassword();
   bool SetPlainData();
