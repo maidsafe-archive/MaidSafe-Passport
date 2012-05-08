@@ -51,7 +51,7 @@ list(REMOVE_ITEM STYLE_PASSPORT "${PROJECT_SOURCE_DIR}/src/maidsafe/passport/sig
 # Define MaidSafe libraries and executables                                                       #
 ###################################################################################################
 ms_add_static_library(passport ${ALL_FILES_PASSPORT_DIR})
-ms_add_executable(TESTpassport Tests ${ALL_FILES_PASSPORT_TESTS_DIR})
+ms_add_executable(TESTpassport "Tests/Passport" ${ALL_FILES_PASSPORT_TESTS_DIR})
 
 target_link_libraries(maidsafe_passport maidsafe_pki)
 target_link_libraries(TESTpassport maidsafe_passport)
