@@ -288,7 +288,7 @@ bool TmidPacket::SetPassword() {
   }
 
   uint32_t random_no_from_rid(0);
-  int a = 1;
+  uint8_t a(1);
   for (int i = 0; i < 4; ++i) {
     uint8_t temp(static_cast<uint8_t>(rid_.at(i)));
     random_no_from_rid += (temp * a);
