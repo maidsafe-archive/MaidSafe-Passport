@@ -497,9 +497,9 @@ TEST_F(SystemPacketsTest, BEH_CreateTmid) {
   // Check with valid inputs - no plain data
   std::string expected_salt(crypto::Hash<crypto::SHA512>(kRid + kPassword));
   uint32_t random_no_from_rid(0);
-  int a = 1;
+  int64_t a = 1;
   for (int i = 0; i < 4; ++i) {
-    uint8_t temp(static_cast<uint8_t>(kRid.at(i)));
+    uint8_t temp(static_cast<uint64_t>(kRid.at(i)));
     random_no_from_rid += (temp * a);
     a *= 256;
   }
@@ -565,7 +565,7 @@ TEST_F(SystemPacketsTest, BEH_SetAndDecryptData) {
   // Set plain data
   std::string expected_salt(crypto::Hash<crypto::SHA512>(kRid + kPassword));
   uint32_t random_no_from_rid(0);
-  int a = 1;
+  int64_t a = 1;
   for (int i = 0; i < 4; ++i) {
     uint8_t temp(static_cast<uint8_t>(kRid.at(i)));
     random_no_from_rid += (temp * a);
