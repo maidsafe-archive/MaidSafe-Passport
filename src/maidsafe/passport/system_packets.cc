@@ -291,7 +291,7 @@ bool TmidPacket::SetPassword() {
   int64_t a(1);
   for (int i = 0; i < 4; ++i) {
     uint8_t temp(static_cast<uint8_t>(rid_.at(i)));
-    random_no_from_rid += (temp * a);
+    random_no_from_rid += static_cast<uint32_t>(temp * a);
     a *= 256;
   }
 

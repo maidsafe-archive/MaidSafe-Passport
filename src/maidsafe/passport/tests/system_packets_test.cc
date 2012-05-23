@@ -500,7 +500,7 @@ TEST_F(SystemPacketsTest, BEH_CreateTmid) {
   int64_t a = 1;
   for (int i = 0; i < 4; ++i) {
     uint8_t temp(static_cast<uint64_t>(kRid.at(i)));
-    random_no_from_rid += (temp * a);
+    random_no_from_rid += static_cast<uint32_t>(temp * a);
     a *= 256;
   }
   std::string expected_secure_password;
@@ -568,7 +568,7 @@ TEST_F(SystemPacketsTest, BEH_SetAndDecryptData) {
   int64_t a = 1;
   for (int i = 0; i < 4; ++i) {
     uint8_t temp(static_cast<uint8_t>(kRid.at(i)));
-    random_no_from_rid += (temp * a);
+    random_no_from_rid += static_cast<uint32_t>(temp * a);
     a *= 256;
   }
   std::string expected_secure_password;
