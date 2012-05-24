@@ -73,4 +73,5 @@ ms_disable_warnings(${PROJECT_SOURCE_DIR}/src/maidsafe/passport/signature_packet
 ###################################################################################################
 add_style_test(${STYLE_PASSPORT})
 add_gtests(TESTpassport)
+add_project_experimental()
 test_summary_output()
