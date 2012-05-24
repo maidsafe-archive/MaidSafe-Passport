@@ -90,6 +90,10 @@ class Passport {
   std::string PacketSignature(PacketType packet_type,
                               bool confirmed,
                               const std::string &chosen_name = "") const;
+  std::shared_ptr<asymm::Keys> SignaturePacketDetails(
+      PacketType packet_type,
+      bool confirmed,
+      const std::string &chosen_name = "");
 
   // Selectable Identity (aka MPID)
   int CreateSelectableIdentity(const std::string &chosen_name);

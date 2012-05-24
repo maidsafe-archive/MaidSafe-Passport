@@ -348,6 +348,33 @@ std::string Passport::PacketSignature(PacketType packet_type,
   return signature;
 }
 
+std::shared_ptr<asymm::Keys> Passport::SignaturePacketDetails(
+    PacketType packet_type,
+    bool confirmed,
+    const std::string &chosen_name) {
+  if (!IsSignature(packet_type, false)) {
+    DLOG(ERROR) << "Packet " << DebugString(packet_type)
+                << " is not a signing packet.";
+    return std::shared_ptr<asymm::Keys>();
+  }
+
+  PacketPtr packet(handler_->GetPacket(packet_type, confirmed, chosen_name));
+  if (!packet) {
+    DLOG(ERROR) << "Packet " << DebugString(packet_type) << " in state "
+                << std::boolalpha << confirmed << " not found";
+    return std::shared_ptr<asymm::Keys>();
+  }
+
+  std::shared_ptr<pki::SignaturePacket> sig_packet(
+      std::static_pointer_cast<pki::SignaturePacket>(packet));
+  std::shared_ptr<asymm::Keys> keys(new asymm::Keys);
+  keys->identity = sig_packet->name();
+  keys->private_key = sig_packet->private_key();
+  keys->public_key = sig_packet->value();
+  keys->validation_token = sig_packet->signature();
+  return keys;
+}
+
 // Selectable Identity (MPID)
 int Passport::CreateSelectableIdentity(const std::string &chosen_name) {
   std::vector<pki::SignaturePacketPtr> packets;
