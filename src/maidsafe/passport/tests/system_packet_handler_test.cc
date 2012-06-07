@@ -24,11 +24,11 @@
 
 #include "boost/lexical_cast.hpp"
 
+#include "maidsafe/common/log.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
 #include "maidsafe/passport/system_packet_handler.h"
-#include "maidsafe/passport/log.h"
 
 namespace maidsafe {
 
@@ -178,7 +178,7 @@ class SystemPacketHandlerTest : public testing::Test {
                                   bool pending) {
     auto it = packet_handler_.selectable_ids_.find(chosen_identity);
     if (it == packet_handler_.selectable_ids_.end()) {
-      DLOG(ERROR) << "Found nothing";
+      LOG(kError) << "Found nothing";
       return false;
     }
 
@@ -186,14 +186,14 @@ class SystemPacketHandlerTest : public testing::Test {
       if (!confirmed_identity->Equals((*it).second.mpid.stored) ||
           !confirmed_signer->Equals((*it).second.anmpid.stored) ||
           !confirmed_inbox->Equals((*it).second.mmid.stored)) {
-        DLOG(ERROR) << "Different packets";
+        LOG(kError) << "Different packets";
         return false;
       }
     } else {
        if ((*it).second.mpid.stored ||
            (*it).second.anmpid.stored ||
            (*it).second.mmid.stored) {
-        DLOG(ERROR) << "Stored packets shouldn't exist";
+        LOG(kError) << "Stored packets shouldn't exist";
         return false;
       }
     }
@@ -202,14 +202,14 @@ class SystemPacketHandlerTest : public testing::Test {
       if (!pending_identity->Equals((*it).second.mpid.pending) ||
           !pending_signer->Equals((*it).second.anmpid.pending) ||
           !pending_inbox->Equals((*it).second.mmid.pending)) {
-        DLOG(ERROR) << "Different packets";
+        LOG(kError) << "Different packets";
         return false;
       }
     } else {
        if ((*it).second.mpid.pending ||
            (*it).second.anmpid.pending ||
            (*it).second.mmid.pending) {
-        DLOG(ERROR) << "Pending packets shouldn't exist";
+        LOG(kError) << "Pending packets shouldn't exist";
         return false;
       }
     }
@@ -469,7 +469,7 @@ TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
     PacketType packet_type(static_cast<PacketType>(
         (*packets1_itr++)->packet_type()));
     PacketPtr confirmed(packet_handler_.GetPacket(packet_type, true));
-    DLOG(INFO) << "Checking - " << DebugString(confirmed->packet_type());
+    LOG(kInfo) << "Checking - " << DebugString(confirmed->packet_type());
     ASSERT_TRUE((*packets2_itr++)->Equals(confirmed));
     ASSERT_TRUE(packet_handler_.GetPacket(packet_type, false).get() == NULL);
   }
@@ -884,7 +884,7 @@ TEST_F(SystemPacketHandlerTest, BEH_GetSelectableIdentityData) {
                                                      mmid1.at(0)));
     packeteers.push_back(packets1);
     mmideers.push_back(mmid1);
-    DLOG(ERROR) << "Created #" << n;
+    LOG(kError) << "Created #" << n;
   }
   ASSERT_TRUE(VerifySelectableIdContainerSize(chosens.size()));
 
@@ -920,7 +920,7 @@ TEST_F(SystemPacketHandlerTest, BEH_GetSelectableIdentityData) {
     ASSERT_TRUE(KeysEqual(mmideers.at(a).at(0)->value(),
                           std::get<1>(data.at(2))));
     ASSERT_EQ(mmideers.at(a).at(0)->signature(), std::get<2>(data.at(2)));
-    DLOG(ERROR) << "Verified #" << a;
+    LOG(kError) << "Verified #" << a;
   }
 
   for (size_t y(0); y < chosens.size(); ++y) {
@@ -953,7 +953,7 @@ TEST_F(SystemPacketHandlerTest, BEH_GetSelectableIdentityData) {
     ASSERT_TRUE(KeysEqual(mmideers.at(y).at(0)->value(),
                           std::get<1>(data.at(2))));
     ASSERT_EQ(mmideers.at(y).at(0)->signature(), std::get<2>(data.at(2)));
-    DLOG(ERROR) << "Re-verified #" << y;
+    LOG(kError) << "Re-verified #" << y;
   }
 }
 
@@ -980,7 +980,7 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityValue) {
                                                      mmid1.at(0)));
     packeteers.push_back(packets1);
     mmideers.push_back(mmid1);
-    DLOG(ERROR) << "Created #" << n;
+    LOG(kError) << "Created #" << n;
   }
   ASSERT_TRUE(VerifySelectableIdContainerSize(chosens.size()));
 
@@ -1017,7 +1017,7 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityValue) {
                                       std::get<0>(chosens.at(a)))));
     ASSERT_TRUE(mmid.get() != NULL);
     ASSERT_TRUE(mmid->Equals(mmideers.at(a).at(0)));
-    DLOG(ERROR) << "Verified #" << a;
+    LOG(kError) << "Verified #" << a;
   }
 
   for (size_t y(0); y < chosens.size(); ++y) {
@@ -1057,7 +1057,7 @@ TEST_F(SystemPacketHandlerTest, BEH_SelectableIdentityValue) {
                                       std::get<0>(chosens.at(y)))));
     ASSERT_TRUE(mmid.get() != NULL);
     ASSERT_TRUE(mmid->Equals(mmideers.at(y).at(0)));
-    DLOG(ERROR) << "Re-verified #" << y;
+    LOG(kError) << "Re-verified #" << y;
   }
 }
 

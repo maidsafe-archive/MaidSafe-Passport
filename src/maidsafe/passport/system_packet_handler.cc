@@ -33,9 +33,9 @@
 #include "boost/archive/text_iarchive.hpp"
 #include "boost/serialization/map.hpp"
 
+#include "maidsafe/common/log.h"
 #include "maidsafe/common/utils.h"
 
-#include "maidsafe/passport/log.h"
 #include "maidsafe/passport/passport_config.h"
 
 
@@ -73,7 +73,7 @@ bool SystemPacketHandler::AddPendingPacket(PacketPtr packet) {
             PacketInfo(packet)));
 #ifdef DEBUG
     if (!result.second)
-      DLOG(ERROR) << "SystemPacketHandler::AddPacket: Failed for "
+      LOG(kError) << "SystemPacketHandler::AddPacket: Failed for "
                   << DebugString(packet->packet_type());
 #endif
     return result.second;
@@ -90,14 +90,14 @@ int SystemPacketHandler::ConfirmPacket(PacketPtr packet) {
   boost::mutex::scoped_lock lock(mutex_);
   SystemPacketMap::iterator it = packets_.find(packet_type);
   if (it == packets_.end()) {
-     DLOG(ERROR) << "SystemPacketHandler::ConfirmPacket: Missing "
+     LOG(kError) << "SystemPacketHandler::ConfirmPacket: Missing "
                  << DebugString(packet_type);
     return kNoPendingPacket;
   }
   if (!(*it).second.pending) {
     if ((*it).second.stored && (*it).second.stored->Equals(packet))
       return kSuccess;
-    DLOG(ERROR) << "SystemPacketHandler::ConfirmPacket: Missing "
+    LOG(kError) << "SystemPacketHandler::ConfirmPacket: Missing "
                 << DebugString(packet_type);
     return kNoPendingPacket;
   }
@@ -133,12 +133,12 @@ int SystemPacketHandler::ConfirmPacket(PacketPtr packet) {
       break;
   }
   if (!dependencies_confirmed) {
-    DLOG(ERROR) << "SystemPacketHandler::ConfirmPacket: dependencies for "
+    LOG(kError) << "SystemPacketHandler::ConfirmPacket: dependencies for "
                 << DebugString(packet_type) << " not confirmed";
     return kMissingDependentPackets;
   } else {
     if (!(*it).second.pending->Equals(packet)) {
-      DLOG(ERROR) << "SystemPacketHandler::ConfirmPacket: input "
+      LOG(kError) << "SystemPacketHandler::ConfirmPacket: input "
                   << DebugString(packet_type) << " != pending "
                   << DebugString(packet_type);
 
@@ -154,7 +154,7 @@ bool SystemPacketHandler::RevertPacket(const PacketType &packet_type) {
   boost::mutex::scoped_lock lock(mutex_);
   SystemPacketMap::iterator it = packets_.find(packet_type);
   if (it == packets_.end()) {
-    DLOG(ERROR) << "SystemPacketHandler::RevertPacket: Missing "
+    LOG(kError) << "SystemPacketHandler::RevertPacket: Missing "
                 << DebugString(packet_type);
     return false;
   } else {
@@ -172,7 +172,7 @@ PacketPtr SystemPacketHandler::GetPacket(
     boost::mutex::scoped_lock lock(mutex_);
     SystemPacketMap::const_iterator it = packets_.find(packet_type);
     if (it == packets_.end()) {
-      DLOG(ERROR) << "SystemPacketHandler::Packet: Missing "
+      LOG(kError) << "SystemPacketHandler::Packet: Missing "
                   << DebugString(packet_type);
     } else {
       PacketPtr retrieved_packet;
@@ -195,11 +195,11 @@ PacketPtr SystemPacketHandler::GetPacket(
                   *std::static_pointer_cast<pki::SignaturePacket>(
                       retrieved_packet)));
         } else {
-          DLOG(ERROR) << "SystemPacketHandler::Packet: "
+          LOG(kError) << "SystemPacketHandler::Packet: "
                       << DebugString(packet_type) << " type error.";
         }
       } else {
-        DLOG(ERROR) << "SystemPacketHandler::Packet: "
+        LOG(kError) << "SystemPacketHandler::Packet: "
                     << DebugString(packet_type) << " not "
                     << (confirmed ? "confirmed as stored." :
                                     "pending confirmation.");
@@ -209,13 +209,13 @@ PacketPtr SystemPacketHandler::GetPacket(
     if (packet_type != kAnmpid &&
         packet_type != kMpid &&
         packet_type != kMmid) {
-      DLOG(ERROR) << "Wrong type to use chosen identity search";
+      LOG(kError) << "Wrong type to use chosen identity search";
       return packet;
     }
     boost::mutex::scoped_lock lock(selectable_ids_mutex_);
     auto it = selectable_ids_.find(chosen_identity);
     if (it == selectable_ids_.end()) {
-      DLOG(ERROR) << "Failed to find chosen identity";
+      LOG(kError) << "Failed to find chosen identity";
       return packet;
     }
     if (confirmed) {
@@ -289,16 +289,16 @@ PacketPtr SystemPacketHandler::GetPacket(const std::string &packet_id,
         packet = std::shared_ptr<pki::SignaturePacket>(new pki::SignaturePacket(
             *std::static_pointer_cast<pki::SignaturePacket>(retrieved_packet)));
       } else {
-        DLOG(ERROR) << "SystemPacketHandler::Packet: "
+        LOG(kError) << "SystemPacketHandler::Packet: "
                     << DebugString(retrieved_packet->packet_type())
                     << " type error.";
       }
-      DLOG(ERROR) << "Found packet by name "
+      LOG(kError) << "Found packet by name "
                   << DebugString(retrieved_packet->packet_type());
     }
   }
   if (!done) {
-    DLOG(ERROR) << "SystemPacketHandler::Packet " << Base32Substr(packet_id)
+    LOG(kError) << "SystemPacketHandler::Packet " << Base32Substr(packet_id)
                 << ": not " << (confirmed ? "confirmed as stored." :
                                             "pending confirmation.");
   }
@@ -357,7 +357,7 @@ void SystemPacketHandler::SerialiseKeyChain(std::string *key_chain,
                     std::static_pointer_cast<pki::SignaturePacket>(
                                    (*it).second.mmid.stored))));
         if (!p.second)
-          DLOG(ERROR) << "Failed to add " << (*it).first << " to SIS";
+          LOG(kError) << "Failed to add " << (*it).first << " to SIS";
       }
       ++it;
     }
@@ -380,7 +380,7 @@ int SystemPacketHandler::ParseKeyChain(
     SystemPacketMap spm;
     kc_input_archive >> spm;
     if (spm.empty()) {
-      DLOG(ERROR) << "SystemPacketHandler::ParseKeyChain failed.";
+      LOG(kError) << "SystemPacketHandler::ParseKeyChain failed.";
       return kBadSerialisedKeyChain;
     }
 
@@ -389,11 +389,11 @@ int SystemPacketHandler::ParseKeyChain(
       for (auto it(spm.begin()); it != spm.end(); ++it) {
         auto result = packets_.insert(*it);
         if (!result.second) {
-          DLOG(ERROR) << "SystemPacketHandler::ParseKeyChain: Failed for "
+          LOG(kError) << "SystemPacketHandler::ParseKeyChain: Failed for "
                       << DebugString((*it).second.stored->packet_type());
           return kKeyChainNotEmpty;
         } else {
-          DLOG(ERROR) << "Added "
+          LOG(kError) << "Added "
                       << DebugString((*it).second.stored->packet_type());
         }
       }
@@ -416,11 +416,11 @@ int SystemPacketHandler::ParseKeyChain(
                               new pki::SignaturePacket((*it).second.anmpid)),
                           SignaturePacketPtr(
                               new pki::SignaturePacket((*it).second.mmid)))) {
-        DLOG(ERROR) << "Failed adding pending " << (*it).first;
+        LOG(kError) << "Failed adding pending " << (*it).first;
         return kFailedToAddSelectableIdentity;
       }
       if (kSuccess != ConfirmSelectableIdentity((*it).first)) {
-        DLOG(ERROR) << "Failed adding pending " << (*it).first;
+        LOG(kError) << "Failed adding pending " << (*it).first;
         return kFailedToConfirmSelectableIdentity;
       }
     }
@@ -462,7 +462,7 @@ int SystemPacketHandler::DeletePacket(const PacketType &packet_type) {
   boost::mutex::scoped_lock lock(mutex_);
   size_t deleted_count = packets_.erase(packet_type);
   if (deleted_count == 0U) {
-    DLOG(ERROR) << "SystemPacketHandler::DeletePacket: Missing "
+    LOG(kError) << "SystemPacketHandler::DeletePacket: Missing "
                 << DebugString(packet_type);
     return kNoPacket;
   }
@@ -488,38 +488,38 @@ int SystemPacketHandler::AddPendingSelectableIdentity(
     SignaturePacketPtr signer,
     SignaturePacketPtr inbox) {
   if (chosen_identity.empty() || !identity || !signer || !inbox) {
-    DLOG(ERROR) << "Empty chosen identity or null pointers";
+    LOG(kError) << "Empty chosen identity or null pointers";
     return kFailedToAddSelectableIdentity;
   }
 
   SelectableIdentity packets(identity, signer, inbox);
   if (!packets.anmpid.pending)
-    DLOG(ERROR) << "0. No unconfirmed ANMPID";
+    LOG(kError) << "0. No unconfirmed ANMPID";
   if (!packets.mpid.pending)
-    DLOG(ERROR) << "0. No unconfirmed MPID";
+    LOG(kError) << "0. No unconfirmed MPID";
   if (!packets.mmid.pending)
-    DLOG(ERROR) << "0. No unconfirmed MMID";
+    LOG(kError) << "0. No unconfirmed MMID";
   boost::mutex::scoped_lock loch_an_ruathair(selectable_ids_mutex_);
   auto it = selectable_ids_.find(chosen_identity);
   if (it == selectable_ids_.end()) {
     std::pair<SelectableIdentitiesMap::iterator, bool> result =
         selectable_ids_.insert(std::make_pair(chosen_identity, packets));
     if (!result.second) {
-      DLOG(ERROR) << "Failed for " << chosen_identity;
+      LOG(kError) << "Failed for " << chosen_identity;
       return kFailedToAddSelectableIdentity;
     } else {
-      DLOG(ERROR) << "Added pending packets for " << chosen_identity;
+      LOG(kError) << "Added pending packets for " << chosen_identity;
       auto it1 = selectable_ids_.find(chosen_identity);
       if (it1 == selectable_ids_.end()) {
-        DLOG(ERROR) << "Chosen identity not found";
+        LOG(kError) << "Chosen identity not found";
         return kFailedToGetSelectableIdentityData;
       }
       if (!(*it1).second.anmpid.pending)
-        DLOG(ERROR) << "1. No unconfirmed ANMPID";
+        LOG(kError) << "1. No unconfirmed ANMPID";
       if (!(*it1).second.mpid.pending)
-        DLOG(ERROR) << "1. No unconfirmed MPID";
+        LOG(kError) << "1. No unconfirmed MPID";
       if (!(*it1).second.mmid.pending)
-        DLOG(ERROR) << "1. No unconfirmed MMID";
+        LOG(kError) << "1. No unconfirmed MMID";
     }
   } else {
     (*it).second.mpid.pending = identity;
@@ -533,14 +533,14 @@ int SystemPacketHandler::AddPendingSelectableIdentity(
 int SystemPacketHandler::ConfirmSelectableIdentity(
     const std::string &chosen_identity) {
   if (chosen_identity.empty()) {
-    DLOG(ERROR) << "Empty chosen identity";
+    LOG(kError) << "Empty chosen identity";
     return kFailedToConfirmSelectableIdentity;
   }
 
   boost::mutex::scoped_lock loch_arichlinie(selectable_ids_mutex_);
   auto it = selectable_ids_.find(chosen_identity);
   if (it == selectable_ids_.end()) {
-    DLOG(ERROR) << "Chosen identity to be confirmed not found";
+    LOG(kError) << "Chosen identity to be confirmed not found";
     return kFailedToConfirmSelectableIdentity;
   }
 
@@ -557,14 +557,14 @@ int SystemPacketHandler::ConfirmSelectableIdentity(
 int SystemPacketHandler::DeleteSelectableIdentity(
     const std::string &chosen_identity) {
   if (chosen_identity.empty()) {
-    DLOG(ERROR) << "Empty chosen identity";
+    LOG(kError) << "Empty chosen identity";
     return kFailedToDeleteSelectableIdentity;
   }
 
   boost::mutex::scoped_lock loch_eribol(selectable_ids_mutex_);
   size_t deleted_count = selectable_ids_.erase(chosen_identity);
   if (deleted_count == 0U) {
-    DLOG(ERROR) << "Missing selectable ID: " << chosen_identity;
+    LOG(kError) << "Missing selectable ID: " << chosen_identity;
     return kFailedToDeleteSelectableIdentity;
   }
 
@@ -608,7 +608,7 @@ int SystemPacketHandler::GetSelectableIdentityData(
   boost::mutex::scoped_lock loch_na_beinne_baine(selectable_ids_mutex_);
   auto it = selectable_ids_.find(chosen_identity);
   if (it == selectable_ids_.end()) {
-    DLOG(ERROR) << "Chosen identity not found";
+    LOG(kError) << "Chosen identity not found";
     return kFailedToGetSelectableIdentityData;
   }
 
@@ -632,7 +632,7 @@ int SystemPacketHandler::GetSelectableIdentityData(
                                       mmid->value(),
                                       mmid->signature()));
     } else {
-      DLOG(ERROR) << "No confirmed details";
+      LOG(kError) << "No confirmed details";
       return kFailedToGetSelectableIdentityData;
     }
   } else {
@@ -656,18 +656,18 @@ int SystemPacketHandler::GetSelectableIdentityData(
                                       mmid->signature()));
     } else {
       if (!(*it).second.anmpid.pending)
-        DLOG(INFO) << "No unconfirmed ANMPID";
+        LOG(kInfo) << "No unconfirmed ANMPID";
       if (!(*it).second.mpid.pending)
-        DLOG(INFO) << "No unconfirmed MPID";
+        LOG(kInfo) << "No unconfirmed MPID";
       if (!(*it).second.mmid.pending)
-        DLOG(INFO) << "No unconfirmed MMID";
+        LOG(kInfo) << "No unconfirmed MMID";
       if (!(*it).second.anmpid.stored)
-        DLOG(INFO) << "No confirmed ANMPID";
+        LOG(kInfo) << "No confirmed ANMPID";
       if (!(*it).second.mpid.stored)
-        DLOG(INFO) << "No confirmed MPID";
+        LOG(kInfo) << "No confirmed MPID";
       if (!(*it).second.mmid.stored)
-        DLOG(INFO) << "No confirmed MMID";
-      DLOG(ERROR) << "No unconfirmed details " << (*it).first;
+        LOG(kInfo) << "No confirmed MMID";
+      LOG(kError) << "No unconfirmed details " << (*it).first;
       return kFailedToGetSelectableIdentityData;
     }
   }
@@ -682,7 +682,7 @@ int SystemPacketHandler::ChangeSelectableIdentityPacket(
   boost::mutex::scoped_lock loch_an_ruathair(selectable_ids_mutex_);
   auto it = selectable_ids_.find(chosen_identity);
   if (it == selectable_ids_.end()) {
-    DLOG(ERROR) << "No such selectable identities";
+    LOG(kError) << "No such selectable identities";
     return -7;
   }
 
@@ -703,7 +703,7 @@ int SystemPacketHandler::ChangeSelectableIdentityPacket(
         (*it).second.mmid.pending = packet;
         break;
     default:
-        DLOG(ERROR) << "Type not defined for selectable identities";
+        LOG(kError) << "Type not defined for selectable identities";
         return -7;
   }
 
@@ -716,7 +716,7 @@ int SystemPacketHandler::ConfirmSelectableIdentityPacket(
   boost::mutex::scoped_lock loch_an_ruathair(selectable_ids_mutex_);
   auto it = selectable_ids_.find(chosen_identity);
   if (it == selectable_ids_.end()) {
-    DLOG(ERROR) << "No such selectable identities";
+    LOG(kError) << "No such selectable identities";
     return -7;
   }
 
@@ -740,7 +740,7 @@ int SystemPacketHandler::ConfirmSelectableIdentityPacket(
         (*it).second.mmid.pending.reset();
         break;
     default:
-        DLOG(ERROR) << "Type not defined for selectable identities";
+        LOG(kError) << "Type not defined for selectable identities";
         return -7;
   }
 

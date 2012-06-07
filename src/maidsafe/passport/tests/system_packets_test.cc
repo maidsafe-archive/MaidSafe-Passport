@@ -25,10 +25,10 @@
 
 #include "boost/lexical_cast.hpp"
 
+#include "maidsafe/common/log.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
-#include "maidsafe/passport/log.h"
 #include "maidsafe/passport/system_packets.h"
 
 namespace maidsafe {

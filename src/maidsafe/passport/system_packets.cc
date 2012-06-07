@@ -27,9 +27,8 @@
 #include "boost/lexical_cast.hpp"
 
 #include "maidsafe/common/crypto.h"
+#include "maidsafe/common/log.h"
 #include "maidsafe/common/rsa.h"
-
-#include "maidsafe/passport/log.h"
 
 namespace maidsafe {
 
@@ -133,14 +132,14 @@ void MidPacket::Initialise() {
     pin = boost::lexical_cast<uint32_t>(pin_);
   }
   catch(boost::bad_lexical_cast & e) {
-    DLOG(ERROR) << "MidPacket::Initialise: Bad pin:" << e.what();
+    LOG(kError) << "MidPacket::Initialise: Bad pin:" << e.what();
     return Clear();
   }
 
   std::string secure_password;
   int result = crypto::SecurePassword(username_, salt_, pin, &secure_password);
   if (result != kSuccess) {
-    DLOG(ERROR) << "Failed to create secure pasword.  Result: " << result;
+    LOG(kError) << "Failed to create secure pasword.  Result: " << result;
     return Clear();
   }
 
@@ -155,21 +154,21 @@ void MidPacket::Initialise() {
 void MidPacket::SetRid(const std::string &rid) {
   rid_ = rid;
   if (rid_.empty()) {
-    DLOG(ERROR) << "Empty given RID";
+    LOG(kError) << "Empty given RID";
     Clear();
     return;
   }
 
   encrypted_rid_ = crypto::SymmEncrypt(rid_, secure_key_, secure_iv_);
   if (encrypted_rid_.empty()) {
-    DLOG(ERROR) << "Failed to encrypt given RID";
+    LOG(kError) << "Failed to encrypt given RID";
     Clear();
   }
 }
 
 std::string MidPacket::DecryptRid(const std::string &encrypted_rid) {
   if (username_.empty() || pin_.empty() || encrypted_rid.empty()) {
-    DLOG(ERROR) << "MidPacket::DecryptRid: Empty encrypted RID or user data.";
+    LOG(kError) << "MidPacket::DecryptRid: Empty encrypted RID or user data.";
     Clear();
     return "";
   }
@@ -177,7 +176,7 @@ std::string MidPacket::DecryptRid(const std::string &encrypted_rid) {
   encrypted_rid_ = encrypted_rid;
   rid_ = crypto::SymmDecrypt(encrypted_rid_, secure_key_, secure_iv_);
   if (rid_.empty()) {
-    DLOG(ERROR) << "MidPacket::DecryptRid: Failed decryption.";
+    LOG(kError) << "MidPacket::DecryptRid: Failed decryption.";
     Clear();
     return "";
   }
@@ -249,26 +248,26 @@ TmidPacket::TmidPacket(const std::string &username,
 
 void TmidPacket::Initialise() {
   if (username_.empty() || pin_.empty() || rid_.empty()) {
-    DLOG(ERROR) << "TmidPacket::Initialise: Empty uname/pin";
+    LOG(kError) << "TmidPacket::Initialise: Empty uname/pin";
     return Clear();
   }
 
   if (!SetPassword()) {
-    DLOG(ERROR) << "TmidPacket::Initialise: Password set failure";
+    LOG(kError) << "TmidPacket::Initialise: Password set failure";
     return;
   }
   if (!ObfuscatePlainData()) {
-    DLOG(ERROR) << "TmidPacket::Initialise: Obfuscation failure";
+    LOG(kError) << "TmidPacket::Initialise: Obfuscation failure";
     return;
   }
   if (!SetPlainData()) {
-    DLOG(ERROR) << "TmidPacket::Initialise: Plain data failure";
+    LOG(kError) << "TmidPacket::Initialise: Plain data failure";
     return;
   }
 
   name_ = crypto::Hash<crypto::SHA512>(encrypted_master_data_);
   if (name_.empty())
-    DLOG(ERROR) << "TmidPacket::Initialise: Empty kTmid name";
+    LOG(kError) << "TmidPacket::Initialise: Empty kTmid name";
 }
 
 bool TmidPacket::SetPassword() {
@@ -276,14 +275,14 @@ bool TmidPacket::SetPassword() {
     salt_.clear();
     secure_key_.clear();
     secure_iv_.clear();
-    DLOG(ERROR) << "Password empty or RID too small(" << rid_.size() << ")";
+    LOG(kError) << "Password empty or RID too small(" << rid_.size() << ")";
     return false;
   }
 
   salt_ = crypto::Hash<crypto::SHA512>(rid_ + password_);
   if (salt_.empty()) {
     Clear();
-    DLOG(ERROR) << "Salt empty";
+    LOG(kError) << "Salt empty";
     return false;
   }
 
@@ -300,7 +299,7 @@ bool TmidPacket::SetPassword() {
                                       &secure_password);
   if (result != kSuccess) {
     Clear();
-    DLOG(ERROR) << "Failed to create secure pasword.  Result: " << result;
+    LOG(kError) << "Failed to create secure pasword.  Result: " << result;
     return false;
   }
   secure_key_ = secure_password.substr(0, crypto::AES256_KeySize);
@@ -312,7 +311,7 @@ bool TmidPacket::SetPassword() {
 
 bool TmidPacket::ObfuscatePlainData() {
   if (plain_text_master_data_.empty() || username_.empty() || pin_.empty()) {
-    DLOG(ERROR) << "TmidPacket::ObfuscatePlainData: "
+    LOG(kError) << "TmidPacket::ObfuscatePlainData: "
                 << plain_text_master_data_.empty() << " - "
                 << username_.empty() << " - " << pin_.empty();
     obfuscated_master_data_.clear();
@@ -327,7 +326,7 @@ bool TmidPacket::ObfuscatePlainData() {
   int result = crypto::SecurePassword(username_, obfuscation_salt_, rounds,
                                       &obfuscation_str);
   if (result != kSuccess) {
-    DLOG(ERROR) << "Failed to create secure pasword.  Result: " << result;
+    LOG(kError) << "Failed to create secure pasword.  Result: " << result;
     return false;
   }
 
@@ -375,7 +374,7 @@ bool TmidPacket::ClarifyObfuscatedData() {
                              rounds,
                              &obfuscation_str);
   if (result != kSuccess) {
-    DLOG(ERROR) << "Failed to create secure pasword.  Result: " << result;
+    LOG(kError) << "Failed to create secure pasword.  Result: " << result;
     return false;
   }
 
@@ -398,12 +397,12 @@ std::string TmidPacket::DecryptMasterData(
     const std::string &encrypted_master_data) {
   password_ = password;
   if (!SetPassword()) {
-    DLOG(ERROR) << "TmidPacket::DecryptMasterData: failed to set password.";
+    LOG(kError) << "TmidPacket::DecryptMasterData: failed to set password.";
     return "";
   }
 
   if (encrypted_master_data.empty()) {
-    DLOG(ERROR) << "TmidPacket::DecryptMasterData: bad encrypted data.";
+    LOG(kError) << "TmidPacket::DecryptMasterData: bad encrypted data.";
     password_.clear();
     salt_.clear();
     secure_key_.clear();
@@ -454,47 +453,47 @@ bool TmidPacket::Equals(const std::shared_ptr<pki::Packet> other) const {
 //         secure_iv_ == tmid->secure_iv_ &&
 //         encrypted_master_data_ == tmid->encrypted_master_data_;
   if (packet_type_ != tmid->packet_type_) {
-    DLOG(INFO) << "packet_type_";
+    LOG(kInfo) << "packet_type_";
     return false;
   }
   if (name_ != tmid->name_) {
-    DLOG(INFO) << "name_";
+    LOG(kInfo) << "name_";
     return false;
   }
   if (username_ != tmid->username_) {
-    DLOG(INFO) << "username_";
+    LOG(kInfo) << "username_";
     return false;
   }
   if (pin_ != tmid->pin_) {
-    DLOG(INFO) << "pin_";
+    LOG(kInfo) << "pin_";
     return false;
   }
   if (password_ != tmid->password_) {
-    DLOG(INFO) << "password_";
+    LOG(kInfo) << "password_";
     return false;
   }
   if (rid_ != tmid->rid_) {
-    DLOG(INFO) << "rid_";
+    LOG(kInfo) << "rid_";
     return false;
   }
   if (plain_text_master_data_ != tmid->plain_text_master_data_) {
-    DLOG(INFO) << "plain_text_master_data_";
+    LOG(kInfo) << "plain_text_master_data_";
     return false;
   }
   if (salt_ != tmid->salt_) {
-    DLOG(INFO) << "salt_";
+    LOG(kInfo) << "salt_";
     return false;
   }
   if (secure_key_ != tmid->secure_key_) {
-    DLOG(INFO) << "secure_key_";
+    LOG(kInfo) << "secure_key_";
     return false;
   }
   if (secure_iv_ != tmid->secure_iv_) {
-    DLOG(INFO) << "secure_iv_";
+    LOG(kInfo) << "secure_iv_";
     return false;
   }
   if (encrypted_master_data_ != tmid->encrypted_master_data_) {
-    DLOG(INFO) << "encrypted_master_data_";
+    LOG(kInfo) << "encrypted_master_data_";
     return false;
   }
 

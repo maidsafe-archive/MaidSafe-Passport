@@ -23,7 +23,8 @@
 
 #include <vector>
 
-#include "maidsafe/passport/log.h"
+#include "maidsafe/common/log.h"
+
 #include "maidsafe/passport/system_packet_handler.h"
 
 namespace maidsafe {
@@ -40,7 +41,7 @@ std::string DecryptRid(const std::string &username,
                        const std::string &pin,
                        const std::string &encrypted_rid) {
   if (username.empty() || pin.empty() || encrypted_rid.empty()) {
-    DLOG(ERROR) << "Empty encrypted RID or user data.";
+    LOG(kError) << "Empty encrypted RID or user data.";
     return "";
   }
   MidPacket mid(username, pin, "");
@@ -53,7 +54,7 @@ std::string DecryptMasterData(const std::string &username,
                               const std::string &encrypted_master_data) {
   if (username.empty() || pin.empty() || password.empty() ||
       encrypted_master_data.empty()) {
-    DLOG(ERROR) << "Empty encrypted data or user data.";
+    LOG(kError) << "Empty encrypted data or user data.";
     return "";
   }
 
@@ -74,43 +75,43 @@ int Passport::CreateSigningPackets() {
   // kAnmid
   std::vector<pki::SignaturePacketPtr> packets;
   if (pki::CreateChainedId(&packets, 1) != kSuccess || packets.size() != 1U) {
-    DLOG(ERROR) << "Failed to create kAnmid";
+    LOG(kError) << "Failed to create kAnmid";
     return kFailedToCreatePacket;
   }
   packets.at(0)->set_packet_type(kAnmid);
   if (!handler_->AddPendingPacket(packets.at(0))) {
-    DLOG(ERROR) << "Failed to add pending kAnmid";
+    LOG(kError) << "Failed to add pending kAnmid";
     return kFailedToCreatePacket;
   }
 
   // kAnsmid
   packets.clear();
   if (pki::CreateChainedId(&packets, 1) != kSuccess || packets.size() != 1U) {
-    DLOG(ERROR) << "Failed to create kAnsmid";
+    LOG(kError) << "Failed to create kAnsmid";
     return kFailedToCreatePacket;
   }
   packets.at(0)->set_packet_type(kAnsmid);
   if (!handler_->AddPendingPacket(packets.at(0))) {
-    DLOG(ERROR) << "Failed to add pending kAnsmid";
+    LOG(kError) << "Failed to add pending kAnsmid";
     return kFailedToCreatePacket;
   }
 
   // kAntmid
   packets.clear();
   if (pki::CreateChainedId(&packets, 1) != kSuccess || packets.size() != 1U) {
-    DLOG(ERROR) << "Failed to create kAntmid";
+    LOG(kError) << "Failed to create kAntmid";
     return kFailedToCreatePacket;
   }
   packets.at(0)->set_packet_type(kAntmid);
   if (!handler_->AddPendingPacket(packets.at(0))) {
-    DLOG(ERROR) << "Failed to add pending kAntmid";
+    LOG(kError) << "Failed to add pending kAntmid";
     return kFailedToCreatePacket;
   }
 
   // kAnmaid, kMaid, kPmid
   packets.clear();
   if (pki::CreateChainedId(&packets, 3) != kSuccess || packets.size() != 3U) {
-    DLOG(ERROR) << "Failed to create kAntmid";
+    LOG(kError) << "Failed to create kAntmid";
     return kFailedToCreatePacket;
   }
   packets.at(0)->set_packet_type(kAnmaid);
@@ -119,7 +120,7 @@ int Passport::CreateSigningPackets() {
   if (!handler_->AddPendingPacket(packets.at(0)) ||
       !handler_->AddPendingPacket(packets.at(1)) ||
       !handler_->AddPendingPacket(packets.at(2))) {
-    DLOG(ERROR) << "Failed to add pending kAnmaid/kMaid/kPmid";
+    LOG(kError) << "Failed to add pending kAnmaid/kMaid/kPmid";
     return kFailedToCreatePacket;
   }
 
@@ -131,12 +132,12 @@ int Passport::ConfirmSigningPackets() {
   for (int pt(kAnmid); pt != kMid; ++pt) {
     PacketPtr p(handler_->GetPacket(static_cast<PacketType>(pt), false));
     if (!p) {
-      DLOG(ERROR) << "Failed getting pending packet " << DebugString(pt);
+      LOG(kError) << "Failed getting pending packet " << DebugString(pt);
       result = kFailedToConfirmPacket;
       break;
     }
     if (handler_->ConfirmPacket(p) != kSuccess) {
-      DLOG(ERROR) << "Failed confirming packet " << DebugString(pt);
+      LOG(kError) << "Failed confirming packet " << DebugString(pt);
       result = pt;
       break;
     }
@@ -152,7 +153,7 @@ int Passport::SetIdentityPackets(const std::string &username,
                                  const std::string &surrogate_data) {
   if (username.empty() || pin.empty() || password.empty() ||
       master_data.empty() || surrogate_data.empty()) {
-    DLOG(ERROR) << "At least one empty parameter passed in "
+    LOG(kError) << "At least one empty parameter passed in "
                 << std::boolalpha << username.empty() << " - "
                 << std::boolalpha << pin.empty() << " - "
                 << std::boolalpha << password.empty() << " - "
@@ -185,7 +186,7 @@ int Passport::SetIdentityPackets(const std::string &username,
       !handler_->AddPendingPacket(smid) ||
       !handler_->AddPendingPacket(tmid) ||
       !handler_->AddPendingPacket(stmid)) {
-    DLOG(ERROR) << "Failed to add pending identity packet";
+    LOG(kError) << "Failed to add pending identity packet";
     return kFailedToCreatePacket;
   }
 
@@ -197,7 +198,7 @@ int Passport::ConfirmIdentityPackets() {
   for (int pt(kMid); pt != kAnmpid; ++pt) {
     if (handler_->ConfirmPacket(handler_->GetPacket(
           static_cast<PacketType>(pt), false)) != kSuccess) {
-      DLOG(ERROR) << "Failed confirming packet " << DebugString(pt);
+      LOG(kError) << "Failed confirming packet " << DebugString(pt);
       result = kFailedToConfirmPacket;
       break;
     }
@@ -236,7 +237,7 @@ std::string Passport::PacketName(PacketType packet_type,
                                  const std::string &chosen_name) const {
   PacketPtr packet(handler_->GetPacket(packet_type, confirmed, chosen_name));
   if (!packet) {
-    DLOG(ERROR) << "Packet " << DebugString(packet_type) << " in state "
+    LOG(kError) << "Packet " << DebugString(packet_type) << " in state "
                 << std::boolalpha << confirmed << " not found";
     return "";
   }
@@ -249,14 +250,14 @@ asymm::PublicKey Passport::SignaturePacketValue(
     bool confirmed,
     const std::string &chosen_name) const {
   if (!IsSignature(packet_type, false)) {
-    DLOG(ERROR) << "Packet " << DebugString(packet_type)
+    LOG(kError) << "Packet " << DebugString(packet_type)
                 << " is not a signing packet.";
     return asymm::PublicKey();
   }
 
   PacketPtr packet(handler_->GetPacket(packet_type, confirmed, chosen_name));
   if (!packet) {
-    DLOG(ERROR) << "Packet " << DebugString(packet_type) << " in state "
+    LOG(kError) << "Packet " << DebugString(packet_type) << " in state "
                 << std::boolalpha << confirmed << " not found";
     return asymm::PublicKey();
   }
@@ -269,14 +270,14 @@ asymm::PrivateKey Passport::PacketPrivateKey(
     bool confirmed,
     const std::string &chosen_name) const {
   if (!IsSignature(packet_type, false)) {
-    DLOG(ERROR) << "Packet " << DebugString(packet_type)
+    LOG(kError) << "Packet " << DebugString(packet_type)
                 << " is not a signing packet.";
     return asymm::PrivateKey();
   }
 
   PacketPtr packet(handler_->GetPacket(packet_type, confirmed, chosen_name));
   if (!packet) {
-    DLOG(ERROR) << "Packet " << DebugString(packet_type) << " in state "
+    LOG(kError) << "Packet " << DebugString(packet_type) << " in state "
                 << std::boolalpha << confirmed << " not found";
     return asymm::PrivateKey();
   }
@@ -288,14 +289,14 @@ std::string Passport::IdentityPacketValue(PacketType packet_type,
                                           bool confirmed) const {
   if (packet_type != kMid && packet_type != kSmid &&
       packet_type != kTmid && packet_type != kStmid) {
-    DLOG(ERROR) << "Packet " << DebugString(packet_type)
+    LOG(kError) << "Packet " << DebugString(packet_type)
                 << " is not an identity packet.";
     return "";
   }
 
   PacketPtr packet(handler_->GetPacket(packet_type, confirmed));
   if (!packet) {
-    DLOG(ERROR) << "Packet " << DebugString(packet_type) << " in state "
+    LOG(kError) << "Packet " << DebugString(packet_type) << " in state "
                 << std::boolalpha << confirmed << " not found";
     return "";
   }
@@ -311,7 +312,7 @@ std::string Passport::PacketSignature(PacketType packet_type,
                                       const std::string &chosen_name) const {
   PacketPtr packet(handler_->GetPacket(packet_type, confirmed, chosen_name));
   if (!packet) {
-    DLOG(ERROR) << "Packet " << DebugString(packet_type) << " in state "
+    LOG(kError) << "Packet " << DebugString(packet_type) << " in state "
                 << std::boolalpha << confirmed << " not found";
     return "";
   }
@@ -338,7 +339,7 @@ std::string Passport::PacketSignature(PacketType packet_type,
           handler_->GetPacket(signing_packet_type, true)));
 
   if (!signing_packet || !asymm::ValidateKey(signing_packet->private_key())) {
-    DLOG(ERROR) << "Packet " << DebugString(packet_type) << " in state "
+    LOG(kError) << "Packet " << DebugString(packet_type) << " in state "
                 << std::boolalpha << confirmed << " doesn't have a signer";
     return "";
   }
@@ -353,14 +354,14 @@ std::shared_ptr<asymm::Keys> Passport::SignaturePacketDetails(
     bool confirmed,
     const std::string &chosen_name) {
   if (!IsSignature(packet_type, false)) {
-    DLOG(ERROR) << "Packet " << DebugString(packet_type)
+    LOG(kError) << "Packet " << DebugString(packet_type)
                 << " is not a signing packet.";
     return std::shared_ptr<asymm::Keys>();
   }
 
   PacketPtr packet(handler_->GetPacket(packet_type, confirmed, chosen_name));
   if (!packet) {
-    DLOG(ERROR) << "Packet " << DebugString(packet_type) << " in state "
+    LOG(kError) << "Packet " << DebugString(packet_type) << " in state "
                 << std::boolalpha << confirmed << " not found";
     return std::shared_ptr<asymm::Keys>();
   }
@@ -379,14 +380,14 @@ std::shared_ptr<asymm::Keys> Passport::SignaturePacketDetails(
 int Passport::CreateSelectableIdentity(const std::string &chosen_name) {
   std::vector<pki::SignaturePacketPtr> packets;
   if (pki::CreateChainedId(&packets, 2) != kSuccess || packets.size() != 2U) {
-    DLOG(ERROR) << "Failed to create kAnmpid";
+    LOG(kError) << "Failed to create kAnmpid";
     return kFailedToCreatePacket;
   }
 
   std::vector<pki::SignaturePacketPtr> mmid_packet;
   if (pki::CreateChainedId(&mmid_packet, 1) != kSuccess ||
       mmid_packet.size() != 1U) {
-    DLOG(ERROR) << "Failed to create kMmid";
+    LOG(kError) << "Failed to create kMmid";
     return kFailedToCreatePacket;
   }
 
@@ -394,7 +395,7 @@ int Passport::CreateSelectableIdentity(const std::string &chosen_name) {
                                                          packets.at(1),
                                                          packets.at(0),
                                                          mmid_packet.at(0))) {
-    DLOG(ERROR) << "Failed to add pending selectable";
+    LOG(kError) << "Failed to add pending selectable";
     return kFailedToCreatePacket;
   }
 
@@ -426,14 +427,14 @@ int Passport::MoveMaidsafeInbox(const std::string &chosen_identity,
                                 PacketData *current_data,
                                 PacketData *new_data) {
   if (!handler_->SelectableIdentityExists(chosen_identity)) {
-    DLOG(ERROR) << "Failed to find " << chosen_identity;
+    LOG(kError) << "Failed to find " << chosen_identity;
     return kFailedToFindSelectableIdentity;
   }
 
   SelectableIdentityData sid;
   int result(GetSelectableIdentityData(chosen_identity, true, &sid));
   if (result != kSuccess) {
-    DLOG(ERROR) << "Failed to obtain current MMID details";
+    LOG(kError) << "Failed to obtain current MMID details";
     return result;
   }
 
@@ -443,7 +444,7 @@ int Passport::MoveMaidsafeInbox(const std::string &chosen_identity,
          mmid_packet.front()->name() == std::get<0>(sid.at(2))) {
     if (pki::CreateChainedId(&mmid_packet, 1) != kSuccess ||
         mmid_packet.size() != 1U) {
-      DLOG(ERROR) << "Failed to create new MMID";
+      LOG(kError) << "Failed to create new MMID";
       return kFailedToCreatePacket;
     }
   }
@@ -452,7 +453,7 @@ int Passport::MoveMaidsafeInbox(const std::string &chosen_identity,
                                                     kMmid,
                                                     mmid_packet.front());
   if (result != kSuccess) {
-    DLOG(ERROR) << "Failed to change MMID pending packet";
+    LOG(kError) << "Failed to change MMID pending packet";
     return result;
   }
 
@@ -469,7 +470,7 @@ int Passport::ConfirmMovedMaidsafeInbox(const std::string &chosen_identity) {
   int result(handler_->ConfirmSelectableIdentityPacket(chosen_identity,
                                                       kMmid));
   if (result != kSuccess) {
-    DLOG(ERROR) << "Failed to change MMID pending packet";
+    LOG(kError) << "Failed to change MMID pending packet";
     return result;
   }
 

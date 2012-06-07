@@ -22,12 +22,12 @@
 
 #include <cstdint>
 
+#include "maidsafe/common/log.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
 #include "maidsafe/pki/packet.h"
 
-#include "maidsafe/passport/log.h"
 #include "maidsafe/passport/passport.h"
 #include "maidsafe/passport/system_packet_handler.h"
 
@@ -55,7 +55,7 @@ class PassportTest : public testing::Test {
   bool VerifySignatures() {
     for (int pt(kAnmid); pt != kMid; ++pt) {
       PacketType casted(static_cast<PacketType>(pt)), signer;
-      DLOG(ERROR) << "0. Packet: " << DebugString(casted);
+      LOG(kError) << "0. Packet: " << DebugString(casted);
       if (casted == kMaid)
         signer = kAnmaid;
       else if (casted == kPmid)
@@ -66,13 +66,13 @@ class PassportTest : public testing::Test {
           std::static_pointer_cast<pki::SignaturePacket>(
               passport_.handler_->GetPacket(signer, true)));
       if (!signing_packet) {
-        DLOG(ERROR) << "1. Packet: " << DebugString(casted) << ", Signer: "
+        LOG(kError) << "1. Packet: " << DebugString(casted) << ", Signer: "
                     << DebugString(signer);
         return false;
       }
 
       if (!asymm::ValidateKey(signing_packet->private_key())) {
-        DLOG(ERROR) << "1.5. Packet: " << DebugString(casted) << ", Signer: "
+        LOG(kError) << "1.5. Packet: " << DebugString(casted) << ", Signer: "
                     << DebugString(signer);
         return false;
       }
@@ -83,7 +83,7 @@ class PassportTest : public testing::Test {
       if (!asymm::Validate(string_value,
                            passport_.PacketSignature(casted, true),
                            signing_packet->value())) {
-        DLOG(ERROR) << "2. Packet: " << DebugString(casted) << ", Signer: "
+        LOG(kError) << "2. Packet: " << DebugString(casted) << ", Signer: "
                     << DebugString(signer);
         return false;
       }
@@ -96,7 +96,7 @@ class PassportTest : public testing::Test {
                          passport_.handler_->GetPacket(kMid, true)));
     if (passport_.PacketName(kTmid, true) !=
         mid->DecryptRid(mid->value())) {
-      DLOG(ERROR) << "kMid doesn't contain pointer to kTmid";
+      LOG(kError) << "kMid doesn't contain pointer to kTmid";
       return false;
     }
 
@@ -104,7 +104,7 @@ class PassportTest : public testing::Test {
                           passport_.handler_->GetPacket(kSmid, true)));
     if (passport_.PacketName(kStmid, true) !=
         smid->DecryptRid(smid->value())) {
-      DLOG(ERROR) << "kSmid doesn't contain pointer to kTmid";
+      LOG(kError) << "kSmid doesn't contain pointer to kTmid";
       return false;
     }
     return true;
@@ -116,7 +116,7 @@ class PassportTest : public testing::Test {
     MidPacketPtr p_mid(std::static_pointer_cast<MidPacket>(
                            passport_.handler_->GetPacket(kMid, false)));
     if (c_mid->name() != p_mid->name()) {
-      DLOG(ERROR) << "kMid names not the same";
+      LOG(kError) << "kMid names not the same";
       return false;
     }
 
@@ -125,7 +125,7 @@ class PassportTest : public testing::Test {
     MidPacketPtr p_smid(std::static_pointer_cast<MidPacket>(
                             passport_.handler_->GetPacket(kSmid, false)));
     if (c_smid->name() != p_smid->name()) {
-      DLOG(ERROR) << "kSmid names not the same";
+      LOG(kError) << "kSmid names not the same";
       return false;
     }
 
@@ -133,7 +133,7 @@ class PassportTest : public testing::Test {
             passport_.PacketName(kStmid, false) ||
         passport_.IdentityPacketValue(kTmid, true) !=
             passport_.IdentityPacketValue(kStmid, false)) {
-      DLOG(ERROR) << "Pending kStmid doesn't match confirmed kTmid";
+      LOG(kError) << "Pending kStmid doesn't match confirmed kTmid";
       return false;
     }
 
@@ -141,7 +141,7 @@ class PassportTest : public testing::Test {
             passport_.PacketName(kTmid, false) ||
         passport_.PacketName(kStmid, true) ==
             passport_.PacketName(kStmid, false)) {
-      DLOG(ERROR) << "Pending kStmid doesn't match confirmed kTmid";
+      LOG(kError) << "Pending kStmid doesn't match confirmed kTmid";
       return false;
     }
 
@@ -155,11 +155,11 @@ class PassportTest : public testing::Test {
     MidPacketPtr p_mid(std::static_pointer_cast<MidPacket>(
                            passport_.handler_->GetPacket(kMid, false)));
     if (c_mid->name() == p_mid->name()) {
-      DLOG(ERROR) << "kMid names the same";
+      LOG(kError) << "kMid names the same";
       return false;
     }
     if (crypto::Hash<crypto::SHA512>(new_username + new_pin) != p_mid->name()) {
-      DLOG(ERROR) << "kMid name incorrect";
+      LOG(kError) << "kMid name incorrect";
       return false;
     }
 
@@ -168,12 +168,12 @@ class PassportTest : public testing::Test {
     MidPacketPtr p_smid(std::static_pointer_cast<MidPacket>(
                             passport_.handler_->GetPacket(kSmid, false)));
     if (c_smid->name() == p_smid->name()) {
-      DLOG(ERROR) << "kSmid names the same";
+      LOG(kError) << "kSmid names the same";
       return false;
     }
     if (crypto::Hash<crypto::SHA512>(new_username + new_pin + appendix_) !=
         p_smid->name()) {
-      DLOG(ERROR) << "kSmid name incorrect";
+      LOG(kError) << "kSmid name incorrect";
       return false;
     }
 
@@ -185,7 +185,7 @@ class PassportTest : public testing::Test {
             passport_.IdentityPacketValue(kStmid, false)) !=
         c_tmid->DecryptMasterData(password_,
             passport_.IdentityPacketValue(kTmid, true))) {
-      DLOG(ERROR) << "New kStmid plain value is not old kTmid plain value";
+      LOG(kError) << "New kStmid plain value is not old kTmid plain value";
       return false;
     }
 
@@ -198,7 +198,7 @@ class PassportTest : public testing::Test {
     MidPacketPtr p_mid(std::static_pointer_cast<MidPacket>(
                            passport_.handler_->GetPacket(kMid, false)));
     if (c_mid->name() != p_mid->name()) {
-      DLOG(ERROR) << "kMid names not the same";
+      LOG(kError) << "kMid names not the same";
       return false;
     }
 
@@ -207,7 +207,7 @@ class PassportTest : public testing::Test {
     MidPacketPtr p_smid(std::static_pointer_cast<MidPacket>(
                             passport_.handler_->GetPacket(kSmid, false)));
     if (c_smid->name() != p_smid->name()) {
-      DLOG(ERROR) << "kSmid names not the same";
+      LOG(kError) << "kSmid names not the same";
       return false;
     }
 
@@ -219,7 +219,7 @@ class PassportTest : public testing::Test {
             passport_.IdentityPacketValue(kStmid, false)) !=
         c_tmid->DecryptMasterData(password_,
             passport_.IdentityPacketValue(kTmid, true))) {
-      DLOG(ERROR) << "New kStmid plain value is not old kTmid plain value";
+      LOG(kError) << "New kStmid plain value is not old kTmid plain value";
       return false;
     }
 
@@ -231,7 +231,7 @@ class PassportTest : public testing::Test {
     std::shared_ptr<pki::Packet> mmid(
         passport_.handler_->GetPacket(kMmid, false, public_username));
     if (!mmid) {
-      DLOG(ERROR) << "Packet MMID pending not found";
+      LOG(kError) << "Packet MMID pending not found";
       return false;
     }
 
