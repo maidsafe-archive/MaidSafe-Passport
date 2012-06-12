@@ -65,7 +65,7 @@ rename_outdated_built_exes()
 # Set compiler and linker flags                                                                   #
 ###################################################################################################
 include(maidsafe_standard_flags)
-ms_disable_warnings(${PROJECT_SOURCE_DIR}/src/maidsafe/passport/signature_packet.pb.cc)
+ms_disable_warnings(${PROJECT_SOURCE_DIR}/src/maidsafe/passport/packets.pb.cc)
 
 
 ###################################################################################################

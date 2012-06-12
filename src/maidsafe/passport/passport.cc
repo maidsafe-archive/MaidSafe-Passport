@@ -24,7 +24,9 @@
 #include <vector>
 
 #include "maidsafe/common/log.h"
+#include "maidsafe/common/rsa.h"
 
+#include "maidsafe/passport/packets_pb.h"
 #include "maidsafe/passport/system_packet_handler.h"
 
 namespace maidsafe {
@@ -330,9 +332,10 @@ std::string Passport::PacketSignature(PacketType packet_type,
   return signature;
 }
 
-std::shared_ptr<asymm::Keys> Passport::SignaturePacketDetails(PacketType packet_type,
-                                                              bool confirmed,
-                                                              const std::string &chosen_name) {
+std::shared_ptr<asymm::Keys> Passport::SignaturePacketDetails(
+    PacketType packet_type,
+    bool confirmed,
+    const std::string &chosen_name) const {
   if (!IsSignature(packet_type, false)) {
     LOG(kError) << "Packet " << DebugString(packet_type) << " is not a signing packet.";
     return std::shared_ptr<asymm::Keys>();
@@ -426,6 +429,124 @@ int Passport::ConfirmMovedMaidsafeInbox(const std::string &chosen_identity) {
   if (result != kSuccess) {
     LOG(kError) << "Failed to change MMID pending packet";
     return result;
+  }
+
+  return kSuccess;
+}
+
+int SignatureAsymmKeysToProtobuf(const asymm::Keys& packet_keys,
+                                 int type,
+                                 PacketContainer &packet_container) {
+  std::string public_key, private_key;
+  asymm::EncodePublicKey(packet_keys.public_key, &public_key);
+  asymm::EncodePrivateKey(packet_keys.private_key, &private_key);
+  if (public_key.empty() || private_key.empty()) {
+    LOG(kError) << "Failed to serialise keys of packet: " << DebugString(type);
+    return kPassportError;
+  }
+
+  SignaturePacketContainer* container = packet_container.add_signature_packet();
+  container->set_identity(packet_keys.identity);
+  container->set_public_key(public_key);
+  container->set_private_key(private_key);
+  container->set_signature(packet_keys.validation_token);
+  container->set_type(type);
+
+  return kSuccess;
+}
+
+std::string Passport::Serialise() const {
+  PacketContainer packet_container;
+
+  int result(0);
+  for (int n(kAnmid); n != kPmid; ++n) {
+    std::shared_ptr<asymm::Keys> packet_keys(SignaturePacketDetails(static_cast<PacketType>(n),
+                                                                    true));
+    if (packet_keys) {
+      result += SignatureAsymmKeysToProtobuf(*packet_keys, n, packet_container);
+    }
+  }
+  if (result != kSuccess) {
+    LOG(kError) << "At least one signature packet failed to be added to serialisable container.";
+    return "";
+  }
+
+  result = 0;
+  std::vector<std::string> selectables(handler_->SelectableIdentities());
+  std::for_each(selectables.begin(),
+                selectables.end(),
+                [&packet_container, &result, this](const std::string& id) {
+                  for (int n(kAnmpid); n != kMmid; ++n) {
+                    std::shared_ptr<asymm::Keys> packet_keys(
+                        SignaturePacketDetails(static_cast<PacketType>(n), true, id));
+                    if (packet_keys) {
+                      result += SignatureAsymmKeysToProtobuf(*packet_keys, n, packet_container);
+                    }
+                  }
+                });
+  if (result != kSuccess) {
+    LOG(kError) << "At least one selectable packet failed to be added to serialisable container.";
+    return "";
+  }
+
+  return packet_container.SerializeAsString();
+}
+
+SignaturePacketPtr ProtobufToSignaturePacketPtr(const SignaturePacketContainer& spc) {
+  asymm::PublicKey public_key;
+  asymm::PrivateKey private_key;
+  asymm::DecodePublicKey(spc.public_key(), &public_key);
+  asymm::DecodePrivateKey(spc.private_key(), &private_key);
+  SignaturePacketPtr signature_packet(new pki::SignaturePacket(spc.identity(),
+                                                               public_key,
+                                                               private_key,
+                                                               spc.signature(),
+                                                               spc.type()));
+  return signature_packet;
+}
+
+int Passport::Parse(const std::string& serialised_passport) {
+  PacketContainer packet_container;
+  if (!packet_container.ParseFromString(serialised_passport)) {
+    LOG(kError) << "Failed to parse provided string.";
+    return kBadSerialisedKeyChain;
+  }
+
+  if (packet_container.signature_packet_size() == 0) {
+    LOG(kError) << "Failed to parse provided string.";
+    return kBadSerialisedKeyChain;
+  }
+
+  int result(0);
+  for (int n(0); n < packet_container.signature_packet_size(); ++n) {
+    SignaturePacketPtr packet(ProtobufToSignaturePacketPtr(packet_container.signature_packet(n)));
+    if (handler_->AddPendingPacket(packet))
+      result += handler_->ConfirmPacket(packet);
+    else
+      --result;
+  }
+  if (result != kSuccess) {
+    LOG(kError) << "At least one signature packet failed to be inserted.";
+    return kBadSerialisedKeyChain;
+  }
+
+  result = 0;
+  for (int n(0); n < packet_container.selectable_packet_size(); ++n) {
+    SignaturePacketPtr anmpid(
+        ProtobufToSignaturePacketPtr(packet_container.selectable_packet(n).anmpid()));
+    SignaturePacketPtr mpid(
+        ProtobufToSignaturePacketPtr(packet_container.selectable_packet(n).mpid()));
+    SignaturePacketPtr mmid(
+        ProtobufToSignaturePacketPtr(packet_container.selectable_packet(n).mmid()));
+    std::string public_id(packet_container.selectable_packet(n).public_id());
+    if (handler_->AddPendingSelectableIdentity(public_id, mpid, anmpid, mmid) == kSuccess)
+      result += handler_->ConfirmSelectableIdentity(public_id);
+    else
+      --result;
+  }
+  if (result != kSuccess) {
+    LOG(kError) << "At least one selectable packet failed to be inserted.";
+    return kBadSerialisedKeyChain;
   }
 
   return kSuccess;

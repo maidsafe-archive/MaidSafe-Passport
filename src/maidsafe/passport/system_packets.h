@@ -90,8 +90,7 @@ class MidPacket : public pki::Packet {
                                               std::shared_ptr<MidPacket> mid);
   void Initialise();
   void Clear();
-  std::string username_, pin_, smid_appendix_, rid_, encrypted_rid_, salt_;
-  std::string secure_key_, secure_iv_;
+  std::string username_, pin_, smid_appendix_, rid_, encrypted_rid_, salt_, secure_key_, secure_iv_;
 };
 
 class TmidPacket : public pki::Packet {

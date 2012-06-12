@@ -224,6 +224,8 @@ class SystemPacketHandlerTest : public testing::Test {
     return encoded_left == encoded_right;
   }
 
+  SystemPacketHandler::SystemPacketMap& packets() { return packets(); }
+
   SystemPacketHandler packet_handler_;
   const std::string kUsername1_, kUsername2_, kPin1_, kPin2_;
   const std::string kMidRid1_, kMidRid2_, kSmidRid1_, kSmidRid2_;
@@ -240,8 +242,8 @@ TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
   auto packets1_itr = packets1_.begin();
   while (packets1_itr != packets1_.end())
     ASSERT_TRUE(packet_handler_.AddPendingPacket(*packets1_itr++));
-  ASSERT_EQ(packets1_.size(), packet_handler_.packets_.size());
-  auto it = packet_handler_.packets_.begin();
+  ASSERT_EQ(packets1_.size(), packets().size());
+  auto it = packets().begin();
   packets1_itr = packets1_.begin();
   while (packets1_itr != packets1_.end()) {
     ASSERT_EQ((*packets1_itr)->packet_type(),
@@ -254,8 +256,8 @@ TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
   auto packets2_itr = packets2_.begin();
   while (packets2_itr != packets2_.end())
     ASSERT_TRUE(packet_handler_.AddPendingPacket(*packets2_itr++));
-  ASSERT_EQ(packets2_.size(), packet_handler_.packets_.size());
-  it = packet_handler_.packets_.begin();
+  ASSERT_EQ(packets2_.size(), packets().size());
+  it = packets().begin();
   packets1_itr = packets1_.begin();
   packets2_itr = packets2_.begin();
   while (packets2_itr != packets2_.end()) {
@@ -424,7 +426,7 @@ TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
 
   // Check ClearKeyChain only removes signature packets
   packet_handler_.ClearKeySignatures();
-  ASSERT_EQ(4U, packet_handler_.packets_.size());
+  ASSERT_EQ(4U, packets().size());
   packets1_itr = packets1_.begin();
   packets1_itr += 6;
   packets2_itr = packets2_.begin();
@@ -449,7 +451,7 @@ TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
 
   // Check parsing succeeds to packethandler without signature packets
   ASSERT_EQ(kSuccess, packet_handler_.ParseKeyChain(keyring2, selectables2));
-  ASSERT_EQ(10U, packet_handler_.packets_.size());
+  ASSERT_EQ(10U, packets().size());
   packets1_itr = packets1_.begin();
   packets1_itr += 6;
   packets2_itr = packets2_.begin();

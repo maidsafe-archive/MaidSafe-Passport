@@ -66,11 +66,13 @@ class Passport {
   int ConfirmIdentityPackets();
 
   // Serialisation
-  void SerialiseKeyChain(std::string *key_chain,
-                         std::string *selectables) const;
+  void SerialiseKeyChain(std::string *key_chain, std::string *selectables) const;
   int ParseKeyChain(const std::string &serialised_keychain,
                     const std::string &serialised_selectables);
   void ClearKeyChain(bool signature, bool identity, bool selectable);
+
+  std::string Serialise() const;
+  int Parse(const std::string& serialised_passport);
 
   // Getters
   std::string PacketName(PacketType packet_type,
@@ -88,7 +90,7 @@ class Passport {
                               const std::string &chosen_name = "") const;
   std::shared_ptr<asymm::Keys> SignaturePacketDetails(PacketType packet_type,
                                                       bool confirmed,
-                                                      const std::string &chosen_name = "");
+                                                      const std::string &chosen_name = "") const;
 
   // Selectable Identity (aka MPID)
   int CreateSelectableIdentity(const std::string &chosen_name);
@@ -103,6 +105,7 @@ class Passport {
  private:
   Passport(const Passport&);
   Passport& operator=(const Passport&);
+
   std::shared_ptr<SystemPacketHandler> handler_;
   std::string kSmidAppendix_;
 };

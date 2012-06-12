@@ -72,6 +72,7 @@ class SystemPacketHandler {
   int ConfirmSelectableIdentity(const std::string &chosen_identity);
   int DeleteSelectableIdentity(const std::string &chosen_identity);
   void SelectableIdentitiesList(std::vector<SelectableIdData> *selectables) const;
+  std::vector<std::string> SelectableIdentities() const;
   int GetSelectableIdentityData(const std::string &chosen_identity,
                                 bool confirmed,
                                 SelectableIdentityData *data);
@@ -92,7 +93,6 @@ class SystemPacketHandler {
   void Clear();
   friend class test::PassportTest;
   friend class test::SystemPacketHandlerTest;
-  friend class test::SystemPacketHandlerTest_FUNC_SigningAndIdentityPackets_Test;
 
  private:
   SystemPacketHandler &operator=(const SystemPacketHandler&);

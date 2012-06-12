@@ -568,6 +568,17 @@ void SystemPacketHandler::SelectableIdentitiesList(
   }
 }
 
+std::vector<std::string> SystemPacketHandler::SelectableIdentities() const {
+  std::vector<std::string> identities;
+  boost::mutex::scoped_lock loch_na_tuadh(selectable_ids_mutex_);
+  std::for_each(selectable_ids_.begin(),
+                selectable_ids_.end(),
+                [&identities] (const SelectableIdentitiesMap::value_type &el) {
+                  identities.push_back(el.first);
+                });
+  return identities;
+}
+
 int SystemPacketHandler::GetSelectableIdentityData(const std::string &chosen_identity,
                                                    bool confirmed,
                                                    SelectableIdentityData *data) {
