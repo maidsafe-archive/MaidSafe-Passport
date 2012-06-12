@@ -33,7 +33,6 @@
 
 namespace testing { class AssertionResult; }
 
-
 namespace maidsafe {
 
 namespace passport {
@@ -87,9 +86,8 @@ class MidPacket : public pki::Packet {
   std::string rid() const { return rid_; }
  private:
   friend testing::AssertionResult test::Empty(PacketPtr packet);
-  friend testing::AssertionResult test::Equal(
-      std::shared_ptr<test::ExpectedMidContent> expected,
-      std::shared_ptr<MidPacket> mid);
+  friend testing::AssertionResult test::Equal(std::shared_ptr<test::ExpectedMidContent> expected,
+                                              std::shared_ptr<MidPacket> mid);
   void Initialise();
   void Clear();
   std::string username_, pin_, smid_appendix_, rid_, encrypted_rid_, salt_;
@@ -116,9 +114,8 @@ class TmidPacket : public pki::Packet {
 
  private:
   friend testing::AssertionResult test::Empty(PacketPtr packet);
-  friend testing::AssertionResult test::Equal(
-      std::shared_ptr<test::ExpectedTmidContent> expected,
-      std::shared_ptr<TmidPacket> tmid);
+  friend testing::AssertionResult test::Equal(std::shared_ptr<test::ExpectedTmidContent> expected,
+                                              std::shared_ptr<TmidPacket> tmid);
   void Initialise();
   bool SetPassword();
   bool SetPlainData();

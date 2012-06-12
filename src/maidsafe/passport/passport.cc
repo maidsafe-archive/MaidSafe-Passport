@@ -31,9 +31,7 @@ namespace maidsafe {
 
 namespace passport {
 
-std::string MidName(const std::string &username,
-                    const std::string &pin,
-                    bool surrogate) {
+std::string MidName(const std::string &username, const std::string &pin, bool surrogate) {
   return GetMidName(username, pin, surrogate ? g_smid_appendix : "");
 }
 
@@ -52,8 +50,7 @@ std::string DecryptMasterData(const std::string &username,
                               const std::string &pin,
                               const std::string &password,
                               const std::string &encrypted_master_data) {
-  if (username.empty() || pin.empty() || password.empty() ||
-      encrypted_master_data.empty()) {
+  if (username.empty() || pin.empty() || password.empty() || encrypted_master_data.empty()) {
     LOG(kError) << "Empty encrypted data or user data.";
     return "";
   }
@@ -62,9 +59,7 @@ std::string DecryptMasterData(const std::string &username,
   return decrypting_tmid.DecryptMasterData(password, encrypted_master_data);
 }
 
-std::string PacketDebugString(const int &packet_type) {
-  return DebugString(packet_type);
-}
+std::string PacketDebugString(const int &packet_type) { return DebugString(packet_type); }
 
 
 Passport::Passport()
@@ -162,16 +157,8 @@ int Passport::SetIdentityPackets(const std::string &username,
     return kEmptyParameter;
   }
 
-  std::shared_ptr<TmidPacket> tmid(new TmidPacket(username,
-                                                  pin,
-                                                  false,
-                                                  password,
-                                                  master_data));
-  std::shared_ptr<TmidPacket> stmid(new TmidPacket(username,
-                                                   pin,
-                                                   true,
-                                                   password,
-                                                   surrogate_data));
+  std::shared_ptr<TmidPacket> tmid(new TmidPacket(username, pin, false, password, master_data));
+  std::shared_ptr<TmidPacket> stmid(new TmidPacket(username, pin, true, password, surrogate_data));
 
   std::shared_ptr<MidPacket> mid(new MidPacket(username, pin, ""));
   std::shared_ptr<MidPacket> smid(new MidPacket(username, pin, kSmidAppendix_));
@@ -196,8 +183,8 @@ int Passport::SetIdentityPackets(const std::string &username,
 int Passport::ConfirmIdentityPackets() {
   int result(kSuccess);
   for (int pt(kMid); pt != kAnmpid; ++pt) {
-    if (handler_->ConfirmPacket(handler_->GetPacket(
-          static_cast<PacketType>(pt), false)) != kSuccess) {
+    if (handler_->ConfirmPacket(handler_->GetPacket(static_cast<PacketType>(pt), false)) !=
+        kSuccess) {
       LOG(kError) << "Failed confirming packet " << DebugString(pt);
       result = kFailedToConfirmPacket;
       break;
@@ -207,8 +194,7 @@ int Passport::ConfirmIdentityPackets() {
   return result;
 }
 
-void Passport::SerialiseKeyChain(std::string *key_chain,
-                                 std::string *selectables) const {
+void Passport::SerialiseKeyChain(std::string *key_chain, std::string *selectables) const {
   return handler_->SerialiseKeyChain(key_chain, selectables);
 }
 
@@ -245,13 +231,11 @@ std::string Passport::PacketName(PacketType packet_type,
   return packet->name();
 }
 
-asymm::PublicKey Passport::SignaturePacketValue(
-    PacketType packet_type,
-    bool confirmed,
-    const std::string &chosen_name) const {
+asymm::PublicKey Passport::SignaturePacketValue(PacketType packet_type,
+                                                bool confirmed,
+                                                const std::string &chosen_name) const {
   if (!IsSignature(packet_type, false)) {
-    LOG(kError) << "Packet " << DebugString(packet_type)
-                << " is not a signing packet.";
+    LOG(kError) << "Packet " << DebugString(packet_type) << " is not a signing packet.";
     return asymm::PublicKey();
   }
 
@@ -265,13 +249,11 @@ asymm::PublicKey Passport::SignaturePacketValue(
   return std::static_pointer_cast<pki::SignaturePacket>(packet)->value();
 }
 
-asymm::PrivateKey Passport::PacketPrivateKey(
-    PacketType packet_type,
-    bool confirmed,
-    const std::string &chosen_name) const {
+asymm::PrivateKey Passport::PacketPrivateKey(PacketType packet_type,
+                                             bool confirmed,
+                                             const std::string &chosen_name) const {
   if (!IsSignature(packet_type, false)) {
-    LOG(kError) << "Packet " << DebugString(packet_type)
-                << " is not a signing packet.";
+    LOG(kError) << "Packet " << DebugString(packet_type) << " is not a signing packet.";
     return asymm::PrivateKey();
   }
 
@@ -285,12 +267,12 @@ asymm::PrivateKey Passport::PacketPrivateKey(
   return std::static_pointer_cast<pki::SignaturePacket>(packet)->private_key();
 }
 
-std::string Passport::IdentityPacketValue(PacketType packet_type,
-                                          bool confirmed) const {
-  if (packet_type != kMid && packet_type != kSmid &&
-      packet_type != kTmid && packet_type != kStmid) {
-    LOG(kError) << "Packet " << DebugString(packet_type)
-                << " is not an identity packet.";
+std::string Passport::IdentityPacketValue(PacketType packet_type, bool confirmed) const {
+  if (packet_type != kMid &&
+      packet_type != kSmid &&
+      packet_type != kTmid &&
+      packet_type != kStmid) {
+    LOG(kError) << "Packet " << DebugString(packet_type) << " is not an identity packet.";
     return "";
   }
 
@@ -334,9 +316,8 @@ std::string Passport::PacketSignature(PacketType packet_type,
   }
 
   // Must use confirmed signing packets for signing ID packets.
-  pki::SignaturePacketPtr signing_packet(
-      std::static_pointer_cast<pki::SignaturePacket>(
-          handler_->GetPacket(signing_packet_type, true)));
+  pki::SignaturePacketPtr signing_packet(std::static_pointer_cast<pki::SignaturePacket>(
+                                             handler_->GetPacket(signing_packet_type, true)));
 
   if (!signing_packet || !asymm::ValidateKey(signing_packet->private_key())) {
     LOG(kError) << "Packet " << DebugString(packet_type) << " in state "
@@ -349,13 +330,11 @@ std::string Passport::PacketSignature(PacketType packet_type,
   return signature;
 }
 
-std::shared_ptr<asymm::Keys> Passport::SignaturePacketDetails(
-    PacketType packet_type,
-    bool confirmed,
-    const std::string &chosen_name) {
+std::shared_ptr<asymm::Keys> Passport::SignaturePacketDetails(PacketType packet_type,
+                                                              bool confirmed,
+                                                              const std::string &chosen_name) {
   if (!IsSignature(packet_type, false)) {
-    LOG(kError) << "Packet " << DebugString(packet_type)
-                << " is not a signing packet.";
+    LOG(kError) << "Packet " << DebugString(packet_type) << " is not a signing packet.";
     return std::shared_ptr<asymm::Keys>();
   }
 
@@ -410,29 +389,14 @@ int Passport::DeleteSelectableIdentity(const std::string &chosen_name) {
   return handler_->DeleteSelectableIdentity(chosen_name);
 }
 
-void Passport::SelectableIdentitiesList(
-    std::vector<SelectableIdData> *selectables) const {
-  handler_->SelectableIdentitiesList(selectables);
-}
-
-int Passport::GetSelectableIdentityData(const std::string &chosen_identity,
-                                        bool confirmed,
-                                        SelectableIdentityData *data) {
-  BOOST_ASSERT(data);
-  data->clear();
-  return handler_->GetSelectableIdentityData(chosen_identity, confirmed, data);
-}
-
-int Passport::MoveMaidsafeInbox(const std::string &chosen_identity,
-                                PacketData *current_data,
-                                PacketData *new_data) {
+int Passport::MoveMaidsafeInbox(const std::string &chosen_identity) {
   if (!handler_->SelectableIdentityExists(chosen_identity)) {
     LOG(kError) << "Failed to find " << chosen_identity;
     return kFailedToFindSelectableIdentity;
   }
 
   SelectableIdentityData sid;
-  int result(GetSelectableIdentityData(chosen_identity, true, &sid));
+  int result(handler_->GetSelectableIdentityData(chosen_identity, true, &sid));
   if (result != kSuccess) {
     LOG(kError) << "Failed to obtain current MMID details";
     return result;
@@ -442,33 +406,23 @@ int Passport::MoveMaidsafeInbox(const std::string &chosen_identity,
   while (mmid_packet.empty() ||
          !mmid_packet.front() ||
          mmid_packet.front()->name() == std::get<0>(sid.at(2))) {
-    if (pki::CreateChainedId(&mmid_packet, 1) != kSuccess ||
-        mmid_packet.size() != 1U) {
+    if (pki::CreateChainedId(&mmid_packet, 1) != kSuccess || mmid_packet.size() != 1U) {
       LOG(kError) << "Failed to create new MMID";
       return kFailedToCreatePacket;
     }
   }
 
-  result = handler_->ChangeSelectableIdentityPacket(chosen_identity,
-                                                    kMmid,
-                                                    mmid_packet.front());
+  result = handler_->ChangeSelectableIdentityPacket(chosen_identity, kMmid, mmid_packet.front());
   if (result != kSuccess) {
     LOG(kError) << "Failed to change MMID pending packet";
     return result;
   }
 
-  *current_data = std::make_tuple(std::get<0>(sid.at(2)),
-                                  std::get<1>(sid.at(2)),
-                                  std::get<2>(sid.at(2)));
-  *new_data = std::make_tuple(mmid_packet.front()->name(),
-                              mmid_packet.front()->value(),
-                              mmid_packet.front()->signature());
   return kSuccess;
 }
 
 int Passport::ConfirmMovedMaidsafeInbox(const std::string &chosen_identity) {
-  int result(handler_->ConfirmSelectableIdentityPacket(chosen_identity,
-                                                      kMmid));
+  int result(handler_->ConfirmSelectableIdentityPacket(chosen_identity, kMmid));
   if (result != kSuccess) {
     LOG(kError) << "Failed to change MMID pending packet";
     return result;

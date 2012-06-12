@@ -240,6 +240,8 @@ class PassportTest : public testing::Test {
     return true;
   }
 
+  std::shared_ptr<SystemPacketHandler> handler() { return passport_.handler_; }
+
   Passport passport_;
   std::string username_, pin_, password_, master_data_, surrogate_data_,
               appendix_;
@@ -388,50 +390,41 @@ TEST_F(PassportTest, BEH_FreeFunctions) {
 }
 
 TEST_F(PassportTest, BEH_MoveMaidsafeInbox) {  // AKA MMID
-  std::string public_username(RandomString(8));
+  std::string public_username(RandomAlphaNumericString(8));
   ASSERT_EQ(kSuccess, passport_.CreateSelectableIdentity(public_username));
   ASSERT_EQ(kSuccess, passport_.ConfirmSelectableIdentity(public_username));
 
   SelectableIdentityData sid;
-  ASSERT_EQ(kSuccess,
-            passport_.GetSelectableIdentityData(public_username, true, &sid));
+  ASSERT_EQ(kSuccess, handler()->GetSelectableIdentityData(public_username, true, &sid));
 
   asymm::Identity current_identity(std::get<0>(sid.at(2)));
   asymm::PublicKey current_public_key(std::get<1>(sid.at(2)));
   asymm::Signature current_signature(std::get<2>(sid.at(2)));
-  asymm::PrivateKey current_private_key(
-      passport_.PacketPrivateKey(kMmid, true, public_username));
 
-  PacketData current_mmid, new_mmid;
-  ASSERT_EQ(kSuccess, passport_.MoveMaidsafeInbox(public_username,
-                                                  &current_mmid,
-                                                  &new_mmid));
+  ASSERT_EQ(kSuccess, passport_.MoveMaidsafeInbox(public_username));
+  asymm::Keys current_mmid(*passport_.SignaturePacketDetails(kMmid, true, public_username));
+  asymm::Keys new_mmid(*passport_.SignaturePacketDetails(kMmid, false, public_username));
 
-  ASSERT_EQ(current_identity, std::get<0>(current_mmid));
-  ASSERT_TRUE(asymm::MatchingPublicKeys(current_public_key,
-                                        std::get<1>(current_mmid)));
-  ASSERT_EQ(current_signature, std::get<2>(current_mmid));
-  ASSERT_NE(current_identity, std::get<0>(new_mmid));
-  ASSERT_FALSE(asymm::MatchingPublicKeys(current_public_key,
-                                         std::get<1>(new_mmid)));
-  ASSERT_NE(current_signature, std::get<2>(new_mmid));
+  ASSERT_EQ(current_identity, current_mmid.identity);
+  ASSERT_TRUE(asymm::MatchingPublicKeys(current_public_key, current_mmid.public_key));
+  ASSERT_EQ(current_signature, current_mmid.validation_token);
+  ASSERT_NE(current_identity, new_mmid.identity);
+  ASSERT_FALSE(asymm::MatchingPublicKeys(current_public_key, new_mmid.public_key));
+  ASSERT_NE(current_signature, new_mmid.validation_token);
 
   pki::SignaturePacketPtr pending_mmid;
   ASSERT_TRUE(GetPendingMmid(public_username, &pending_mmid));
-  ASSERT_EQ(pending_mmid->name(), std::get<0>(new_mmid));
-  ASSERT_TRUE(asymm::MatchingPublicKeys(pending_mmid->value(),
-                                        std::get<1>(new_mmid)));
-  ASSERT_EQ(pending_mmid->signature(), std::get<2>(new_mmid));
+  ASSERT_EQ(pending_mmid->name(), new_mmid.identity);
+  ASSERT_TRUE(asymm::MatchingPublicKeys(pending_mmid->value(), new_mmid.public_key));
+  ASSERT_EQ(pending_mmid->signature(), new_mmid.validation_token);
 
   ASSERT_EQ(kSuccess, passport_.ConfirmMovedMaidsafeInbox(public_username));
-  ASSERT_NE(kSuccess,
-            passport_.GetSelectableIdentityData(public_username, false, &sid));
-  ASSERT_EQ(kSuccess,
-            passport_.GetSelectableIdentityData(public_username, true, &sid));
-  ASSERT_EQ(std::get<0>(new_mmid), std::get<0>(sid.at(2)));
-  ASSERT_TRUE(asymm::MatchingPublicKeys(std::get<1>(new_mmid),
-                                        std::get<1>(sid.at(2))));
-  ASSERT_EQ(std::get<2>(new_mmid), std::get<2>(sid.at(2)));
+  ASSERT_NE(kSuccess, handler()->GetSelectableIdentityData(public_username, false, &sid));
+  SelectableIdentityData sid2;
+  ASSERT_EQ(kSuccess, handler()->GetSelectableIdentityData(public_username, true, &sid2));
+  ASSERT_EQ(new_mmid.identity, std::get<0>(sid2.at(2)));
+  ASSERT_TRUE(asymm::MatchingPublicKeys(new_mmid.public_key, std::get<1>(sid2.at(2))));
+  ASSERT_EQ(new_mmid.validation_token, std::get<2>(sid2.at(2)));
 }
 
 }  // namespace test

@@ -71,8 +71,7 @@ class SystemPacketHandler {
                                    SignaturePacketPtr inbox);
   int ConfirmSelectableIdentity(const std::string &chosen_identity);
   int DeleteSelectableIdentity(const std::string &chosen_identity);
-  void SelectableIdentitiesList(
-      std::vector<SelectableIdData> *selectables) const;
+  void SelectableIdentitiesList(std::vector<SelectableIdData> *selectables) const;
   int GetSelectableIdentityData(const std::string &chosen_identity,
                                 bool confirmed,
                                 SelectableIdentityData *data);
@@ -83,8 +82,7 @@ class SystemPacketHandler {
                                       const PacketType &packet_type);
 
   // Whole keyring
-  void SerialiseKeyChain(std::string *key_chain,
-                         std::string *selectables) const;
+  void SerialiseKeyChain(std::string *key_chain, std::string *selectables) const;
   int ParseKeyChain(const std::string &serialised_keychain,
                     const std::string &serialised_selectables);
   void ClearKeySignatures();
@@ -94,8 +92,7 @@ class SystemPacketHandler {
   void Clear();
   friend class test::PassportTest;
   friend class test::SystemPacketHandlerTest;
-  friend class
-         test::SystemPacketHandlerTest_FUNC_SigningAndIdentityPackets_Test;
+  friend class test::SystemPacketHandlerTest_FUNC_SigningAndIdentityPackets_Test;
 
  private:
   SystemPacketHandler &operator=(const SystemPacketHandler&);
@@ -111,14 +108,12 @@ class SystemPacketHandler {
         if (pend->packet_type() == kTmid || pend->packet_type() == kStmid) {
           pending = std::shared_ptr<TmidPacket>(new TmidPacket(
               *std::static_pointer_cast<TmidPacket>(pend)));
-        } else if (pend->packet_type() == kMid ||
-                   pend->packet_type() == kSmid) {
+        } else if (pend->packet_type() == kMid || pend->packet_type() == kSmid) {
           pending = std::shared_ptr<MidPacket>(new MidPacket(
               *std::static_pointer_cast<MidPacket>(pend)));
         } else if (IsSignature(pend->packet_type(), false)) {
           pending = std::shared_ptr<pki::SignaturePacket>(
-              new pki::SignaturePacket(
-                  *std::static_pointer_cast<pki::SignaturePacket>(pend)));
+              new pki::SignaturePacket(*std::static_pointer_cast<pki::SignaturePacket>(pend)));
         }
       }
     }
@@ -156,11 +151,15 @@ class SystemPacketHandler {
   };
   struct SerialisableSelectableIdentity {
     SerialisableSelectableIdentity()
-       : anmpid(), mpid(), mmid() {}
+       : anmpid(),
+         mpid(),
+         mmid() {}
     SerialisableSelectableIdentity(SignaturePacketPtr identity,
                                    SignaturePacketPtr signer,
                                    SignaturePacketPtr inbox)
-       : anmpid(*signer), mpid(*identity), mmid(*inbox) {}
+       : anmpid(*signer),
+         mpid(*identity),
+         mmid(*inbox) {}
     pki::SignaturePacket anmpid, mpid, mmid;
     friend class boost::serialization::access;
 
@@ -181,8 +180,7 @@ class SystemPacketHandler {
 
  public:
   typedef std::map<PacketType, PacketInfo> SystemPacketMap;
-  typedef std::map<std::string, SerialisableSelectableIdentity>
-          SelectableIdentitiesSerialiser;
+  typedef std::map<std::string, SerialisableSelectableIdentity> SelectableIdentitiesSerialiser;
 
  private:
   typedef std::map<std::string, SelectableIdentity> SelectableIdentitiesMap;

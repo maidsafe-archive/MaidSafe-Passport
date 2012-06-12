@@ -36,9 +36,7 @@ namespace maidsafe {
 
 namespace passport {
 
-std::string MidName(const std::string &username,
-                    const std::string &pin,
-                    bool surrogate);
+std::string MidName(const std::string &username, const std::string &pin, bool surrogate);
 
 std::string DecryptRid(const std::string &username,
                        const std::string &pin,
@@ -78,35 +76,26 @@ class Passport {
   std::string PacketName(PacketType packet_type,
                          bool confirmed,
                          const std::string &chosen_name = "") const;
-  asymm::PublicKey SignaturePacketValue(
-      PacketType packet_type,
-      bool confirmed,
-      const std::string &chosen_name = "") const;
-  asymm::PrivateKey PacketPrivateKey(
-      PacketType packet_type,
-      bool confirmed,
-      const std::string &chosen_name = "") const;
+  asymm::PublicKey SignaturePacketValue(PacketType packet_type,
+                                        bool confirmed,
+                                        const std::string &chosen_name = "") const;
+  asymm::PrivateKey PacketPrivateKey(PacketType packet_type,
+                                     bool confirmed,
+                                     const std::string &chosen_name = "") const;
   std::string IdentityPacketValue(PacketType packet_type, bool confirmed) const;
   std::string PacketSignature(PacketType packet_type,
                               bool confirmed,
                               const std::string &chosen_name = "") const;
-  std::shared_ptr<asymm::Keys> SignaturePacketDetails(
-      PacketType packet_type,
-      bool confirmed,
-      const std::string &chosen_name = "");
+  std::shared_ptr<asymm::Keys> SignaturePacketDetails(PacketType packet_type,
+                                                      bool confirmed,
+                                                      const std::string &chosen_name = "");
 
   // Selectable Identity (aka MPID)
   int CreateSelectableIdentity(const std::string &chosen_name);
   int ConfirmSelectableIdentity(const std::string &chosen_name);
   int DeleteSelectableIdentity(const std::string &chosen_name);
-  void SelectableIdentitiesList(
-      std::vector<SelectableIdData> *selectables) const;
-  int GetSelectableIdentityData(const std::string &chosen_identity,
-                                bool confirmed,
-                                SelectableIdentityData *data);
-  int MoveMaidsafeInbox(const std::string &chosen_identity,
-                        PacketData *current_data,
-                        PacketData *new_data);
+
+  int MoveMaidsafeInbox(const std::string &chosen_identity);
   int ConfirmMovedMaidsafeInbox(const std::string &chosen_identity);
 
   friend class test::PassportTest;
