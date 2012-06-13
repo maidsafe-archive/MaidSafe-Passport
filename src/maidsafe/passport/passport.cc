@@ -455,11 +455,63 @@ int SignatureAsymmKeysToProtobuf(const asymm::Keys& packet_keys,
   return kSuccess;
 }
 
+int SelectableAsymmKeysToProtobuf(std::shared_ptr<asymm::Keys> anmpid,
+                                  std::shared_ptr<asymm::Keys> mpid,
+                                  std::shared_ptr<asymm::Keys> mmid,
+                                  const std::string& id,
+                                  PacketContainer &packet_container) {
+  SelectableIdentityContainer* id_container = packet_container.add_selectable_packet();
+  id_container->set_public_id(id);
+  SignaturePacketContainer *anmpid_container = id_container->mutable_anmpid();
+  anmpid_container->set_identity(anmpid->identity);
+  std::string anmpid_public_key, anmpid_private_key;
+  asymm::EncodePublicKey(anmpid->public_key, &anmpid_public_key);
+  asymm::EncodePrivateKey(anmpid->private_key, &anmpid_private_key);
+  if (anmpid_public_key.empty() || anmpid_private_key.empty()) {
+    LOG(kError) << "Failed to serialise keys of packet: " << DebugString(kAnmpid);
+    return -1;
+  }
+  anmpid_container->set_public_key(anmpid_public_key);
+  anmpid_container->set_private_key(anmpid_private_key);
+  anmpid_container->set_signature(anmpid->validation_token);
+  anmpid_container->set_type(kAnmpid);
+
+  SignaturePacketContainer *mpid_container = id_container->mutable_mpid();
+  mpid_container->set_identity(mpid->identity);
+  std::string mpid_public_key, mpid_private_key;
+  asymm::EncodePublicKey(mpid->public_key, &mpid_public_key);
+  asymm::EncodePrivateKey(mpid->private_key, &mpid_private_key);
+  if (mpid_public_key.empty() || mpid_private_key.empty()) {
+    LOG(kError) << "Failed to serialise keys of packet: " << DebugString(kMpid);
+    return -1;
+  }
+  mpid_container->set_public_key(mpid_public_key);
+  mpid_container->set_private_key(mpid_private_key);
+  mpid_container->set_signature(mpid->validation_token);
+  mpid_container->set_type(kMpid);
+
+  SignaturePacketContainer *mmid_container = id_container->mutable_mmid();
+  mmid_container->set_identity(mmid->identity);
+  std::string mmid_public_key, mmid_private_key;
+  asymm::EncodePublicKey(mmid->public_key, &mmid_public_key);
+  asymm::EncodePrivateKey(mmid->private_key, &mmid_private_key);
+  if (mmid_public_key.empty() || mmid_private_key.empty()) {
+    LOG(kError) << "Failed to serialise keys of packet: " << DebugString(kMmid);
+    return -1;
+  }
+  mmid_container->set_public_key(mmid_public_key);
+  mmid_container->set_private_key(mmid_private_key);
+  mmid_container->set_signature(mmid->validation_token);
+  mmid_container->set_type(kMmid);
+
+  return kSuccess;
+}
+
 std::string Passport::Serialise() const {
   PacketContainer packet_container;
 
   int result(0);
-  for (int n(kAnmid); n != kPmid; ++n) {
+  for (int n(kAnmid); n != kMid; ++n) {
     std::shared_ptr<asymm::Keys> packet_keys(SignaturePacketDetails(static_cast<PacketType>(n),
                                                                     true));
     if (packet_keys) {
@@ -473,23 +525,24 @@ std::string Passport::Serialise() const {
 
   result = 0;
   std::vector<std::string> selectables(handler_->SelectableIdentities());
-  std::for_each(selectables.begin(),
-                selectables.end(),
-                [&packet_container, &result, this](const std::string& id) {
-                  for (int n(kAnmpid); n != kMmid; ++n) {
-                    std::shared_ptr<asymm::Keys> packet_keys(
-                        SignaturePacketDetails(static_cast<PacketType>(n), true, id));
-                    if (packet_keys) {
-                      result += SignatureAsymmKeysToProtobuf(*packet_keys, n, packet_container);
-                    }
-                  }
-                });
+  for (size_t n(0); n < selectables.size(); ++n) {
+    std::shared_ptr<asymm::Keys> anmpid(SignaturePacketDetails(kAnmpid, true, selectables[n]));
+    std::shared_ptr<asymm::Keys> mpid(SignaturePacketDetails(kMpid, true, selectables[n]));
+    std::shared_ptr<asymm::Keys> mmid(SignaturePacketDetails(kMmid, true, selectables[n]));
+    if (anmpid && mpid && mmid) {
+      result += SelectableAsymmKeysToProtobuf(anmpid, mpid, mmid, selectables[n], packet_container);
+    }
+  }
   if (result != kSuccess) {
     LOG(kError) << "At least one selectable packet failed to be added to serialisable container.";
     return "";
   }
 
-  return packet_container.SerializeAsString();
+  std::string s;
+  if (!packet_container.SerializeToString(&s))
+    LOG(kError) << "Failed to serialise.";
+
+  return s;
 }
 
 SignaturePacketPtr ProtobufToSignaturePacketPtr(const SignaturePacketContainer& spc) {
