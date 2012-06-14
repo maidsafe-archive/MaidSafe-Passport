@@ -45,8 +45,8 @@ source_group("Tests Source Files" FILES ${SOURCE_FILES_PASSPORT_DIR})
 source_group("Tests Header Files" FILES ${HEADER_FILES_PASSPORT_DIR})
 
 set(STYLE_PASSPORT ${ALL_FILES_PASSPORT_DIR} ${ALL_FILES_PASSPORT_TESTS_DIR})
-list(REMOVE_ITEM STYLE_PASSPORT "${PROJECT_SOURCE_DIR}/src/maidsafe/passport/signature_packet.pb.cc")
-list(REMOVE_ITEM STYLE_PASSPORT "${PROJECT_SOURCE_DIR}/src/maidsafe/passport/signature_packet.pb.h")
+list(REMOVE_ITEM STYLE_PASSPORT "${PROJECT_SOURCE_DIR}/src/maidsafe/passport/packets.pb.cc")
+list(REMOVE_ITEM STYLE_PASSPORT "${PROJECT_SOURCE_DIR}/src/maidsafe/passport/packets.pb.h")
 
 
 ###################################################################################################

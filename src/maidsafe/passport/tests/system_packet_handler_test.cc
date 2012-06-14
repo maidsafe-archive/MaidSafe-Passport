@@ -224,7 +224,7 @@ class SystemPacketHandlerTest : public testing::Test {
     return encoded_left == encoded_right;
   }
 
-  SystemPacketHandler::SystemPacketMap& packets() { return packets(); }
+  SystemPacketHandler::SystemPacketMap& packets() { return packet_handler_.packets_; }
 
   SystemPacketHandler packet_handler_;
   const std::string kUsername1_, kUsername2_, kPin1_, kPin2_;
@@ -246,8 +246,7 @@ TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
   auto it = packets().begin();
   packets1_itr = packets1_.begin();
   while (packets1_itr != packets1_.end()) {
-    ASSERT_EQ((*packets1_itr)->packet_type(),
-              (*it).second.pending->packet_type());
+    ASSERT_EQ((*packets1_itr)->packet_type(), (*it).second.pending->packet_type());
     ASSERT_TRUE((*packets1_itr++)->Equals((*it).second.pending));
     ASSERT_TRUE((*it++).second.stored.get() == NULL);
   }
@@ -261,10 +260,8 @@ TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
   packets1_itr = packets1_.begin();
   packets2_itr = packets2_.begin();
   while (packets2_itr != packets2_.end()) {
-    ASSERT_EQ((*packets1_itr)->packet_type(),
-              (*it).second.pending->packet_type());
-    ASSERT_EQ((*packets2_itr)->packet_type(),
-              (*it).second.pending->packet_type());
+    ASSERT_EQ((*packets1_itr)->packet_type(), (*it).second.pending->packet_type());
+    ASSERT_EQ((*packets2_itr)->packet_type(), (*it).second.pending->packet_type());
     ASSERT_FALSE((*packets1_itr++)->Equals((*it).second.pending));
     ASSERT_TRUE((*packets2_itr++)->Equals((*it).second.pending));
     ASSERT_TRUE((*it++).second.stored.get() == NULL);
@@ -282,8 +279,7 @@ TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
   packets1_itr += 6;
   while (packets1_itr != packets1_.end()) {
     ASSERT_TRUE(packet_handler_.AddPendingPacket(*packets1_itr));
-    ASSERT_EQ(kMissingDependentPackets,
-              packet_handler_.ConfirmPacket(*packets1_itr++));
+    ASSERT_EQ(kMissingDependentPackets, packet_handler_.ConfirmPacket(*packets1_itr++));
   }
 
   // Check packets which are dependencies fail when different version in
@@ -326,8 +322,7 @@ TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
   packets1_itr = packets1_.begin();
   packets2_itr = packets2_.begin();
   while (packets1_itr != packets1_.end()) {
-    PacketType packet_type(static_cast<PacketType>(
-        (*packets1_itr)->packet_type()));
+    PacketType packet_type(static_cast<PacketType>((*packets1_itr)->packet_type()));
     ASSERT_FALSE(packet_handler_.Confirmed(packet_type));
     PacketPtr confirmed(packet_handler_.GetPacket(packet_type, true));
     PacketPtr pending(packet_handler_.GetPacket(packet_type, false));
@@ -345,8 +340,7 @@ TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
   // Revert all pending packets and use getters
   packets1_itr = packets1_.begin();
   while (packets1_itr != packets1_.end()) {
-    PacketType packet_type(static_cast<PacketType>(
-        (*packets1_itr)->packet_type()));
+    PacketType packet_type(static_cast<PacketType>((*packets1_itr)->packet_type()));
     ASSERT_TRUE(packet_handler_.RevertPacket(packet_type));
     ASSERT_TRUE(packet_handler_.Confirmed(packet_type));
     PacketPtr confirmed(packet_handler_.GetPacket(packet_type, true));
@@ -358,8 +352,7 @@ TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
   // Revert all again - should succeed
   packets1_itr = packets1_.begin();
   while (packets1_itr != packets1_.end()) {
-    PacketType packet_type(static_cast<PacketType>(
-        (*packets1_itr)->packet_type()));
+    PacketType packet_type(static_cast<PacketType>((*packets1_itr)->packet_type()));
     ASSERT_TRUE(packet_handler_.RevertPacket(packet_type));
     PacketPtr confirmed(packet_handler_.GetPacket(packet_type, true));
     PacketPtr pending(packet_handler_.GetPacket(packet_type, false));
@@ -371,18 +364,13 @@ TEST_F(SystemPacketHandlerTest, FUNC_SigningAndIdentityPackets) {
   packet_handler_.Clear();
   packets1_itr = packets1_.begin();
   while (packets1_itr != packets1_.end()) {
-    PacketType packet_type(static_cast<PacketType>(
-        (*packets1_itr++)->packet_type()));
+    PacketType packet_type(static_cast<PacketType>((*packets1_itr++)->packet_type()));
     ASSERT_FALSE(packet_handler_.RevertPacket(packet_type));
     ASSERT_TRUE(packet_handler_.GetPacket(packet_type, true).get() == NULL);
     ASSERT_TRUE(packet_handler_.GetPacket(packet_type, false).get() == NULL);
   }
 
   // *********************** Test Serialising and Parsing KeyChain *************
-  // Check with empty packethandler
-  const std::string kPublicName("Name");
-  std::string retrieved_public_name("AnotherName");
-
   // Check with only pending packets
   packets1_itr = packets1_.begin();
   while (packets1_itr != packets1_.end())

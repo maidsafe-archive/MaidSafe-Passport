@@ -228,6 +228,13 @@ class PassportTest : public testing::Test {
 
   std::shared_ptr<SystemPacketHandler> handler() { return passport_.handler_; }
 
+  bool EqualPackets(std::shared_ptr<asymm::Keys> packet_1, std::shared_ptr<asymm::Keys> packet_2) {
+    return packet_1->identity == packet_2->identity &&
+           asymm::MatchingPublicKeys(packet_1->public_key, packet_2->public_key) &&
+           asymm::MatchingPrivateKeys(packet_1->private_key, packet_2->private_key) &&
+           packet_1->validation_token == packet_2->validation_token;
+  }
+
   Passport passport_;
   std::string username_, pin_, password_, master_data_, surrogate_data_, appendix_;
 };
@@ -422,6 +429,12 @@ TEST_F(PassportTest, BEH_SerialiseParse) {
   std::string public_id(RandomAlphaNumericString(5));
   ASSERT_EQ(kSuccess, passport_.CreateSigningPackets());
   ASSERT_EQ(kSuccess, passport_.ConfirmSigningPackets());
+  std::shared_ptr<asymm::Keys> anmid1(passport_.SignaturePacketDetails(kAnmid, true));
+  std::shared_ptr<asymm::Keys> ansmid1(passport_.SignaturePacketDetails(kAnsmid, true));
+  std::shared_ptr<asymm::Keys> antmid1(passport_.SignaturePacketDetails(kAntmid, true));
+  std::shared_ptr<asymm::Keys> anmaid1(passport_.SignaturePacketDetails(kAnmaid, true));
+  std::shared_ptr<asymm::Keys> maid1(passport_.SignaturePacketDetails(kMaid, true));
+  std::shared_ptr<asymm::Keys> pmid1(passport_.SignaturePacketDetails(kPmid, true));
   ASSERT_EQ(kSuccess, passport_.SetIdentityPackets(username_,
                                                    pin_,
                                                    password_,
@@ -430,15 +443,38 @@ TEST_F(PassportTest, BEH_SerialiseParse) {
   ASSERT_EQ(kSuccess, passport_.ConfirmIdentityPackets());
   ASSERT_EQ(kSuccess, passport_.CreateSelectableIdentity(public_id));
   ASSERT_EQ(kSuccess, passport_.ConfirmSelectableIdentity(public_id));
+  std::shared_ptr<asymm::Keys> anmpid1(passport_.SignaturePacketDetails(kAnmpid, true, public_id));
+  std::shared_ptr<asymm::Keys> mpid1(passport_.SignaturePacketDetails(kMpid, true, public_id));
+  std::shared_ptr<asymm::Keys> mmid1(passport_.SignaturePacketDetails(kMmid, true, public_id));
 
   std::string serialised1(passport_.Serialise()), serialised2(passport_.Serialise());
   ASSERT_EQ(serialised1, serialised2);
   passport_.ClearKeyChain(true, true, true);
+  std::string empty(passport_.Serialise());
+  ASSERT_TRUE(empty.empty());
   ASSERT_EQ(kSuccess, passport_.Parse(serialised1));
+  std::shared_ptr<asymm::Keys> anmid2(passport_.SignaturePacketDetails(kAnmid, true));
+  std::shared_ptr<asymm::Keys> ansmid2(passport_.SignaturePacketDetails(kAnsmid, true));
+  std::shared_ptr<asymm::Keys> antmid2(passport_.SignaturePacketDetails(kAntmid, true));
+  std::shared_ptr<asymm::Keys> anmaid2(passport_.SignaturePacketDetails(kAnmaid, true));
+  std::shared_ptr<asymm::Keys> maid2(passport_.SignaturePacketDetails(kMaid, true));
+  std::shared_ptr<asymm::Keys> pmid2(passport_.SignaturePacketDetails(kPmid, true));
+  std::shared_ptr<asymm::Keys> anmpid2(passport_.SignaturePacketDetails(kAnmpid, true, public_id));
+  std::shared_ptr<asymm::Keys> mpid2(passport_.SignaturePacketDetails(kMpid, true, public_id));
+  std::shared_ptr<asymm::Keys> mmid2(passport_.SignaturePacketDetails(kMmid, true, public_id));
   serialised2 = passport_.Serialise();
-  EXPECT_TRUE(serialised1 == serialised2);
+  ASSERT_TRUE(serialised1 == serialised2);
 //  EXPECT_EQ(kSuccess, PrintSerialisedInfo(serialised1));
 //  EXPECT_EQ(kSuccess, PrintSerialisedInfo(serialised2));
+  ASSERT_TRUE(EqualPackets(anmid1, anmid2));
+  ASSERT_TRUE(EqualPackets(ansmid1, ansmid2));
+  ASSERT_TRUE(EqualPackets(antmid1, antmid2));
+  ASSERT_TRUE(EqualPackets(anmaid1, anmaid2));
+  ASSERT_TRUE(EqualPackets(maid1, maid2));
+  ASSERT_TRUE(EqualPackets(pmid1, pmid2));
+  ASSERT_TRUE(EqualPackets(anmpid1, anmpid2));
+  ASSERT_TRUE(EqualPackets(mpid1, mpid2));
+  ASSERT_TRUE(EqualPackets(mmid1, mmid2));
 }
 
 }  // namespace test
