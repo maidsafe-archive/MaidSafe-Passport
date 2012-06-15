@@ -75,7 +75,7 @@ enum PacketType {
   kMcid
 };
 
-const std::string g_smid_appendix("1");
+const std::string kSmidAppendix("1");
 
 typedef std::tuple<std::string, std::string, asymm::PrivateKey, bool> SelectableIdData;
 typedef std::tuple<std::string, asymm::PublicKey, std::string> PacketData;

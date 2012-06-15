@@ -47,7 +47,7 @@ class PassportTest : public testing::Test {
         password_(RandomAlphaNumericString(8)),
         master_data_(RandomString(1000)),
         surrogate_data_(RandomString(1000)),
-        appendix_(g_smid_appendix) {}
+        appendix_(kSmidAppendix) {}
 
  protected:
   typedef std::shared_ptr<MidPacket> MidPacketPtr;
@@ -449,7 +449,7 @@ TEST_F(PassportTest, BEH_SerialiseParse) {
 
   std::string serialised1(passport_.Serialise()), serialised2(passport_.Serialise());
   ASSERT_EQ(serialised1, serialised2);
-  passport_.ClearKeyChain(true, true, true);
+  passport_.Clear(true, true, true);
   std::string empty(passport_.Serialise());
   ASSERT_TRUE(empty.empty());
   ASSERT_EQ(kSuccess, passport_.Parse(serialised1));

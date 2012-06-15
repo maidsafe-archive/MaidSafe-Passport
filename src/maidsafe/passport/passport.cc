@@ -34,7 +34,7 @@ namespace maidsafe {
 namespace passport {
 
 std::string MidName(const std::string &username, const std::string &pin, bool surrogate) {
-  return GetMidName(username, pin, surrogate ? g_smid_appendix : "");
+  return GetMidName(username, pin, surrogate ? kSmidAppendix : "");
 }
 
 std::string DecryptRid(const std::string &username,
@@ -64,9 +64,7 @@ std::string DecryptMasterData(const std::string &username,
 std::string PacketDebugString(const int &packet_type) { return DebugString(packet_type); }
 
 
-Passport::Passport()
-    : handler_(new SystemPacketHandler),
-      kSmidAppendix_(g_smid_appendix) {}
+Passport::Passport() : handler_(new SystemPacketHandler) {}
 
 int Passport::CreateSigningPackets() {
   // kAnmid
@@ -163,7 +161,7 @@ int Passport::SetIdentityPackets(const std::string &username,
   std::shared_ptr<TmidPacket> stmid(new TmidPacket(username, pin, true, password, surrogate_data));
 
   std::shared_ptr<MidPacket> mid(new MidPacket(username, pin, ""));
-  std::shared_ptr<MidPacket> smid(new MidPacket(username, pin, kSmidAppendix_));
+  std::shared_ptr<MidPacket> smid(new MidPacket(username, pin, kSmidAppendix));
   mid->SetRid(tmid->name());
   smid->SetRid(stmid->name());
   BOOST_ASSERT(!mid->name().empty());
@@ -196,21 +194,7 @@ int Passport::ConfirmIdentityPackets() {
   return result;
 }
 
-void Passport::SerialiseKeyChain(std::string *key_chain, std::string *selectables) const {
-  return handler_->SerialiseKeyChain(key_chain, selectables);
-}
-
-int Passport::ParseKeyChain(const std::string &serialised_keychain,
-                            const std::string &serialised_selectables) {
-  if (serialised_keychain.empty()) {
-    std::cout << "Empty keychain" << std::endl;
-    return kPassportError;
-  }
-
-  return handler_->ParseKeyChain(serialised_keychain, serialised_selectables);
-}
-
-void Passport::ClearKeyChain(bool signature, bool identity, bool selectable) {
+void Passport::Clear(bool signature, bool identity, bool selectable) {
   if (signature)
     handler_->ClearKeySignatures();
   if (identity)

@@ -19,18 +19,20 @@
 * ============================================================================
 */
 
-#ifndef MAIDSAFE_PASSPORT_PASSPORT_H_
-#define MAIDSAFE_PASSPORT_PASSPORT_H_
+#ifndef MAIDSAFE_PASSPORT_PASSPORT_IMPL_H_
+#define MAIDSAFE_PASSPORT_PASSPORT_IMPL_H_
 
 #include <cstdint>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "boost/thread/mutex.hpp"
+
 #include "maidsafe/common/rsa.h"
 
 #include "maidsafe/passport/passport_config.h"
-
+#include "maidsafe/passport/system_packets.h"
 
 namespace maidsafe {
 
@@ -49,13 +51,22 @@ std::string DecryptMasterData(const std::string &username,
 
 std::string PacketDebugString(const int &packet_type);
 
-namespace test { class PassportTest; }
+struct IdentityPackets {
+  IdentityPackets() : mid(), smid(), tmid(), stmid() {}
+  MidPacket mid, smid;
+  TmidPacket tmid, stmid;
+};
 
-class SystemPacketHandler;
+struct SelectableIdentity {
+  SelectableIdentity() : anmpid(), mpid(), mmid() {}
+  asymm::Keys anmpid;
+  asymm::Keys mpid;
+  asymm::Keys mmid;
+};
 
-class Passport {
+class PassportImpl {
  public:
-  Passport();
+  PassportImpl();
   int CreateSigningPackets();
   int ConfirmSigningPackets();
   int SetIdentityPackets(const std::string &username,
@@ -75,18 +86,18 @@ class Passport {
                          bool confirmed,
                          const std::string &chosen_name = "") const;
   asymm::PublicKey SignaturePacketValue(PacketType packet_type,
-                                        bool confirmed,
-                                        const std::string &chosen_name = "") const;
+                                         bool confirmed,
+                                         const std::string &chosen_name = "") const;
   asymm::PrivateKey PacketPrivateKey(PacketType packet_type,
-                                     bool confirmed,
-                                     const std::string &chosen_name = "") const;
+                                      bool confirmed,
+                                      const std::string &chosen_name = "") const;
   std::string IdentityPacketValue(PacketType packet_type, bool confirmed) const;
   std::string PacketSignature(PacketType packet_type,
                               bool confirmed,
                               const std::string &chosen_name = "") const;
-  std::shared_ptr<asymm::Keys> SignaturePacketDetails(PacketType packet_type,
-                                                      bool confirmed,
-                                                      const std::string &chosen_name = "") const;
+  asymm::Keys SignaturePacketDetails(PacketType packet_type,
+                                      bool confirmed,
+                                      const std::string &chosen_name = "") const;
 
   // Selectable Identity (aka MPID)
   int CreateSelectableIdentity(const std::string &chosen_name);
@@ -96,17 +107,19 @@ class Passport {
   int MoveMaidsafeInbox(const std::string &chosen_identity);
   int ConfirmMovedMaidsafeInbox(const std::string &chosen_identity);
 
-  friend class test::PassportTest;
-
  private:
-  Passport(const Passport&);
-  Passport& operator=(const Passport&);
+  PassportImpl(const PassportImpl&);
+  PassportImpl& operator=(const PassportImpl&);
 
-  std::shared_ptr<SystemPacketHandler> handler_;
+  std::map<PacketType, asymm::Keys> pending_signature_packets_, confirmed_signature_packets_;
+  IdentityPackets pending_identity_packets_, confirmed_identity_packets_;
+  std::map<std::string, SelectableIdentity> pending_selectable_packets_,
+                                            confirmed_selectable_packets_;
+  boost::mutex signature_mutex_, identity_mutex_, selectable_mutex_;
 };
 
 }  // namespace passport
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_PASSPORT_PASSPORT_H_
+#endif  // MAIDSAFE_PASSPORT_PASSPORT_IMPL_H_
