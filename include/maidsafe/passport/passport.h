@@ -51,7 +51,7 @@ std::string PacketDebugString(const int &packet_type);
 
 namespace test { class PassportTest; }
 
-class SystemPacketHandler;
+class PassportImpl;
 
 class Passport {
  public:
@@ -67,26 +67,15 @@ class Passport {
   void Clear(bool signature, bool identity, bool selectable);
 
   // Serialisation
-  std::string Serialise() const;
+  std::string Serialise();
   int Parse(const std::string& serialised_passport);
 
   // Getters
-  std::string PacketName(PacketType packet_type,
-                         bool confirmed,
-                         const std::string &chosen_name = "") const;
-  asymm::PublicKey SignaturePacketValue(PacketType packet_type,
-                                        bool confirmed,
-                                        const std::string &chosen_name = "") const;
-  asymm::PrivateKey PacketPrivateKey(PacketType packet_type,
+  std::string IdentityPacketName(PacketType packet_type, bool confirmed);
+  std::string IdentityPacketValue(PacketType packet_type, bool confirmed);
+  asymm::Keys SignaturePacketDetails(PacketType packet_type,
                                      bool confirmed,
-                                     const std::string &chosen_name = "") const;
-  std::string IdentityPacketValue(PacketType packet_type, bool confirmed) const;
-  std::string PacketSignature(PacketType packet_type,
-                              bool confirmed,
-                              const std::string &chosen_name = "") const;
-  std::shared_ptr<asymm::Keys> SignaturePacketDetails(PacketType packet_type,
-                                                      bool confirmed,
-                                                      const std::string &chosen_name = "") const;
+                                     const std::string &chosen_name = "");
 
   // Selectable Identity (aka MPID)
   int CreateSelectableIdentity(const std::string &chosen_name);
@@ -102,7 +91,7 @@ class Passport {
   Passport(const Passport&);
   Passport& operator=(const Passport&);
 
-  std::shared_ptr<SystemPacketHandler> handler_;
+  std::shared_ptr<PassportImpl> impl_;
 };
 
 }  // namespace passport

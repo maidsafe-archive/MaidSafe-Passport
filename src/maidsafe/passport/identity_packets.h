@@ -27,73 +27,46 @@
 #include <memory>
 #include <string>
 
-#include "maidsafe/pki/packet.h"
 #include "maidsafe/passport/passport_config.h"
-
-
-namespace testing { class AssertionResult; }
 
 namespace maidsafe {
 
 namespace passport {
 
-typedef std::shared_ptr<pki::Packet> PacketPtr;
-typedef std::shared_ptr<pki::SignaturePacket> SignaturePacketPtr;
+namespace detail {
 
-class MidPacket;
-class TmidPacket;
-class Key;
-class Passport;
+std::string MidName(const std::string &username, const std::string &pin, bool surrogate);
 
-namespace test {
+}  // namespace detail
 
-testing::AssertionResult Empty(PacketPtr packet);
-class SystemPacketsTest_BEH_CreateSig_Test;
-class SystemPacketsTest_BEH_PutToAndGetFromKey_Test;
-struct ExpectedMidContent;
-testing::AssertionResult Equal(std::shared_ptr<ExpectedMidContent> expected,
-                               std::shared_ptr<MidPacket> mid);
-struct ExpectedTmidContent;
-testing::AssertionResult Equal(std::shared_ptr<ExpectedTmidContent> expected,
-                               std::shared_ptr<TmidPacket> mid);
-class PassportTest_BEH_SetNewUserData_Test;
-class PassportTest_BEH_ConfirmNewUserData_Test;
-class PassportTest;
+namespace test { class IdentityPacketsTest; }
 
-}  // namespace test
-
-std::string GetMidName(const std::string &username,
-                       const std::string &pin,
-                       const std::string &smid_appendix);
-
-std::string DebugString(const int &packet_type);
-
-bool IsSignature(const int &packet_type, bool check_for_self_signer);
-
-class MidPacket : public pki::Packet {
+class MidPacket {
  public:
   MidPacket();
   MidPacket(const std::string &username,
             const std::string &pin,
             const std::string &smid_appendix);
   ~MidPacket() {}
+  std::string name() const { return name_; }
   std::string value() const { return encrypted_rid_; }
-  bool Equals(const std::shared_ptr<pki::Packet> other) const;
+  bool Equals(const MidPacket& other) const;
   void SetRid(const std::string &rid);
   std::string DecryptRid(const std::string &encrypted_rid);
   std::string username() const { return username_; }
   std::string pin() const { return pin_; }
   std::string rid() const { return rid_; }
+
  private:
-  friend testing::AssertionResult test::Empty(PacketPtr packet);
-  friend testing::AssertionResult test::Equal(std::shared_ptr<test::ExpectedMidContent> expected,
-                                              std::shared_ptr<MidPacket> mid);
+  friend class test::IdentityPacketsTest;
   void Initialise();
   void Clear();
-  std::string username_, pin_, smid_appendix_, rid_, encrypted_rid_, salt_, secure_key_, secure_iv_;
+  PacketType packet_type_;
+  std::string name_, username_, pin_, smid_appendix_, rid_, encrypted_rid_,
+              salt_, secure_key_, secure_iv_;
 };
 
-class TmidPacket : public pki::Packet {
+class TmidPacket {
  public:
   TmidPacket();
   TmidPacket(const std::string &username,
@@ -102,8 +75,9 @@ class TmidPacket : public pki::Packet {
              const std::string &password,
              const std::string &plain_text_master_data);
   ~TmidPacket() {}
+  std::string name() const { return name_; }
   std::string value() const { return encrypted_master_data_; }
-  bool Equals(const std::shared_ptr<pki::Packet> other) const;
+  bool Equals(const TmidPacket& other) const;
   std::string DecryptMasterData(const std::string &password,
                                 const std::string &encrypted_master_data);
   void SetToSurrogate() { packet_type_ = kStmid; }
@@ -112,36 +86,16 @@ class TmidPacket : public pki::Packet {
   std::string password() const { return password_; }
 
  private:
-  friend testing::AssertionResult test::Empty(PacketPtr packet);
-  friend testing::AssertionResult test::Equal(std::shared_ptr<test::ExpectedTmidContent> expected,
-                                              std::shared_ptr<TmidPacket> tmid);
-  void Initialise();
+  friend class test::IdentityPacketsTest;  void Initialise();
   bool SetPassword();
   bool SetPlainData();
   bool ObfuscatePlainData();
   bool ClarifyObfuscatedData();
   void Clear();
-  std::string username_, pin_, password_, rid_, plain_text_master_data_, salt_,
+  PacketType packet_type_;
+  std::string name_, username_, pin_, password_, rid_, plain_text_master_data_, salt_,
               secure_key_, secure_iv_, encrypted_master_data_,
               obfuscated_master_data_, obfuscation_salt_;
-};
-
-class MpidPacket : public pki::Packet {
- public:
-  MpidPacket();
-  ~MpidPacket() {}
-};
-
-class McidPacket : public pki::Packet {
- public:
-  McidPacket();
-  McidPacket(const std::string &mmid_name,
-             const MpidPacket &mpid,
-             const asymm::PublicKey &recipient_public_key);
-  ~McidPacket() {}
-  std::string value() const { return value_; }
- private:
-  std::string value_;
 };
 
 }  // namespace passport

@@ -32,11 +32,13 @@
 #include "maidsafe/common/rsa.h"
 
 #include "maidsafe/passport/passport_config.h"
-#include "maidsafe/passport/system_packets.h"
+#include "maidsafe/passport/identity_packets.h"
 
 namespace maidsafe {
 
 namespace passport {
+
+namespace impl {
 
 std::string MidName(const std::string &username, const std::string &pin, bool surrogate);
 
@@ -50,6 +52,8 @@ std::string DecryptMasterData(const std::string &username,
                               const std::string &encrypted_master_data);
 
 std::string PacketDebugString(const int &packet_type);
+
+}
 
 struct IdentityPackets {
   IdentityPackets() : mid(), smid(), tmid(), stmid() {}
@@ -78,26 +82,15 @@ class PassportImpl {
   void Clear(bool signature, bool identity, bool selectable);
 
   // Serialisation
-  std::string Serialise() const;
+  std::string Serialise();
   int Parse(const std::string& serialised_passport);
 
   // Getters
-  std::string PacketName(PacketType packet_type,
-                         bool confirmed,
-                         const std::string &chosen_name = "") const;
-  asymm::PublicKey SignaturePacketValue(PacketType packet_type,
-                                         bool confirmed,
-                                         const std::string &chosen_name = "") const;
-  asymm::PrivateKey PacketPrivateKey(PacketType packet_type,
-                                      bool confirmed,
-                                      const std::string &chosen_name = "") const;
-  std::string IdentityPacketValue(PacketType packet_type, bool confirmed) const;
-  std::string PacketSignature(PacketType packet_type,
-                              bool confirmed,
-                              const std::string &chosen_name = "") const;
+  std::string IdentityPacketName(PacketType packet_type, bool confirmed);
+  std::string IdentityPacketValue(PacketType packet_type, bool confirmed);
   asymm::Keys SignaturePacketDetails(PacketType packet_type,
-                                      bool confirmed,
-                                      const std::string &chosen_name = "") const;
+                                     bool confirmed,
+                                     const std::string &chosen_name = "");
 
   // Selectable Identity (aka MPID)
   int CreateSelectableIdentity(const std::string &chosen_name);

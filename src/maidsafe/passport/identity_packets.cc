@@ -20,7 +20,7 @@
 * ============================================================================
 */
 
-#include "maidsafe/passport/system_packets.h"
+#include "maidsafe/passport/identity_packets.h"
 
 #include <cstdio>
 
@@ -34,70 +34,17 @@ namespace maidsafe {
 
 namespace passport {
 
-std::string GetMidName(const std::string &username,
-                       const std::string &pin,
-                       const std::string &smid_appendix) {
-  return crypto::Hash<crypto::SHA512>(username + pin + smid_appendix);
+namespace detail {
+
+std::string MidName(const std::string &username, const std::string &pin, bool surrogate) {
+  return crypto::Hash<crypto::SHA512>(username + pin + (surrogate ? kSmidAppendix : ""));
 }
 
-std::string DebugString(const int &packet_type) {
-  switch (packet_type) {
-    case kUnknown:
-      return "unknown";
-    case kAnmid:
-      return "ANMID";
-    case kAnsmid:
-      return "ANSMID";
-    case kAntmid:
-      return "ANTMID";
-    case kAnmaid:
-      return "ANMAID";
-    case kMaid:
-      return "MAID";
-    case kPmid:
-      return "PMID";
-    case kMid:
-      return "MID";
-    case kSmid:
-      return "SMID";
-    case kTmid:
-      return "TMID";
-    case kStmid:
-      return "STMID";
-    case kAnmpid:
-      return "ANMPID";
-    case kMpid:
-      return "MPID";
-    case kMmid:
-      return "MMID";
-    case kMcid:
-      return "MCID";
-    default:
-      return "error";
-  }
-}
-
-bool IsSignature(const int &packet_type, bool check_for_self_signer) {
-  switch (packet_type) {
-    case kMpid:
-    case kPmid:
-    case kMaid:
-      return !check_for_self_signer;
-    case kAnmid:
-    case kAnsmid:
-    case kAntmid:
-    case kAnmpid:
-    case kAnmaid:
-    case kMmid:
-      return true;
-    default:
-      return false;
-  }
-}
-
+}  // namespace detail
 
 MidPacket::MidPacket()
-    : pki::Packet(kUnknown),
+    : packet_type_(kUnknown),
+      name_(),
       username_(),
       pin_(),
       smid_appendix_(),
@@ -110,7 +57,8 @@ MidPacket::MidPacket()
 MidPacket::MidPacket(const std::string &username,
                      const std::string &pin,
                      const std::string &smid_appendix)
-    : pki::Packet(smid_appendix.empty() ? kMid : kSmid),
+    : packet_type_(smid_appendix.empty() ? kMid : kSmid),
+      name_(),
       username_(username),
       pin_(pin),
       smid_appendix_(smid_appendix),
@@ -145,7 +93,7 @@ void MidPacket::Initialise() {
 
   secure_key_ = secure_password.substr(0, crypto::AES256_KeySize);
   secure_iv_ = secure_password.substr(crypto::AES256_KeySize, crypto::AES256_IVSize);
-  name_ = GetMidName(username_, pin_, smid_appendix_);
+  name_ = detail::MidName(username_, pin_, !smid_appendix_.empty());
   if (name_.empty())
     Clear();
 }
@@ -195,23 +143,23 @@ void MidPacket::Clear() {
   rid_.clear();
 }
 
-bool MidPacket::Equals(const std::shared_ptr<pki::Packet> other) const {
-  const std::shared_ptr<MidPacket> mid(std::static_pointer_cast<MidPacket>(other));
-  return packet_type_ == mid->packet_type_ &&
-         name_ == mid->name_ &&
-         username_ == mid->username_ &&
-         pin_ == mid->pin_ &&
-         smid_appendix_ == mid->smid_appendix_ &&
-         encrypted_rid_ == mid->encrypted_rid_ &&
-         salt_ == mid->salt_ &&
-         secure_key_ == mid->secure_key_ &&
-         secure_iv_ == mid->secure_iv_ &&
-         rid_ == mid->rid_;
+bool MidPacket::Equals(const MidPacket& other) const {
+  return packet_type_ == other.packet_type_ &&
+         name_ == other.name_ &&
+         username_ == other.username_ &&
+         pin_ == other.pin_ &&
+         smid_appendix_ == other.smid_appendix_ &&
+         encrypted_rid_ == other.encrypted_rid_ &&
+         salt_ == other.salt_ &&
+         secure_key_ == other.secure_key_ &&
+         secure_iv_ == other.secure_iv_ &&
+         rid_ == other.rid_;
 }
 
 
 TmidPacket::TmidPacket()
-    : pki::Packet(kUnknown),
+    : packet_type_(kUnknown),
+      name_(),
       username_(),
       pin_(),
       password_(),
@@ -229,7 +177,8 @@ TmidPacket::TmidPacket(const std::string &username,
                        bool surrogate,
                        const std::string &password,
                        const std::string &plain_text_master_data)
-    : pki::Packet(surrogate ? kStmid : kTmid),
+    : packet_type_(surrogate ? kStmid : kTmid),
+      name_(),
       username_(username),
       pin_(pin),
       password_(password),
@@ -424,71 +373,65 @@ void TmidPacket::Clear() {
   obfuscation_salt_.clear();
 }
 
-bool TmidPacket::Equals(const std::shared_ptr<pki::Packet> other) const {
-  const std::shared_ptr<TmidPacket> tmid(
-      std::static_pointer_cast<TmidPacket>(other));
-//  return packet_type_ == tmid->packet_type_ &&
-//         name_ == tmid->name_ &&
-//         username_ == tmid->username_ &&
-//         pin_ == tmid->pin_ &&
-//         password_ == tmid->password_ &&
-//         rid_ == tmid->rid_ &&
-//         plain_text_master_data_ == tmid->plain_text_master_data_ &&
-//         salt_ == tmid->salt_ &&
-//         secure_key_ == tmid->secure_key_ &&
-//         secure_iv_ == tmid->secure_iv_ &&
-//         encrypted_master_data_ == tmid->encrypted_master_data_;
-  if (packet_type_ != tmid->packet_type_) {
+bool TmidPacket::Equals(const TmidPacket& other) const {
+//  return packet_type_ == other.packet_type_ &&
+//         name_ == other.name_ &&
+//         username_ == other.username_ &&
+//         pin_ == other.pin_ &&
+//         password_ == other.password_ &&
+//         rid_ == other.rid_ &&
+//         plain_text_master_data_ == other.plain_text_master_data_ &&
+//         salt_ == other.salt_ &&
+//         secure_key_ == other.secure_key_ &&
+//         secure_iv_ == other.secure_iv_ &&
+//         encrypted_master_data_ == other.encrypted_master_data_;
+  if (packet_type_ != other.packet_type_) {
     LOG(kInfo) << "packet_type_";
     return false;
   }
-  if (name_ != tmid->name_) {
+  if (name_ != other.name_) {
     LOG(kInfo) << "name_";
     return false;
   }
-  if (username_ != tmid->username_) {
+  if (username_ != other.username_) {
     LOG(kInfo) << "username_";
     return false;
   }
-  if (pin_ != tmid->pin_) {
+  if (pin_ != other.pin_) {
     LOG(kInfo) << "pin_";
     return false;
   }
-  if (password_ != tmid->password_) {
+  if (password_ != other.password_) {
     LOG(kInfo) << "password_";
     return false;
   }
-  if (rid_ != tmid->rid_) {
+  if (rid_ != other.rid_) {
     LOG(kInfo) << "rid_";
     return false;
   }
-  if (plain_text_master_data_ != tmid->plain_text_master_data_) {
+  if (plain_text_master_data_ != other.plain_text_master_data_) {
     LOG(kInfo) << "plain_text_master_data_";
     return false;
   }
-  if (salt_ != tmid->salt_) {
+  if (salt_ != other.salt_) {
     LOG(kInfo) << "salt_";
     return false;
   }
-  if (secure_key_ != tmid->secure_key_) {
+  if (secure_key_ != other.secure_key_) {
     LOG(kInfo) << "secure_key_";
     return false;
   }
-  if (secure_iv_ != tmid->secure_iv_) {
+  if (secure_iv_ != other.secure_iv_) {
     LOG(kInfo) << "secure_iv_";
     return false;
   }
-  if (encrypted_master_data_ != tmid->encrypted_master_data_) {
+  if (encrypted_master_data_ != other.encrypted_master_data_) {
     LOG(kInfo) << "encrypted_master_data_";
     return false;
   }
 
   return true;
 }
-
-
-
-McidPacket::McidPacket() : pki::Packet(kMcid), value_() {}
 
 }  // namespace passport
 

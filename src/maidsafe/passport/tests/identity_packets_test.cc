@@ -29,155 +29,13 @@
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
-#include "maidsafe/passport/system_packets.h"
+#include "maidsafe/passport/identity_packets.h"
 
 namespace maidsafe {
 
 namespace passport {
 
 namespace test {
-
-class SystemPacketsTest : public testing::Test {
- public:
-  typedef std::shared_ptr<pki::SignaturePacket> SignaturePtr;
-  typedef std::shared_ptr<MidPacket> MidPtr;
-  typedef std::shared_ptr<TmidPacket> TmidPtr;
-  SystemPacketsTest()
-      : signature_packet_types_(),
-        packet_types_() {}
-
- protected:
-  virtual void SetUp() {
-    signature_packet_types_.push_back(kMpid);
-    signature_packet_types_.push_back(kPmid);
-    signature_packet_types_.push_back(kMaid);
-    signature_packet_types_.push_back(kAnmid);
-    signature_packet_types_.push_back(kAnsmid);
-    signature_packet_types_.push_back(kAntmid);
-    signature_packet_types_.push_back(kAnmpid);
-    signature_packet_types_.push_back(kAnmaid);
-    packet_types_.push_back(kMid);
-    packet_types_.push_back(kSmid);
-    packet_types_.push_back(kTmid);
-    packet_types_.push_back(kStmid);
-    packet_types_.push_back(kMpid);
-    packet_types_.push_back(kPmid);
-    packet_types_.push_back(kMaid);
-    packet_types_.push_back(kAnmid);
-    packet_types_.push_back(kAnsmid);
-    packet_types_.push_back(kAntmid);
-    packet_types_.push_back(kAnmpid);
-    packet_types_.push_back(kAnmaid);
-  }
-
-  void TearDown() {}
-
-  bool GetRids(std::string *rid1, std::string *rid2) {
-    *rid1 = RandomString(64);
-    if (!rid2)
-      return (!rid1->empty());
-    *rid2 = *rid1;
-    while (*rid2 == *rid1)
-      *rid2 = RandomString(64);
-    return (!rid1->empty() && !rid2->empty() && *rid1 != *rid2);
-  }
-
-  std::vector<PacketType> signature_packet_types_, packet_types_;
-};
-
-TEST_F(SystemPacketsTest, BEH_IsSignature) {
-  // Check for self-signers
-  EXPECT_FALSE(IsSignature(kMid, true));
-  EXPECT_FALSE(IsSignature(kSmid, true));
-  EXPECT_FALSE(IsSignature(kTmid, true));
-  EXPECT_FALSE(IsSignature(kStmid, true));
-  EXPECT_FALSE(IsSignature(kMpid, true));
-  EXPECT_FALSE(IsSignature(kPmid, true));
-  EXPECT_FALSE(IsSignature(kMaid, true));
-  EXPECT_TRUE(IsSignature(kAnmid, true));
-  EXPECT_TRUE(IsSignature(kAnsmid, true));
-  EXPECT_TRUE(IsSignature(kAntmid, true));
-  EXPECT_TRUE(IsSignature(kAnmpid, true));
-  EXPECT_TRUE(IsSignature(kAnmaid, true));
-  EXPECT_FALSE(IsSignature(kUnknown, true));
-  // Check for all signature types
-  EXPECT_FALSE(IsSignature(kMid, false));
-  EXPECT_FALSE(IsSignature(kSmid, false));
-  EXPECT_FALSE(IsSignature(kTmid, false));
-  EXPECT_FALSE(IsSignature(kStmid, false));
-  EXPECT_TRUE(IsSignature(kMpid, false));
-  EXPECT_TRUE(IsSignature(kPmid, false));
-  EXPECT_TRUE(IsSignature(kMaid, false));
-  EXPECT_TRUE(IsSignature(kAnmid, false));
-  EXPECT_TRUE(IsSignature(kAnsmid, false));
-  EXPECT_TRUE(IsSignature(kAntmid, false));
-  EXPECT_TRUE(IsSignature(kAnmpid, false));
-  EXPECT_TRUE(IsSignature(kAnmaid, false));
-  EXPECT_FALSE(IsSignature(kUnknown, false));
-}
-
-testing::AssertionResult Empty(std::shared_ptr<pki::Packet> packet) {
-  PacketType packet_type = static_cast<PacketType>(packet->packet_type());
-  if (!packet->name().empty())
-    return testing::AssertionFailure() << "Packet name not empty.";
-  if (IsSignature(packet_type, false)) {
-    std::shared_ptr<pki::SignaturePacket> sig_packet =
-        std::static_pointer_cast<pki::SignaturePacket>(packet);
-    if (asymm::ValidateKey(sig_packet->value()))
-      return testing::AssertionFailure() << "Packet public key not empty.";
-    if (asymm::ValidateKey(sig_packet->private_key()))
-      return testing::AssertionFailure() << "Packet private key not empty.";
-    if (!sig_packet->signature().empty())
-      return testing::AssertionFailure() << "Packet public key sig not empty.";
-  } else if (packet_type == kMid || packet_type == kSmid) {
-    std::shared_ptr<MidPacket> mid_packet =
-        std::static_pointer_cast<MidPacket>(packet);
-    if (!mid_packet->value().empty())
-      return testing::AssertionFailure() << "Packet value not empty.";
-    if (!mid_packet->username_.empty())
-      return testing::AssertionFailure() << "Packet username not empty.";
-    if (!mid_packet->pin_.empty())
-      return testing::AssertionFailure() << "Packet pin not empty.";
-    if (!mid_packet->smid_appendix_.empty())
-      return testing::AssertionFailure() << "Packet smid appendix not empty.";
-    if (!mid_packet->rid_.empty())
-      return testing::AssertionFailure() << "Packet rid not 0.";
-    if (!mid_packet->encrypted_rid_.empty())
-      return testing::AssertionFailure() << "Packet encrypted rid not empty.";
-    if (!mid_packet->salt_.empty())
-      return testing::AssertionFailure() << "Packet salt not empty.";
-    if (!mid_packet->secure_key_.empty())
-      return testing::AssertionFailure() << "Packet secure key not empty.";
-    if (!mid_packet->secure_iv_.empty())
-      return testing::AssertionFailure() << "Packet secure IV not empty.";
-  } else if (packet_type == kTmid || packet_type == kStmid) {
-    std::shared_ptr<TmidPacket> tmid_packet =
-        std::static_pointer_cast<TmidPacket>(packet);
-    if (!tmid_packet->value().empty())
-      return testing::AssertionFailure() << "Packet value not empty.";
-    if (!tmid_packet->username_.empty())
-      return testing::AssertionFailure() << "Packet username not empty.";
-    if (!tmid_packet->pin_.empty())
-      return testing::AssertionFailure() << "Packet pin not empty.";
-    if (!tmid_packet->password_.empty())
-      return testing::AssertionFailure() << "Packet password not empty.";
-    if (!tmid_packet->rid_.empty())
-      return testing::AssertionFailure() << "Packet rid not 0.";
-    if (!tmid_packet->plain_text_master_data_.empty())
-      return testing::AssertionFailure() << "Packet plain data not empty.";
-    if (!tmid_packet->salt_.empty())
-      return testing::AssertionFailure() << "Packet salt not empty.";
-    if (!tmid_packet->secure_key_.empty())
-      return testing::AssertionFailure() << "Packet secure key not empty.";
-    if (!tmid_packet->secure_iv_.empty())
-      return testing::AssertionFailure() << "Packet secure IV not empty.";
-    if (!tmid_packet->encrypted_master_data_.empty())
-      return testing::AssertionFailure() << "Packet encrypted data not empty.";
-  } else if (packet_type != kUnknown) {
-    return testing::AssertionFailure() << "Invalid packet type.";
-  }
-  return testing::AssertionSuccess();
-}
 
 struct ExpectedMidContent {
   ExpectedMidContent(const std::string &mid_name_in,
@@ -206,84 +64,200 @@ struct ExpectedMidContent {
   std::string rid;
 };
 
-testing::AssertionResult Equal(
-    std::shared_ptr<ExpectedMidContent> expected,
-    std::shared_ptr<MidPacket> mid) {
-  std::string dbg(expected->packet_type == kMid ? "kMid" : "kSmid");
-  if (expected->mid_name != mid->name())
-    return testing::AssertionFailure() << dbg << " name wrong.";
-  if (expected->encrypted_rid != mid->value())
-    return testing::AssertionFailure() << dbg << " value wrong.";
-  if (expected->encrypted_rid != mid->encrypted_rid_)
-    return testing::AssertionFailure() << dbg << " encrypted_rid wrong.";
-  if (expected->username != mid->username())
-    return testing::AssertionFailure() << dbg << " username wrong.";
-  if (expected->pin != mid->pin())
-    return testing::AssertionFailure() << dbg << " pin wrong.";
-  if (expected->smid_appendix != mid->smid_appendix_)
-    return testing::AssertionFailure() << dbg << " smid_appendix wrong.";
-  if (expected->salt != mid->salt_)
-    return testing::AssertionFailure() << dbg << " salt wrong.";
-  if (expected->secure_key != mid->secure_key_)
-    return testing::AssertionFailure() << dbg << " secure_key wrong.";
-  if (expected->secure_iv != mid->secure_iv_)
-    return testing::AssertionFailure() << dbg << " secure_iv wrong.";
-  if (expected->packet_type != mid->packet_type_)
-    return testing::AssertionFailure() << dbg << " packet_type wrong.";
-  if (expected->rid != mid->rid())
-    return testing::AssertionFailure() << dbg << " RID wrong.";
-  return testing::AssertionSuccess();
-}
+class IdentityPacketsTest : public testing::Test {
+ public:
+  IdentityPacketsTest() {}
 
-TEST_F(SystemPacketsTest, BEH_CreateMid) {
+ protected:
+  virtual void SetUp() {}
+  void TearDown() {}
+
+  bool EmptyMid(const MidPacket& mid_packet) {
+    if (!mid_packet.name().empty()) {
+      LOG(kError) << "Packet name not empty.";
+      return false;
+    }
+    if (!mid_packet.value().empty()) {
+      LOG(kError) << "Packet value not empty.";
+      return false;
+    }
+    if (!mid_packet.username_.empty()) {
+      LOG(kError) << "Packet username not empty.";
+      return false;
+    }
+    if (!mid_packet.pin_.empty()) {
+      LOG(kError) << "Packet pin not empty.";
+      return false;
+    }
+    if (!mid_packet.smid_appendix_.empty()) {
+      LOG(kError) << "Packet appendix not empty.";
+      return false;
+    }
+    if (!mid_packet.rid_.empty()) {
+      LOG(kError) << "Packet rid not empty.";
+      return false;
+    }
+    if (!mid_packet.encrypted_rid_.empty()) {
+      LOG(kError) << "Packet encrypted_rid not empty.";
+      return false;
+    }
+    if (!mid_packet.salt_.empty()) {
+      LOG(kError) << "Packet salt not empty.";
+      return false;
+    }
+    if (!mid_packet.secure_key_.empty()) {
+      LOG(kError) << "Packet secure_key not empty.";
+      return false;
+    }
+    if (!mid_packet.secure_iv_.empty()) {
+      LOG(kError) << "Packet secure_iv not empty.";
+      return false;
+    }
+    return true;
+  }
+
+  bool EmptyTmid(const TmidPacket& tmid_packet) {
+    if (!tmid_packet.name().empty()) {
+      LOG(kError) << "Packet name not empty.";
+      return false;
+    }
+    if (!tmid_packet.value().empty()) {
+      LOG(kError) << "Packet value not empty.";
+      return false;
+    }
+    if (!tmid_packet.username_.empty()) {
+      LOG(kError) << "Packet username not empty.";
+      return false;
+    }
+    if (!tmid_packet.pin_.empty()) {
+      LOG(kError) << "Packet pin not empty.";
+      return false;
+    }
+    if (!tmid_packet.password_.empty()) {
+      LOG(kError) << "Packet password not empty.";
+      return false;
+    }
+    if (!tmid_packet.rid_.empty()) {
+      LOG(kError) << "Packet rid not empty.";
+      return false;
+    }
+    if (!tmid_packet.plain_text_master_data_.empty()) {
+      LOG(kError) << "Packet plain_text_master_data not empty.";
+      return false;
+    }
+    if (!tmid_packet.salt_.empty()) {
+      LOG(kError) << "Packet salt not empty.";
+      return false;
+    }
+    if (!tmid_packet.secure_key_.empty()) {
+      LOG(kError) << "Packet secure_key not empty.";
+      return false;
+    }
+    if (!tmid_packet.secure_iv_.empty()) {
+      LOG(kError) << "Packet secure_iv not empty.";
+      return false;
+    }
+    if (!tmid_packet.encrypted_master_data_.empty()) {
+      LOG(kError) << "Packet encrypted_master_data not empty.";
+      return false;
+    }
+    return true;
+  }
+
+  bool EqualMids(const ExpectedMidContent& expected, const MidPacket& mid) {
+    std::string dbg(expected.packet_type == kMid ? "kMid" : "kSmid");
+    if (expected.mid_name != mid.name()) {
+      LOG(kError) << dbg << " name wrong.";
+      return false;
+    }
+    if (expected.encrypted_rid != mid.value()) {
+      LOG(kError) << dbg << " value wrong.";
+      return false;
+    }
+    if (expected.encrypted_rid != mid.encrypted_rid_) {
+      LOG(kError) << dbg << " encrypted_rid wrong.";
+      return false;
+    }
+    if (expected.username != mid.username()) {
+      LOG(kError) << dbg << " username wrong.";
+      return false;
+    }
+    if (expected.pin != mid.pin()) {
+      LOG(kError) << dbg << " pin wrong.";
+      return false;
+    }
+    if (expected.smid_appendix != mid.smid_appendix_) {
+      LOG(kError) << dbg << " smid_appendix wrong.";
+      return false;
+    }
+    if (expected.salt != mid.salt_) {
+      LOG(kError) << dbg << " salt wrong.";
+      return false;
+    }
+    if (expected.secure_key != mid.secure_key_) {
+      LOG(kError) << dbg << " secure_key wrong.";
+      return false;
+    }
+    if (expected.secure_iv != mid.secure_iv_) {
+      LOG(kError) << dbg << " secure_iv wrong.";
+      return false;
+    }
+    if (expected.packet_type != mid.packet_type_) {
+      LOG(kError) << dbg << " packet_type wrong.";
+      return false;
+    }
+    if (expected.rid != mid.rid()) {
+      LOG(kError) << dbg << " rid wrong.";
+      return false;
+    }
+    return true;
+  }
+
+};
+
+TEST_F(IdentityPacketsTest, BEH_CreateMid) {
   const std::string kUsername(RandomAlphaNumericString(20));
   const uint32_t kPin(RandomUint32());
   const std::string kPinStr(boost::lexical_cast<std::string>(kPin));
   const std::string kSmidAppendix(RandomAlphaNumericString(20));
 
   // Check with invalid inputs
-  MidPtr mid(new MidPacket("", "", ""));
-  EXPECT_TRUE(Empty(mid));
-  mid.reset(new MidPacket("", kPinStr, ""));
-  EXPECT_TRUE(Empty(mid));
-  mid.reset(new MidPacket(kUsername, "", ""));
-  EXPECT_TRUE(Empty(mid));
-  mid.reset(new MidPacket(kUsername, "Non-number", ""));
-  EXPECT_TRUE(Empty(mid));
+  MidPacket mid("", "", "");
+  EXPECT_TRUE(EmptyMid(mid));
+  mid = MidPacket("", kPinStr, "");
+  EXPECT_TRUE(EmptyMid(mid));
+  mid = MidPacket(kUsername, "", "");
+  EXPECT_TRUE(EmptyMid(mid));
+  mid = MidPacket(kUsername, "Non-number", "");
+  EXPECT_TRUE(EmptyMid(mid));
 
   // Check kMid with valid inputs
   std::string expected_salt = crypto::Hash<crypto::SHA512>(kPinStr + kUsername);
   std::string expected_secure_password;
-  EXPECT_EQ(kSuccess, crypto::SecurePassword(kUsername, expected_salt, kPin,
-                                             &expected_secure_password));
-  std::string expected_secure_key = expected_secure_password.
-                                        substr(0, crypto::AES256_KeySize);
-  std::string expected_secure_iv = expected_secure_password.
-                                       substr(crypto::AES256_KeySize,
-                                              crypto::AES256_IVSize);
-  std::string expected_mid_name(
-      crypto::Hash<crypto::SHA512>(kUsername + kPinStr));
-  mid.reset(new MidPacket(kUsername, kPinStr, ""));
-  std::shared_ptr<ExpectedMidContent> expected_mid_content(
-      new ExpectedMidContent(expected_mid_name, "", kUsername, kPinStr, "",
-                             expected_salt, expected_secure_key,
-                             expected_secure_iv, kMid, ""));
-  EXPECT_FALSE(Empty(mid));
-  EXPECT_TRUE(Equal(expected_mid_content, mid));
+  EXPECT_EQ(kSuccess,
+            crypto::SecurePassword(kUsername, expected_salt, kPin, &expected_secure_password));
+  std::string expected_secure_key = expected_secure_password.substr(0, crypto::AES256_KeySize);
+  std::string expected_secure_iv = expected_secure_password.substr(crypto::AES256_KeySize,
+                                                                   crypto::AES256_IVSize);
+  std::string expected_mid_name(crypto::Hash<crypto::SHA512>(kUsername + kPinStr));
+  mid = MidPacket(kUsername, kPinStr, "");
+  ExpectedMidContent expected_mid_content(expected_mid_name, "", kUsername, kPinStr, "",
+                                          expected_salt, expected_secure_key, expected_secure_iv,
+                                          kMid, "");
+  EXPECT_FALSE(EmptyMid(mid));
+  EXPECT_TRUE(EqualMids(expected_mid_content, mid));
 
   // Check kSmid with valid inputs
-  std::string expected_smid_name(
-        crypto::Hash<crypto::SHA512>(kUsername + kPinStr + kSmidAppendix));
-  MidPtr smid(new MidPacket(kUsername, kPinStr, kSmidAppendix));
-  std::shared_ptr<ExpectedMidContent> expected_smid_content(
-      new ExpectedMidContent(expected_smid_name, "", kUsername, kPinStr,
-                             kSmidAppendix, expected_salt, expected_secure_key,
-                             expected_secure_iv, kSmid, ""));
-  EXPECT_FALSE(Empty(smid));
-  EXPECT_TRUE(Equal(expected_smid_content, smid));
+  std::string expected_smid_name(crypto::Hash<crypto::SHA512>(kUsername + kPinStr + kSmidAppendix));
+  MidPacket smid(kUsername, kPinStr, kSmidAppendix);
+  ExpectedMidContent expected_smid_content(expected_smid_name, "", kUsername, kPinStr,
+                                           kSmidAppendix, expected_salt, expected_secure_key,
+                                           expected_secure_iv, kSmid, "");
+  EXPECT_FALSE(EmptyMid(smid));
+  EXPECT_TRUE(EqualMids(expected_smid_content, smid));
 }
-
-TEST_F(SystemPacketsTest, BEH_SetAndDecryptRid) {
+/*
+TEST_F(IdentityPacketsTest, BEH_SetAndDecryptRid) {
   const std::string kUsername(RandomAlphaNumericString(20));
   const uint32_t kPin(RandomUint32());
   const std::string kPinStr(boost::lexical_cast<std::string>(kPin));
@@ -460,7 +434,7 @@ testing::AssertionResult Equal(
   return testing::AssertionSuccess();
 }
 
-TEST_F(SystemPacketsTest, BEH_CreateTmid) {
+TEST_F(IdentityPacketsTest, BEH_CreateTmid) {
   const std::string kUsername(RandomAlphaNumericString(20));
   const uint32_t kPin(RandomUint32());
   const std::string kPinStr(boost::lexical_cast<std::string>(kPin));
@@ -531,7 +505,7 @@ TEST_F(SystemPacketsTest, BEH_CreateTmid) {
   EXPECT_TRUE(Equal(expected_tmid_content, tmid));
 }
 
-TEST_F(SystemPacketsTest, BEH_SetAndDecryptData) {
+TEST_F(IdentityPacketsTest, BEH_SetAndDecryptData) {
   const std::string kUsername(RandomAlphaNumericString(20));
   const uint32_t kPin(RandomUint32());
   const std::string kPinStr(boost::lexical_cast<std::string>(kPin));
@@ -637,7 +611,7 @@ TEST_F(SystemPacketsTest, BEH_SetAndDecryptData) {
                                                 expected_encrypted_data));
   EXPECT_TRUE(Equal(expected_tmid_content, tmid));
 }
-
+*/
 }  // namespace test
 
 }  // namespace passport
