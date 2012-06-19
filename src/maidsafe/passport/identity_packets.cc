@@ -44,10 +44,10 @@ std::string MidName(const std::string &username, const std::string &pin, bool su
 
 MidPacket::MidPacket()
     : packet_type_(kUnknown),
+      surrogate_(false),
       name_(),
       username_(),
       pin_(),
-      smid_appendix_(),
       rid_(),
       encrypted_rid_(),
       salt_(),
@@ -56,12 +56,12 @@ MidPacket::MidPacket()
 
 MidPacket::MidPacket(const std::string &username,
                      const std::string &pin,
-                     const std::string &smid_appendix)
-    : packet_type_(smid_appendix.empty() ? kMid : kSmid),
+                     bool surrogate)
+    : packet_type_(surrogate ? kSmid : kMid),
+      surrogate_(surrogate),
       name_(),
       username_(username),
       pin_(pin),
-      smid_appendix_(smid_appendix),
       rid_(),
       encrypted_rid_(),
       salt_(),
@@ -93,7 +93,7 @@ void MidPacket::Initialise() {
 
   secure_key_ = secure_password.substr(0, crypto::AES256_KeySize);
   secure_iv_ = secure_password.substr(crypto::AES256_KeySize, crypto::AES256_IVSize);
-  name_ = detail::MidName(username_, pin_, !smid_appendix_.empty());
+  name_ = detail::MidName(username_, pin_, surrogate_);
   if (name_.empty())
     Clear();
 }
@@ -132,10 +132,11 @@ std::string MidPacket::DecryptRid(const std::string &encrypted_rid) {
 }
 
 void MidPacket::Clear() {
+  packet_type_ = kUnknown;
+  surrogate_ = false;
   name_.clear();
   username_.clear();
   pin_.clear();
-  smid_appendix_.clear();
   encrypted_rid_.clear();
   salt_.clear();
   secure_key_.clear();
@@ -145,10 +146,10 @@ void MidPacket::Clear() {
 
 bool MidPacket::Equals(const MidPacket& other) const {
   return packet_type_ == other.packet_type_ &&
+         surrogate_ == other.surrogate_ &&
          name_ == other.name_ &&
          username_ == other.username_ &&
          pin_ == other.pin_ &&
-         smid_appendix_ == other.smid_appendix_ &&
          encrypted_rid_ == other.encrypted_rid_ &&
          salt_ == other.salt_ &&
          secure_key_ == other.secure_key_ &&

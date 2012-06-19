@@ -71,15 +71,10 @@ enum PacketType {
   kStmid,
   kAnmpid,
   kMpid,
-  kMmid,
-  kMcid
+  kMmid
 };
 
 const std::string kSmidAppendix("1");
-
-typedef std::tuple<std::string, std::string, asymm::PrivateKey, bool> SelectableIdData;
-typedef std::tuple<std::string, asymm::PublicKey, std::string> PacketData;
-typedef std::vector<PacketData> SelectableIdentityData;
 
 }  // namespace passport
 

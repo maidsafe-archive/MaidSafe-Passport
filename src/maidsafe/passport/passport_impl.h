@@ -23,6 +23,7 @@
 #define MAIDSAFE_PASSPORT_PASSPORT_IMPL_H_
 
 #include <cstdint>
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -53,7 +54,7 @@ std::string DecryptMasterData(const std::string &username,
 
 std::string PacketDebugString(const int &packet_type);
 
-}
+}  // namespace impl
 
 struct IdentityPackets {
   IdentityPackets() : mid(), smid(), tmid(), stmid() {}

@@ -24,7 +24,6 @@ file(GLOB PROTO_FILES RELATIVE ${PROTO_SOURCE_DIR} "${PROTO_SOURCE_DIR}/maidsafe
 include(../../cmake_modules/maidsafe_standard_setup.cmake)
 
 include_directories(${common_SOURCE_DIR}/include)
-include_directories(${pki_SOURCE_DIR}/include)
 
 
 ###################################################################################################
@@ -55,7 +54,7 @@ list(REMOVE_ITEM STYLE_PASSPORT "${PROJECT_SOURCE_DIR}/src/maidsafe/passport/pac
 ms_add_static_library(passport ${ALL_FILES_PASSPORT_DIR})
 ms_add_executable(TESTpassport "Tests/Passport" ${ALL_FILES_PASSPORT_TESTS_DIR})
 
-target_link_libraries(maidsafe_passport maidsafe_pki)
+target_link_libraries(maidsafe_passport maidsafe_common)
 target_link_libraries(TESTpassport maidsafe_passport)
 
 rename_outdated_built_exes()

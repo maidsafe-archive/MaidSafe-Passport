@@ -20,8 +20,8 @@
 * ============================================================================
 */
 
-#ifndef MAIDSAFE_PASSPORT_SYSTEM_PACKETS_H_
-#define MAIDSAFE_PASSPORT_SYSTEM_PACKETS_H_
+#ifndef MAIDSAFE_PASSPORT_IDENTITY_PACKETS_H_
+#define MAIDSAFE_PASSPORT_IDENTITY_PACKETS_H_
 
 #include <cstdint>
 #include <memory>
@@ -46,7 +46,7 @@ class MidPacket {
   MidPacket();
   MidPacket(const std::string &username,
             const std::string &pin,
-            const std::string &smid_appendix);
+            bool surrogate);
   ~MidPacket() {}
   std::string name() const { return name_; }
   std::string value() const { return encrypted_rid_; }
@@ -62,8 +62,8 @@ class MidPacket {
   void Initialise();
   void Clear();
   PacketType packet_type_;
-  std::string name_, username_, pin_, smid_appendix_, rid_, encrypted_rid_,
-              salt_, secure_key_, secure_iv_;
+  bool surrogate_;
+  std::string name_, username_, pin_, rid_, encrypted_rid_, salt_, secure_key_, secure_iv_;
 };
 
 class TmidPacket {
@@ -86,20 +86,20 @@ class TmidPacket {
   std::string password() const { return password_; }
 
  private:
-  friend class test::IdentityPacketsTest;  void Initialise();
+  friend class test::IdentityPacketsTest;
+  void Initialise();
   bool SetPassword();
   bool SetPlainData();
   bool ObfuscatePlainData();
   bool ClarifyObfuscatedData();
   void Clear();
   PacketType packet_type_;
-  std::string name_, username_, pin_, password_, rid_, plain_text_master_data_, salt_,
-              secure_key_, secure_iv_, encrypted_master_data_,
-              obfuscated_master_data_, obfuscation_salt_;
+  std::string name_, username_, pin_, password_, rid_, plain_text_master_data_, salt_, secure_key_,
+              secure_iv_, encrypted_master_data_, obfuscated_master_data_, obfuscation_salt_;
 };
 
 }  // namespace passport
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_PASSPORT_SYSTEM_PACKETS_H_
+#endif  // MAIDSAFE_PASSPORT_IDENTITY_PACKETS_H_

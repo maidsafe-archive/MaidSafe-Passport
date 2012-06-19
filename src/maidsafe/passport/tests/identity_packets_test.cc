@@ -42,24 +42,53 @@ struct ExpectedMidContent {
                      const std::string &encrypted_rid_in,
                      const std::string &username_in,
                      const std::string &pin_in,
-                     const std::string &smid_appendix_in,
+                     bool surrogate_in,
                      const std::string &salt_in,
                      const std::string &secure_key_in,
                      const std::string &secure_iv_in,
                      const PacketType &packet_type_in,
                      const std::string &rid_in)
-    : mid_name(mid_name_in),
+    : surrogate(surrogate_in),
+      mid_name(mid_name_in),
       encrypted_rid(encrypted_rid_in),
       username(username_in),
       pin(pin_in),
-      smid_appendix(smid_appendix_in),
       salt(salt_in),
       secure_key(secure_key_in),
       secure_iv(secure_iv_in),
       packet_type(packet_type_in),
       rid(rid_in) {}
-  std::string mid_name, encrypted_rid, username, pin, smid_appendix, salt;
-  std::string secure_key, secure_iv;
+  bool surrogate;
+  std::string mid_name, encrypted_rid, username, pin, salt, secure_key, secure_iv;
+  PacketType packet_type;
+  std::string rid;
+};
+
+struct ExpectedTmidContent {
+  ExpectedTmidContent(const std::string &tmid_name_in,
+                      const std::string &encrypted_data_in,
+                      const std::string &username_in,
+                      const std::string &pin_in,
+                      const std::string &password_in,
+                      const std::string &plain_data_in,
+                      const std::string &salt_in,
+                      const std::string &secure_key_in,
+                      const std::string & secure_iv_in,
+                      const PacketType &packet_type_in,
+                      const std::string &rid_in)
+    : tmid_name(tmid_name_in),
+      encrypted_data(encrypted_data_in),
+      username(username_in),
+      pin(pin_in),
+      password(password_in),
+      plain_data(plain_data_in),
+      salt(salt_in),
+      secure_key(secure_key_in),
+      secure_iv(secure_iv_in),
+      packet_type(packet_type_in),
+      rid(rid_in) {}
+  std::string tmid_name, encrypted_data, username, pin, password, plain_data;
+  std::string salt, secure_key, secure_iv;
   PacketType packet_type;
   std::string rid;
 };
@@ -87,10 +116,6 @@ class IdentityPacketsTest : public testing::Test {
     }
     if (!mid_packet.pin_.empty()) {
       LOG(kError) << "Packet pin not empty.";
-      return false;
-    }
-    if (!mid_packet.smid_appendix_.empty()) {
-      LOG(kError) << "Packet appendix not empty.";
       return false;
     }
     if (!mid_packet.rid_.empty()) {
@@ -186,7 +211,7 @@ class IdentityPacketsTest : public testing::Test {
       LOG(kError) << dbg << " pin wrong.";
       return false;
     }
-    if (expected.smid_appendix != mid.smid_appendix_) {
+    if (expected.surrogate != mid.surrogate_) {
       LOG(kError) << dbg << " smid_appendix wrong.";
       return false;
     }
@@ -213,225 +238,218 @@ class IdentityPacketsTest : public testing::Test {
     return true;
   }
 
+  bool GetRids(std::string *rid1, std::string *rid2) {
+    *rid1 = RandomString(64);
+    if (!rid2)
+      return (!rid1->empty());
+    *rid2 = *rid1;
+    while (*rid2 == *rid1)
+      *rid2 = RandomString(64);
+    return (!rid1->empty() && !rid2->empty() && *rid1 != *rid2);
+  }
+
+  bool EqualTmids(ExpectedTmidContent& expected, TmidPacket& tmid) {
+    std::string dbg(expected.packet_type == kTmid ? "kTmid" : "kStmid");
+    if (tmid.password().empty() || tmid.plain_text_master_data_.empty()) {
+      if (!tmid.name().empty()) {
+        LOG(kError) << dbg << " name should be empty.";
+        return false;
+      }
+    } else {
+      if (crypto::Hash<crypto::SHA512>(tmid.encrypted_master_data_) != tmid.name()) {
+        LOG(kError) << dbg << " name wrong.";
+        return false;
+      }
+    }
+    if (!expected.encrypted_data.empty()) {
+      if (expected.encrypted_data != tmid.value()) {
+        LOG(kError) << dbg << " value wrong.";
+        return false;
+      }
+      if (expected.encrypted_data != tmid.encrypted_master_data_) {
+        LOG(kError) << dbg << " encrypted_data wrong.";
+        return false;
+      }
+    }
+    if (expected.username != tmid.username()) {
+      LOG(kError) << dbg << " username wrong.";
+      return false;
+    }
+    if (expected.pin != tmid.pin()) {
+      LOG(kError) << dbg << " pin wrong.";
+      return false;
+    }
+    if (expected.password != tmid.password()) {
+      LOG(kError) << dbg << " password wrong.";
+      return false;
+    }
+    if (expected.plain_data != tmid.plain_text_master_data_) {
+      LOG(kError) << dbg << " plain_data wrong.";
+      return false;
+    }
+    if (expected.salt != tmid.salt_) {
+      LOG(kError) << dbg << " salt wrong.";
+      return false;
+    }
+    if (expected.secure_key != tmid.secure_key_) {
+      LOG(kError) << dbg << " secure_key wrong.";
+      return false;
+    }
+    if (expected.secure_iv != tmid.secure_iv_) {
+      LOG(kError) << dbg << " secure_iv wrong.";
+      return false;
+    }
+    if (expected.packet_type != tmid.packet_type_) {
+      LOG(kError) << dbg << " packet_type wrong.";
+      return false;
+    }
+    if (expected.rid != tmid.rid_) {
+      LOG(kError) << dbg << " rid wrong.";
+      return false;
+    }
+    return true;
+  }
 };
 
 TEST_F(IdentityPacketsTest, BEH_CreateMid) {
   const std::string kUsername(RandomAlphaNumericString(20));
   const uint32_t kPin(RandomUint32());
   const std::string kPinStr(boost::lexical_cast<std::string>(kPin));
-  const std::string kSmidAppendix(RandomAlphaNumericString(20));
 
   // Check with invalid inputs
-  MidPacket mid("", "", "");
-  EXPECT_TRUE(EmptyMid(mid));
-  mid = MidPacket("", kPinStr, "");
-  EXPECT_TRUE(EmptyMid(mid));
-  mid = MidPacket(kUsername, "", "");
-  EXPECT_TRUE(EmptyMid(mid));
-  mid = MidPacket(kUsername, "Non-number", "");
-  EXPECT_TRUE(EmptyMid(mid));
+  MidPacket mid("", "", false);
+  ASSERT_TRUE(EmptyMid(mid));
+  mid = MidPacket("", kPinStr, false);
+  ASSERT_TRUE(EmptyMid(mid));
+  mid = MidPacket(kUsername, "", false);
+  ASSERT_TRUE(EmptyMid(mid));
+  mid = MidPacket(kUsername, "Non-number", false);
+  ASSERT_TRUE(EmptyMid(mid));
 
   // Check kMid with valid inputs
   std::string expected_salt = crypto::Hash<crypto::SHA512>(kPinStr + kUsername);
   std::string expected_secure_password;
-  EXPECT_EQ(kSuccess,
+  ASSERT_EQ(kSuccess,
             crypto::SecurePassword(kUsername, expected_salt, kPin, &expected_secure_password));
   std::string expected_secure_key = expected_secure_password.substr(0, crypto::AES256_KeySize);
   std::string expected_secure_iv = expected_secure_password.substr(crypto::AES256_KeySize,
                                                                    crypto::AES256_IVSize);
   std::string expected_mid_name(crypto::Hash<crypto::SHA512>(kUsername + kPinStr));
-  mid = MidPacket(kUsername, kPinStr, "");
-  ExpectedMidContent expected_mid_content(expected_mid_name, "", kUsername, kPinStr, "",
+  mid = MidPacket(kUsername, kPinStr, false);
+  ExpectedMidContent expected_mid_content(expected_mid_name, "", kUsername, kPinStr, false,
                                           expected_salt, expected_secure_key, expected_secure_iv,
                                           kMid, "");
-  EXPECT_FALSE(EmptyMid(mid));
-  EXPECT_TRUE(EqualMids(expected_mid_content, mid));
+  ASSERT_FALSE(EmptyMid(mid));
+  ASSERT_TRUE(EqualMids(expected_mid_content, mid));
 
   // Check kSmid with valid inputs
   std::string expected_smid_name(crypto::Hash<crypto::SHA512>(kUsername + kPinStr + kSmidAppendix));
-  MidPacket smid(kUsername, kPinStr, kSmidAppendix);
+  MidPacket smid(kUsername, kPinStr, true);
   ExpectedMidContent expected_smid_content(expected_smid_name, "", kUsername, kPinStr,
-                                           kSmidAppendix, expected_salt, expected_secure_key,
+                                           true, expected_salt, expected_secure_key,
                                            expected_secure_iv, kSmid, "");
-  EXPECT_FALSE(EmptyMid(smid));
-  EXPECT_TRUE(EqualMids(expected_smid_content, smid));
+  ASSERT_FALSE(EmptyMid(smid));
+  ASSERT_TRUE(EqualMids(expected_smid_content, smid));
 }
-/*
+
 TEST_F(IdentityPacketsTest, BEH_SetAndDecryptRid) {
   const std::string kUsername(RandomAlphaNumericString(20));
   const uint32_t kPin(RandomUint32());
   const std::string kPinStr(boost::lexical_cast<std::string>(kPin));
-  const std::string kSmidAppendix(RandomAlphaNumericString(20));
   std::string rid1, rid2;
   ASSERT_TRUE(GetRids(&rid1, &rid2));
   const std::string kRid1(rid1);
   const std::string kRid2(rid2);
 
   // Check with invalid input
-  MidPtr mid(new MidPacket(kUsername, kPinStr, ""));
-  MidPtr smid(new MidPacket(kUsername, kPinStr, kSmidAppendix));
-  mid->SetRid("");
-  smid->SetRid("");
-  EXPECT_TRUE(Empty(mid));
-  EXPECT_TRUE(Empty(smid));
+  MidPacket mid(kUsername, kPinStr, false);
+  MidPacket smid(kUsername, kPinStr, true);
+  mid.SetRid("");
+  smid.SetRid("");
+  ASSERT_TRUE(EmptyMid(mid));
+  ASSERT_TRUE(EmptyMid(smid));
 
   // Check kMid SetRid with first valid input
   std::string expected_salt(crypto::Hash<crypto::SHA512>(kPinStr + kUsername));
   std::string expected_secure_password;
-  EXPECT_EQ(kSuccess, crypto::SecurePassword(kUsername, expected_salt, kPin,
-                                             &expected_secure_password));
-  std::string expected_secure_key = expected_secure_password.
-                                        substr(0, crypto::AES256_KeySize);
-  std::string expected_secure_iv = expected_secure_password.
-                                       substr(crypto::AES256_KeySize,
-                                              crypto::AES256_IVSize);
+  ASSERT_EQ(kSuccess,
+            crypto::SecurePassword(kUsername, expected_salt, kPin, &expected_secure_password));
+  std::string expected_secure_key(expected_secure_password.substr(0, crypto::AES256_KeySize));
+  std::string expected_secure_iv(expected_secure_password.substr(crypto::AES256_KeySize,
+                                                                 crypto::AES256_IVSize));
 
-  std::string expected_mid_name(crypto::Hash<crypto::SHA512>(kUsername +
-                                                             kPinStr));
-  std::string expected_encrypted_rid1 =
-          crypto::SymmEncrypt(boost::lexical_cast<std::string>(kRid1),
-                              expected_secure_key, expected_secure_iv);
-  std::string expected_encrypted_rid2 =
-          crypto::SymmEncrypt(boost::lexical_cast<std::string>(kRid2),
-                              expected_secure_key, expected_secure_iv);
-  mid.reset(new MidPacket(kUsername, kPinStr, ""));
-  mid->SetRid(kRid1);
-  std::shared_ptr<ExpectedMidContent> expected_mid_content(
-      new ExpectedMidContent(expected_mid_name, expected_encrypted_rid1,
-                             kUsername, kPinStr, "", expected_salt,
-                             expected_secure_key, expected_secure_iv, kMid,
-                             kRid1));
-  EXPECT_FALSE(Empty(mid));
-  EXPECT_TRUE(Equal(expected_mid_content, mid));
+  std::string expected_mid_name(crypto::Hash<crypto::SHA512>(kUsername + kPinStr));
+  std::string expected_encrypted_rid1(crypto::SymmEncrypt(boost::lexical_cast<std::string>(kRid1),
+                                                          expected_secure_key,
+                                                          expected_secure_iv));
+  std::string expected_encrypted_rid2(crypto::SymmEncrypt(boost::lexical_cast<std::string>(kRid2),
+                                                          expected_secure_key,
+                                                          expected_secure_iv));
+  mid = MidPacket(kUsername, kPinStr, false);
+  mid.SetRid(kRid1);
+  ExpectedMidContent expected_mid_content(expected_mid_name, expected_encrypted_rid1, kUsername,
+                                          kPinStr, false, expected_salt, expected_secure_key,
+                                          expected_secure_iv, kMid, kRid1);
+  ASSERT_FALSE(EmptyMid(mid));
+  ASSERT_TRUE(EqualMids(expected_mid_content, mid));
 
   // Check kMid reset rid with second valid input
-  mid->SetRid(kRid2);
-  expected_mid_content->encrypted_rid = expected_encrypted_rid2;
-  expected_mid_content->rid = kRid2;
-  EXPECT_FALSE(Empty(mid));
-  EXPECT_TRUE(Equal(expected_mid_content, mid));
+  mid.SetRid(kRid2);
+  expected_mid_content.encrypted_rid = expected_encrypted_rid2;
+  expected_mid_content.rid = kRid2;
+  ASSERT_FALSE(EmptyMid(mid));
+  ASSERT_TRUE(EqualMids(expected_mid_content, mid));
 
   // Check kMid reset rid with invalid input
-  mid->SetRid("");
-  EXPECT_TRUE(Empty(mid));
+  mid.SetRid("");
+  ASSERT_TRUE(EmptyMid(mid));
 
   // Check kMid decrypt valid encrypted second rid
-  mid.reset(new MidPacket(kUsername, kPinStr, ""));
-  EXPECT_EQ(kRid2, mid->DecryptRid(expected_encrypted_rid2));
-  EXPECT_FALSE(Empty(mid));
-  EXPECT_TRUE(Equal(expected_mid_content, mid));
+  mid = MidPacket(kUsername, kPinStr, false);
+  ASSERT_EQ(kRid2, mid.DecryptRid(expected_encrypted_rid2));
+  ASSERT_FALSE(EmptyMid(mid));
+  ASSERT_TRUE(EqualMids(expected_mid_content, mid));
 
   // Check kMid decrypt valid encrypted first rid
-  EXPECT_EQ(kRid1, mid->DecryptRid(expected_encrypted_rid1));
-  expected_mid_content->encrypted_rid = expected_encrypted_rid1;
-  expected_mid_content->rid = kRid1;
-  EXPECT_FALSE(Empty(mid));
-  EXPECT_TRUE(Equal(expected_mid_content, mid));
+  ASSERT_EQ(kRid1, mid.DecryptRid(expected_encrypted_rid1));
+  expected_mid_content.encrypted_rid = expected_encrypted_rid1;
+  expected_mid_content.rid = kRid1;
+  ASSERT_FALSE(EmptyMid(mid));
+  ASSERT_TRUE(EqualMids(expected_mid_content, mid));
 
   // Check kSmid SetRid with first valid input
-  std::string expected_smid_name(
-      crypto::Hash<crypto::SHA512>(kUsername + kPinStr + kSmidAppendix));
-  smid.reset(new MidPacket(kUsername, kPinStr, kSmidAppendix));
-  smid->SetRid(kRid1);
-  std::shared_ptr<ExpectedMidContent> expected_smid_content(
-      new ExpectedMidContent(expected_smid_name, expected_encrypted_rid1,
-                             kUsername, kPinStr, kSmidAppendix, expected_salt,
-                             expected_secure_key, expected_secure_iv, kSmid,
-                             kRid1));
-  EXPECT_FALSE(Empty(smid));
-  EXPECT_TRUE(Equal(expected_smid_content, smid));
+  std::string expected_smid_name(crypto::Hash<crypto::SHA512>(kUsername + kPinStr + kSmidAppendix));
+  smid = MidPacket(kUsername, kPinStr, true);
+  smid.SetRid(kRid1);
+  ExpectedMidContent expected_smid_content(expected_smid_name, expected_encrypted_rid1, kUsername,
+                                           kPinStr, true, expected_salt,
+                                           expected_secure_key, expected_secure_iv, kSmid, kRid1);
+  ASSERT_FALSE(EmptyMid(smid));
+  ASSERT_TRUE(EqualMids(expected_smid_content, smid));
 
   // Check kSmid reset rid with second valid input
-  smid->SetRid(kRid2);
-  expected_smid_content->encrypted_rid = expected_encrypted_rid2;
-  expected_smid_content->rid = kRid2;
-  EXPECT_FALSE(Empty(smid));
-  EXPECT_TRUE(Equal(expected_smid_content, smid));
+  smid.SetRid(kRid2);
+  expected_smid_content.encrypted_rid = expected_encrypted_rid2;
+  expected_smid_content.rid = kRid2;
+  ASSERT_FALSE(EmptyMid(smid));
+  ASSERT_TRUE(EqualMids(expected_smid_content, smid));
 
   // Check kSmid reset rid with invalid input
-  smid->SetRid("");
-  EXPECT_TRUE(Empty(smid));
+  smid.SetRid("");
+  ASSERT_TRUE(EmptyMid(smid));
 
   // Check kSmid decrypt valid encrypted second rid
-  smid.reset(new MidPacket(kUsername, kPinStr, kSmidAppendix));
-  EXPECT_EQ(kRid2, smid->DecryptRid(expected_encrypted_rid2));
-  EXPECT_FALSE(Empty(smid));
-  EXPECT_TRUE(Equal(expected_smid_content, smid));
+  smid = MidPacket(kUsername, kPinStr, true);
+  ASSERT_EQ(kRid2, smid.DecryptRid(expected_encrypted_rid2));
+  ASSERT_FALSE(EmptyMid(smid));
+  ASSERT_TRUE(EqualMids(expected_smid_content, smid));
 
   // Check kSmid decrypt valid encrypted first rid
-  EXPECT_EQ(kRid1, smid->DecryptRid(expected_encrypted_rid1));
-  expected_smid_content->encrypted_rid = expected_encrypted_rid1;
-  expected_smid_content->rid = kRid1;
-  EXPECT_FALSE(Empty(smid));
-  EXPECT_TRUE(Equal(expected_smid_content, smid));
-}
-
-struct ExpectedTmidContent {
-  ExpectedTmidContent(const std::string &tmid_name_in,
-                      const std::string &encrypted_data_in,
-                      const std::string &username_in,
-                      const std::string &pin_in,
-                      const std::string &password_in,
-                      const std::string &plain_data_in,
-                      const std::string &salt_in,
-                      const std::string &secure_key_in,
-                      const std::string & secure_iv_in,
-                      const PacketType &packet_type_in,
-                      const std::string &rid_in)
-    : tmid_name(tmid_name_in),
-      encrypted_data(encrypted_data_in),
-      username(username_in),
-      pin(pin_in),
-      password(password_in),
-      plain_data(plain_data_in),
-      salt(salt_in),
-      secure_key(secure_key_in),
-      secure_iv(secure_iv_in),
-      packet_type(packet_type_in),
-      rid(rid_in) {}
-  std::string tmid_name, encrypted_data, username, pin, password, plain_data;
-  std::string salt, secure_key, secure_iv;
-  PacketType packet_type;
-  std::string rid;
-};
-
-testing::AssertionResult Equal(
-    std::shared_ptr<ExpectedTmidContent> expected,
-    std::shared_ptr<TmidPacket> tmid) {
-  std::string dbg(expected->packet_type == kTmid ? "kTmid" : "kStmid");
-  if (tmid->password().empty() || tmid->plain_text_master_data_.empty()) {
-    if (!tmid->name().empty())
-      return testing::AssertionFailure() << dbg << " name should be empty.";
-  } else {
-    if (crypto::Hash<crypto::SHA512>(tmid->encrypted_master_data_) !=
-        tmid->name())
-      return testing::AssertionFailure() << dbg << " name wrong.";
-  }
-  if (!expected->encrypted_data.empty()) {
-    if (expected->encrypted_data != tmid->value())
-      return testing::AssertionFailure() << dbg << " value wrong.";
-    if (expected->encrypted_data != tmid->encrypted_master_data_)
-      return testing::AssertionFailure() << dbg << " encrypted_data wrong.";
-  }
-  if (expected->username != tmid->username())
-    return testing::AssertionFailure() << dbg << " username wrong.";
-  if (expected->pin != tmid->pin())
-    return testing::AssertionFailure() << dbg << " pin wrong.";
-  if (expected->password != tmid->password())
-    return testing::AssertionFailure() << dbg << " password wrong.";
-  if (expected->plain_data != tmid->plain_text_master_data_)
-    return testing::AssertionFailure() << dbg << " plain_data wrong.";
-  if (expected->salt != tmid->salt_)
-    return testing::AssertionFailure() << dbg << " salt wrong.";
-  if (expected->secure_key != tmid->secure_key_)
-    return testing::AssertionFailure() << dbg << " secure_key wrong.";
-  if (expected->secure_iv != tmid->secure_iv_)
-    return testing::AssertionFailure() << dbg << " secure_iv wrong.";
-  if (expected->packet_type != tmid->packet_type_)
-    return testing::AssertionFailure() << dbg << " packet_type wrong.";
-  if (expected->rid != tmid->rid_)
-    return testing::AssertionFailure() << dbg << " RID wrong.";
-  return testing::AssertionSuccess();
+  ASSERT_EQ(kRid1, smid.DecryptRid(expected_encrypted_rid1));
+  expected_smid_content.encrypted_rid = expected_encrypted_rid1;
+  expected_smid_content.rid = kRid1;
+  ASSERT_FALSE(EmptyMid(smid));
+  ASSERT_TRUE(EqualMids(expected_smid_content, smid));
 }
 
 TEST_F(IdentityPacketsTest, BEH_CreateTmid) {
@@ -444,29 +462,26 @@ TEST_F(IdentityPacketsTest, BEH_CreateTmid) {
   const std::string kRid(crypto::Hash<crypto::SHA512>(kPinStr));
 
   // Check with invalid inputs
-  TmidPtr tmid(new TmidPacket("", "", false, "", ""));
-  EXPECT_TRUE(Empty(tmid));
-  tmid.reset(new TmidPacket("", kPinStr, false, "", ""));
-  EXPECT_TRUE(Empty(tmid));
-  tmid.reset(new TmidPacket(kUsername, "", false, "", ""));
-  EXPECT_TRUE(Empty(tmid));
+  TmidPacket tmid("", "", false, "", "");
+  ASSERT_TRUE(EmptyTmid(tmid));
+  tmid = TmidPacket("", kPinStr, false, "", "");
+  ASSERT_TRUE(EmptyTmid(tmid));
+  tmid = TmidPacket(kUsername, "", false, "", "");
+  ASSERT_TRUE(EmptyTmid(tmid));
 
   // Check with valid inputs - no password
-  std::string expected_tmid_name(crypto::Hash<crypto::SHA512>(kUsername +
-                                                              kPinStr +
-                                                              kRid));
+  std::string expected_tmid_name(crypto::Hash<crypto::SHA512>(kUsername + kPinStr + kRid));
 
-  tmid.reset(new TmidPacket(kUsername, kPinStr, false, "", ""));
-  std::shared_ptr<ExpectedTmidContent> expected_tmid_content(
-      new ExpectedTmidContent(expected_tmid_name, "", kUsername, kPinStr, "",
-                              "", "", "", "", kTmid, kRid));
-  EXPECT_FALSE(Empty(tmid));
-  EXPECT_TRUE(Equal(expected_tmid_content, tmid));
+  tmid = TmidPacket(kUsername, kPinStr, false, "", "");
+  ExpectedTmidContent expected_tmid_content(expected_tmid_name, "", kUsername, kPinStr, "", "", "",
+                                            "", "", kTmid, kRid);
+  ASSERT_FALSE(EmptyTmid(tmid));
+  ASSERT_TRUE(EqualTmids(expected_tmid_content, tmid));
 
-  tmid->SetToSurrogate();
-  expected_tmid_content->packet_type = kStmid;
-  tmid.reset(new TmidPacket(kUsername, kPinStr, true, "", ""));
-  EXPECT_TRUE(Equal(expected_tmid_content, tmid));
+  tmid.SetToSurrogate();
+  expected_tmid_content.packet_type = kStmid;
+  tmid = TmidPacket(kUsername, kPinStr, true, "", "");
+  ASSERT_TRUE(EqualTmids(expected_tmid_content, tmid));
 
   // Check with valid inputs - no plain data
   std::string expected_salt(crypto::Hash<crypto::SHA512>(kRid + kPassword));
@@ -478,31 +493,25 @@ TEST_F(IdentityPacketsTest, BEH_CreateTmid) {
     a *= 256;
   }
   std::string expected_secure_password;
-  EXPECT_EQ(kSuccess, crypto::SecurePassword(kPassword,
+  ASSERT_EQ(kSuccess, crypto::SecurePassword(kPassword,
                                              expected_salt,
                                              random_no_from_rid,
                                              &expected_secure_password));
-  std::string expected_secure_key = expected_secure_password.
-                                        substr(0, crypto::AES256_KeySize);
-  std::string expected_secure_iv = expected_secure_password.
-                                       substr(crypto::AES256_KeySize,
-                                              crypto::AES256_IVSize);
-  tmid.reset(new TmidPacket(kUsername, kPinStr, false, kPassword, ""));
-  expected_tmid_content->packet_type = kTmid;
-  expected_tmid_content->password = kPassword;
-  expected_tmid_content->salt = expected_salt;
-  expected_tmid_content->secure_key = expected_secure_key;
-  expected_tmid_content->secure_iv = expected_secure_iv;
-  EXPECT_TRUE(Equal(expected_tmid_content, tmid));
+  std::string expected_secure_key(expected_secure_password.substr(0, crypto::AES256_KeySize));
+  std::string expected_secure_iv(expected_secure_password.substr(crypto::AES256_KeySize,
+                                                                 crypto::AES256_IVSize));
+  tmid = TmidPacket(kUsername, kPinStr, false, kPassword, "");
+  expected_tmid_content.packet_type = kTmid;
+  expected_tmid_content.password = kPassword;
+  expected_tmid_content.salt = expected_salt;
+  expected_tmid_content.secure_key = expected_secure_key;
+  expected_tmid_content.secure_iv = expected_secure_iv;
+  ASSERT_TRUE(EqualTmids(expected_tmid_content, tmid));
 
   // Check with valid inputs
-  expected_tmid_content->plain_data = RandomString(1024);
-  tmid.reset(new TmidPacket(kUsername,
-                            kPinStr,
-                            false,
-                            kPassword,
-                            expected_tmid_content->plain_data));
-  EXPECT_TRUE(Equal(expected_tmid_content, tmid));
+  expected_tmid_content.plain_data = RandomString(1024);
+  tmid = TmidPacket(kUsername, kPinStr, false, kPassword, expected_tmid_content.plain_data);
+  ASSERT_TRUE(EqualTmids(expected_tmid_content, tmid));
 }
 
 TEST_F(IdentityPacketsTest, BEH_SetAndDecryptData) {
@@ -517,14 +526,12 @@ TEST_F(IdentityPacketsTest, BEH_SetAndDecryptData) {
   // Plain data is now to be obfuscated first
   std::string kPlainData(RandomString(100000));
   uint32_t numerical_pin(boost::lexical_cast<uint32_t>(kPin));
-  uint32_t rounds(numerical_pin / 2 == 0 ?
-                  numerical_pin * 3 / 2 : numerical_pin / 2);
+  uint32_t rounds(numerical_pin / 2 == 0 ? numerical_pin * 3 / 2 : numerical_pin / 2);
   std::string obfuscation_str;
-  EXPECT_EQ(kSuccess, crypto::SecurePassword(
-      kUsername,
-      crypto::Hash<crypto::SHA512>(kPassword + kRid),
-      rounds,
-      &obfuscation_str));
+  ASSERT_EQ(kSuccess, crypto::SecurePassword(kUsername,
+                                             crypto::Hash<crypto::SHA512>(kPassword + kRid),
+                                             rounds,
+                                             &obfuscation_str));
 
   // make the obfuscation_str of same size for XOR
   if (kPlainData.size() < obfuscation_str.size()) {
@@ -546,72 +553,60 @@ TEST_F(IdentityPacketsTest, BEH_SetAndDecryptData) {
     a *= 256;
   }
   std::string expected_secure_password;
-  EXPECT_EQ(kSuccess, crypto::SecurePassword(kPassword,
+  ASSERT_EQ(kSuccess, crypto::SecurePassword(kPassword,
                                              expected_salt,
                                              random_no_from_rid,
                                              &expected_secure_password));
 
-  std::string expected_secure_key = expected_secure_password.
-                                        substr(0, crypto::AES256_KeySize);
-  std::string expected_secure_iv = expected_secure_password.
-                                       substr(crypto::AES256_KeySize,
-                                              crypto::AES256_IVSize);
+  std::string expected_secure_key(expected_secure_password.substr(0, crypto::AES256_KeySize));
+  std::string expected_secure_iv(expected_secure_password.substr(crypto::AES256_KeySize,
+                                                                 crypto::AES256_IVSize));
   std::string expected_encrypted_data(crypto::SymmEncrypt(kObfuscatedData,
                                                           expected_secure_key,
                                                           expected_secure_iv));
-  std::string expected_tmid_name(
-      crypto::Hash<crypto::SHA512>(expected_encrypted_data));
-  TmidPtr tmid(new TmidPacket(kUsername, kPinStr, false, kPassword,
-                              kPlainData));
-  std::shared_ptr<ExpectedTmidContent> expected_tmid_content(
-      new ExpectedTmidContent(expected_tmid_name, expected_encrypted_data,
-                              kUsername, kPinStr, kPassword, kPlainData,
-                              expected_salt, expected_secure_key,
-                              expected_secure_iv, kTmid, kRid));
-  EXPECT_FALSE(Empty(tmid));
-  EXPECT_TRUE(Equal(expected_tmid_content, tmid));
-  tmid->SetToSurrogate();
-  expected_tmid_content->packet_type = kStmid;
-  EXPECT_TRUE(Equal(expected_tmid_content, tmid));
-  tmid.reset(new TmidPacket(kUsername, kPinStr, true, kPassword,
-                            kPlainData));
-  EXPECT_TRUE(Equal(expected_tmid_content, tmid));
+  std::string expected_tmid_name(crypto::Hash<crypto::SHA512>(expected_encrypted_data));
+  TmidPacket tmid(kUsername, kPinStr, false, kPassword, kPlainData);
+  ExpectedTmidContent expected_tmid_content(expected_tmid_name, expected_encrypted_data, kUsername,
+                                            kPinStr, kPassword, kPlainData, expected_salt,
+                                            expected_secure_key, expected_secure_iv, kTmid, kRid);
+  ASSERT_FALSE(EmptyTmid(tmid));
+  ASSERT_TRUE(EqualTmids(expected_tmid_content, tmid));
+  tmid.SetToSurrogate();
+  expected_tmid_content.packet_type = kStmid;
+  ASSERT_TRUE(EqualTmids(expected_tmid_content, tmid));
+  tmid = TmidPacket(kUsername, kPinStr, true, kPassword, kPlainData);
+  ASSERT_TRUE(EqualTmids(expected_tmid_content, tmid));
 
   // Decrypt invalid data
-  tmid.reset(new TmidPacket(kUsername, kPinStr, false, "", ""));
-  expected_tmid_content->packet_type = kTmid;
-  EXPECT_FALSE(Empty(tmid));
-  expected_tmid_content->encrypted_data.clear();
-  expected_tmid_content->password.clear();
-  expected_tmid_content->plain_data.clear();
-  expected_tmid_content->salt.clear();
-  expected_tmid_content->secure_key.clear();
-  expected_tmid_content->secure_iv.clear();
-  EXPECT_TRUE(Equal(expected_tmid_content, tmid));
-  EXPECT_TRUE(tmid->DecryptMasterData("", "").empty());
-  EXPECT_TRUE(Equal(expected_tmid_content, tmid));
-  EXPECT_TRUE(tmid->DecryptMasterData("", expected_encrypted_data).empty());
-  EXPECT_TRUE(Equal(expected_tmid_content, tmid));
-  EXPECT_TRUE(tmid->DecryptMasterData(kPassword, "").empty());
-  EXPECT_TRUE(Equal(expected_tmid_content, tmid));
+  tmid = TmidPacket(kUsername, kPinStr, false, "", "");
+  expected_tmid_content.packet_type = kTmid;
+  ASSERT_FALSE(EmptyTmid(tmid));
+  expected_tmid_content.encrypted_data.clear();
+  expected_tmid_content.password.clear();
+  expected_tmid_content.plain_data.clear();
+  expected_tmid_content.salt.clear();
+  expected_tmid_content.secure_key.clear();
+  expected_tmid_content.secure_iv.clear();
+  ASSERT_TRUE(EqualTmids(expected_tmid_content, tmid));
+  ASSERT_TRUE(tmid.DecryptMasterData("", "").empty());
+  ASSERT_TRUE(EqualTmids(expected_tmid_content, tmid));
+  ASSERT_TRUE(tmid.DecryptMasterData("", expected_encrypted_data).empty());
+  ASSERT_TRUE(EqualTmids(expected_tmid_content, tmid));
+  ASSERT_TRUE(tmid.DecryptMasterData(kPassword, "").empty());
+  ASSERT_TRUE(EqualTmids(expected_tmid_content, tmid));
 
   // Decrypt valid data
-  tmid.reset(new TmidPacket(kUsername,
-                            kPinStr,
-                            false,
-                            kPassword,
-                            kPlainData));
-  expected_tmid_content->encrypted_data = expected_encrypted_data;
-  expected_tmid_content->password = kPassword;
-  expected_tmid_content->plain_data = kPlainData;
-  expected_tmid_content->salt = expected_salt;
-  expected_tmid_content->secure_key = expected_secure_key;
-  expected_tmid_content->secure_iv = expected_secure_iv;
-  EXPECT_EQ(kPlainData, tmid->DecryptMasterData(kPassword,
-                                                expected_encrypted_data));
-  EXPECT_TRUE(Equal(expected_tmid_content, tmid));
+  tmid = TmidPacket(kUsername, kPinStr, false, kPassword, kPlainData);
+  expected_tmid_content.encrypted_data = expected_encrypted_data;
+  expected_tmid_content.password = kPassword;
+  expected_tmid_content.plain_data = kPlainData;
+  expected_tmid_content.salt = expected_salt;
+  expected_tmid_content.secure_key = expected_secure_key;
+  expected_tmid_content.secure_iv = expected_secure_iv;
+  ASSERT_EQ(kPlainData, tmid.DecryptMasterData(kPassword, expected_encrypted_data));
+  ASSERT_TRUE(EqualTmids(expected_tmid_content, tmid));
 }
-*/
+
 }  // namespace test
 
 }  // namespace passport
