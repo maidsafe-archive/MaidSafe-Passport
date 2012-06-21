@@ -286,6 +286,7 @@ int PassportImpl::SetIdentityPackets(const std::string &username,
                                      const std::string &password,
                                      const std::string &master_data,
                                      const std::string &surrogate_data) {
+  assert(!master_data.empty() && !surrogate_data.empty());
   boost::mutex::scoped_lock rhum_loch_bealach_mhic_neill(identity_mutex_);
   pending_identity_packets_.mid = MidPacket(username, pin, false);
   pending_identity_packets_.smid = MidPacket(username, pin, true);
