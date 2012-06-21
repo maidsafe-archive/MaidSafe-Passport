@@ -100,6 +100,27 @@ std::string PacketDebugString(const int &packet_type) {
   }
 }
 
+int CreateSignaturePacket(asymm::Keys& keys, const asymm::PrivateKey* signer_private_key) {
+  asymm::GenerateKeyPair(&keys);
+  std::string public_key;
+  asymm::EncodePublicKey(keys.public_key, &public_key);
+  if (public_key.empty())
+    return -1;
+
+  int result(0);
+  if (signer_private_key)
+    result = asymm::Sign(public_key, *signer_private_key, &keys.validation_token);
+  else
+    result = asymm::Sign(public_key, keys.private_key, &keys.validation_token);
+  if (result != kSuccess || keys.validation_token.empty())
+    return result;
+
+  keys.identity = crypto::Hash<crypto::SHA512>(public_key + keys.validation_token);
+
+  return kSuccess;
+}
+
+
 }  // namespace impl
 
 namespace {
@@ -194,27 +215,6 @@ asymm::Keys ProtobufToPacketKeys(const SignaturePacketContainer& spc) {
 
 }  // namespace
 
-int CreateSignaturePacket(asymm::Keys& keys,
-                          const asymm::PrivateKey* signer_private_key = nullptr) {
-  asymm::GenerateKeyPair(&keys);
-  std::string public_key;
-  asymm::EncodePublicKey(keys.public_key, &public_key);
-  if (public_key.empty())
-    return -1;
-
-  int result(0);
-  if (signer_private_key)
-    result = asymm::Sign(public_key, *signer_private_key, &keys.validation_token);
-  else
-    result = asymm::Sign(public_key, keys.private_key, &keys.validation_token);
-  if (result != kSuccess || keys.validation_token.empty())
-    return result;
-
-  keys.identity = crypto::Hash<crypto::SHA512>(public_key + keys.validation_token);
-
-  return kSuccess;
-}
-
 PassportImpl::PassportImpl()
     : pending_signature_packets_(),
       confirmed_signature_packets_(),
@@ -228,22 +228,22 @@ PassportImpl::PassportImpl()
 
 int PassportImpl::CreateSigningPackets() {
   asymm::Keys anmid, ansmid, antmid, anmaid, maid, pmid;
-  int result(CreateSignaturePacket(anmid));
-  result += CreateSignaturePacket(ansmid);
-  result += CreateSignaturePacket(antmid);
-  result += CreateSignaturePacket(anmaid);
+  int result(impl::CreateSignaturePacket(anmid));
+  result += impl::CreateSignaturePacket(ansmid);
+  result += impl::CreateSignaturePacket(antmid);
+  result += impl::CreateSignaturePacket(anmaid);
   if (result != kSuccess) {
     LOG(kError) << "Failed to create pure signature packets.";
     return result;
   }
 
-  result = CreateSignaturePacket(maid, &anmaid.private_key);
+  result = impl::CreateSignaturePacket(maid, &anmaid.private_key);
   if (result != kSuccess) {
     LOG(kError) << "Failed to create MAID.";
     return result;
   }
 
-  result = CreateSignaturePacket(pmid, &maid.private_key);
+  result = impl::CreateSignaturePacket(pmid, &maid.private_key);
   if (result != kSuccess) {
     LOG(kError) << "Failed to create PMID.";
     return result;
@@ -445,19 +445,21 @@ asymm::Keys PassportImpl::SignaturePacketDetails(PacketType packet_type,
 // Selectable Identity (MPID)
 int PassportImpl::CreateSelectableIdentity(const std::string &chosen_name) {
   SelectableIdentity selectable_identity;
-  int result(CreateSignaturePacket(selectable_identity.anmpid));
+  int result(impl::CreateSignaturePacket(selectable_identity.anmpid));
   if (result) {
     LOG(kError) << "Failed to create ANMPID.";
     return result;
   }
 
-  result = CreateSignaturePacket(selectable_identity.mpid, &selectable_identity.anmpid.private_key);
+  result = impl::CreateSignaturePacket(selectable_identity.mpid,
+                                       &selectable_identity.anmpid.private_key);
   if (result) {
     LOG(kError) << "Failed to create MPID.";
     return result;
   }
 
-  result = CreateSignaturePacket(selectable_identity.mmid, &selectable_identity.mpid.private_key);
+  result = impl::CreateSignaturePacket(selectable_identity.mmid,
+                                       &selectable_identity.mpid.private_key);
   if (result) {
     LOG(kError) << "Failed to create MMID.";
     return result;
@@ -507,7 +509,7 @@ int PassportImpl::MoveMaidsafeInbox(const std::string &chosen_identity) {
   asymm::Keys mpid(confirmed_selectable_packets_[chosen_identity].mpid);
   asymm::Keys new_mmid;
   while (new_mmid.identity.empty() || new_mmid.identity == old_mmid.identity)
-    CreateSignaturePacket(new_mmid, &mpid.private_key);
+    impl::CreateSignaturePacket(new_mmid, &mpid.private_key);
 
   pending_selectable_packets_[chosen_identity].mmid = new_mmid;
 

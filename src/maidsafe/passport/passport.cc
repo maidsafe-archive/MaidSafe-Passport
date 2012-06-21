@@ -54,6 +54,9 @@ std::string PacketDebugString(const int &packet_type) {
   return impl::PacketDebugString(packet_type);
 }
 
+int CreateSignaturePacket(asymm::Keys& keys, const asymm::PrivateKey* signer_private_key) {
+  return impl::CreateSignaturePacket(keys, signer_private_key);
+}
 
 Passport::Passport() : impl_(new PassportImpl) {}
 

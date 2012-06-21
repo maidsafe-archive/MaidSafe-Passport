@@ -54,6 +54,8 @@ std::string DecryptMasterData(const std::string &username,
 
 std::string PacketDebugString(const int &packet_type);
 
+int CreateSignaturePacket(asymm::Keys& keys, const asymm::PrivateKey* signer_private_key = nullptr);
+
 }  // namespace impl
 
 struct IdentityPackets {
