@@ -101,7 +101,8 @@ std::string PacketDebugString(const int &packet_type) {
 }
 
 int CreateSignaturePacket(asymm::Keys& keys, const asymm::PrivateKey* signer_private_key) {
-  asymm::GenerateKeyPair(&keys);
+  if (asymm::GenerateKeyPair(&keys) != kSuccess)
+    return -1;
   std::string public_key;
   asymm::EncodePublicKey(keys.public_key, &public_key);
   if (public_key.empty())
