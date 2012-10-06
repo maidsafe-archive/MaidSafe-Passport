@@ -37,88 +37,38 @@ namespace passport {
 
 namespace impl {
 
-std::string MidName(const std::string &username, const std::string &pin, bool surrogate) {
+NonEmptyString MidName(const NonEmptyString &username, const uint32_t pin, bool surrogate) {
   return detail::MidName(username, pin, surrogate);
 }
 
-std::string DecryptRid(const std::string &username,
-                       const std::string &pin,
-                       const std::string &encrypted_rid) {
-  if (username.empty() || pin.empty() || encrypted_rid.empty()) {
-    LOG(kError) << "Empty encrypted RID or user data.";
-    return "";
-  }
+NonEmptyString DecryptRid(const NonEmptyString &username,
+                       const uint32_t pin,
+                       const NonEmptyString &encrypted_rid) {
   MidPacket mid(username, pin, "");
   return mid.DecryptRid(encrypted_rid);
 }
 
-std::string DecryptMasterData(const std::string &username,
-                              const std::string &pin,
-                              const std::string &password,
-                              const std::string &encrypted_master_data) {
-  if (username.empty() || pin.empty() || password.empty() || encrypted_master_data.empty()) {
-    LOG(kError) << "Empty encrypted data or user data.";
-    return "";
-  }
+NonEmptyString DecryptMasterData(const NonEmptyString &username,
+                              const uint32_t pin,
+                              const NonEmptyString &password,
+                              const NonEmptyString &encrypted_master_data) {
 
   TmidPacket decrypting_tmid(username, pin, false, password, "");
   return decrypting_tmid.DecryptMasterData(password, encrypted_master_data);
 }
 
-std::string PacketDebugString(const int &packet_type) {
-  switch (packet_type) {
-    case kUnknown:
-      return "unknown";
-    case kAnmid:
-      return "ANMID";
-    case kAnsmid:
-      return "ANSMID";
-    case kAntmid:
-      return "ANTMID";
-    case kAnmaid:
-      return "ANMAID";
-    case kMaid:
-      return "MAID";
-    case kPmid:
-      return "PMID";
-    case kMid:
-      return "MID";
-    case kSmid:
-      return "SMID";
-    case kTmid:
-      return "TMID";
-    case kStmid:
-      return "STMID";
-    case kAnmpid:
-      return "ANMPID";
-    case kMpid:
-      return "MPID";
-    case kMmid:
-      return "MMID";
-    default:
-      return "error";
-  }
-}
-
-int CreateSignaturePacket(asymm::Keys& keys, const asymm::PrivateKey* signer_private_key) {
-  if (asymm::GenerateKeyPair(&keys) != kSuccess)
-    return -1;
-  std::string public_key;
-  asymm::EncodePublicKey(keys.public_key, &public_key);
-  if (public_key.empty())
-    return -1;
-
-  int result(0);
+void CreateSignaturePacket(asymm::Keys& keys, const asymm::PrivateKey* signer_private_key) {
+  keys = asymm::GenerateKeyPair();
   if (signer_private_key)
-    result = asymm::Sign(public_key, *signer_private_key, &keys.validation_token);
+    keys.validation_token = asymm::Sign(PlainText(asymm::EncodeKey(keys.public_key)),
+                                        *signer_private_key).string();
   else
-    result = asymm::Sign(public_key, keys.private_key, &keys.validation_token);
-  if (result != kSuccess || keys.validation_token.empty())
-    return result;
+    keys.validation_token = asymm::Sign(PlainText(asymm::EncodeKey(keys.public_key)),
+                                        keys.private_key).string();
 
-  keys.identity = crypto::Hash<crypto::SHA512>(public_key + keys.validation_token);
+  keys.identity = crypto::Hash<crypto::SHA512>(asymm::EncodeKey(keys.public_key).string()
+                                               + keys.validation_token);
 
-  return kSuccess;
 }
 
 
@@ -132,85 +82,52 @@ bool AllPacketsInPendingContainer(const std::map<PacketType, asymm::Keys>& map) 
            map.find(kAnmaid) == end || map.find(kMaid) == end || map.find(kPmid) == end);
 }
 
-int SignatureAsymmKeysToProtobuf(const asymm::Keys& packet_keys,
+void SignatureAsymmKeysToProtobuf(const asymm::Keys& packet_keys,
                                  int type,
                                  PacketContainer &packet_container) {
-  std::string public_key, private_key;
-  asymm::EncodePublicKey(packet_keys.public_key, &public_key);
-  asymm::EncodePrivateKey(packet_keys.private_key, &private_key);
-  if (public_key.empty() || private_key.empty()) {
-    LOG(kError) << "Failed to serialise keys of packet: " << impl::PacketDebugString(type);
-    return kPassportError;
-  }
-
   SignaturePacketContainer* container = packet_container.add_signature_packet();
-  container->set_identity(packet_keys.identity);
-  container->set_public_key(public_key);
-  container->set_private_key(private_key);
+  container->set_identity(packet_keys.identity.string());
+  container->set_public_key(asymm::EncodeKey(packet_keys.public_key).string());
+  container->set_private_key(asymm::EncodeKey(packet_keys.private_key).string());
   container->set_signature(packet_keys.validation_token);
   container->set_type(type);
-
-  return kSuccess;
 }
 
-int SelectableAsymmKeysToProtobuf(const asymm::Keys& anmpid,
+void SelectableAsymmKeysToProtobuf(const asymm::Keys& anmpid,
                                   const asymm::Keys& mpid,
                                   const asymm::Keys& mmid,
-                                  const std::string& id,
+                                  const NonEmptyString& id,
                                   PacketContainer &packet_container) {
   SelectableIdentityContainer* id_container = packet_container.add_selectable_packet();
   id_container->set_public_id(id);
   SignaturePacketContainer *anmpid_container = id_container->mutable_anmpid();
-  anmpid_container->set_identity(anmpid.identity);
-  std::string anmpid_public_key, anmpid_private_key;
-  asymm::EncodePublicKey(anmpid.public_key, &anmpid_public_key);
-  asymm::EncodePrivateKey(anmpid.private_key, &anmpid_private_key);
-  if (anmpid_public_key.empty() || anmpid_private_key.empty()) {
-    LOG(kError) << "Failed to serialise keys of packet: " << impl::PacketDebugString(kAnmpid);
-    return -1;
-  }
-  anmpid_container->set_public_key(anmpid_public_key);
-  anmpid_container->set_private_key(anmpid_private_key);
+  anmpid_container->set_identity(anmpid.identity.string());
+  anmpid_container->set_public_key(asymm::EncodeKey(anmpid.public_key).string());
+  anmpid_container->set_private_key(asymm::EncodeKey(anmpid.public_key).string());
   anmpid_container->set_signature(anmpid.validation_token);
   anmpid_container->set_type(kAnmpid);
 
   SignaturePacketContainer *mpid_container = id_container->mutable_mpid();
-  mpid_container->set_identity(mpid.identity);
-  std::string mpid_public_key, mpid_private_key;
-  asymm::EncodePublicKey(mpid.public_key, &mpid_public_key);
-  asymm::EncodePrivateKey(mpid.private_key, &mpid_private_key);
-  if (mpid_public_key.empty() || mpid_private_key.empty()) {
-    LOG(kError) << "Failed to serialise keys of packet: " << impl::PacketDebugString(kMpid);
-    return -1;
-  }
-  mpid_container->set_public_key(mpid_public_key);
-  mpid_container->set_private_key(mpid_private_key);
+  mpid_container->set_identity(mpid.identity.string());
+  mpid_container->set_public_key(asymm::EncodeKey(mpid.public_key).string());
+  mpid_container->set_private_key(asymm::EncodeKey(mpid.private_key).string());
   mpid_container->set_signature(mpid.validation_token);
   mpid_container->set_type(kMpid);
 
   SignaturePacketContainer *mmid_container = id_container->mutable_mmid();
-  mmid_container->set_identity(mmid.identity);
-  std::string mmid_public_key, mmid_private_key;
-  asymm::EncodePublicKey(mmid.public_key, &mmid_public_key);
-  asymm::EncodePrivateKey(mmid.private_key, &mmid_private_key);
-  if (mmid_public_key.empty() || mmid_private_key.empty()) {
-    LOG(kError) << "Failed to serialise keys of packet: " << impl::PacketDebugString(kMmid);
-    return -1;
-  }
-  mmid_container->set_public_key(mmid_public_key);
-  mmid_container->set_private_key(mmid_private_key);
+  mmid_container->set_identity(mmid.identity.string());
+  mmid_container->set_public_key(asymm::EncodeKey(mmid.public_key).string());
+  mmid_container->set_private_key(asymm::EncodeKey(mmid.private_key).string());
   mmid_container->set_signature(mmid.validation_token);
   mmid_container->set_type(kMmid);
-
-  return kSuccess;
 }
 
 asymm::Keys ProtobufToPacketKeys(const SignaturePacketContainer& spc) {
   asymm::Keys keys;
-  keys.identity = spc.identity();
+  keys.identity = Identity(spc.identity());
   keys.validation_token = spc.signature();
-  asymm::DecodePublicKey(spc.public_key(), &keys.public_key);
-  asymm::DecodePrivateKey(spc.private_key(), &keys.private_key);
+  keys.public_key = asymm::DecodeKey(asymm::EncodedPublicKey(spc.public_key()));
+  keys.private_key = asymm::DecodeKey(asymm::EncodedPrivateKey(spc.private_key()));
   return keys;
 }
 
@@ -227,31 +144,16 @@ PassportImpl::PassportImpl()
       identity_mutex_(),
       selectable_mutex_() {}
 
-int PassportImpl::CreateSigningPackets() {
+void PassportImpl::CreateSigningPackets() {
   asymm::Keys anmid, ansmid, antmid, anmaid, maid, pmid;
-  int result(impl::CreateSignaturePacket(anmid));
-  result += impl::CreateSignaturePacket(ansmid);
-  result += impl::CreateSignaturePacket(antmid);
-  result += impl::CreateSignaturePacket(anmaid);
-  if (result != kSuccess) {
-    LOG(kError) << "Failed to create pure signature packets.";
-    return result;
-  }
-
-  result = impl::CreateSignaturePacket(maid, &anmaid.private_key);
-  if (result != kSuccess) {
-    LOG(kError) << "Failed to create MAID.";
-    return result;
-  }
-
-  result = impl::CreateSignaturePacket(pmid, &maid.private_key);
-  if (result != kSuccess) {
-    LOG(kError) << "Failed to create PMID.";
-    return result;
-  }
-
+  impl::CreateSignaturePacket(anmid);
+  impl::CreateSignaturePacket(ansmid);
+  impl::CreateSignaturePacket(antmid);
+  impl::CreateSignaturePacket(anmaid);
+  impl::CreateSignaturePacket(maid, &anmaid.private_key);
+  impl::CreateSignaturePacket(pmid, &maid.private_key);
   {
-    boost::mutex::scoped_lock rhum_loch_fiachianis(signature_mutex_);
+    std::lock_guard<std::mutex> lock(signature_mutex_);
     pending_signature_packets_[kAnmid] = anmid;
     pending_signature_packets_[kAnsmid] = ansmid;
     pending_signature_packets_[kAntmid] = antmid;
@@ -259,12 +161,10 @@ int PassportImpl::CreateSigningPackets() {
     pending_signature_packets_[kMaid] = maid;
     pending_signature_packets_[kPmid] = pmid;
   }
-
-  return kSuccess;
 }
 
 int PassportImpl::ConfirmSigningPackets() {
-  boost::mutex::scoped_lock rhum_loch_fiachianis(signature_mutex_);
+  std::lock_guard<std::mutex> lock(signature_mutex_);
   if (!AllPacketsInPendingContainer(pending_signature_packets_)) {
     LOG(kError) << "Not all signature packets were found in pending container.";
     return -1;
@@ -282,13 +182,13 @@ int PassportImpl::ConfirmSigningPackets() {
   return kSuccess;
 }
 
-int PassportImpl::SetIdentityPackets(const std::string &username,
-                                     const std::string &pin,
-                                     const std::string &password,
-                                     const std::string &master_data,
-                                     const std::string &surrogate_data) {
+int PassportImpl::SetIdentityPackets(const NonEmptyString &username,
+                                     const uint32_t pin,
+                                     const NonEmptyString &password,
+                                     const NonEmptyString &master_data,
+                                     const NonEmptyString &surrogate_data) {
   assert(!master_data.empty() && !surrogate_data.empty());
-  boost::mutex::scoped_lock rhum_loch_bealach_mhic_neill(identity_mutex_);
+  std::lock_guard<std::mutex> lock(identity_mutex_);
   pending_identity_packets_.mid = MidPacket(username, pin, false);
   pending_identity_packets_.smid = MidPacket(username, pin, true);
   pending_identity_packets_.tmid = TmidPacket(username, pin, false, password, master_data);
@@ -307,7 +207,7 @@ void ClearIdentityPackets(IdentityPackets &identity_packets) {
 }
 
 int PassportImpl::ConfirmIdentityPackets() {
-  boost::mutex::scoped_lock rhum_loch_bealach_mhic_neill(identity_mutex_);
+  std::lock_guard<std::mutex> lock(identity_mutex_);
   confirmed_identity_packets_.mid = pending_identity_packets_.mid;
   confirmed_identity_packets_.smid = pending_identity_packets_.smid;
   confirmed_identity_packets_.tmid = pending_identity_packets_.tmid;
@@ -320,13 +220,13 @@ int PassportImpl::ConfirmIdentityPackets() {
 
 void PassportImpl::Clear(bool signature, bool identity, bool selectable) {
   if (signature) {
-    boost::mutex::scoped_lock rhum_loch_fiachianis(signature_mutex_);
+    std::lock_guard<std::mutex> lock(signature_mutex_);
     pending_signature_packets_.clear();
     confirmed_signature_packets_.clear();
   }
 
   if (identity) {
-    boost::mutex::scoped_lock rhum_loch_bealach_mhic_neill(identity_mutex_);
+    std::lock_guard<std::mutex> lock(identity_mutex_);
     ClearIdentityPackets(pending_identity_packets_);
     ClearIdentityPackets(confirmed_identity_packets_);
   }
@@ -336,7 +236,7 @@ void PassportImpl::Clear(bool signature, bool identity, bool selectable) {
 }
 
 // Getters
-std::string PassportImpl::IdentityPacketName(PacketType packet_type, bool confirmed) {
+NonEmptyString PassportImpl::IdentityPacketName(PacketType packet_type, bool confirmed) {
   if (packet_type != kMid &&
       packet_type != kSmid &&
       packet_type != kTmid &&
@@ -345,9 +245,9 @@ std::string PassportImpl::IdentityPacketName(PacketType packet_type, bool confir
     return "";
   }
 
-  std::string name;
+  NonEmptyString name;
   if (confirmed) {
-    boost::mutex::scoped_lock rhum_loch_bealach_mhic_neill(identity_mutex_);
+    std::lock_guard<std::mutex> lock(identity_mutex_);
     switch (packet_type) {
       case kMid: name = confirmed_identity_packets_.mid.name(); break;
       case kSmid: name = confirmed_identity_packets_.smid.name(); break;
@@ -356,7 +256,7 @@ std::string PassportImpl::IdentityPacketName(PacketType packet_type, bool confir
       default: break;
     }
   } else {
-    boost::mutex::scoped_lock rhum_loch_bealach_mhic_neill(identity_mutex_);
+    std::lock_guard<std::mutex> lock(identity_mutex_);
     switch (packet_type) {
       case kMid: name = pending_identity_packets_.mid.name(); break;
       case kSmid: name = pending_identity_packets_.smid.name(); break;
@@ -369,7 +269,7 @@ std::string PassportImpl::IdentityPacketName(PacketType packet_type, bool confir
   return name;
 }
 
-std::string PassportImpl::IdentityPacketValue(PacketType packet_type, bool confirmed) {
+NonEmptyString PassportImpl::IdentityPacketValue(PacketType packet_type, bool confirmed) {
   if (packet_type != kMid &&
       packet_type != kSmid &&
       packet_type != kTmid &&
@@ -378,9 +278,9 @@ std::string PassportImpl::IdentityPacketValue(PacketType packet_type, bool confi
     return "";
   }
 
-  std::string value;
+  NonEmptyString value;
   if (confirmed) {
-    boost::mutex::scoped_lock rhum_loch_bealach_mhic_neill(identity_mutex_);
+    std::lock_guard<std::mutex> lock(identity_mutex_);
     switch (packet_type) {
       case kMid: value = confirmed_identity_packets_.mid.value(); break;
       case kSmid: value = confirmed_identity_packets_.smid.value(); break;
@@ -389,7 +289,7 @@ std::string PassportImpl::IdentityPacketValue(PacketType packet_type, bool confi
       default: break;
     }
   } else {
-    boost::mutex::scoped_lock rhum_loch_bealach_mhic_neill(identity_mutex_);
+    std::lock_guard<std::mutex> lock(identity_mutex_);
     switch (packet_type) {
       case kMid: value = pending_identity_packets_.mid.value(); break;
       case kSmid: value = pending_identity_packets_.smid.value(); break;
@@ -404,9 +304,9 @@ std::string PassportImpl::IdentityPacketValue(PacketType packet_type, bool confi
 
 asymm::Keys PassportImpl::SignaturePacketDetails(PacketType packet_type,
                                                  bool confirmed,
-                                                 const std::string &chosen_name) {
+                                                 const NonEmptyString &chosen_name) {
   if (chosen_name.empty()) {
-    boost::mutex::scoped_lock rhum_loch_fiachianis(signature_mutex_);
+    std::lock_guard<std::mutex> lock(signature_mutex_);
     if (confirmed) {
       auto it(confirmed_signature_packets_.find(packet_type));
       if (it != confirmed_signature_packets_.end())
@@ -417,7 +317,7 @@ asymm::Keys PassportImpl::SignaturePacketDetails(PacketType packet_type,
         return it->second;
     }
   } else {
-    boost::mutex::scoped_lock rhum_loch_gainmhich(selectable_mutex_);
+    std::lock_guard<std::mutex> lock(selectable_mutex_);
     if (confirmed) {
       auto it(confirmed_selectable_packets_.find(chosen_name));
       if (it != confirmed_selectable_packets_.end())  {
@@ -445,38 +345,21 @@ asymm::Keys PassportImpl::SignaturePacketDetails(PacketType packet_type,
 }
 
 // Selectable Identity (MPID)
-int PassportImpl::CreateSelectableIdentity(const std::string &chosen_name) {
+void PassportImpl::CreateSelectableIdentity(const NonEmptyString &chosen_name) {
   SelectableIdentity selectable_identity;
-  int result(impl::CreateSignaturePacket(selectable_identity.anmpid));
-  if (result) {
-    LOG(kError) << "Failed to create ANMPID.";
-    return result;
-  }
-
-  result = impl::CreateSignaturePacket(selectable_identity.mpid,
+  impl::CreateSignaturePacket(selectable_identity.anmpid);
+  impl::CreateSignaturePacket(selectable_identity.mpid,
                                        &selectable_identity.anmpid.private_key);
-  if (result) {
-    LOG(kError) << "Failed to create MPID.";
-    return result;
-  }
-
-  result = impl::CreateSignaturePacket(selectable_identity.mmid,
+  impl::CreateSignaturePacket(selectable_identity.mmid,
                                        &selectable_identity.mpid.private_key);
-  if (result) {
-    LOG(kError) << "Failed to create MMID.";
-    return result;
-  }
-
   {
-    boost::mutex::scoped_lock rhum_loch_gainmhich(selectable_mutex_);
+    std::lock_guard<std::mutex> lock(selectable_mutex_);
     pending_selectable_packets_[chosen_name] = selectable_identity;
   }
-
-  return kSuccess;
 }
 
-int PassportImpl::ConfirmSelectableIdentity(const std::string &chosen_name) {
-  boost::mutex::scoped_lock rhum_loch_gainmhich(selectable_mutex_);
+int PassportImpl::ConfirmSelectableIdentity(const NonEmptyString &chosen_name) {
+  std::lock_guard<std::mutex> lock(selectable_mutex_);
 
   if (pending_selectable_packets_.find(chosen_name) == pending_selectable_packets_.end()) {
     LOG(kError) << "No such pending selectable identity: " << chosen_name;
@@ -490,8 +373,8 @@ int PassportImpl::ConfirmSelectableIdentity(const std::string &chosen_name) {
   return kSuccess;
 }
 
-int PassportImpl::DeleteSelectableIdentity(const std::string &chosen_name) {
-  boost::mutex::scoped_lock rhum_loch_gainmhich(selectable_mutex_);
+int PassportImpl::DeleteSelectableIdentity(const NonEmptyString &chosen_name) {
+  std::lock_guard<std::mutex> lock(selectable_mutex_);
 
   confirmed_selectable_packets_.erase(chosen_name);
   pending_selectable_packets_.erase(chosen_name);
@@ -499,8 +382,8 @@ int PassportImpl::DeleteSelectableIdentity(const std::string &chosen_name) {
   return kSuccess;
 }
 
-int PassportImpl::MoveMaidsafeInbox(const std::string &chosen_identity) {
-  boost::mutex::scoped_lock rhum_loch_gainmhich(selectable_mutex_);
+int PassportImpl::MoveMaidsafeInbox(const NonEmptyString &chosen_identity) {
+  std::lock_guard<std::mutex> lock(selectable_mutex_);
 
   if (confirmed_selectable_packets_.find(chosen_identity) == confirmed_selectable_packets_.end()) {
     LOG(kError) << "No inbox for identity: " << chosen_identity;
@@ -510,7 +393,7 @@ int PassportImpl::MoveMaidsafeInbox(const std::string &chosen_identity) {
   asymm::Keys old_mmid(confirmed_selectable_packets_[chosen_identity].mmid);
   asymm::Keys mpid(confirmed_selectable_packets_[chosen_identity].mpid);
   asymm::Keys new_mmid;
-  while (new_mmid.identity.empty() || new_mmid.identity == old_mmid.identity)
+  while (new_mmid.identity == old_mmid.identity)
     impl::CreateSignaturePacket(new_mmid, &mpid.private_key);
 
   pending_selectable_packets_[chosen_identity].mmid = new_mmid;
@@ -518,8 +401,8 @@ int PassportImpl::MoveMaidsafeInbox(const std::string &chosen_identity) {
   return kSuccess;
 }
 
-int PassportImpl::ConfirmMovedMaidsafeInbox(const std::string &chosen_identity) {
-  boost::mutex::scoped_lock rhum_loch_gainmhich(selectable_mutex_);
+int PassportImpl::ConfirmMovedMaidsafeInbox(const NonEmptyString &chosen_identity) {
+  std::lock_guard<std::mutex> lock(selectable_mutex_);
 
   if (pending_selectable_packets_.find(chosen_identity) == pending_selectable_packets_.end() ||
       confirmed_selectable_packets_.find(chosen_identity) == confirmed_selectable_packets_.end()) {
@@ -535,54 +418,43 @@ int PassportImpl::ConfirmMovedMaidsafeInbox(const std::string &chosen_identity) 
   return kSuccess;
 }
 
-std::string PassportImpl::Serialise() {
+NonEmptyString PassportImpl::Serialise() {
   PacketContainer packet_container;
 
-  int result(0);
   {
-    boost::mutex::scoped_lock rhum_loch_fiachianis(signature_mutex_);
+    std::lock_guard<std::mutex> lock(signature_mutex_);
     for (int n(kAnmid); n != kMid; ++n) {
       PacketType packet_type(static_cast<PacketType>(n));
-      result += SignatureAsymmKeysToProtobuf(confirmed_signature_packets_[packet_type],
+      SignatureAsymmKeysToProtobuf(confirmed_signature_packets_[packet_type],
                                              n,
                                              packet_container);
     }
   }
-  if (result != kSuccess) {
-    LOG(kError) << "At least one signature packet failed to be added to serialisable container.";
-    return "";
-  }
 
-  result = 0;
   {
-    boost::mutex::scoped_lock rhum_loch_gainmhich(selectable_mutex_);
-    std::vector<std::string> selectables;
+    std::lock_guard<std::mutex> lock(selectable_mutex_);
+    std::vector<NonEmptyString> selectables;
     std::for_each(confirmed_selectable_packets_.begin(),
                   confirmed_selectable_packets_.end(),
-                  [&selectables](const std::map<std::string, SelectableIdentity>::value_type &e) {
+                  [&selectables](const std::map<NonEmptyString, SelectableIdentity>::value_type &e) {
                     selectables.push_back(e.first);
                   });
     for (size_t n(0); n < selectables.size(); ++n) {
-      result += SelectableAsymmKeysToProtobuf(confirmed_selectable_packets_[selectables[n]].anmpid,
+      SelectableAsymmKeysToProtobuf(confirmed_selectable_packets_[selectables[n]].anmpid,
                                               confirmed_selectable_packets_[selectables[n]].mpid,
                                               confirmed_selectable_packets_[selectables[n]].mmid,
                                               selectables[n],
                                               packet_container);
     }
   }
-  if (result != kSuccess) {
-    LOG(kError) << "At least one selectable packet failed to be added to serialisable container.";
-    return "";
-  }
 
-  std::string s;
+  NonEmptyString s;
   if (!packet_container.SerializeToString(&s))
     LOG(kError) << "Failed to serialise.";
-
   return s;
 }
 
-int PassportImpl::Parse(const std::string& serialised_passport) {
+int PassportImpl::Parse(const NonEmptyString& serialised_passport) {
   PacketContainer packet_container;
   if (!packet_container.ParseFromString(serialised_passport)) {
     LOG(kError) << "Failed to parse provided string.";
@@ -597,7 +469,7 @@ int PassportImpl::Parse(const std::string& serialised_passport) {
   for (int n(0); n < packet_container.signature_packet_size(); ++n) {
     PacketType packet_type(static_cast<PacketType>(packet_container.signature_packet(n).type()));
     asymm::Keys packet(ProtobufToPacketKeys(packet_container.signature_packet(n)));
-    boost::mutex::scoped_lock rhum_loch_fiachianis(signature_mutex_);
+    std::lock_guard<std::mutex> lock(signature_mutex_);
     confirmed_signature_packets_[packet_type] = packet;
   }
 
@@ -606,8 +478,8 @@ int PassportImpl::Parse(const std::string& serialised_passport) {
     selectable_id.anmpid = ProtobufToPacketKeys(packet_container.selectable_packet(n).anmpid());
     selectable_id.mpid = ProtobufToPacketKeys(packet_container.selectable_packet(n).mpid());
     selectable_id.mmid = ProtobufToPacketKeys(packet_container.selectable_packet(n).mmid());
-    std::string public_id(packet_container.selectable_packet(n).public_id());
-    boost::mutex::scoped_lock rhum_loch_gainmhich(selectable_mutex_);
+    NonEmptyString public_id(packet_container.selectable_packet(n).public_id());
+    std::lock_guard<std::mutex> lock(selectable_mutex_);
     confirmed_selectable_packets_[public_id] = selectable_id;
   }
 

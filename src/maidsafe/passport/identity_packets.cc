@@ -36,8 +36,9 @@ namespace passport {
 
 namespace detail {
 
-std::string MidName(const std::string &username, const std::string &pin, bool surrogate) {
-  return crypto::Hash<crypto::SHA512>(username + pin + (surrogate ? kSmidAppendix : ""));
+NonEmptyString MidName(const NonEmptyString &username, const uint32_t pin, bool surrogate) {
+  return crypto::Hash<crypto::SHA512>(username + boost::lexical_cast<NonEmptyString>(pin)
+                                      + (surrogate ? kSmidAppendix : "")).string();
 }
 
 }  // namespace detail
@@ -45,23 +46,23 @@ std::string MidName(const std::string &username, const std::string &pin, bool su
 MidPacket::MidPacket()
     : packet_type_(kUnknown),
       surrogate_(false),
+      pin_(),
       name_(),
       username_(),
-      pin_(),
       rid_(),
       encrypted_rid_(),
       salt_(),
       secure_key_(),
       secure_iv_() {}
 
-MidPacket::MidPacket(const std::string &username,
-                     const std::string &pin,
+MidPacket::MidPacket(const NonEmptyString &username,
+                     const uint32_t pin,
                      bool surrogate)
     : packet_type_(surrogate ? kSmid : kMid),
       surrogate_(surrogate),
+      pin_(pin),
       name_(),
       username_(username),
-      pin_(pin),
       rid_(),
       encrypted_rid_(),
       salt_(),
@@ -71,34 +72,24 @@ MidPacket::MidPacket(const std::string &username,
 }
 
 void MidPacket::Initialise() {
-  if (username_.empty() || pin_.empty())
-    return Clear();
 
-  salt_ = crypto::Hash<crypto::SHA512>(pin_ + username_);
-  uint32_t pin;
-  try {
-    pin = boost::lexical_cast<uint32_t>(pin_);
-  }
-  catch(boost::bad_lexical_cast & e) {
-    LOG(kError) << "MidPacket::Initialise: Bad pin:" << e.what();
-    return Clear();
-  }
+  salt_ = crypto::Hash<crypto::SHA512>(boost::lexical_cast<NonEmptyString>(pin_)
+                                       + username_).string();
 
-  std::string secure_password;
-  int result = crypto::SecurePassword(username_, salt_, pin, &secure_password);
-  if (result != kSuccess) {
-    LOG(kError) << "Failed to create secure pasword.  Result: " << result;
-    return Clear();
-  }
+  UserPassword secure_password(crypto::CreateSecurePassword(UserPassword(username_),
+                                                    Salt(crypto::Hash<crypto::SHA512>(
+                                                      boost::lexical_cast<NonEmptyString>(pin_)
+                                                      + username_).string()),
+                                                    pin_));
 
-  secure_key_ = secure_password.substr(0, crypto::AES256_KeySize);
-  secure_iv_ = secure_password.substr(crypto::AES256_KeySize, crypto::AES256_IVSize);
+  secure_key_ = secure_password.string().substr(0, crypto::AES256_KeySize);
+  secure_iv_ = secure_password.string().substr(crypto::AES256_KeySize, crypto::AES256_IVSize);
   name_ = detail::MidName(username_, pin_, surrogate_);
   if (name_.empty())
     Clear();
 }
 
-void MidPacket::SetRid(const std::string &rid) {
+void MidPacket::SetRid(const NonEmptyString &rid) {
   rid_ = rid;
   if (rid_.empty()) {
     LOG(kError) << "Empty given RID";
@@ -106,14 +97,12 @@ void MidPacket::SetRid(const std::string &rid) {
     return;
   }
 
-  encrypted_rid_ = crypto::SymmEncrypt(rid_, secure_key_, secure_iv_);
-  if (encrypted_rid_.empty()) {
-    LOG(kError) << "Failed to encrypt given RID";
-    Clear();
-  }
+  encrypted_rid_ = crypto::SymmEncrypt(PlainText(rid_),
+                                       crypto::AES256Key(secure_key_),
+                                       crypto::AES256InitialisationVector(secure_iv_));
 }
 
-std::string MidPacket::DecryptRid(const std::string &encrypted_rid) {
+NonEmptyString MidPacket::DecryptRid(const NonEmptyString &encrypted_rid) {
   if (username_.empty() || pin_.empty() || encrypted_rid.empty()) {
     LOG(kError) << "MidPacket::DecryptRid: Empty encrypted RID or user data.";
     Clear();
@@ -173,11 +162,11 @@ TmidPacket::TmidPacket()
       obfuscated_master_data_(),
       obfuscation_salt_() {}
 
-TmidPacket::TmidPacket(const std::string &username,
-                       const std::string &pin,
+TmidPacket::TmidPacket(const NonEmptyString &username,
+                       const NonEmptyString &pin,
                        bool surrogate,
-                       const std::string &password,
-                       const std::string &plain_text_master_data)
+                       const NonEmptyString &password,
+                       const NonEmptyString &plain_text_master_data)
     : packet_type_(surrogate ? kStmid : kTmid),
       name_(),
       username_(username),
@@ -242,7 +231,7 @@ bool TmidPacket::SetPassword() {
     a *= 256;
   }
 
-  std::string secure_password;
+  NonEmptyString secure_password;
   int result = crypto::SecurePassword(password_, salt_, random_no_from_rid, &secure_password);
   if (result != kSuccess) {
     Clear();
@@ -266,7 +255,7 @@ bool TmidPacket::ObfuscatePlainData() {
   obfuscation_salt_ = crypto::Hash<crypto::SHA512>(password_ + rid_);
   uint32_t numerical_pin(boost::lexical_cast<uint32_t>(pin_));
   uint32_t rounds(numerical_pin / 2 == 0 ? numerical_pin * 3 / 2 : numerical_pin / 2);
-  std::string obfuscation_str;
+  NonEmptyString obfuscation_str;
   int result = crypto::SecurePassword(username_, obfuscation_salt_, rounds, &obfuscation_str);
   if (result != kSuccess) {
     LOG(kError) << "Failed to create secure pasword.  Result: " << result;
@@ -306,7 +295,7 @@ bool TmidPacket::SetPlainData() {
 bool TmidPacket::ClarifyObfuscatedData() {
   uint32_t numerical_pin(boost::lexical_cast<uint32_t>(pin_));
   uint32_t rounds(numerical_pin / 2 == 0 ? numerical_pin * 3 / 2 : numerical_pin / 2);
-  std::string obfuscation_str;
+  NonEmptyString obfuscation_str;
   int result =
       crypto::SecurePassword(username_,
                              crypto::Hash<crypto::SHA512>(password_ + rid_),
@@ -330,8 +319,8 @@ bool TmidPacket::ClarifyObfuscatedData() {
   return true;
 }
 
-std::string TmidPacket::DecryptMasterData(const std::string &password,
-                                          const std::string &encrypted_master_data) {
+NonEmptyString TmidPacket::DecryptMasterData(const NonEmptyString &password,
+                                          const NonEmptyString &encrypted_master_data) {
   password_ = password;
   if (!SetPassword()) {
     LOG(kError) << "TmidPacket::DecryptMasterData: failed to set password.";

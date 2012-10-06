@@ -36,20 +36,20 @@ namespace maidsafe {
 
 namespace passport {
 
-std::string MidName(const std::string &username, const std::string &pin, bool surrogate);
+NonEmptyString MidName(const NonEmptyString &username, const uint32_t pin, bool surrogate);
 
-std::string DecryptRid(const std::string &username,
-                       const std::string &pin,
-                       const std::string &encrypted_rid);
+NonEmptyString DecryptRid(const NonEmptyString &username,
+                       const uint32_t pin,
+                       const NonEmptyString &encrypted_rid);
 
-std::string DecryptMasterData(const std::string &username,
-                              const std::string &pin,
-                              const std::string &password,
-                              const std::string &encrypted_master_data);
+NonEmptyString DecryptMasterData(const NonEmptyString &username,
+                              const uint32_t pin,
+                              const NonEmptyString &password,
+                              const NonEmptyString &encrypted_master_data);
 
-std::string PacketDebugString(const int &packet_type);
+NonEmptyString PacketDebugString(const int &packet_type);
 
-int CreateSignaturePacket(asymm::Keys& keys, const asymm::PrivateKey* signer_private_key = nullptr);
+void CreateSignaturePacket(asymm::Keys& keys, const asymm::PrivateKey* signer_private_key = nullptr);
 
 namespace test { class PassportTest; }
 
@@ -58,34 +58,34 @@ class PassportImpl;
 class Passport {
  public:
   Passport();
-  int CreateSigningPackets();
+  void CreateSigningPackets();
   int ConfirmSigningPackets();
-  int SetIdentityPackets(const std::string &username,
-                         const std::string &pin,
-                         const std::string &password,
-                         const std::string &master_data,
-                         const std::string &surrogate_data);
+  int SetIdentityPackets(const NonEmptyString &username,
+                         const uint32_t pin,
+                         const NonEmptyString &password,
+                         const NonEmptyString &master_data,
+                         const NonEmptyString &surrogate_data);
   int ConfirmIdentityPackets();
   void Clear(bool signature, bool identity, bool selectable);
 
   // Serialisation
-  std::string Serialise();
-  int Parse(const std::string& serialised_passport);
+  NonEmptyString Serialise();
+  int Parse(const NonEmptyString& serialised_passport);
 
   // Getters
-  std::string IdentityPacketName(PacketType packet_type, bool confirmed);
-  std::string IdentityPacketValue(PacketType packet_type, bool confirmed);
+  NonEmptyString IdentityPacketName(PacketType packet_type, bool confirmed);
+  NonEmptyString IdentityPacketValue(PacketType packet_type, bool confirmed);
   asymm::Keys SignaturePacketDetails(PacketType packet_type,
                                      bool confirmed,
-                                     const std::string &chosen_name = "");
+                                     const NonEmptyString &chosen_name = "");
 
   // Selectable Identity (aka MPID)
-  int CreateSelectableIdentity(const std::string &chosen_name);
-  int ConfirmSelectableIdentity(const std::string &chosen_name);
-  int DeleteSelectableIdentity(const std::string &chosen_name);
+  void CreateSelectableIdentity(const NonEmptyString &chosen_name);
+  int ConfirmSelectableIdentity(const NonEmptyString &chosen_name);
+  int DeleteSelectableIdentity(const NonEmptyString &chosen_name);
 
-  int MoveMaidsafeInbox(const std::string &chosen_identity);
-  int ConfirmMovedMaidsafeInbox(const std::string &chosen_identity);
+  int MoveMaidsafeInbox(const NonEmptyString &chosen_identity);
+  int ConfirmMovedMaidsafeInbox(const NonEmptyString &chosen_identity);
 
   friend class test::PassportTest;
 

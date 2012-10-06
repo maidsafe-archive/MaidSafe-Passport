@@ -35,7 +35,7 @@ namespace passport {
 
 namespace detail {
 
-std::string MidName(const std::string &username, const std::string &pin, bool surrogate);
+NonEmptyString MidName(const NonEmptyString &username, const uint32_t pin, bool surrogate);
 
 }  // namespace detail
 
@@ -44,18 +44,18 @@ namespace test { class IdentityPacketsTest; }
 class MidPacket {
  public:
   MidPacket();
-  MidPacket(const std::string &username,
-            const std::string &pin,
+  MidPacket(const NonEmptyString &username,
+            const uint32_t pin,
             bool surrogate);
   ~MidPacket() {}
-  std::string name() const { return name_; }
-  std::string value() const { return encrypted_rid_; }
+  NonEmptyString name() const { return name_; }
+  NonEmptyString value() const { return encrypted_rid_; }
   bool Equals(const MidPacket& other) const;
-  void SetRid(const std::string &rid);
-  std::string DecryptRid(const std::string &encrypted_rid);
-  std::string username() const { return username_; }
-  std::string pin() const { return pin_; }
-  std::string rid() const { return rid_; }
+  void SetRid(const NonEmptyString &rid);
+  NonEmptyString DecryptRid(const NonEmptyString &encrypted_rid);
+  NonEmptyString username() const { return username_; }
+  uint32_t pin() const { return pin_; }
+  NonEmptyString rid() const { return rid_; }
 
  private:
   friend class test::IdentityPacketsTest;
@@ -63,27 +63,28 @@ class MidPacket {
   void Clear();
   PacketType packet_type_;
   bool surrogate_;
-  std::string name_, username_, pin_, rid_, encrypted_rid_, salt_, secure_key_, secure_iv_;
+  uint32_t pin_;
+  NonEmptyString name_, username_, rid_, encrypted_rid_, salt_, secure_key_, secure_iv_;
 };
 
 class TmidPacket {
  public:
   TmidPacket();
-  TmidPacket(const std::string &username,
-             const std::string &pin,
+  TmidPacket(const NonEmptyString &username,
+             const uint32_t pin,
              bool surrogate,
-             const std::string &password,
-             const std::string &plain_text_master_data);
+             const NonEmptyString &password,
+             const NonEmptyString &plain_text_master_data);
   ~TmidPacket() {}
-  std::string name() const { return name_; }
-  std::string value() const { return encrypted_master_data_; }
+  NonEmptyString name() const { return name_; }
+  NonEmptyString value() const { return encrypted_master_data_; }
   bool Equals(const TmidPacket& other) const;
-  std::string DecryptMasterData(const std::string &password,
-                                const std::string &encrypted_master_data);
+  NonEmptyString DecryptMasterData(const NonEmptyString &password,
+                                const NonEmptyString &encrypted_master_data);
   void SetToSurrogate() { packet_type_ = kStmid; }
-  std::string username() const { return username_; }
-  std::string pin() const { return pin_; }
-  std::string password() const { return password_; }
+  NonEmptyString username() const { return username_; }
+  uint32_t pin() const { return pin_; }
+  NonEmptyString password() const { return password_; }
 
  private:
   friend class test::IdentityPacketsTest;
@@ -94,7 +95,8 @@ class TmidPacket {
   bool ClarifyObfuscatedData();
   void Clear();
   PacketType packet_type_;
-  std::string name_, username_, pin_, password_, rid_, plain_text_master_data_, salt_, secure_key_,
+  uint32_t pin_;
+  NonEmptyString name_, username_, password_, rid_, plain_text_master_data_, salt_, secure_key_,
               secure_iv_, encrypted_master_data_, obfuscated_master_data_, obfuscation_salt_;
 };
 

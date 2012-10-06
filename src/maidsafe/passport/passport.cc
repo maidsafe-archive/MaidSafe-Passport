@@ -33,42 +33,42 @@ namespace maidsafe {
 
 namespace passport {
 
-std::string MidName(const std::string &username, const std::string &pin, bool surrogate) {
+NonEmptyString MidName(const NonEmptyString &username, const NonEmptyString &pin, bool surrogate) {
   return impl::MidName(username, pin, surrogate);
 }
 
-std::string DecryptRid(const std::string &username,
-                       const std::string &pin,
-                       const std::string &encrypted_rid) {
+NonEmptyString DecryptRid(const NonEmptyString &username,
+                       const NonEmptyString &pin,
+                       const NonEmptyString &encrypted_rid) {
   return impl::DecryptRid(username, pin, encrypted_rid);
 }
 
-std::string DecryptMasterData(const std::string &username,
-                              const std::string &pin,
-                              const std::string &password,
-                              const std::string &encrypted_master_data) {
+NonEmptyString DecryptMasterData(const NonEmptyString &username,
+                              const NonEmptyString &pin,
+                              const NonEmptyString &password,
+                              const NonEmptyString &encrypted_master_data) {
   return impl::DecryptMasterData(username, pin, password, encrypted_master_data);
 }
 
-std::string PacketDebugString(const int &packet_type) {
+NonEmptyString PacketDebugString(const int &packet_type) {
   return impl::PacketDebugString(packet_type);
 }
 
-int CreateSignaturePacket(asymm::Keys& keys, const asymm::PrivateKey* signer_private_key) {
-  return impl::CreateSignaturePacket(keys, signer_private_key);
+void CreateSignaturePacket(asymm::Keys& keys, const asymm::PrivateKey* signer_private_key) {
+  impl::CreateSignaturePacket(keys, signer_private_key);
 }
 
 Passport::Passport() : impl_(new PassportImpl) {}
 
-int Passport::CreateSigningPackets() { return impl_->CreateSigningPackets(); }
+void Passport::CreateSigningPackets() { impl_->CreateSigningPackets(); }
 
 int Passport::ConfirmSigningPackets() { return impl_->ConfirmSigningPackets(); }
 
-int Passport::SetIdentityPackets(const std::string &username,
-                                 const std::string &pin,
-                                 const std::string &password,
-                                 const std::string &master_data,
-                                 const std::string &surrogate_data) {
+int Passport::SetIdentityPackets(const NonEmptyString &username,
+                                 const uint32_t pin,
+                                 const NonEmptyString &password,
+                                 const NonEmptyString &master_data,
+                                 const NonEmptyString &surrogate_data) {
   return impl_->SetIdentityPackets(username, pin, password, master_data, surrogate_data);
 }
 
@@ -79,46 +79,46 @@ void Passport::Clear(bool signature, bool identity, bool selectable) {
 }
 
 // Getters
-std::string Passport::IdentityPacketName(PacketType packet_type, bool confirmed) {
+NonEmptyString Passport::IdentityPacketName(PacketType packet_type, bool confirmed) {
   return impl_->IdentityPacketName(packet_type, confirmed);
 }
 
-std::string Passport::IdentityPacketValue(PacketType packet_type, bool confirmed) {
+NonEmptyString Passport::IdentityPacketValue(PacketType packet_type, bool confirmed) {
   return impl_->IdentityPacketValue(packet_type, confirmed);
 }
 
 asymm::Keys Passport::SignaturePacketDetails(PacketType packet_type,
                                              bool confirmed,
-                                             const std::string &public_id) {
+                                             const NonEmptyString &public_id) {
   return impl_->SignaturePacketDetails(packet_type, confirmed, public_id);
 }
 
 // Selectable Identity (MPID)
-int Passport::CreateSelectableIdentity(const std::string &public_id) {
-  return impl_->CreateSelectableIdentity(public_id);
+void Passport::CreateSelectableIdentity(const NonEmptyString &public_id) {
+  impl_->CreateSelectableIdentity(public_id);
 }
 
-int Passport::ConfirmSelectableIdentity(const std::string &public_id) {
+int Passport::ConfirmSelectableIdentity(const NonEmptyString &public_id) {
   return impl_->ConfirmSelectableIdentity(public_id);
 }
 
-int Passport::DeleteSelectableIdentity(const std::string &public_id) {
+int Passport::DeleteSelectableIdentity(const NonEmptyString &public_id) {
   return impl_->DeleteSelectableIdentity(public_id);
 }
 
-int Passport::MoveMaidsafeInbox(const std::string &public_id) {
+int Passport::MoveMaidsafeInbox(const NonEmptyString &public_id) {
   return impl_->MoveMaidsafeInbox(public_id);
 }
 
-int Passport::ConfirmMovedMaidsafeInbox(const std::string &public_id) {
+int Passport::ConfirmMovedMaidsafeInbox(const NonEmptyString &public_id) {
   return impl_->ConfirmMovedMaidsafeInbox(public_id);
 }
 
-std::string Passport::Serialise() {
+NonEmptyString Passport::Serialise() {
   return impl_->Serialise();
 }
 
-int Passport::Parse(const std::string& serialised_passport) {
+int Passport::Parse(const NonEmptyString& serialised_passport) {
   return impl_->Parse(serialised_passport);
 }
 
