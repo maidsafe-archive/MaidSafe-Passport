@@ -35,7 +35,7 @@ namespace passport {
 
 namespace detail {
 
-NonEmptyString MidName(const NonEmptyString &username, const uint32_t pin, bool surrogate);
+Identity MidName(NonEmptyString username, uint32_t pin, bool surrogate);
 
 }  // namespace detail
 
@@ -48,11 +48,11 @@ class MidPacket {
             const uint32_t pin,
             bool surrogate);
   ~MidPacket() {}
-  NonEmptyString name() const { return name_; }
+  Identity name() const { return name_; }
   NonEmptyString value() const { return encrypted_rid_; }
-  bool Equals(const MidPacket& other) const;
-  void SetRid(const NonEmptyString &rid);
-  NonEmptyString DecryptRid(const NonEmptyString &encrypted_rid);
+  bool operator==(const MidPacket& other) const;
+  void SetRid(const Identity &rid);
+  Identity DecryptRid(const NonEmptyString &encrypted_rid);
   NonEmptyString username() const { return username_; }
   uint32_t pin() const { return pin_; }
   NonEmptyString rid() const { return rid_; }
@@ -64,7 +64,10 @@ class MidPacket {
   PacketType packet_type_;
   bool surrogate_;
   uint32_t pin_;
-  NonEmptyString name_, username_, rid_, encrypted_rid_, salt_, secure_key_, secure_iv_;
+  Identity name_;
+  NonEmptyString username_, rid_, encrypted_rid_, salt_;
+  crypto::AES256Key secure_key_;
+  crypto::AES256InitialisationVector secure_iv_;
 };
 
 class TmidPacket {
@@ -73,12 +76,16 @@ class TmidPacket {
   TmidPacket(const NonEmptyString &username,
              const uint32_t pin,
              bool surrogate,
+             const NonEmptyString &password);
+  TmidPacket(const NonEmptyString &username,
+             const uint32_t pin,
+             bool surrogate,
              const NonEmptyString &password,
              const NonEmptyString &plain_text_master_data);
   ~TmidPacket() {}
-  NonEmptyString name() const { return name_; }
+  Identity name() const { return name_; }
   NonEmptyString value() const { return encrypted_master_data_; }
-  bool Equals(const TmidPacket& other) const;
+  bool operator==(const TmidPacket& other) const;
   NonEmptyString DecryptMasterData(const NonEmptyString &password,
                                 const NonEmptyString &encrypted_master_data);
   void SetToSurrogate() { packet_type_ = kStmid; }
@@ -95,9 +102,13 @@ class TmidPacket {
   bool ClarifyObfuscatedData();
   void Clear();
   PacketType packet_type_;
+  Identity name_;
+  NonEmptyString username_;
   uint32_t pin_;
-  NonEmptyString name_, username_, password_, rid_, plain_text_master_data_, salt_, secure_key_,
-              secure_iv_, encrypted_master_data_, obfuscated_master_data_, obfuscation_salt_;
+  NonEmptyString  password_, rid_, plain_text_master_data_, salt_;
+  crypto::AES256Key secure_key_;
+  crypto::AES256InitialisationVector secure_iv_;
+  NonEmptyString encrypted_master_data_, obfuscated_master_data_, obfuscation_salt_;
 };
 
 }  // namespace passport

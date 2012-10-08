@@ -37,14 +37,14 @@ namespace passport {
 
 namespace impl {
 
-NonEmptyString MidName(const NonEmptyString &username, const uint32_t pin, bool surrogate) {
+Identity MidName(NonEmptyString &username, uint32_t pin, bool surrogate) {
   return detail::MidName(username, pin, surrogate);
 }
 
-NonEmptyString DecryptRid(const NonEmptyString &username,
+Identity DecryptRid(const NonEmptyString &username,
                        const uint32_t pin,
                        const NonEmptyString &encrypted_rid) {
-  MidPacket mid(username, pin, "");
+  MidPacket mid(username, pin, false);
   return mid.DecryptRid(encrypted_rid);
 }
 
@@ -53,17 +53,17 @@ NonEmptyString DecryptMasterData(const NonEmptyString &username,
                               const NonEmptyString &password,
                               const NonEmptyString &encrypted_master_data) {
 
-  TmidPacket decrypting_tmid(username, pin, false, password, "");
+  TmidPacket decrypting_tmid(username, pin, false, password);
   return decrypting_tmid.DecryptMasterData(password, encrypted_master_data);
 }
 
 void CreateSignaturePacket(asymm::Keys& keys, const asymm::PrivateKey* signer_private_key) {
   keys = asymm::GenerateKeyPair();
   if (signer_private_key)
-    keys.validation_token = asymm::Sign(PlainText(asymm::EncodeKey(keys.public_key)),
+    keys.validation_token = asymm::Sign(asymm::PlainText(asymm::EncodeKey(keys.public_key)),
                                         *signer_private_key).string();
   else
-    keys.validation_token = asymm::Sign(PlainText(asymm::EncodeKey(keys.public_key)),
+    keys.validation_token = asymm::Sign(asymm::PlainText(asymm::EncodeKey(keys.public_key)),
                                         keys.private_key).string();
 
   keys.identity = crypto::Hash<crypto::SHA512>(asymm::EncodeKey(keys.public_key).string()
@@ -99,7 +99,7 @@ void SelectableAsymmKeysToProtobuf(const asymm::Keys& anmpid,
                                   const NonEmptyString& id,
                                   PacketContainer &packet_container) {
   SelectableIdentityContainer* id_container = packet_container.add_selectable_packet();
-  id_container->set_public_id(id);
+  id_container->set_public_id(id.string());
   SignaturePacketContainer *anmpid_container = id_container->mutable_anmpid();
   anmpid_container->set_identity(anmpid.identity.string());
   anmpid_container->set_public_key(asymm::EncodeKey(anmpid.public_key).string());
@@ -187,7 +187,6 @@ int PassportImpl::SetIdentityPackets(const NonEmptyString &username,
                                      const NonEmptyString &password,
                                      const NonEmptyString &master_data,
                                      const NonEmptyString &surrogate_data) {
-  assert(!master_data.empty() && !surrogate_data.empty());
   std::lock_guard<std::mutex> lock(identity_mutex_);
   pending_identity_packets_.mid = MidPacket(username, pin, false);
   pending_identity_packets_.smid = MidPacket(username, pin, true);
@@ -237,13 +236,6 @@ void PassportImpl::Clear(bool signature, bool identity, bool selectable) {
 
 // Getters
 NonEmptyString PassportImpl::IdentityPacketName(PacketType packet_type, bool confirmed) {
-  if (packet_type != kMid &&
-      packet_type != kSmid &&
-      packet_type != kTmid &&
-      packet_type != kStmid) {
-    LOG(kError) << "Packet type " << impl::PacketDebugString(packet_type) << " isn't identity.";
-    return "";
-  }
 
   NonEmptyString name;
   if (confirmed) {
@@ -270,13 +262,6 @@ NonEmptyString PassportImpl::IdentityPacketName(PacketType packet_type, bool con
 }
 
 NonEmptyString PassportImpl::IdentityPacketValue(PacketType packet_type, bool confirmed) {
-  if (packet_type != kMid &&
-      packet_type != kSmid &&
-      packet_type != kTmid &&
-      packet_type != kStmid) {
-    LOG(kError) << "Packet type " << impl::PacketDebugString(packet_type) << " isn't identity.";
-    return "";
-  }
 
   NonEmptyString value;
   if (confirmed) {
@@ -303,9 +288,7 @@ NonEmptyString PassportImpl::IdentityPacketValue(PacketType packet_type, bool co
 }
 
 asymm::Keys PassportImpl::SignaturePacketDetails(PacketType packet_type,
-                                                 bool confirmed,
-                                                 const NonEmptyString &chosen_name) {
-  if (chosen_name.empty()) {
+                                                 bool confirmed) {
     std::lock_guard<std::mutex> lock(signature_mutex_);
     if (confirmed) {
       auto it(confirmed_signature_packets_.find(packet_type));
@@ -316,28 +299,32 @@ asymm::Keys PassportImpl::SignaturePacketDetails(PacketType packet_type,
       if (it != pending_signature_packets_.end())
         return it->second;
     }
+  return asymm::Keys();
+}
+
+asymm::Keys PassportImpl::SignaturePacketDetails(PacketType packet_type,
+                                                 bool confirmed,
+                                                 const NonEmptyString &chosen_name) {
+  std::lock_guard<std::mutex> lock(selectable_mutex_);
+  if (confirmed) {
+    auto it(confirmed_selectable_packets_.find(chosen_name));
+    if (it != confirmed_selectable_packets_.end())  {
+      if (packet_type == kAnmpid)
+        return it->second.anmpid;
+      if (packet_type == kMpid)
+        return it->second.mpid;
+      if (packet_type == kMmid)
+        return it->second.mmid;
+    }
   } else {
-    std::lock_guard<std::mutex> lock(selectable_mutex_);
-    if (confirmed) {
-      auto it(confirmed_selectable_packets_.find(chosen_name));
-      if (it != confirmed_selectable_packets_.end())  {
-        if (packet_type == kAnmpid)
-          return it->second.anmpid;
-        if (packet_type == kMpid)
-          return it->second.mpid;
-        if (packet_type == kMmid)
-          return it->second.mmid;
-      }
-    } else {
-      auto it(pending_selectable_packets_.find(chosen_name));
-      if (it != pending_selectable_packets_.end())  {
-        if (packet_type == kAnmpid)
-          return it->second.anmpid;
-        if (packet_type == kMpid)
-          return it->second.mpid;
-        if (packet_type == kMmid)
-          return it->second.mmid;
-      }
+    auto it(pending_selectable_packets_.find(chosen_name));
+    if (it != pending_selectable_packets_.end())  {
+      if (packet_type == kAnmpid)
+        return it->second.anmpid;
+      if (packet_type == kMpid)
+        return it->second.mpid;
+      if (packet_type == kMmid)
+        return it->second.mmid;
     }
   }
 
@@ -362,7 +349,7 @@ int PassportImpl::ConfirmSelectableIdentity(const NonEmptyString &chosen_name) {
   std::lock_guard<std::mutex> lock(selectable_mutex_);
 
   if (pending_selectable_packets_.find(chosen_name) == pending_selectable_packets_.end()) {
-    LOG(kError) << "No such pending selectable identity: " << chosen_name;
+    LOG(kError) << "No such pending selectable identity: " << chosen_name.string();
     return -1;
   }
 
@@ -386,7 +373,7 @@ int PassportImpl::MoveMaidsafeInbox(const NonEmptyString &chosen_identity) {
   std::lock_guard<std::mutex> lock(selectable_mutex_);
 
   if (confirmed_selectable_packets_.find(chosen_identity) == confirmed_selectable_packets_.end()) {
-    LOG(kError) << "No inbox for identity: " << chosen_identity;
+    LOG(kError) << "No inbox for identity: " << chosen_identity.string();
     return -1;
   }
 
@@ -406,7 +393,7 @@ int PassportImpl::ConfirmMovedMaidsafeInbox(const NonEmptyString &chosen_identit
 
   if (pending_selectable_packets_.find(chosen_identity) == pending_selectable_packets_.end() ||
       confirmed_selectable_packets_.find(chosen_identity) == confirmed_selectable_packets_.end()) {
-    LOG(kError) << "No inbox for identity: " << chosen_identity;
+    LOG(kError) << "No inbox for identity: " << chosen_identity.string();
     return -1;
   }
 
@@ -418,7 +405,7 @@ int PassportImpl::ConfirmMovedMaidsafeInbox(const NonEmptyString &chosen_identit
   return kSuccess;
 }
 
-NonEmptyString PassportImpl::Serialise() {
+std::string PassportImpl::Serialise() {
   PacketContainer packet_container;
 
   {
@@ -448,13 +435,13 @@ NonEmptyString PassportImpl::Serialise() {
     }
   }
 
-  NonEmptyString s;
+  std::string s;
   if (!packet_container.SerializeToString(&s))
     LOG(kError) << "Failed to serialise.";
   return s;
 }
 
-int PassportImpl::Parse(const NonEmptyString& serialised_passport) {
+int PassportImpl::Parse(const std::string& serialised_passport) {
   PacketContainer packet_container;
   if (!packet_container.ParseFromString(serialised_passport)) {
     LOG(kError) << "Failed to parse provided string.";

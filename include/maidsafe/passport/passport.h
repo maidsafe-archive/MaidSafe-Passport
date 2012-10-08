@@ -36,9 +36,9 @@ namespace maidsafe {
 
 namespace passport {
 
-NonEmptyString MidName(const NonEmptyString &username, const uint32_t pin, bool surrogate);
+Identity MidName(const NonEmptyString &username, const uint32_t pin, bool surrogate);
 
-NonEmptyString DecryptRid(const NonEmptyString &username,
+Identity DecryptRid(const NonEmptyString &username,
                        const uint32_t pin,
                        const NonEmptyString &encrypted_rid);
 
@@ -69,15 +69,17 @@ class Passport {
   void Clear(bool signature, bool identity, bool selectable);
 
   // Serialisation
-  NonEmptyString Serialise();
-  int Parse(const NonEmptyString& serialised_passport);
+  std::string Serialise();
+  int Parse(const std::string& serialised_passport);
 
   // Getters
   NonEmptyString IdentityPacketName(PacketType packet_type, bool confirmed);
   NonEmptyString IdentityPacketValue(PacketType packet_type, bool confirmed);
   asymm::Keys SignaturePacketDetails(PacketType packet_type,
                                      bool confirmed,
-                                     const NonEmptyString &chosen_name = "");
+                                     const NonEmptyString &chosen_name);
+  asymm::Keys SignaturePacketDetails(PacketType packet_type,
+                                     bool confirmed);
 
   // Selectable Identity (aka MPID)
   void CreateSelectableIdentity(const NonEmptyString &chosen_name);

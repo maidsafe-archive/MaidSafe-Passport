@@ -33,11 +33,11 @@ namespace maidsafe {
 
 namespace passport {
 
-NonEmptyString MidName(const NonEmptyString &username, const NonEmptyString &pin, bool surrogate) {
+Identity MidName(const NonEmptyString &username, const NonEmptyString &pin, bool surrogate) {
   return impl::MidName(username, pin, surrogate);
 }
 
-NonEmptyString DecryptRid(const NonEmptyString &username,
+Identity DecryptRid(const NonEmptyString &username,
                        const NonEmptyString &pin,
                        const NonEmptyString &encrypted_rid) {
   return impl::DecryptRid(username, pin, encrypted_rid);
@@ -93,6 +93,11 @@ asymm::Keys Passport::SignaturePacketDetails(PacketType packet_type,
   return impl_->SignaturePacketDetails(packet_type, confirmed, public_id);
 }
 
+asymm::Keys Passport::SignaturePacketDetails(PacketType packet_type,
+                                             bool confirmed) {
+  return impl_->SignaturePacketDetails(packet_type, confirmed);
+}
+
 // Selectable Identity (MPID)
 void Passport::CreateSelectableIdentity(const NonEmptyString &public_id) {
   impl_->CreateSelectableIdentity(public_id);
@@ -114,11 +119,11 @@ int Passport::ConfirmMovedMaidsafeInbox(const NonEmptyString &public_id) {
   return impl_->ConfirmMovedMaidsafeInbox(public_id);
 }
 
-NonEmptyString Passport::Serialise() {
+std::string Passport::Serialise() {
   return impl_->Serialise();
 }
 
-int Passport::Parse(const NonEmptyString& serialised_passport) {
+int Passport::Parse(const std::string& serialised_passport) {
   return impl_->Parse(serialised_passport);
 }
 
