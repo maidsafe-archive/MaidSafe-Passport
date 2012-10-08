@@ -24,6 +24,7 @@ file(GLOB PROTO_FILES RELATIVE ${PROTO_SOURCE_DIR} "${PROTO_SOURCE_DIR}/maidsafe
 include(../../cmake_modules/maidsafe_standard_setup.cmake)
 
 include_directories(${common_SOURCE_DIR}/include)
+include_directories(${utilities_SOURCE_DIR}/include)
 
 
 ###################################################################################################
@@ -40,8 +41,8 @@ source_group("Passport API Files" FILES ${API_FILES_PASSPORT_DIR})
 file(GLOB SOURCE_FILES_PASSPORT_TESTS_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/passport/tests/*.cc")
 file(GLOB HEADER_FILES_PASSPORT_TESTS_DIR "${PROJECT_SOURCE_DIR}/src/maidsafe/passport/tests/*.h")
 set(ALL_FILES_PASSPORT_TESTS_DIR ${SOURCE_FILES_PASSPORT_TESTS_DIR} ${HEADER_FILES_PASSPORT_TESTS_DIR})
-source_group("Tests Source Files" FILES ${SOURCE_FILES_PASSPORT_DIR})
-source_group("Tests Header Files" FILES ${HEADER_FILES_PASSPORT_DIR})
+source_group("Tests Source Files" FILES ${SOURCE_FILES_PASSPORT_TESTS_DIR})
+source_group("Tests Header Files" FILES ${HEADER_FILES_PASSPORT_TESTS_DIR})
 
 set(STYLE_PASSPORT ${ALL_FILES_PASSPORT_DIR} ${ALL_FILES_PASSPORT_TESTS_DIR})
 list(REMOVE_ITEM STYLE_PASSPORT "${PROJECT_SOURCE_DIR}/src/maidsafe/passport/packets.pb.cc")
@@ -54,7 +55,7 @@ list(REMOVE_ITEM STYLE_PASSPORT "${PROJECT_SOURCE_DIR}/src/maidsafe/passport/pac
 ms_add_static_library(passport ${ALL_FILES_PASSPORT_DIR})
 ms_add_executable(TESTpassport "Tests/Passport" ${ALL_FILES_PASSPORT_TESTS_DIR})
 
-target_link_libraries(maidsafe_passport maidsafe_common)
+target_link_libraries(maidsafe_passport maidsafe_common maidsafe_utilities)
 target_link_libraries(TESTpassport maidsafe_passport)
 
 rename_outdated_built_exes()
