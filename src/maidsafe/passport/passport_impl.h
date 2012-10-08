@@ -31,6 +31,7 @@
 #include "boost/thread/mutex.hpp"
 
 #include "maidsafe/common/rsa.h"
+#include "maidsafe/private/utils/fob.h"
 
 #include "maidsafe/passport/passport_config.h"
 #include "maidsafe/passport/identity_packets.h"
@@ -44,17 +45,18 @@ namespace impl {
 Identity MidName(const NonEmptyString &username, const NonEmptyString &pin, bool surrogate);
 
 Identity DecryptRid(const NonEmptyString &username,
-                       const NonEmptyString &pin,
-                       const NonEmptyString &encrypted_rid);
+                    const NonEmptyString &pin,
+                    const NonEmptyString &encrypted_rid);
 
 NonEmptyString DecryptMasterData(const NonEmptyString &username,
-                              const NonEmptyString &pin,
-                              const NonEmptyString &password,
-                              const NonEmptyString &encrypted_master_data);
+                                 const NonEmptyString &pin,
+                                 const NonEmptyString &password,
+                                 const NonEmptyString &encrypted_master_data);
 
 NonEmptyString PacketDebugString(const int &packet_type);
 
-void CreateSignaturePacket(asymm::Keys& keys, const asymm::PrivateKey* signer_private_key = nullptr);
+void CreateSignaturePacket(Fob& keys,
+                           const asymm::PrivateKey* signer_private_key = nullptr);
 
 }  // namespace impl
 
