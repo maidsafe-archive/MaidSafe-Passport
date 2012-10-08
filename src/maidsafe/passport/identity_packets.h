@@ -96,7 +96,7 @@ class TmidPacket {
  private:
   friend class test::IdentityPacketsTest;
   void Initialise();
-  bool SetPassword();
+  bool SetSecurePassword();
   bool SetPlainData();
   bool ObfuscatePlainData();
   bool ClarifyObfuscatedData();

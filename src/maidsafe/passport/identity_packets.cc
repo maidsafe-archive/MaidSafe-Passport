@@ -37,8 +37,7 @@ namespace passport {
 namespace detail {
 
 Identity MidName(NonEmptyString username, uint32_t pin, bool surrogate) {
-  
-  return surrogate ?  
+  return surrogate ?
     crypto::Hash<crypto::SHA512>(username +  boost::lexical_cast<NonEmptyString>(pin)) :
     crypto::Hash<crypto::SHA512>(crypto::Hash<crypto::SHA512>(username +
                                 boost::lexical_cast<NonEmptyString>(pin)));
@@ -75,15 +74,12 @@ MidPacket::MidPacket(const NonEmptyString &username,
 }
 
 void MidPacket::Initialise() {
-
   salt_ = crypto::Hash<crypto::SHA512>(boost::lexical_cast<NonEmptyString>(pin_) + username_);
-
   UserPassword secure_password(crypto::CreateSecurePassword(UserPassword(username_),
                                                     crypto::Salt(crypto::Hash<crypto::SHA512>(
                                                       boost::lexical_cast<std::string>(pin_)
                                                       + username_.string())),
                                                     pin_));
-
   secure_key_ =  NonEmptyString(secure_password.string().substr(0, crypto::AES256_KeySize));
   secure_iv_ = NonEmptyString(secure_password.string().substr(crypto::AES256_KeySize,
                                                               crypto::AES256_IVSize));
@@ -92,7 +88,6 @@ void MidPacket::Initialise() {
 
 void MidPacket::SetRid(const Identity &rid) {
   rid_ = rid;
-
   encrypted_rid_ = crypto::SymmEncrypt(crypto::PlainText(rid_),
                                        crypto::AES256Key(secure_key_),
                                        crypto::AES256InitialisationVector(secure_iv_));
@@ -156,7 +151,7 @@ TmidPacket::TmidPacket(const NonEmptyString &username,
 
 void TmidPacket::Initialise() {
 
-  if (!SetPassword()) {
+  if (!SecurePassword()) {
     LOG(kError) << "TmidPacket::Initialise: Password set failure";
     return;
   }
@@ -172,10 +167,8 @@ void TmidPacket::Initialise() {
   name_ = crypto::Hash<crypto::SHA512>(encrypted_master_data_);
 }
 
-bool TmidPacket::SetPassword() {
-
+NonEmptyString TmidPacket::SecurePassword() {
   salt_ = crypto::Hash<crypto::SHA512>(rid_ + password_);
-
   uint32_t random_no_from_rid(0);
   int64_t a(1);
   for (int i = 0; i < 4; ++i) {
@@ -183,38 +176,33 @@ bool TmidPacket::SetPassword() {
     random_no_from_rid += static_cast<uint32_t>(temp * a);
     a *= 256;
   }
-
-  NonEmptyString secure_password(crypto::CreateSecurePassword(password_, salt_, random_no_from_rid));
-  secure_key_ = crypto::AES256Key(secure_password.string().substr(0, crypto::AES256_KeySize));
-  secure_iv_ = crypto::AES256InitialisationVector(
-      secure_password.string().substr(crypto::AES256_KeySize, crypto::AES256_IVSize));
-
-  return true;
+  return crypto::CreateSecurePassword(password_, salt_, random_no_from_rid);
 }
 
-bool TmidPacket::ObfuscatePlainData() {
+crypto::AES256Key TmidPacket::SecureKey(NonEmptyString &secure_password) {
+  return secure_password.string().substr(0, crypto::AES256_KeySize));
+} 
 
+crypto::AES256InitialisationVector TmidPacket::SecureIv(NonEmptyString &secure_password) {
+  return secure_password.string().substr(crypto::AES256_KeySize, crypto::AES256_IVSize);
+
+}
+
+NonEmptyString TmidPacket::XorData(NonEmptyString data) {
   obfuscation_salt_ = crypto::Hash<crypto::SHA512>(password_ + rid_);
   uint32_t rounds(pin_ / 2 == 0 ? pin_ * 3 / 2 : pin_ / 2);
   std::string obfuscation_str = crypto::CreateSecurePassword(username_,
                                                           obfuscation_salt_,
                                                           rounds).string();
-
   // make the obfuscation_str of same size for XOR
-  if (plain_text_master_data_.string().size() < obfuscation_str.size()) {
-    obfuscation_str.resize(plain_text_master_data_.string().size());
-  } else if (plain_text_master_data_.string().size() > obfuscation_str.size()) {
-    while (plain_text_master_data_.string().size() > obfuscation_str.size())
+  if (data.string().size() < obfuscation_str.size()) {
+    obfuscation_str.resize(data.string().size());
+  } else if (data.string().size() > obfuscation_str.size()) {
+    while (data.string().size() > obfuscation_str.size())
       obfuscation_str += obfuscation_str;
-    obfuscation_str.resize(plain_text_master_data_.string().size());
+    obfuscation_str.resize(data.string().size());
   }
-
-  maidsafe::detail::BoundedString<obfuscation_str.size(), obfuscation_str.size()> XorType;
-
-  XorType result = crypto::XOR(XorType(plain_text_master_data_), XorType(obfuscation_str));
-  obfuscated_master_data_ = result;
-
-  return true;
+  return NonEmptyString(crypto::XOR(data.string(), obfuscation_str));
 }
 
 bool TmidPacket::SetPlainData() {
@@ -222,31 +210,10 @@ bool TmidPacket::SetPlainData() {
   return true;
 }
 
-bool TmidPacket::ClarifyObfuscatedData() {
-  uint32_t rounds(pin_ / 2 == 0 ? pin_ * 3 / 2 : pin_ / 2);
-  crypto::SecurePassword obfuscation_str = crypto::SecurePassword(username_,
-                             crypto::Hash<crypto::SHA512>(password_ + rid_),
-                             rounds);
-
-  // make the obfuscation_str of same sizer for XOR
-  if (obfuscated_master_data_.size() < obfuscation_str.size()) {
-    obfuscation_str.resize(obfuscated_master_data_.size());
-  } else if (obfuscated_master_data_.size() > obfuscation_str.size()) {
-    while (obfuscated_master_data_.size() > obfuscation_str.size())
-      obfuscation_str += obfuscation_str;
-    obfuscation_str.resize(obfuscated_master_data_.size());
-  }
-  BoundedString<obfuscation_str.size(), obfuscation_str.size()> XorType;
-
-  XorType result = crypto::XOR(XorType(obfuscated_master_data_), XorType(obfuscation_str));
-  plain_text_master_data_ = result;
-  return true;
-}
-
 NonEmptyString TmidPacket::DecryptMasterData(const NonEmptyString &password,
                                           const NonEmptyString &encrypted_master_data) {
   password_ = password;
-  if (!SetPassword()) {
+  if (!SecurePassword()) {
     LOG(kError) << "TmidPacket::DecryptMasterData: failed to set password.";
     return "";
   }
