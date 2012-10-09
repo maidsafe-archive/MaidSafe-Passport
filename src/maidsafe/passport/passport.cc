@@ -33,29 +33,8 @@ namespace maidsafe {
 
 namespace passport {
 
-Identity MidName(const NonEmptyString &username, const NonEmptyString &pin, bool surrogate) {
-  return impl::MidName(username, pin, surrogate);
-}
-
-Identity DecryptRid(const NonEmptyString &username,
-                       const NonEmptyString &pin,
-                       const NonEmptyString &encrypted_rid) {
-  return impl::DecryptRid(username, pin, encrypted_rid);
-}
-
-NonEmptyString DecryptMasterData(const NonEmptyString &username,
-                              const NonEmptyString &pin,
-                              const NonEmptyString &password,
-                              const NonEmptyString &encrypted_master_data) {
-  return impl::DecryptMasterData(username, pin, password, encrypted_master_data);
-}
-
 NonEmptyString PacketDebugString(const int &packet_type) {
   return impl::PacketDebugString(packet_type);
-}
-
-void CreateSignaturePacket(asymm::Keys& keys, const asymm::PrivateKey* signer_private_key) {
-  impl::CreateSignaturePacket(keys, signer_private_key);
 }
 
 Passport::Passport() : impl_(new PassportImpl) {}
@@ -64,11 +43,11 @@ void Passport::CreateSigningPackets() { impl_->CreateSigningPackets(); }
 
 int Passport::ConfirmSigningPackets() { return impl_->ConfirmSigningPackets(); }
 
-int Passport::SetIdentityPackets(const NonEmptyString &username,
+int Passport::SetIdentityPackets(const NonEmptyString& username,
                                  const uint32_t pin,
-                                 const NonEmptyString &password,
-                                 const NonEmptyString &master_data,
-                                 const NonEmptyString &surrogate_data) {
+                                 const NonEmptyString& password,
+                                 const NonEmptyString& master_data,
+                                 const NonEmptyString& surrogate_data) {
   return impl_->SetIdentityPackets(username, pin, password, master_data, surrogate_data);
 }
 
@@ -79,7 +58,7 @@ void Passport::Clear(bool signature, bool identity, bool selectable) {
 }
 
 // Getters
-NonEmptyString Passport::IdentityPacketName(PacketType packet_type, bool confirmed) {
+Identity Passport::IdentityPacketName(PacketType packet_type, bool confirmed) {
   return impl_->IdentityPacketName(packet_type, confirmed);
 }
 
@@ -87,43 +66,40 @@ NonEmptyString Passport::IdentityPacketValue(PacketType packet_type, bool confir
   return impl_->IdentityPacketValue(packet_type, confirmed);
 }
 
-asymm::Keys Passport::SignaturePacketDetails(PacketType packet_type,
-                                             bool confirmed,
-                                             const NonEmptyString &public_id) {
+Fob Passport::SignaturePacketDetails(PacketType packet_type,
+                                     bool confirmed,
+                                     const NonEmptyString& public_id) {
   return impl_->SignaturePacketDetails(packet_type, confirmed, public_id);
 }
 
-asymm::Keys Passport::SignaturePacketDetails(PacketType packet_type,
-                                             bool confirmed) {
+Fob Passport::SignaturePacketDetails(PacketType packet_type, bool confirmed) {
   return impl_->SignaturePacketDetails(packet_type, confirmed);
 }
 
 // Selectable Identity (MPID)
-void Passport::CreateSelectableIdentity(const NonEmptyString &public_id) {
+void Passport::CreateSelectableIdentity(const NonEmptyString& public_id) {
   impl_->CreateSelectableIdentity(public_id);
 }
 
-int Passport::ConfirmSelectableIdentity(const NonEmptyString &public_id) {
+int Passport::ConfirmSelectableIdentity(const NonEmptyString& public_id) {
   return impl_->ConfirmSelectableIdentity(public_id);
 }
 
-int Passport::DeleteSelectableIdentity(const NonEmptyString &public_id) {
+int Passport::DeleteSelectableIdentity(const NonEmptyString& public_id) {
   return impl_->DeleteSelectableIdentity(public_id);
 }
 
-int Passport::MoveMaidsafeInbox(const NonEmptyString &public_id) {
+int Passport::MoveMaidsafeInbox(const NonEmptyString& public_id) {
   return impl_->MoveMaidsafeInbox(public_id);
 }
 
-int Passport::ConfirmMovedMaidsafeInbox(const NonEmptyString &public_id) {
+int Passport::ConfirmMovedMaidsafeInbox(const NonEmptyString& public_id) {
   return impl_->ConfirmMovedMaidsafeInbox(public_id);
 }
 
-std::string Passport::Serialise() {
-  return impl_->Serialise();
-}
+NonEmptyString Passport::Serialise() { return impl_->Serialise(); }
 
-int Passport::Parse(const std::string& serialised_passport) {
+int Passport::Parse(const NonEmptyString& serialised_passport) {
   return impl_->Parse(serialised_passport);
 }
 

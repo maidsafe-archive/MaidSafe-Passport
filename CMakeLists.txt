@@ -24,7 +24,7 @@ file(GLOB PROTO_FILES RELATIVE ${PROTO_SOURCE_DIR} "${PROTO_SOURCE_DIR}/maidsafe
 include(../../cmake_modules/maidsafe_standard_setup.cmake)
 
 include_directories(${common_SOURCE_DIR}/include)
-include_directories(${utilities_SOURCE_DIR}/include)
+include_directories(${private_SOURCE_DIR}/include)
 
 
 ###################################################################################################

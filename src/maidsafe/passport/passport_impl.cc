@@ -24,6 +24,8 @@
 #include <map>
 #include <vector>
 
+#include "boost/lexical_cast.hpp"
+
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/rsa.h"
@@ -37,98 +39,102 @@ namespace passport {
 
 namespace impl {
 
-Identity MidName(NonEmptyString &username, uint32_t pin, bool surrogate) {
-  return detail::MidName(username, pin, surrogate);
+NonEmptyString PacketDebugString(const int &packet_type) {
+  switch (packet_type) {
+    case kUnknown:
+      return NonEmptyString("unknown");
+    case kAnmid:
+      return NonEmptyString("ANMID");
+    case kAnsmid:
+      return NonEmptyString("ANSMID");
+    case kAntmid:
+      return NonEmptyString("ANTMID");
+    case kAnmaid:
+      return NonEmptyString("ANMAID");
+    case kMaid:
+      return NonEmptyString("MAID");
+    case kPmid:
+      return NonEmptyString("PMID");
+    case kMid:
+      return NonEmptyString("MID");
+    case kSmid:
+      return NonEmptyString("SMID");
+    case kTmid:
+      return NonEmptyString("TMID");
+    case kStmid:
+      return NonEmptyString("STMID");
+    case kAnmpid:
+      return NonEmptyString("ANMPID");
+    case kMpid:
+      return NonEmptyString("MPID");
+    case kMmid:
+      return NonEmptyString("MMID");
+    default:
+      return NonEmptyString("error");
+  }
 }
-
-Identity DecryptRid(const NonEmptyString &username,
-                       const uint32_t pin,
-                       const NonEmptyString &encrypted_rid) {
-  MidPacket mid(username, pin, false);
-  return mid.DecryptRid(encrypted_rid);
-}
-
-NonEmptyString DecryptMasterData(const NonEmptyString &username,
-                              const uint32_t pin,
-                              const NonEmptyString &password,
-                              const NonEmptyString &encrypted_master_data) {
-
-  TmidPacket decrypting_tmid(username, pin, false, password);
-  return decrypting_tmid.DecryptMasterData(password, encrypted_master_data);
-}
-
-void CreateSignaturePacket(asymm::Keys& keys, const asymm::PrivateKey* signer_private_key) {
-  keys = asymm::GenerateKeyPair();
-  if (signer_private_key)
-    keys.validation_token = asymm::Sign(asymm::PlainText(asymm::EncodeKey(keys.public_key)),
-                                        *signer_private_key).string();
-  else
-    keys.validation_token = asymm::Sign(asymm::PlainText(asymm::EncodeKey(keys.public_key)),
-                                        keys.private_key).string();
-
-  keys.identity = crypto::Hash<crypto::SHA512>(asymm::EncodeKey(keys.public_key).string()
-                                               + keys.validation_token);
-
-}
-
 
 }  // namespace impl
 
 namespace {
 
-bool AllPacketsInPendingContainer(const std::map<PacketType, asymm::Keys>& map) {
+bool AllPacketsInPendingContainer(const std::map<PacketType, Fob>& map) {
   auto end(map.end());
-  return !(map.find(kAnmid) == end || map.find(kAnsmid) == end || map.find(kAntmid) == end ||
-           map.find(kAnmaid) == end || map.find(kMaid) == end || map.find(kPmid) == end);
+  return map.find(kAnmid) != end &&
+         map.find(kAnsmid) != end &&
+         map.find(kAntmid) != end &&
+         map.find(kAnmaid) != end &&
+         map.find(kMaid) != end &&
+         map.find(kPmid) != end;
 }
 
-void SignatureAsymmKeysToProtobuf(const asymm::Keys& packet_keys,
+void SignatureAsymmKeysToProtobuf(const Fob& packet_keys,
                                  int type,
                                  PacketContainer &packet_container) {
   SignaturePacketContainer* container = packet_container.add_signature_packet();
   container->set_identity(packet_keys.identity.string());
-  container->set_public_key(asymm::EncodeKey(packet_keys.public_key).string());
-  container->set_private_key(asymm::EncodeKey(packet_keys.private_key).string());
-  container->set_signature(packet_keys.validation_token);
+  container->set_public_key(asymm::EncodeKey(packet_keys.keys.public_key).string());
+  container->set_private_key(asymm::EncodeKey(packet_keys.keys.private_key).string());
+  container->set_signature(packet_keys.validation_token.string());
   container->set_type(type);
 }
 
-void SelectableAsymmKeysToProtobuf(const asymm::Keys& anmpid,
-                                  const asymm::Keys& mpid,
-                                  const asymm::Keys& mmid,
-                                  const NonEmptyString& id,
-                                  PacketContainer &packet_container) {
+void SelectableAsymmKeysToProtobuf(const Fob& anmpid,
+                                   const Fob& mpid,
+                                   const Fob& mmid,
+                                   const NonEmptyString& id,
+                                   PacketContainer &packet_container) {
   SelectableIdentityContainer* id_container = packet_container.add_selectable_packet();
   id_container->set_public_id(id.string());
   SignaturePacketContainer *anmpid_container = id_container->mutable_anmpid();
   anmpid_container->set_identity(anmpid.identity.string());
-  anmpid_container->set_public_key(asymm::EncodeKey(anmpid.public_key).string());
-  anmpid_container->set_private_key(asymm::EncodeKey(anmpid.public_key).string());
-  anmpid_container->set_signature(anmpid.validation_token);
+  anmpid_container->set_public_key(asymm::EncodeKey(anmpid.keys.public_key).string());
+  anmpid_container->set_private_key(asymm::EncodeKey(anmpid.keys.public_key).string());
+  anmpid_container->set_signature(anmpid.validation_token.string());
   anmpid_container->set_type(kAnmpid);
 
   SignaturePacketContainer *mpid_container = id_container->mutable_mpid();
   mpid_container->set_identity(mpid.identity.string());
-  mpid_container->set_public_key(asymm::EncodeKey(mpid.public_key).string());
-  mpid_container->set_private_key(asymm::EncodeKey(mpid.private_key).string());
-  mpid_container->set_signature(mpid.validation_token);
+  mpid_container->set_public_key(asymm::EncodeKey(mpid.keys.public_key).string());
+  mpid_container->set_private_key(asymm::EncodeKey(mpid.keys.private_key).string());
+  mpid_container->set_signature(mpid.validation_token.string());
   mpid_container->set_type(kMpid);
 
   SignaturePacketContainer *mmid_container = id_container->mutable_mmid();
   mmid_container->set_identity(mmid.identity.string());
-  mmid_container->set_public_key(asymm::EncodeKey(mmid.public_key).string());
-  mmid_container->set_private_key(asymm::EncodeKey(mmid.private_key).string());
-  mmid_container->set_signature(mmid.validation_token);
+  mmid_container->set_public_key(asymm::EncodeKey(mmid.keys.public_key).string());
+  mmid_container->set_private_key(asymm::EncodeKey(mmid.keys.private_key).string());
+  mmid_container->set_signature(mmid.validation_token.string());
   mmid_container->set_type(kMmid);
 }
 
-asymm::Keys ProtobufToPacketKeys(const SignaturePacketContainer& spc) {
-  asymm::Keys keys;
-  keys.identity = Identity(spc.identity());
-  keys.validation_token = spc.signature();
-  keys.public_key = asymm::DecodeKey(asymm::EncodedPublicKey(spc.public_key()));
-  keys.private_key = asymm::DecodeKey(asymm::EncodedPrivateKey(spc.private_key()));
-  return keys;
+Fob ProtobufToPacketKeys(const SignaturePacketContainer& spc) {
+  Fob fob;
+  fob.identity = Identity(spc.identity());
+  fob.validation_token = NonEmptyString(spc.signature());
+  fob.keys.public_key = asymm::DecodeKey(asymm::EncodedPublicKey(spc.public_key()));
+  fob.keys.private_key = asymm::DecodeKey(asymm::EncodedPrivateKey(spc.private_key()));
+  return fob;
 }
 
 }  // namespace
@@ -145,13 +151,12 @@ PassportImpl::PassportImpl()
       selectable_mutex_() {}
 
 void PassportImpl::CreateSigningPackets() {
-  asymm::Keys anmid, ansmid, antmid, anmaid, maid, pmid;
-  impl::CreateSignaturePacket(anmid);
-  impl::CreateSignaturePacket(ansmid);
-  impl::CreateSignaturePacket(antmid);
-  impl::CreateSignaturePacket(anmaid);
-  impl::CreateSignaturePacket(maid, &anmaid.private_key);
-  impl::CreateSignaturePacket(pmid, &maid.private_key);
+  Fob anmid(priv::utilities::GenerateFob(nullptr)),
+      ansmid(priv::utilities::GenerateFob(nullptr)),
+      antmid(priv::utilities::GenerateFob(nullptr)),
+      anmaid(priv::utilities::GenerateFob(nullptr)),
+      maid(priv::utilities::GenerateFob(&anmaid.keys.private_key)),
+      pmid(priv::utilities::GenerateFob(&maid.keys.private_key));
   {
     std::lock_guard<std::mutex> lock(signature_mutex_);
     pending_signature_packets_[kAnmid] = anmid;
@@ -187,13 +192,17 @@ int PassportImpl::SetIdentityPackets(const NonEmptyString &username,
                                      const NonEmptyString &password,
                                      const NonEmptyString &master_data,
                                      const NonEmptyString &surrogate_data) {
+  crypto::PlainText rid(crypto::Hash<crypto::SHA512>(boost::lexical_cast<std::string>(pin)));
   std::lock_guard<std::mutex> lock(identity_mutex_);
-  pending_identity_packets_.mid = MidPacket(username, pin, false);
-  pending_identity_packets_.smid = MidPacket(username, pin, true);
-  pending_identity_packets_.tmid = TmidPacket(username, pin, false, password, master_data);
-  pending_identity_packets_.stmid = TmidPacket(username, pin, true, password, surrogate_data);
-  pending_identity_packets_.mid.SetRid(pending_identity_packets_.tmid.name());
-  pending_identity_packets_.smid.SetRid(pending_identity_packets_.stmid.name());
+  pending_identity_packets_.mid.name = MidName(username, pin, false);
+  pending_identity_packets_.smid.name = MidName(username, pin, true);
+  pending_identity_packets_.tmid.value = EncryptSession(username, pin, rid, password, master_data);
+  pending_identity_packets_.stmid.value = EncryptSession(username, pin, rid, password, surrogate_data);
+  pending_identity_packets_.tmid.name = TmidName(pending_identity_packets_.tmid.value);
+  pending_identity_packets_.stmid.name = TmidName(pending_identity_packets_.stmid.value);
+
+  pending_identity_packets_.mid.value = EncryptRid(username, pin, pending_identity_packets_.tmid.name);
+  pending_identity_packets_.smid.value = EncryptRid(username, pin, pending_identity_packets_.stmid.name);
 
   return kSuccess;
 }
@@ -235,25 +244,24 @@ void PassportImpl::Clear(bool signature, bool identity, bool selectable) {
 }
 
 // Getters
-NonEmptyString PassportImpl::IdentityPacketName(PacketType packet_type, bool confirmed) {
-
-  NonEmptyString name;
+Identity PassportImpl::IdentityPacketName(PacketType packet_type, bool confirmed) {
+  Identity name;
   if (confirmed) {
     std::lock_guard<std::mutex> lock(identity_mutex_);
     switch (packet_type) {
-      case kMid: name = confirmed_identity_packets_.mid.name(); break;
-      case kSmid: name = confirmed_identity_packets_.smid.name(); break;
-      case kTmid: name = confirmed_identity_packets_.tmid.name(); break;
-      case kStmid: name = confirmed_identity_packets_.stmid.name(); break;
+      case kMid: name = confirmed_identity_packets_.mid.name; break;
+      case kSmid: name = confirmed_identity_packets_.smid.name; break;
+      case kTmid: name = confirmed_identity_packets_.tmid.name; break;
+      case kStmid: name = confirmed_identity_packets_.stmid.name; break;
       default: break;
     }
   } else {
     std::lock_guard<std::mutex> lock(identity_mutex_);
     switch (packet_type) {
-      case kMid: name = pending_identity_packets_.mid.name(); break;
-      case kSmid: name = pending_identity_packets_.smid.name(); break;
-      case kTmid: name = pending_identity_packets_.tmid.name(); break;
-      case kStmid: name = pending_identity_packets_.stmid.name(); break;
+      case kMid: name = pending_identity_packets_.mid.name; break;
+      case kSmid: name = pending_identity_packets_.smid.name; break;
+      case kTmid: name = pending_identity_packets_.tmid.name; break;
+      case kStmid: name = pending_identity_packets_.stmid.name; break;
       default: break;
     }
   }
@@ -267,19 +275,19 @@ NonEmptyString PassportImpl::IdentityPacketValue(PacketType packet_type, bool co
   if (confirmed) {
     std::lock_guard<std::mutex> lock(identity_mutex_);
     switch (packet_type) {
-      case kMid: value = confirmed_identity_packets_.mid.value(); break;
-      case kSmid: value = confirmed_identity_packets_.smid.value(); break;
-      case kTmid: value = confirmed_identity_packets_.tmid.value(); break;
-      case kStmid: value = confirmed_identity_packets_.stmid.value(); break;
+      case kMid: value = confirmed_identity_packets_.mid.value; break;
+      case kSmid: value = confirmed_identity_packets_.smid.value; break;
+      case kTmid: value = confirmed_identity_packets_.tmid.value; break;
+      case kStmid: value = confirmed_identity_packets_.stmid.value; break;
       default: break;
     }
   } else {
     std::lock_guard<std::mutex> lock(identity_mutex_);
     switch (packet_type) {
-      case kMid: value = pending_identity_packets_.mid.value(); break;
-      case kSmid: value = pending_identity_packets_.smid.value(); break;
-      case kTmid: value = pending_identity_packets_.tmid.value(); break;
-      case kStmid: value = pending_identity_packets_.stmid.value(); break;
+      case kMid: value = pending_identity_packets_.mid.value; break;
+      case kSmid: value = pending_identity_packets_.smid.value; break;
+      case kTmid: value = pending_identity_packets_.tmid.value; break;
+      case kStmid: value = pending_identity_packets_.stmid.value; break;
       default: break;
     }
   }
@@ -287,22 +295,21 @@ NonEmptyString PassportImpl::IdentityPacketValue(PacketType packet_type, bool co
   return value;
 }
 
-asymm::Keys PassportImpl::SignaturePacketDetails(PacketType packet_type,
-                                                 bool confirmed) {
-    std::lock_guard<std::mutex> lock(signature_mutex_);
-    if (confirmed) {
-      auto it(confirmed_signature_packets_.find(packet_type));
-      if (it != confirmed_signature_packets_.end())
-        return it->second;
-    } else {
-      auto it(pending_signature_packets_.find(packet_type));
-      if (it != pending_signature_packets_.end())
-        return it->second;
-    }
-  return asymm::Keys();
+Fob PassportImpl::SignaturePacketDetails(PacketType packet_type, bool confirmed) {
+  std::lock_guard<std::mutex> lock(signature_mutex_);
+  if (confirmed) {
+    auto it(confirmed_signature_packets_.find(packet_type));
+    if (it != confirmed_signature_packets_.end())
+      return it->second;
+  } else {
+    auto it(pending_signature_packets_.find(packet_type));
+    if (it != pending_signature_packets_.end())
+      return it->second;
+  }
+  return Fob();
 }
 
-asymm::Keys PassportImpl::SignaturePacketDetails(PacketType packet_type,
+Fob PassportImpl::SignaturePacketDetails(PacketType packet_type,
                                                  bool confirmed,
                                                  const NonEmptyString &chosen_name) {
   std::lock_guard<std::mutex> lock(selectable_mutex_);
@@ -328,17 +335,15 @@ asymm::Keys PassportImpl::SignaturePacketDetails(PacketType packet_type,
     }
   }
 
-  return asymm::Keys();
+  return Fob();
 }
 
 // Selectable Identity (MPID)
 void PassportImpl::CreateSelectableIdentity(const NonEmptyString &chosen_name) {
   SelectableIdentity selectable_identity;
-  impl::CreateSignaturePacket(selectable_identity.anmpid);
-  impl::CreateSignaturePacket(selectable_identity.mpid,
-                                       &selectable_identity.anmpid.private_key);
-  impl::CreateSignaturePacket(selectable_identity.mmid,
-                                       &selectable_identity.mpid.private_key);
+  selectable_identity.anmpid = priv::utilities::GenerateFob(nullptr);
+  selectable_identity.mpid = priv::utilities::GenerateFob(&selectable_identity.anmpid.keys.private_key);
+  selectable_identity.mmid = priv::utilities::GenerateFob(&selectable_identity.mpid.keys.private_key);
   {
     std::lock_guard<std::mutex> lock(selectable_mutex_);
     pending_selectable_packets_[chosen_name] = selectable_identity;
@@ -377,11 +382,11 @@ int PassportImpl::MoveMaidsafeInbox(const NonEmptyString &chosen_identity) {
     return -1;
   }
 
-  asymm::Keys old_mmid(confirmed_selectable_packets_[chosen_identity].mmid);
-  asymm::Keys mpid(confirmed_selectable_packets_[chosen_identity].mpid);
-  asymm::Keys new_mmid;
+  Fob old_mmid(confirmed_selectable_packets_[chosen_identity].mmid);
+  Fob mpid(confirmed_selectable_packets_[chosen_identity].mpid);
+  Fob new_mmid;
   while (new_mmid.identity == old_mmid.identity)
-    impl::CreateSignaturePacket(new_mmid, &mpid.private_key);
+    new_mmid = priv::utilities::GenerateFob(&mpid.keys.private_key);
 
   pending_selectable_packets_[chosen_identity].mmid = new_mmid;
 
@@ -405,7 +410,7 @@ int PassportImpl::ConfirmMovedMaidsafeInbox(const NonEmptyString &chosen_identit
   return kSuccess;
 }
 
-std::string PassportImpl::Serialise() {
+NonEmptyString PassportImpl::Serialise() {
   PacketContainer packet_container;
 
   {
@@ -438,12 +443,13 @@ std::string PassportImpl::Serialise() {
   std::string s;
   if (!packet_container.SerializeToString(&s))
     LOG(kError) << "Failed to serialise.";
-  return s;
+
+  return NonEmptyString(s);
 }
 
-int PassportImpl::Parse(const std::string& serialised_passport) {
+int PassportImpl::Parse(const NonEmptyString& serialised_passport) {
   PacketContainer packet_container;
-  if (!packet_container.ParseFromString(serialised_passport)) {
+  if (!packet_container.ParseFromString(serialised_passport.string())) {
     LOG(kError) << "Failed to parse provided string.";
     return kBadSerialisedKeyChain;
   }
@@ -455,7 +461,7 @@ int PassportImpl::Parse(const std::string& serialised_passport) {
 
   for (int n(0); n < packet_container.signature_packet_size(); ++n) {
     PacketType packet_type(static_cast<PacketType>(packet_container.signature_packet(n).type()));
-    asymm::Keys packet(ProtobufToPacketKeys(packet_container.signature_packet(n)));
+    Fob packet(ProtobufToPacketKeys(packet_container.signature_packet(n)));
     std::lock_guard<std::mutex> lock(signature_mutex_);
     confirmed_signature_packets_[packet_type] = packet;
   }

@@ -42,23 +42,18 @@ namespace passport {
 
 namespace impl {
 
-Identity MidName(const NonEmptyString &username, const NonEmptyString &pin, bool surrogate);
-
-Identity DecryptRid(const NonEmptyString &username,
-                    const NonEmptyString &pin,
-                    const NonEmptyString &encrypted_rid);
-
-NonEmptyString DecryptMasterData(const NonEmptyString &username,
-                                 const NonEmptyString &pin,
-                                 const NonEmptyString &password,
-                                 const NonEmptyString &encrypted_master_data);
-
 NonEmptyString PacketDebugString(const int &packet_type);
 
-void CreateSignaturePacket(Fob& keys,
-                           const asymm::PrivateKey* signer_private_key = nullptr);
-
 }  // namespace impl
+
+struct NameAndValue {
+  NameAndValue() : name(), value() {}
+  Identity name;
+  NonEmptyString value;
+};
+
+typedef NameAndValue MidPacket;
+typedef NameAndValue TmidPacket;
 
 struct IdentityPackets {
   IdentityPackets() : mid(), smid(), tmid(), stmid() {}
@@ -68,9 +63,9 @@ struct IdentityPackets {
 
 struct SelectableIdentity {
   SelectableIdentity() : anmpid(), mpid(), mmid() {}
-  asymm::Keys anmpid;
-  asymm::Keys mpid;
-  asymm::Keys mmid;
+  Fob anmpid;
+  Fob mpid;
+  Fob mmid;
 };
 
 class PassportImpl {
@@ -87,17 +82,16 @@ class PassportImpl {
   void Clear(bool signature, bool identity, bool selectable);
 
   // Serialisation
-  std::string Serialise();
-  int Parse(const std::string& serialised_passport);
+  NonEmptyString Serialise();
+  int Parse(const NonEmptyString& serialised_passport);
 
   // Getters
-  NonEmptyString IdentityPacketName(PacketType packet_type, bool confirmed);
+  Identity IdentityPacketName(PacketType packet_type, bool confirmed);
   NonEmptyString IdentityPacketValue(PacketType packet_type, bool confirmed);
-  asymm::Keys SignaturePacketDetails(PacketType packet_type,
-                                     bool confirmed,
-                                     const NonEmptyString &chosen_name);
-  asymm::Keys SignaturePacketDetails(PacketType packet_type,
-                                     bool confirmed);
+  Fob SignaturePacketDetails(PacketType packet_type,
+                             bool confirmed,
+                             const NonEmptyString &chosen_name);
+  Fob SignaturePacketDetails(PacketType packet_type, bool confirmed);
 
   // Selectable Identity (aka MPID)
   void CreateSelectableIdentity(const NonEmptyString &chosen_name);
@@ -112,7 +106,7 @@ class PassportImpl {
   PassportImpl(const PassportImpl&);
   PassportImpl& operator=(const PassportImpl&);
 
-  std::map<PacketType, asymm::Keys> pending_signature_packets_, confirmed_signature_packets_;
+  std::map<PacketType, Fob> pending_signature_packets_, confirmed_signature_packets_;
   IdentityPackets pending_identity_packets_, confirmed_identity_packets_;
   std::map<NonEmptyString, SelectableIdentity> pending_selectable_packets_,
                                             confirmed_selectable_packets_;

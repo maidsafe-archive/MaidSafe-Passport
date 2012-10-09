@@ -27,7 +27,7 @@
 #include <string>
 #include <vector>
 
-#include "maidsafe/common/rsa.h"
+#include "maidsafe/private/utils/fob.h"
 
 #include "maidsafe/passport/passport_config.h"
 
@@ -36,20 +36,7 @@ namespace maidsafe {
 
 namespace passport {
 
-Identity MidName(const NonEmptyString &username, const uint32_t pin, bool surrogate);
-
-Identity DecryptRid(const NonEmptyString &username,
-                       const uint32_t pin,
-                       const NonEmptyString &encrypted_rid);
-
-NonEmptyString DecryptMasterData(const NonEmptyString &username,
-                              const uint32_t pin,
-                              const NonEmptyString &password,
-                              const NonEmptyString &encrypted_master_data);
-
 NonEmptyString PacketDebugString(const int &packet_type);
-
-void CreateSignaturePacket(asymm::Keys& keys, const asymm::PrivateKey* signer_private_key = nullptr);
 
 namespace test { class PassportTest; }
 
@@ -60,34 +47,33 @@ class Passport {
   Passport();
   void CreateSigningPackets();
   int ConfirmSigningPackets();
-  int SetIdentityPackets(const NonEmptyString &username,
+  int SetIdentityPackets(const NonEmptyString& username,
                          const uint32_t pin,
-                         const NonEmptyString &password,
-                         const NonEmptyString &master_data,
-                         const NonEmptyString &surrogate_data);
+                         const NonEmptyString& password,
+                         const NonEmptyString& master_data,
+                         const NonEmptyString& surrogate_data);
   int ConfirmIdentityPackets();
   void Clear(bool signature, bool identity, bool selectable);
 
   // Serialisation
-  std::string Serialise();
-  int Parse(const std::string& serialised_passport);
+  NonEmptyString Serialise();
+  int Parse(const NonEmptyString& serialised_passport);
 
   // Getters
-  NonEmptyString IdentityPacketName(PacketType packet_type, bool confirmed);
+  Identity IdentityPacketName(PacketType packet_type, bool confirmed);
   NonEmptyString IdentityPacketValue(PacketType packet_type, bool confirmed);
-  asymm::Keys SignaturePacketDetails(PacketType packet_type,
-                                     bool confirmed,
-                                     const NonEmptyString &chosen_name);
-  asymm::Keys SignaturePacketDetails(PacketType packet_type,
-                                     bool confirmed);
+  Fob SignaturePacketDetails(PacketType packet_type,
+                             bool confirmed,
+                             const NonEmptyString& chosen_name);
+  Fob SignaturePacketDetails(PacketType packet_type, bool confirmed);
 
   // Selectable Identity (aka MPID)
-  void CreateSelectableIdentity(const NonEmptyString &chosen_name);
-  int ConfirmSelectableIdentity(const NonEmptyString &chosen_name);
-  int DeleteSelectableIdentity(const NonEmptyString &chosen_name);
+  void CreateSelectableIdentity(const NonEmptyString& chosen_name);
+  int ConfirmSelectableIdentity(const NonEmptyString& chosen_name);
+  int DeleteSelectableIdentity(const NonEmptyString& chosen_name);
 
-  int MoveMaidsafeInbox(const NonEmptyString &chosen_identity);
-  int ConfirmMovedMaidsafeInbox(const NonEmptyString &chosen_identity);
+  int MoveMaidsafeInbox(const NonEmptyString& chosen_identity);
+  int ConfirmMovedMaidsafeInbox(const NonEmptyString& chosen_identity);
 
   friend class test::PassportTest;
 

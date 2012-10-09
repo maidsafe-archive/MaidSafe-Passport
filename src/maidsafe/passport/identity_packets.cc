@@ -46,9 +46,11 @@ crypto::AES256InitialisationVector SecureIv(crypto::SecurePassword secure_passwo
 }
 
 crypto::SecurePassword CreateSecureMidPassword(UserPassword username, uint32_t pin) {
-  return crypto::CreateSecurePassword(username,
-      crypto::Salt(crypto::Hash<crypto::SHA512>(
-          boost::lexical_cast<std::string>(pin) + username.string())), pin);
+  return crypto::CreateSecurePassword(
+      username,
+      crypto::Salt(crypto::Hash<crypto::SHA512>(boost::lexical_cast<std::string>(pin) +
+                                                username.string())),
+      pin);
 }
 
 crypto::SecurePassword CreateSecureTmidPassword(UserPassword password, crypto::PlainText rid) {
@@ -89,22 +91,26 @@ NonEmptyString XorData(UserPassword username,
 
 
 Identity MidName(NonEmptyString username, uint32_t pin, bool surrogate) {
-  return surrogate ?
-    crypto::Hash<crypto::SHA512>(username + boost::lexical_cast<NonEmptyString>(pin)) :
-    crypto::Hash<crypto::SHA512>(crypto::Hash<crypto::SHA512>(username +
-                                 boost::lexical_cast<NonEmptyString>(pin)));
+  NonEmptyString username_hash(crypto::Hash<crypto::SHA512>(username));
+  NonEmptyString pin_hash(crypto::Hash<crypto::SHA512>(boost::lexical_cast<std::string>(pin)));
+  return surrogate ? crypto::Hash<crypto::SHA512>(username_hash +
+                                                  pin_hash +
+                                                  NonEmptyString(kSmidAppendix)) :
+                     crypto::Hash<crypto::SHA512>(username_hash + pin_hash);
 }
 
 crypto::PlainText DecryptRid(UserPassword username,
                              uint32_t pin,
-                             crypto::CipherText encrypted_rid) {
+                             crypto::CipherText encrypted_tmid_name) {
   crypto::SecurePassword secure_password(CreateSecureMidPassword(username, pin));
-  return crypto::SymmDecrypt(encrypted_rid, SecureKey(secure_password), SecureIv(secure_password));
+  return crypto::SymmDecrypt(encrypted_tmid_name,
+                             SecureKey(secure_password),
+                             SecureIv(secure_password));
 }
 
-crypto::CipherText EncryptRid(UserPassword username, uint32_t pin, crypto::PlainText rid) {
+crypto::CipherText EncryptRid(UserPassword username, uint32_t pin, Identity tmid_name) {
   crypto::SecurePassword secure_password(CreateSecureMidPassword(username, pin));
-  return crypto::SymmEncrypt(crypto::PlainText(rid),
+  return crypto::SymmEncrypt(crypto::PlainText(tmid_name),
                              SecureKey(secure_password),
                              SecureIv(secure_password));
 }
