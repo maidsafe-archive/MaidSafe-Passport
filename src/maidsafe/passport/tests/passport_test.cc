@@ -136,7 +136,7 @@ class PassportTest : public testing::Test {
       return false;
     }
 
-    if (crypto::Hash<crypto::SHA512>(keyword_hash + pin_hash + NonEmptyString(kSmidAppendix)) !=
+    if (crypto::Hash<crypto::SHA512>(crypto::Hash<crypto::SHA512>(keyword_hash + pin_hash)) !=
         passport_.IdentityPacketName(kSmid, false)) {
       LOG(kError) << "New kSmid name incorrect";
       return false;
@@ -263,7 +263,7 @@ TEST_F(PassportTest, BEH_SigningPackets) {
 //    ASSERT_EQ(passport_.IdentityPacketName(kMid, true),
 //              crypto::Hash<crypto::SHA512>(keyword_ + pin_));
 //    ASSERT_EQ(passport_.IdentityPacketName(kSmid, true),
-//              crypto::Hash<crypto::SHA512>(keyword_ + pin_ + kSmidAppendix));
+//              crypto::Hash<crypto::SHA512>(crypto::Hash<crypto::SHA512>(keyword_ + pin_));
 //    ASSERT_EQ(passport_.IdentityPacketName(kTmid, true),
 //              crypto::Hash<crypto::SHA512>(passport_.IdentityPacketValue(kTmid, true)));
 //    ASSERT_EQ(passport_.IdentityPacketName(kStmid, true),

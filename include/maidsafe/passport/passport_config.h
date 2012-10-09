@@ -74,8 +74,6 @@ enum PacketType {
   kMmid
 };
 
-const std::string kSmidAppendix("1");
-
 }  // namespace passport
 
 }  // namespace maidsafe

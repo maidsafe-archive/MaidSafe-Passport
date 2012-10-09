@@ -93,9 +93,8 @@ NonEmptyString XorData(UserPassword username,
 Identity MidName(NonEmptyString username, uint32_t pin, bool surrogate) {
   NonEmptyString username_hash(crypto::Hash<crypto::SHA512>(username));
   NonEmptyString pin_hash(crypto::Hash<crypto::SHA512>(boost::lexical_cast<std::string>(pin)));
-  return surrogate ? crypto::Hash<crypto::SHA512>(username_hash +
-                                                  pin_hash +
-                                                  NonEmptyString(kSmidAppendix)) :
+  return surrogate ? crypto::Hash<crypto::SHA512>(crypto::Hash<crypto::SHA512>(username_hash +
+                                                                               pin_hash)) :
                      crypto::Hash<crypto::SHA512>(username_hash + pin_hash);
 }
 
