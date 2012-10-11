@@ -73,7 +73,7 @@ class PassportImpl {
   PassportImpl();
   void CreateSigningPackets();
   int ConfirmSigningPackets();
-  int SetIdentityPackets(const NonEmptyString &username,
+  int SetIdentityPackets(const NonEmptyString &keyword,
                          const uint32_t pin,
                          const NonEmptyString &password,
                          const NonEmptyString &master_data,

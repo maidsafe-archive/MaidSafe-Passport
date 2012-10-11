@@ -43,12 +43,12 @@ void Passport::CreateSigningPackets() { impl_->CreateSigningPackets(); }
 
 int Passport::ConfirmSigningPackets() { return impl_->ConfirmSigningPackets(); }
 
-int Passport::SetIdentityPackets(const NonEmptyString& username,
+int Passport::SetIdentityPackets(const NonEmptyString& keyword,
                                  const uint32_t pin,
                                  const NonEmptyString& password,
                                  const NonEmptyString& master_data,
                                  const NonEmptyString& surrogate_data) {
-  return impl_->SetIdentityPackets(username, pin, password, master_data, surrogate_data);
+  return impl_->SetIdentityPackets(keyword, pin, password, master_data, surrogate_data);
 }
 
 int Passport::ConfirmIdentityPackets() { return impl_->ConfirmIdentityPackets(); }

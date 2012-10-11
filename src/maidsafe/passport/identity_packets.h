@@ -35,24 +35,24 @@ namespace passport {
 
 namespace test { class IdentityPacketsTest; }
 
-Identity MidName(NonEmptyString username, uint32_t pin, bool surrogate);
+Identity MidName(NonEmptyString keyword, uint32_t pin, bool surrogate);
 
-crypto::PlainText DecryptRid(UserPassword username,
+crypto::PlainText DecryptRid(UserPassword keyword,
                              uint32_t pin,
                              crypto::CipherText encrypted_tmid_name);
 
-crypto::CipherText EncryptRid(UserPassword username, uint32_t pin, Identity tmid_name);
+crypto::CipherText EncryptRid(UserPassword keyword, uint32_t pin, Identity tmid_name);
 
 
 Identity TmidName(const crypto::CipherText& encrypted_tmid);
 
-crypto::CipherText EncryptSession(UserPassword username,
+crypto::CipherText EncryptSession(UserPassword keyword,
                                   uint32_t pin,
                                   UserPassword password,
                                   crypto::PlainText rid,
                                   const NonEmptyString& serialised_session);
 
-NonEmptyString DecryptSession(UserPassword username,
+NonEmptyString DecryptSession(UserPassword keyword,
                               uint32_t pin,
                               UserPassword password,
                               crypto::PlainText rid,

@@ -45,12 +45,11 @@ crypto::AES256InitialisationVector SecureIv(crypto::SecurePassword secure_passwo
       secure_password.string().substr(crypto::AES256_KeySize, crypto::AES256_IVSize));
 }
 
-crypto::SecurePassword CreateSecureMidPassword(UserPassword username, uint32_t pin) {
-  return crypto::CreateSecurePassword(
-      username,
-      crypto::Salt(crypto::Hash<crypto::SHA512>(boost::lexical_cast<std::string>(pin) +
-                                                username.string())),
-      pin);
+crypto::SecurePassword CreateSecureMidPassword(UserPassword keyword, uint32_t pin) {
+  crypto::Salt salt(crypto::Salt(crypto::Hash<crypto::SHA512>(
+                                     boost::lexical_cast<std::string>(pin) +
+                                     keyword.string())));
+  return crypto::CreateSecurePassword(keyword, salt, pin);
 }
 
 crypto::SecurePassword CreateSecureTmidPassword(UserPassword password, crypto::PlainText rid) {
@@ -66,14 +65,14 @@ crypto::SecurePassword CreateSecureTmidPassword(UserPassword password, crypto::P
                                       random_no_from_rid);
 }
 
-NonEmptyString XorData(UserPassword username,
+NonEmptyString XorData(UserPassword keyword,
                        uint32_t pin,
                        UserPassword password,
                        crypto::PlainText rid,
                        NonEmptyString data) {
   uint32_t rounds(pin / 2 == 0 ? pin * 3 / 2 : pin / 2);
   std::string obfuscation_str =
-      crypto::CreateSecurePassword(username,
+      crypto::CreateSecurePassword(keyword,
                                    crypto::Salt(crypto::Hash<crypto::SHA512>(password + rid)),
                                    rounds).string();
   // make the obfuscation_str of same size for XOR
@@ -90,25 +89,25 @@ NonEmptyString XorData(UserPassword username,
 }  // unnamed namespace
 
 
-Identity MidName(NonEmptyString username, uint32_t pin, bool surrogate) {
-  NonEmptyString username_hash(crypto::Hash<crypto::SHA512>(username));
+Identity MidName(NonEmptyString keyword, uint32_t pin, bool surrogate) {
+  NonEmptyString keyword_hash(crypto::Hash<crypto::SHA512>(keyword));
   NonEmptyString pin_hash(crypto::Hash<crypto::SHA512>(boost::lexical_cast<std::string>(pin)));
-  return surrogate ? crypto::Hash<crypto::SHA512>(crypto::Hash<crypto::SHA512>(username_hash +
+  return surrogate ? crypto::Hash<crypto::SHA512>(crypto::Hash<crypto::SHA512>(keyword_hash +
                                                                                pin_hash)) :
-                     crypto::Hash<crypto::SHA512>(username_hash + pin_hash);
+                     crypto::Hash<crypto::SHA512>(keyword_hash + pin_hash);
 }
 
-crypto::PlainText DecryptRid(UserPassword username,
+crypto::PlainText DecryptRid(UserPassword keyword,
                              uint32_t pin,
                              crypto::CipherText encrypted_tmid_name) {
-  crypto::SecurePassword secure_password(CreateSecureMidPassword(username, pin));
+  crypto::SecurePassword secure_password(CreateSecureMidPassword(keyword, pin));
   return crypto::SymmDecrypt(encrypted_tmid_name,
                              SecureKey(secure_password),
                              SecureIv(secure_password));
 }
 
-crypto::CipherText EncryptRid(UserPassword username, uint32_t pin, Identity tmid_name) {
-  crypto::SecurePassword secure_password(CreateSecureMidPassword(username, pin));
+crypto::CipherText EncryptRid(UserPassword keyword, uint32_t pin, Identity tmid_name) {
+  crypto::SecurePassword secure_password(CreateSecureMidPassword(keyword, pin));
   return crypto::SymmEncrypt(crypto::PlainText(tmid_name),
                              SecureKey(secure_password),
                              SecureIv(secure_password));
@@ -119,27 +118,30 @@ Identity TmidName(const crypto::CipherText& encrypted_tmid) {
   return crypto::Hash<crypto::SHA512>(encrypted_tmid);
 }
 
-crypto::CipherText EncryptSession(UserPassword username,
+crypto::CipherText EncryptSession(UserPassword keyword,
                                   uint32_t pin,
                                   UserPassword password,
                                   crypto::PlainText rid,
                                   const NonEmptyString& serialised_session) {
   crypto::SecurePassword secure_password(CreateSecureTmidPassword(password, rid));
-  return crypto::SymmEncrypt(
-      crypto::PlainText(XorData(username, pin, password, rid, serialised_session)),
-      SecureKey(secure_password),
-      SecureIv(secure_password));
+  return crypto::SymmEncrypt(crypto::PlainText(XorData(keyword,
+                                                       pin,
+                                                       password,
+                                                       rid,
+                                                       serialised_session)),
+                             SecureKey(secure_password),
+                             SecureIv(secure_password));
 }
 
-NonEmptyString DecryptSession(UserPassword username,
+NonEmptyString DecryptSession(UserPassword keyword,
                               uint32_t pin,
                               UserPassword password,
                               crypto::PlainText rid,
                               const crypto::CipherText& encrypted_session) {
   crypto::SecurePassword secure_password(CreateSecureTmidPassword(password, rid));
-  return XorData(username, pin, password, rid, crypto::SymmDecrypt(encrypted_session,
-                                                                   SecureKey(secure_password),
-                                                                   SecureIv(secure_password)));
+  return XorData(keyword, pin, password, rid, crypto::SymmDecrypt(encrypted_session,
+                                                                  SecureKey(secure_password),
+                                                                  SecureIv(secure_password)));
 }
 
 }  // namespace passport

@@ -29,11 +29,15 @@
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/rsa.h"
+#include "maidsafe/common/utils.h"
 
 #include "maidsafe/passport/identity_packets.h"
 #include "maidsafe/passport/packets_pb.h"
 
+
 namespace maidsafe {
+
+namespace pu = priv::utilities;
 
 namespace passport {
 
@@ -109,7 +113,7 @@ void SelectableAsymmKeysToProtobuf(const Fob& anmpid,
   SignaturePacketContainer *anmpid_container = id_container->mutable_anmpid();
   anmpid_container->set_identity(anmpid.identity.string());
   anmpid_container->set_public_key(asymm::EncodeKey(anmpid.keys.public_key).string());
-  anmpid_container->set_private_key(asymm::EncodeKey(anmpid.keys.public_key).string());
+  anmpid_container->set_private_key(asymm::EncodeKey(anmpid.keys.private_key).string());
   anmpid_container->set_signature(anmpid.validation_token.string());
   anmpid_container->set_type(kAnmpid);
 
@@ -137,6 +141,13 @@ Fob ProtobufToPacketKeys(const SignaturePacketContainer& spc) {
   return fob;
 }
 
+void ClearIdentityPackets(IdentityPackets &identity_packets) {
+  identity_packets.mid = MidPacket();
+  identity_packets.smid = MidPacket();
+  identity_packets.tmid = TmidPacket();
+  identity_packets.stmid = TmidPacket();
+}
+
 }  // namespace
 
 PassportImpl::PassportImpl()
@@ -151,12 +162,12 @@ PassportImpl::PassportImpl()
       selectable_mutex_() {}
 
 void PassportImpl::CreateSigningPackets() {
-  Fob anmid(priv::utilities::GenerateFob(nullptr)),
-      ansmid(priv::utilities::GenerateFob(nullptr)),
-      antmid(priv::utilities::GenerateFob(nullptr)),
-      anmaid(priv::utilities::GenerateFob(nullptr)),
-      maid(priv::utilities::GenerateFob(&anmaid.keys.private_key)),
-      pmid(priv::utilities::GenerateFob(&maid.keys.private_key));
+  Fob anmid(pu::GenerateFob(nullptr)),
+      ansmid(pu::GenerateFob(nullptr)),
+      antmid(pu::GenerateFob(nullptr)),
+      anmaid(pu::GenerateFob(nullptr)),
+      maid(pu::GenerateFob(&anmaid.keys.private_key)),
+      pmid(pu::GenerateFob(&maid.keys.private_key));
   {
     std::lock_guard<std::mutex> lock(signature_mutex_);
     pending_signature_packets_[kAnmid] = anmid;
@@ -187,31 +198,33 @@ int PassportImpl::ConfirmSigningPackets() {
   return kSuccess;
 }
 
-int PassportImpl::SetIdentityPackets(const NonEmptyString &username,
+int PassportImpl::SetIdentityPackets(const NonEmptyString &keyword,
                                      const uint32_t pin,
                                      const NonEmptyString &password,
                                      const NonEmptyString &master_data,
                                      const NonEmptyString &surrogate_data) {
   crypto::PlainText rid(crypto::Hash<crypto::SHA512>(boost::lexical_cast<std::string>(pin)));
   std::lock_guard<std::mutex> lock(identity_mutex_);
-  pending_identity_packets_.mid.name = MidName(username, pin, false);
-  pending_identity_packets_.smid.name = MidName(username, pin, true);
-  pending_identity_packets_.tmid.value = EncryptSession(username, pin, rid, password, master_data);
-  pending_identity_packets_.stmid.value = EncryptSession(username, pin, rid, password, surrogate_data);
+
+  pending_identity_packets_.tmid.value = EncryptSession(keyword, pin, password, rid, master_data);
+  pending_identity_packets_.stmid.value = EncryptSession(keyword,
+                                                         pin,
+                                                         password,
+                                                         rid,
+                                                         surrogate_data);
   pending_identity_packets_.tmid.name = TmidName(pending_identity_packets_.tmid.value);
   pending_identity_packets_.stmid.name = TmidName(pending_identity_packets_.stmid.value);
 
-  pending_identity_packets_.mid.value = EncryptRid(username, pin, pending_identity_packets_.tmid.name);
-  pending_identity_packets_.smid.value = EncryptRid(username, pin, pending_identity_packets_.stmid.name);
+  pending_identity_packets_.mid.name = MidName(keyword, pin, false);
+  pending_identity_packets_.smid.name = MidName(keyword, pin, true);
+  pending_identity_packets_.mid.value = EncryptRid(keyword,
+                                                   pin,
+                                                   pending_identity_packets_.tmid.name);
+  pending_identity_packets_.smid.value = EncryptRid(keyword,
+                                                    pin,
+                                                    pending_identity_packets_.stmid.name);
 
   return kSuccess;
-}
-
-void ClearIdentityPackets(IdentityPackets &identity_packets) {
-  identity_packets.mid = MidPacket();
-  identity_packets.smid = MidPacket();
-  identity_packets.tmid = TmidPacket();
-  identity_packets.stmid = TmidPacket();
 }
 
 int PassportImpl::ConfirmIdentityPackets() {
@@ -240,6 +253,9 @@ void PassportImpl::Clear(bool signature, bool identity, bool selectable) {
   }
 
   if (selectable) {
+    std::lock_guard<std::mutex> lock(selectable_mutex_);
+    pending_selectable_packets_.clear();
+    confirmed_selectable_packets_.clear();
   }
 }
 
@@ -270,7 +286,6 @@ Identity PassportImpl::IdentityPacketName(PacketType packet_type, bool confirmed
 }
 
 NonEmptyString PassportImpl::IdentityPacketValue(PacketType packet_type, bool confirmed) {
-
   NonEmptyString value;
   if (confirmed) {
     std::lock_guard<std::mutex> lock(identity_mutex_);
@@ -310,8 +325,8 @@ Fob PassportImpl::SignaturePacketDetails(PacketType packet_type, bool confirmed)
 }
 
 Fob PassportImpl::SignaturePacketDetails(PacketType packet_type,
-                                                 bool confirmed,
-                                                 const NonEmptyString &chosen_name) {
+                                         bool confirmed,
+                                         const NonEmptyString &chosen_name) {
   std::lock_guard<std::mutex> lock(selectable_mutex_);
   if (confirmed) {
     auto it(confirmed_selectable_packets_.find(chosen_name));
@@ -341,12 +356,14 @@ Fob PassportImpl::SignaturePacketDetails(PacketType packet_type,
 // Selectable Identity (MPID)
 void PassportImpl::CreateSelectableIdentity(const NonEmptyString &chosen_name) {
   SelectableIdentity selectable_identity;
-  selectable_identity.anmpid = priv::utilities::GenerateFob(nullptr);
-  selectable_identity.mpid = priv::utilities::GenerateFob(&selectable_identity.anmpid.keys.private_key);
-  selectable_identity.mmid = priv::utilities::GenerateFob(&selectable_identity.mpid.keys.private_key);
+  selectable_identity.anmpid = pu::GenerateFob(nullptr);
+  selectable_identity.mpid = pu::GenerateFob(&selectable_identity.anmpid.keys.private_key);
+  selectable_identity.mmid = pu::GenerateFob(&selectable_identity.mpid.keys.private_key);
   {
     std::lock_guard<std::mutex> lock(selectable_mutex_);
     pending_selectable_packets_[chosen_name] = selectable_identity;
+    // TODO(Team): Throw exception here to ensure that users of the function have checked the
+    //             chosen name doesn't exist yet.
   }
 }
 
@@ -384,9 +401,9 @@ int PassportImpl::MoveMaidsafeInbox(const NonEmptyString &chosen_identity) {
 
   Fob old_mmid(confirmed_selectable_packets_[chosen_identity].mmid);
   Fob mpid(confirmed_selectable_packets_[chosen_identity].mpid);
-  Fob new_mmid;
+  Fob new_mmid(pu::GenerateFob(&mpid.keys.private_key));
   while (new_mmid.identity == old_mmid.identity)
-    new_mmid = priv::utilities::GenerateFob(&mpid.keys.private_key);
+    new_mmid = pu::GenerateFob(&mpid.keys.private_key);
 
   pending_selectable_packets_[chosen_identity].mmid = new_mmid;
 
@@ -415,11 +432,13 @@ NonEmptyString PassportImpl::Serialise() {
 
   {
     std::lock_guard<std::mutex> lock(signature_mutex_);
-    for (int n(kAnmid); n != kMid; ++n) {
-      PacketType packet_type(static_cast<PacketType>(n));
-      SignatureAsymmKeysToProtobuf(confirmed_signature_packets_[packet_type],
-                                             n,
-                                             packet_container);
+    if (!confirmed_signature_packets_.empty()) {
+      for (int n(kAnmid); n != kMid; ++n) {
+        PacketType packet_type(static_cast<PacketType>(n));
+        SignatureAsymmKeysToProtobuf(confirmed_signature_packets_[packet_type],
+                                     n,
+                                     packet_container);
+      }
     }
   }
 
@@ -428,21 +447,31 @@ NonEmptyString PassportImpl::Serialise() {
     std::vector<NonEmptyString> selectables;
     std::for_each(confirmed_selectable_packets_.begin(),
                   confirmed_selectable_packets_.end(),
-                  [&selectables](const std::map<NonEmptyString, SelectableIdentity>::value_type &e) {
+                  [&selectables]
+                  (const std::map<NonEmptyString, SelectableIdentity>::value_type &e) {
                     selectables.push_back(e.first);
                   });
     for (size_t n(0); n < selectables.size(); ++n) {
       SelectableAsymmKeysToProtobuf(confirmed_selectable_packets_[selectables[n]].anmpid,
-                                              confirmed_selectable_packets_[selectables[n]].mpid,
-                                              confirmed_selectable_packets_[selectables[n]].mmid,
-                                              selectables[n],
-                                              packet_container);
+                                    confirmed_selectable_packets_[selectables[n]].mpid,
+                                    confirmed_selectable_packets_[selectables[n]].mmid,
+                                    selectables[n],
+                                    packet_container);
     }
   }
 
+  if (packet_container.signature_packet_size() == 0 &&
+      packet_container.selectable_packet_size() == 0) {
+    LOG(kError) << "Empty container, confirmed packets missing.";
+    // TODO(Team): This should be another exception to prevent usage after Clear.
+    return NonEmptyString();
+  }
+
   std::string s;
-  if (!packet_container.SerializeToString(&s))
+  if (!packet_container.SerializeToString(&s) || s.empty()) {
     LOG(kError) << "Failed to serialise.";
+    return NonEmptyString();
+  }
 
   return NonEmptyString(s);
 }
