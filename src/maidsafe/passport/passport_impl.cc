@@ -37,7 +37,7 @@
 
 namespace maidsafe {
 
-namespace pu = priv::utilities;
+namespace pu = priv::utils;
 
 namespace passport {
 
