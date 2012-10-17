@@ -34,7 +34,6 @@
 #include "maidsafe/private/utils/fob.h"
 
 #include "maidsafe/passport/passport_config.h"
-#include "maidsafe/passport/identity_packets.h"
 
 namespace maidsafe {
 
@@ -43,6 +42,18 @@ namespace passport {
 namespace impl {
 
 NonEmptyString PacketDebugString(const int &packet_type);
+
+Identity MidName(NonEmptyString keyword, uint32_t pin, bool surrogate);
+
+crypto::PlainText DecryptRid(UserPassword keyword,
+                             uint32_t pin,
+                             crypto::CipherText encrypted_tmid_name);
+
+NonEmptyString DecryptSession(UserPassword keyword,
+                              uint32_t pin,
+                              UserPassword password,
+                              crypto::PlainText rid,
+                              const crypto::CipherText& encrypted_session);
 
 }  // namespace impl
 

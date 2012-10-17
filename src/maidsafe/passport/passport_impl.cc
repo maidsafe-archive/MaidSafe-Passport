@@ -34,7 +34,6 @@
 #include "maidsafe/passport/identity_packets.h"
 #include "maidsafe/passport/packets_pb.h"
 
-
 namespace maidsafe {
 
 namespace pu = priv::utils;
@@ -76,6 +75,24 @@ NonEmptyString PacketDebugString(const int &packet_type) {
     default:
       return NonEmptyString("error");
   }
+}
+
+Identity MidName(NonEmptyString keyword, uint32_t pin, bool surrogate) {
+  return detail::MidName(keyword, pin, surrogate);
+}
+
+crypto::PlainText DecryptRid(UserPassword keyword,
+                             uint32_t pin,
+                             crypto::CipherText encrypted_tmid_name) {
+  return detail::DecryptRid(keyword, pin, encrypted_tmid_name);
+}
+
+NonEmptyString DecryptSession(UserPassword keyword,
+                              uint32_t pin,
+                              UserPassword password,
+                              crypto::PlainText rid,
+                              const crypto::CipherText& encrypted_session) {
+  return detail::DecryptSession(keyword, pin, password, rid, encrypted_session);
 }
 
 }  // namespace impl
@@ -206,23 +223,27 @@ int PassportImpl::SetIdentityPackets(const NonEmptyString &keyword,
   crypto::PlainText rid(crypto::Hash<crypto::SHA512>(boost::lexical_cast<std::string>(pin)));
   std::lock_guard<std::mutex> lock(identity_mutex_);
 
-  pending_identity_packets_.tmid.value = EncryptSession(keyword, pin, password, rid, master_data);
-  pending_identity_packets_.stmid.value = EncryptSession(keyword,
-                                                         pin,
-                                                         password,
-                                                         rid,
-                                                         surrogate_data);
-  pending_identity_packets_.tmid.name = TmidName(pending_identity_packets_.tmid.value);
-  pending_identity_packets_.stmid.name = TmidName(pending_identity_packets_.stmid.value);
+  pending_identity_packets_.tmid.value = detail::EncryptSession(keyword,
+                                                                pin,
+                                                                password,
+                                                                rid,
+                                                                master_data);
+  pending_identity_packets_.stmid.value = detail::EncryptSession(keyword,
+                                                                 pin,
+                                                                 password,
+                                                                 rid,
+                                                                 surrogate_data);
+  pending_identity_packets_.tmid.name = detail::TmidName(pending_identity_packets_.tmid.value);
+  pending_identity_packets_.stmid.name = detail::TmidName(pending_identity_packets_.stmid.value);
 
-  pending_identity_packets_.mid.name = MidName(keyword, pin, false);
-  pending_identity_packets_.smid.name = MidName(keyword, pin, true);
-  pending_identity_packets_.mid.value = EncryptRid(keyword,
-                                                   pin,
-                                                   pending_identity_packets_.tmid.name);
-  pending_identity_packets_.smid.value = EncryptRid(keyword,
-                                                    pin,
-                                                    pending_identity_packets_.stmid.name);
+  pending_identity_packets_.mid.name = detail::MidName(keyword, pin, false);
+  pending_identity_packets_.smid.name = detail::MidName(keyword, pin, true);
+  pending_identity_packets_.mid.value = detail::EncryptRid(keyword,
+                                                           pin,
+                                                           pending_identity_packets_.tmid.name);
+  pending_identity_packets_.smid.value = detail::EncryptRid(keyword,
+                                                            pin,
+                                                            pending_identity_packets_.stmid.name);
 
   return kSuccess;
 }

@@ -36,6 +36,8 @@ namespace maidsafe {
 
 namespace passport {
 
+namespace detail {
+
 namespace test {
 
 class IdentityPacketsTest : public testing::Test {
@@ -162,6 +164,8 @@ TEST_F(IdentityPacketsTest, BEH_ChangeDetails) {
 }
 
 }  // namespace test
+
+}  // namespace detail
 
 }  // namespace passport
 

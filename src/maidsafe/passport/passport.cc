@@ -37,6 +37,25 @@ NonEmptyString PacketDebugString(const int &packet_type) {
   return impl::PacketDebugString(packet_type);
 }
 
+Identity MidName(NonEmptyString keyword, uint32_t pin, bool surrogate) {
+  return impl::MidName(keyword, pin, surrogate);
+}
+
+crypto::PlainText DecryptRid(UserPassword keyword,
+                             uint32_t pin,
+                             crypto::CipherText encrypted_tmid_name) {
+  return impl::DecryptRid(keyword, pin, encrypted_tmid_name);
+}
+
+NonEmptyString DecryptSession(UserPassword keyword,
+                              uint32_t pin,
+                              UserPassword password,
+                              crypto::PlainText rid,
+                              const crypto::CipherText& encrypted_session) {
+  return impl::DecryptSession(keyword, pin, password, rid, encrypted_session);
+}
+
+
 Passport::Passport() : impl_(new PassportImpl) {}
 
 void Passport::CreateSigningPackets() { impl_->CreateSigningPackets(); }

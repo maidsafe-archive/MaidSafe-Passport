@@ -33,7 +33,7 @@ namespace maidsafe {
 
 namespace passport {
 
-namespace test { class IdentityPacketsTest; }
+namespace detail {
 
 Identity MidName(NonEmptyString keyword, uint32_t pin, bool surrogate);
 
@@ -57,6 +57,8 @@ NonEmptyString DecryptSession(UserPassword keyword,
                               UserPassword password,
                               crypto::PlainText rid,
                               const crypto::CipherText& encrypted_session);
+
+}  // namespace detail
 
 }  // namespace passport
 

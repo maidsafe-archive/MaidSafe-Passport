@@ -88,6 +88,7 @@ NonEmptyString XorData(UserPassword keyword,
 
 }  // unnamed namespace
 
+namespace detail {
 
 Identity MidName(NonEmptyString keyword, uint32_t pin, bool surrogate) {
   NonEmptyString keyword_hash(crypto::Hash<crypto::SHA512>(keyword));
@@ -143,6 +144,8 @@ NonEmptyString DecryptSession(UserPassword keyword,
                                                                   SecureKey(secure_password),
                                                                   SecureIv(secure_password)));
 }
+
+}  // namespace detail
 
 }  // namespace passport
 

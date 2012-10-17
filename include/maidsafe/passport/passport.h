@@ -38,6 +38,18 @@ namespace passport {
 
 NonEmptyString PacketDebugString(const int &packet_type);
 
+Identity MidName(NonEmptyString keyword, uint32_t pin, bool surrogate);
+
+crypto::PlainText DecryptRid(UserPassword keyword,
+                             uint32_t pin,
+                             crypto::CipherText encrypted_tmid_name);
+
+NonEmptyString DecryptSession(UserPassword keyword,
+                              uint32_t pin,
+                              UserPassword password,
+                              crypto::PlainText rid,
+                              const crypto::CipherText& encrypted_session);
+
 namespace test { class PassportTest; }
 
 class PassportImpl;
