@@ -131,10 +131,20 @@ TEST_F(IdentityPacketsTest, BEH_Full) {
     ASSERT_EQ(decrypted_surrogate_data1, decrypted_surrogate_data2);
     ASSERT_EQ(kSurrogateData, decrypted_surrogate_data2);
 
-    Identity decrypted_mid_value1(DecryptRid(kKeyword, kPin, mid_value1));
-    Identity decrypted_mid_value2(DecryptRid(kKeyword, kPin, mid_value2));
-    Identity decrypted_smid_value1(DecryptRid(kKeyword, kPin, smid_value1));
-    Identity decrypted_smid_value2(DecryptRid(kKeyword, kPin, smid_value2));
+    crypto::CipherText dec_rid1(DecryptRid(kKeyword, kPin, mid_value1));
+    crypto::CipherText dec_rid2(DecryptRid(kKeyword, kPin, mid_value2));
+    ASSERT_EQ(size_t(crypto::SHA512::DIGESTSIZE), dec_rid1.string().size());
+    ASSERT_EQ(size_t(crypto::SHA512::DIGESTSIZE), dec_rid2.string().size());
+    Identity decrypted_mid_value1(dec_rid1.string());
+    Identity decrypted_mid_value2(dec_rid2.string());
+
+    crypto::CipherText dec_srid1(DecryptRid(kKeyword, kPin, smid_value1));
+    crypto::CipherText dec_srid2(DecryptRid(kKeyword, kPin, smid_value2));
+    ASSERT_EQ(size_t(crypto::SHA512::DIGESTSIZE), dec_srid1.string().size());
+    ASSERT_EQ(size_t(crypto::SHA512::DIGESTSIZE), dec_srid2.string().size());
+    Identity decrypted_smid_value1(dec_srid1.string());
+    Identity decrypted_smid_value2(dec_srid2.string());
+
     ASSERT_EQ(decrypted_mid_value1, decrypted_mid_value2);
     ASSERT_EQ(tmid_name1, decrypted_mid_value2);
     ASSERT_EQ(decrypted_smid_value1, decrypted_smid_value2);
