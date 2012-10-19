@@ -37,9 +37,7 @@ namespace detail {
 
 Identity MidName(NonEmptyString keyword, uint32_t pin, bool surrogate);
 
-crypto::PlainText DecryptRid(UserPassword keyword,
-                             uint32_t pin,
-                             crypto::CipherText encrypted_tmid_name);
+Identity DecryptRid(UserPassword keyword, uint32_t pin, crypto::CipherText encrypted_tmid_name);
 
 crypto::CipherText EncryptRid(UserPassword keyword, uint32_t pin, Identity tmid_name);
 

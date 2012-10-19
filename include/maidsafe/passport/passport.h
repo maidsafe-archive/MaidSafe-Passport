@@ -40,9 +40,7 @@ NonEmptyString PacketDebugString(const int &packet_type);
 
 Identity MidName(NonEmptyString keyword, uint32_t pin, bool surrogate);
 
-crypto::PlainText DecryptRid(UserPassword keyword,
-                             uint32_t pin,
-                             crypto::CipherText encrypted_tmid_name);
+Identity DecryptRid(UserPassword keyword, uint32_t pin, crypto::CipherText encrypted_tmid_name);
 
 NonEmptyString DecryptSession(UserPassword keyword,
                               uint32_t pin,

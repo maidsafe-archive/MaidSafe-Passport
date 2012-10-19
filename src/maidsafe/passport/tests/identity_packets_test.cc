@@ -40,19 +40,7 @@ namespace detail {
 
 namespace test {
 
-class IdentityPacketsTest : public testing::Test {
- protected:
-  void RunInParallel(std::function<void()> f, int num_threads = 6) {
-    std::vector<std::future<void> > vec;
-    for (int i = 0; i < num_threads; ++i)
-      vec.push_back(std::async(std::launch::async, f));
-    // wait for all threads to finish
-    for (auto &i : vec)
-      i.get();
-  }
-};
-
-TEST_F(IdentityPacketsTest, BEH_Full) {
+TEST(IdentityPacketsTest, BEH_Full) {
   auto f([=] {
     const NonEmptyString kKeyword(RandomAlphaNumericString(20)),
                          kPassword(RandomAlphaNumericString(20));
@@ -131,29 +119,20 @@ TEST_F(IdentityPacketsTest, BEH_Full) {
     ASSERT_EQ(decrypted_surrogate_data1, decrypted_surrogate_data2);
     ASSERT_EQ(kSurrogateData, decrypted_surrogate_data2);
 
-    crypto::CipherText dec_rid1(DecryptRid(kKeyword, kPin, mid_value1));
-    crypto::CipherText dec_rid2(DecryptRid(kKeyword, kPin, mid_value2));
-    ASSERT_EQ(size_t(crypto::SHA512::DIGESTSIZE), dec_rid1.string().size());
-    ASSERT_EQ(size_t(crypto::SHA512::DIGESTSIZE), dec_rid2.string().size());
-    Identity decrypted_mid_value1(dec_rid1.string());
-    Identity decrypted_mid_value2(dec_rid2.string());
-
-    crypto::CipherText dec_srid1(DecryptRid(kKeyword, kPin, smid_value1));
-    crypto::CipherText dec_srid2(DecryptRid(kKeyword, kPin, smid_value2));
-    ASSERT_EQ(size_t(crypto::SHA512::DIGESTSIZE), dec_srid1.string().size());
-    ASSERT_EQ(size_t(crypto::SHA512::DIGESTSIZE), dec_srid2.string().size());
-    Identity decrypted_smid_value1(dec_srid1.string());
-    Identity decrypted_smid_value2(dec_srid2.string());
+    Identity decrypted_mid_value1(DecryptRid(kKeyword, kPin, mid_value1));
+    Identity decrypted_mid_value2(DecryptRid(kKeyword, kPin, mid_value2));
+    Identity decrypted_smid_value1(DecryptRid(kKeyword, kPin, smid_value1));
+    Identity decrypted_smid_value2(DecryptRid(kKeyword, kPin, smid_value2));
 
     ASSERT_EQ(decrypted_mid_value1, decrypted_mid_value2);
     ASSERT_EQ(tmid_name1, decrypted_mid_value2);
     ASSERT_EQ(decrypted_smid_value1, decrypted_smid_value2);
     ASSERT_EQ(stmid_name1, decrypted_smid_value2);
   });
-  RunInParallel(f);
+  maidsafe::test::RunInParallel(6, f);
 }
 
-TEST_F(IdentityPacketsTest, BEH_ChangeDetails) {
+TEST(IdentityPacketsTest, BEH_ChangeDetails) {
   const NonEmptyString kKeyword(RandomAlphaNumericString(20)),
                        kPassword(RandomAlphaNumericString(20)),
                        kNewKeyword(RandomAlphaNumericString(20));

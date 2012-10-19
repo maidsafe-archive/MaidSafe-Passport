@@ -41,9 +41,7 @@ Identity MidName(NonEmptyString keyword, uint32_t pin, bool surrogate) {
   return impl::MidName(keyword, pin, surrogate);
 }
 
-crypto::PlainText DecryptRid(UserPassword keyword,
-                             uint32_t pin,
-                             crypto::CipherText encrypted_tmid_name) {
+Identity DecryptRid(UserPassword keyword, uint32_t pin, crypto::CipherText encrypted_tmid_name) {
   return impl::DecryptRid(keyword, pin, encrypted_tmid_name);
 }
 

@@ -98,13 +98,16 @@ Identity MidName(NonEmptyString keyword, uint32_t pin, bool surrogate) {
                      crypto::Hash<crypto::SHA512>(keyword_hash + pin_hash);
 }
 
-crypto::PlainText DecryptRid(UserPassword keyword,
-                             uint32_t pin,
-                             crypto::CipherText encrypted_tmid_name) {
+Identity DecryptRid(UserPassword keyword, uint32_t pin, crypto::CipherText encrypted_tmid_name) {
   crypto::SecurePassword secure_password(CreateSecureMidPassword(keyword, pin));
-  return crypto::SymmDecrypt(encrypted_tmid_name,
-                             SecureKey(secure_password),
-                             SecureIv(secure_password));
+  crypto::CipherText decrypted_rid(crypto::SymmDecrypt(encrypted_tmid_name,
+                                                       SecureKey(secure_password),
+                                                       SecureIv(secure_password)));
+#ifndef NDEBUG
+  if (decrypted_rid.string().size() > size_t(crypto::SHA512::DIGESTSIZE))
+    LOG(kError) << "The decrypted RID is longer than it should be. The conversion will throw.";
+#endif
+  return Identity(decrypted_rid.string());
 }
 
 crypto::CipherText EncryptRid(UserPassword keyword, uint32_t pin, Identity tmid_name) {
