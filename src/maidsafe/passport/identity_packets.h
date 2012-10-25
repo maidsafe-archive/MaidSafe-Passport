@@ -47,13 +47,13 @@ Identity TmidName(const crypto::CipherText& encrypted_tmid);
 crypto::CipherText EncryptSession(UserPassword keyword,
                                   uint32_t pin,
                                   UserPassword password,
-                                  crypto::PlainText rid,
+                                  crypto::PlainText salt,
                                   const NonEmptyString& serialised_session);
 
 NonEmptyString DecryptSession(UserPassword keyword,
                               uint32_t pin,
                               UserPassword password,
-                              crypto::PlainText rid,
+                              crypto::PlainText salt,
                               const crypto::CipherText& encrypted_session);
 
 }  // namespace detail

@@ -48,9 +48,9 @@ Identity DecryptRid(UserPassword keyword, uint32_t pin, crypto::CipherText encry
 NonEmptyString DecryptSession(UserPassword keyword,
                               uint32_t pin,
                               UserPassword password,
-                              crypto::PlainText rid,
+                              crypto::PlainText salt,
                               const crypto::CipherText& encrypted_session) {
-  return impl::DecryptSession(keyword, pin, password, rid, encrypted_session);
+  return impl::DecryptSession(keyword, pin, password, salt, encrypted_session);
 }
 
 

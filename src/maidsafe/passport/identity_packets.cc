@@ -125,13 +125,13 @@ Identity TmidName(const crypto::CipherText& encrypted_tmid) {
 crypto::CipherText EncryptSession(UserPassword keyword,
                                   uint32_t pin,
                                   UserPassword password,
-                                  crypto::PlainText rid,
+                                  crypto::PlainText salt,
                                   const NonEmptyString& serialised_session) {
-  crypto::SecurePassword secure_password(CreateSecureTmidPassword(password, rid));
+  crypto::SecurePassword secure_password(CreateSecureTmidPassword(password, salt));
   return crypto::SymmEncrypt(crypto::PlainText(XorData(keyword,
                                                        pin,
                                                        password,
-                                                       rid,
+                                                       salt,
                                                        serialised_session)),
                              SecureKey(secure_password),
                              SecureIv(secure_password));
@@ -140,12 +140,12 @@ crypto::CipherText EncryptSession(UserPassword keyword,
 NonEmptyString DecryptSession(UserPassword keyword,
                               uint32_t pin,
                               UserPassword password,
-                              crypto::PlainText rid,
+                              crypto::PlainText salt,
                               const crypto::CipherText& encrypted_session) {
-  crypto::SecurePassword secure_password(CreateSecureTmidPassword(password, rid));
-  return XorData(keyword, pin, password, rid, crypto::SymmDecrypt(encrypted_session,
-                                                                  SecureKey(secure_password),
-                                                                  SecureIv(secure_password)));
+  crypto::SecurePassword secure_password(CreateSecureTmidPassword(password, salt));
+  return XorData(keyword, pin, password, salt, crypto::SymmDecrypt(encrypted_session,
+                                                                   SecureKey(secure_password),
+                                                                   SecureIv(secure_password)));
 }
 
 }  // namespace detail

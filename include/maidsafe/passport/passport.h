@@ -45,7 +45,7 @@ Identity DecryptRid(UserPassword keyword, uint32_t pin, crypto::CipherText encry
 NonEmptyString DecryptSession(UserPassword keyword,
                               uint32_t pin,
                               UserPassword password,
-                              crypto::PlainText rid,
+                              crypto::PlainText salt,
                               const crypto::CipherText& encrypted_session);
 
 namespace test { class PassportTest; }
