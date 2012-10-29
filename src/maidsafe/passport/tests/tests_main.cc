@@ -24,7 +24,5 @@
 #include "maidsafe/common/test.h"
 
 int main(int argc, char **argv) {
-  maidsafe::log::FilterMap filter_map;
-  filter_map["passport"] = maidsafe::log::kError;
-  return ExecuteMain(argc, argv, filter_map);
+  return maidsafe::test::ExecuteMain(argc, argv);
 }
