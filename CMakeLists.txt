@@ -53,10 +53,12 @@ list(REMOVE_ITEM STYLE_PASSPORT "${PROJECT_SOURCE_DIR}/src/maidsafe/passport/pac
 # Define MaidSafe libraries and executables                                                       #
 ###################################################################################################
 ms_add_static_library(passport ${ALL_FILES_PASSPORT_DIR})
-ms_add_executable(TESTpassport "Tests/Passport" ${ALL_FILES_PASSPORT_TESTS_DIR})
-
 target_link_libraries(maidsafe_passport maidsafe_common maidsafe_utilities)
-target_link_libraries(TESTpassport maidsafe_passport)
+
+if(MAIDSAFE_TESTING)
+  ms_add_executable(TESTpassport "Tests/Passport" ${ALL_FILES_PASSPORT_TESTS_DIR})
+  target_link_libraries(TESTpassport maidsafe_passport)
+endif()
 
 rename_outdated_built_exes()
 
@@ -71,7 +73,9 @@ ms_disable_warnings(${PROJECT_SOURCE_DIR}/src/maidsafe/passport/packets.pb.cc)
 ###################################################################################################
 # Tests                                                                                           #
 ###################################################################################################
-add_style_test(${STYLE_PASSPORT})
-add_gtests(TESTpassport)
-add_project_experimental()
-test_summary_output()
+if(MAIDSAFE_TESTING)
+  add_style_test(${STYLE_PASSPORT})
+  add_gtests(TESTpassport)
+  add_project_experimental()
+  test_summary_output()
+endif()
