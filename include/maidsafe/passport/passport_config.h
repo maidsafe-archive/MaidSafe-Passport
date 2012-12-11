@@ -57,22 +57,33 @@ enum ReturnCode {
   kFailedToGetSelectableIdentityData = -100017
 };
 
-enum PacketType {
-  kUnknown = -1,
-  kAnmid,
-  kAnsmid,
-  kAntmid,
-  kAnmaid,
-  kMaid,
-  kPmid,
-  kMid,
-  kSmid,
-  kTmid,
-  kStmid,
-  kAnmpid,
-  kMpid,
-  kMmid
-};
+struct AnmidTag;
+struct AnsmidTag;
+struct AntmidTag;
+struct AnmaidTag;
+struct MaidTag;
+struct PmidTag;
+struct MidTag;
+struct SmidTag;
+struct TmidTag;
+struct StmidTag;
+struct AnmpidTag;
+struct MpidTag;
+struct MmidTag;
+
+typedef TaggedValue<Identity, struct AnmidTag> AnmidName;
+typedef TaggedValue<Identity, struct AnsmidTag> AnsmidName;
+typedef TaggedValue<Identity, struct AntmidTag> AntmidName;
+typedef TaggedValue<Identity, struct AnmaidTag> AnmaidName;
+typedef TaggedValue<Identity, struct MaidTag> MaidName;
+typedef TaggedValue<Identity, struct PmidTag> PmidName;
+typedef TaggedValue<Identity, struct MidTag> MidName;
+typedef TaggedValue<Identity, struct SmidTag> SmidName;
+typedef TaggedValue<Identity, struct TmidTag> TmidName;
+typedef TaggedValue<Identity, struct StmidTag> StmidName;
+typedef TaggedValue<Identity, struct AnmpidTag> AnmpidName;
+typedef TaggedValue<Identity, struct MpidTag> MpidName;
+typedef TaggedValue<Identity, struct MmidTag> MmidName;
 
 }  // namespace passport
 
