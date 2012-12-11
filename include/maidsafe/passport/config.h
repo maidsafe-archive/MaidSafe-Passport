@@ -21,8 +21,8 @@
 * ============================================================================
 */
 
-#ifndef MAIDSAFE_PASSPORT_PASSPORT_CONFIG_H_
-#define MAIDSAFE_PASSPORT_PASSPORT_CONFIG_H_
+#ifndef MAIDSAFE_PASSPORT_CONFIG_H_
+#define MAIDSAFE_PASSPORT_CONFIG_H_
 
 #include <tuple>
 
@@ -87,6 +87,10 @@ typedef TaggedValue<Identity, struct MmidTag> MmidName;
 
 }  // namespace passport
 
+class PmidFob {
+  // dummy class //TODO(dirvine) delete me
+};
+
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_PASSPORT_PASSPORT_CONFIG_H_
+#endif  // MAIDSAFE_PASSPORT_CONFIG_H_
