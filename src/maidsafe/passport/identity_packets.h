@@ -27,7 +27,8 @@
 #include <memory>
 #include <string>
 
-#include "maidsafe/passport/passport_config.h"
+#include "maidsafe/passport/detail/config.h"
+
 
 namespace maidsafe {
 
@@ -35,7 +36,17 @@ namespace passport {
 
 namespace detail {
 
-Identity MidName(NonEmptyString keyword, uint32_t pin, bool surrogate);
+template<typename Tag>
+struct NameAndValue {
+  typedef TaggedValue<Identity, Tag> name_type;
+  typedef typename Signer<typename Tag>::type signer_type;
+  NameAndValue() : name(), value() {}
+  name_type name;
+  NonEmptyString value;
+};
+
+
+Mid::name_type MidName(NonEmptyString keyword, uint32_t pin, bool surrogate);
 
 Identity DecryptRid(UserPassword keyword, uint32_t pin, crypto::CipherText encrypted_tmid_name);
 

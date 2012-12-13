@@ -55,14 +55,6 @@ NonEmptyString DecryptSession(UserPassword keyword,
 
 }  // namespace impl
 
-struct NameAndValue {
-  NameAndValue() : name(), value() {}
-  Identity name;
-  NonEmptyString value;
-};
-
-typedef NameAndValue MidPacket;
-typedef NameAndValue TmidPacket;
 
 struct IdentityPackets {
   IdentityPackets() : mid(), smid(), tmid(), stmid() {}
@@ -118,7 +110,7 @@ class PassportImpl {
   std::map<PacketType, Fob> pending_signature_packets_, confirmed_signature_packets_;
   IdentityPackets pending_identity_packets_, confirmed_identity_packets_;
   std::map<NonEmptyString, SelectableIdentity> pending_selectable_packets_,
-                                            confirmed_selectable_packets_;
+                                               confirmed_selectable_packets_;
   std::mutex signature_mutex_, identity_mutex_, selectable_mutex_;
 };
 
