@@ -26,6 +26,7 @@ namespace test {
 class FobTest : public testing::Test {
 };
 
+
 TEST_F(FobTest, BEH_FobGenerationAndValidation) {
   maidsafe::test::RunInParallel(6, [=] {
       Anmid anmid;
@@ -34,13 +35,25 @@ TEST_F(FobTest, BEH_FobGenerationAndValidation) {
       Anmaid anmaid;
       Maid maid(anmaid);
       Pmid pmid(maid);
-      Mid mid(anmid);
-      Smid smid(ansmid);
-      Tmid tmid(antmid);
-      Stmid stmid(antmid);
       Anmpid anmpid;
       Mpid mpid(anmpid);
   });
+  static_assert(is_short_term_cacheable<Anmid::name_type>::value, "");
+  static_assert(is_short_term_cacheable<Ansmid::name_type>::value, "");
+  static_assert(is_short_term_cacheable<Antmid::name_type>::value, "");
+  static_assert(is_short_term_cacheable<Anmaid::name_type>::value, "");
+  static_assert(is_short_term_cacheable<Maid::name_type>::value, "");
+  static_assert(is_short_term_cacheable<Pmid::name_type>::value, "");
+  static_assert(is_short_term_cacheable<Anmpid::name_type>::value, "");
+  static_assert(is_short_term_cacheable<Mpid::name_type>::value, "");
+  static_assert(!is_long_term_cacheable<Anmid::name_type>::value, "");
+  static_assert(!is_long_term_cacheable<Ansmid::name_type>::value, "");
+  static_assert(!is_long_term_cacheable<Antmid::name_type>::value, "");
+  static_assert(!is_long_term_cacheable<Anmaid::name_type>::value, "");
+  static_assert(!is_long_term_cacheable<Maid::name_type>::value, "");
+  static_assert(!is_long_term_cacheable<Pmid::name_type>::value, "");
+  static_assert(!is_long_term_cacheable<Anmpid::name_type>::value, "");
+  static_assert(!is_long_term_cacheable<Mpid::name_type>::value, "");
 }
 
 //TEST_F(FobTest, BEH_FobSerialisationAndParsing) {

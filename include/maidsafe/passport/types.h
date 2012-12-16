@@ -12,10 +12,11 @@
 #ifndef MAIDSAFE_PASSPORT_TYPES_H_
 #define MAIDSAFE_PASSPORT_TYPES_H_
 
-#include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"
 
 #include "maidsafe/passport/detail/config.h"
+#include "maidsafe/passport/detail/fob.h"
+#include "maidsafe/passport/detail/identity_data.h"
 
 
 namespace maidsafe {
@@ -29,15 +30,31 @@ typedef detail::Fob<detail::AnmaidTag> Anmaid;
 typedef detail::Fob<detail::MaidTag> Maid;
 typedef detail::Fob<detail::PmidTag> Pmid;
 
-typedef detail::NameAndValue<detail::MidTag> Mid;
-typedef detail::NameAndValue<detail::SmidTag> Smid;
-typedef detail::NameAndValue<detail::TmidTag> Tmid;
-typedef detail::NameAndValue<detail::StmidTag> Stmid;
+typedef detail::MidData<detail::MidTag> Mid;
+typedef detail::MidData<detail::SmidTag> Smid;
+typedef detail::TmidData<detail::TmidTag> Tmid, Stmid;
 
 typedef detail::Fob<detail::AnmpidTag> Anmpid;
 typedef detail::Fob<detail::MpidTag> Mpid;
 
 }  // namespace passport
+
+template<>
+struct is_short_term_cacheable<passport::Anmid::name_type> : public std::true_type {};
+template<>
+struct is_short_term_cacheable<passport::Ansmid::name_type> : public std::true_type {};
+template<>
+struct is_short_term_cacheable<passport::Antmid::name_type> : public std::true_type {};
+template<>
+struct is_short_term_cacheable<passport::Anmaid::name_type> : public std::true_type {};
+template<>
+struct is_short_term_cacheable<passport::Maid::name_type> : public std::true_type {};
+template<>
+struct is_short_term_cacheable<passport::Pmid::name_type> : public std::true_type {};
+template<>
+struct is_short_term_cacheable<passport::Anmpid::name_type> : public std::true_type {};
+template<>
+struct is_short_term_cacheable<passport::Mpid::name_type> : public std::true_type {};
 
 }  // namespace maidsafe
 

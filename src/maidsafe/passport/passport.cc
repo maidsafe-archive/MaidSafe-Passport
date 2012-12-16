@@ -1,23 +1,13 @@
-/*
-* ============================================================================
-*
-* Copyright [2011] maidsafe.net limited
-*
-* Description:  MaidSafe Passport Class
-* Version:      1.0
-* Created:      2010-10-13-14.01.23
-* Company:      maidsafe.net limited
-*
-* The following source code is property of maidsafe.net limited and is not
-* meant for external use.  The use of this code is governed by the license
-* file LICENSE.TXT found in the root of this directory and also on
-* www.maidsafe.net.
-*
-* You are not free to copy, amend or otherwise use this source code without
-* the explicit written permission of the board of directors of maidsafe.net.
-*
-* ============================================================================
-*/
+/***************************************************************************************************
+ *  Copyright 2012 maidsafe.net limited                                                            *
+ *                                                                                                 *
+ *  The following source code is property of MaidSafe.net limited and is not meant for external    *
+ *  use. The use of this code is governed by the licence file licence.txt found in the root of     *
+ *  this directory and also on www.maidsafe.net.                                                   *
+ *                                                                                                 *
+ *  You are not free to copy, amend or otherwise use this source code without the explicit written *
+ *  permission of the board of directors of MaidSafe.net.                                          *
+ **************************************************************************************************/
 
 #include "maidsafe/passport/passport.h"
 
@@ -26,99 +16,101 @@
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/rsa.h"
 
-#include "maidsafe/passport/packets_pb.h"
-#include "maidsafe/passport/passport_impl.h"
+#include "maidsafe/passport/detail/passport_impl.h"
+#include "maidsafe/passport/detail/identity_data.h"
+
 
 namespace maidsafe {
 
 namespace passport {
 
-NonEmptyString PacketDebugString(const int &packet_type) {
-  return impl::PacketDebugString(packet_type);
+Mid::name_type MidName(const NonEmptyString& keyword, uint32_t pin) {
+  return Mid::Name(keyword, pin);
 }
 
-Identity MidName(NonEmptyString keyword, uint32_t pin, bool surrogate) {
-  return impl::MidName(keyword, pin, surrogate);
+Smid::name_type SmidName(const NonEmptyString& keyword, uint32_t pin) {
+  return Smid::Name(keyword, pin);
 }
 
-Identity DecryptRid(UserPassword keyword, uint32_t pin, crypto::CipherText encrypted_tmid_name) {
-  return impl::DecryptRid(keyword, pin, encrypted_tmid_name);
+Tmid::name_type DecryptTmidName(const UserPassword& keyword,
+                                uint32_t pin,
+                                const crypto::CipherText& encrypted_tmid_name) {
+  return detail::DecryptTmidName(keyword, pin, encrypted_tmid_name);
 }
 
-NonEmptyString DecryptSession(UserPassword keyword,
+NonEmptyString DecryptSession(const UserPassword& keyword,
                               uint32_t pin,
-                              UserPassword password,
-                              crypto::PlainText salt,
+                              const UserPassword& password,
                               const crypto::CipherText& encrypted_session) {
-  return impl::DecryptSession(keyword, pin, password, salt, encrypted_session);
+  return detail::DecryptSession(keyword, pin, password, encrypted_session);
 }
 
 
-Passport::Passport() : impl_(new PassportImpl) {}
+Passport::Passport() : impl_(new detail::PassportImpl) {}
 
-void Passport::CreateSigningPackets() { impl_->CreateSigningPackets(); }
-
-int Passport::ConfirmSigningPackets() { return impl_->ConfirmSigningPackets(); }
-
-int Passport::SetIdentityPackets(const NonEmptyString& keyword,
-                                 const uint32_t pin,
-                                 const NonEmptyString& password,
-                                 const NonEmptyString& master_data,
-                                 const NonEmptyString& surrogate_data) {
-  return impl_->SetIdentityPackets(keyword, pin, password, master_data, surrogate_data);
-}
-
-int Passport::ConfirmIdentityPackets() { return impl_->ConfirmIdentityPackets(); }
-
-void Passport::Clear(bool signature, bool identity, bool selectable) {
-  return impl_->Clear(signature, identity, selectable);
-}
-
-// Getters
-Identity Passport::IdentityPacketName(PacketType packet_type, bool confirmed) {
-  return impl_->IdentityPacketName(packet_type, confirmed);
-}
-
-NonEmptyString Passport::IdentityPacketValue(PacketType packet_type, bool confirmed) {
-  return impl_->IdentityPacketValue(packet_type, confirmed);
-}
-
-Fob Passport::SignaturePacketDetails(PacketType packet_type,
-                                     bool confirmed,
-                                     const NonEmptyString& public_id) {
-  return impl_->SignaturePacketDetails(packet_type, confirmed, public_id);
-}
-
-Fob Passport::SignaturePacketDetails(PacketType packet_type, bool confirmed) {
-  return impl_->SignaturePacketDetails(packet_type, confirmed);
-}
-
-// Selectable Identity (MPID)
-void Passport::CreateSelectableIdentity(const NonEmptyString& public_id) {
-  impl_->CreateSelectableIdentity(public_id);
-}
-
-int Passport::ConfirmSelectableIdentity(const NonEmptyString& public_id) {
-  return impl_->ConfirmSelectableIdentity(public_id);
-}
-
-int Passport::DeleteSelectableIdentity(const NonEmptyString& public_id) {
-  return impl_->DeleteSelectableIdentity(public_id);
-}
-
-int Passport::MoveMaidsafeInbox(const NonEmptyString& public_id) {
-  return impl_->MoveMaidsafeInbox(public_id);
-}
-
-int Passport::ConfirmMovedMaidsafeInbox(const NonEmptyString& public_id) {
-  return impl_->ConfirmMovedMaidsafeInbox(public_id);
-}
-
-NonEmptyString Passport::Serialise() { return impl_->Serialise(); }
-
-int Passport::Parse(const NonEmptyString& serialised_passport) {
-  return impl_->Parse(serialised_passport);
-}
+//void Passport::CreateSigningPackets() { impl_->CreateSigningPackets(); }
+//
+//int Passport::ConfirmSigningPackets() { return impl_->ConfirmSigningPackets(); }
+//
+//int Passport::SetIdentityPackets(const NonEmptyString& keyword,
+//                                 const uint32_t pin,
+//                                 const NonEmptyString& password,
+//                                 const NonEmptyString& master_data,
+//                                 const NonEmptyString& surrogate_data) {
+//  return impl_->SetIdentityPackets(keyword, pin, password, master_data, surrogate_data);
+//}
+//
+//int Passport::ConfirmIdentityPackets() { return impl_->ConfirmIdentityPackets(); }
+//
+//void Passport::Clear(bool signature, bool identity, bool selectable) {
+//  return impl_->Clear(signature, identity, selectable);
+//}
+//
+//// Getters
+//Identity Passport::IdentityPacketName(PacketType packet_type, bool confirmed) {
+//  return impl_->IdentityPacketName(packet_type, confirmed);
+//}
+//
+//NonEmptyString Passport::IdentityPacketValue(PacketType packet_type, bool confirmed) {
+//  return impl_->IdentityPacketValue(packet_type, confirmed);
+//}
+//
+//Fob Passport::SignaturePacketDetails(PacketType packet_type,
+//                                     bool confirmed,
+//                                     const NonEmptyString& public_id) {
+//  return impl_->SignaturePacketDetails(packet_type, confirmed, public_id);
+//}
+//
+//Fob Passport::SignaturePacketDetails(PacketType packet_type, bool confirmed) {
+//  return impl_->SignaturePacketDetails(packet_type, confirmed);
+//}
+//
+//// Selectable Identity (MPID)
+//void Passport::CreateSelectableIdentity(const NonEmptyString& public_id) {
+//  impl_->CreateSelectableIdentity(public_id);
+//}
+//
+//int Passport::ConfirmSelectableIdentity(const NonEmptyString& public_id) {
+//  return impl_->ConfirmSelectableIdentity(public_id);
+//}
+//
+//int Passport::DeleteSelectableIdentity(const NonEmptyString& public_id) {
+//  return impl_->DeleteSelectableIdentity(public_id);
+//}
+//
+//int Passport::MoveMaidsafeInbox(const NonEmptyString& public_id) {
+//  return impl_->MoveMaidsafeInbox(public_id);
+//}
+//
+//int Passport::ConfirmMovedMaidsafeInbox(const NonEmptyString& public_id) {
+//  return impl_->ConfirmMovedMaidsafeInbox(public_id);
+//}
+//
+//NonEmptyString Passport::Serialise() { return impl_->Serialise(); }
+//
+//int Passport::Parse(const NonEmptyString& serialised_passport) {
+//  return impl_->Parse(serialised_passport);
+//}
 
 }  // namespace passport
 

@@ -1,0 +1,20 @@
+package maidsafe.passport.detail.protobuf;
+
+message Fob {
+  required int32 type = 1;
+  required bytes name = 2;
+  required bytes encoded_private_key = 3;
+  required bytes encoded_public_key = 4;
+  required bytes validation_token = 5;
+}
+
+message PublicIdentity {
+  required bytes public_id = 1;
+  required Fob anmpid = 2;
+  required Fob mpid = 3;
+}
+
+message Passport {
+  repeated Fob fob = 1;
+  repeated PublicIdentity public_identity = 2;
+}

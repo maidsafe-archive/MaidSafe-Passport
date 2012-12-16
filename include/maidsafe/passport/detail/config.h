@@ -28,19 +28,21 @@ struct PmidTag   { static const int kEnumValue = 5; };
 struct MidTag    { static const int kEnumValue = 6; };
 struct SmidTag   { static const int kEnumValue = 7; };
 struct TmidTag   { static const int kEnumValue = 8; };
-struct StmidTag  { static const int kEnumValue = 9; };
-struct AnmpidTag { static const int kEnumValue = 10; };
-struct MpidTag   { static const int kEnumValue = 11; };
+struct AnmpidTag { static const int kEnumValue = 9; };
+struct MpidTag   { static const int kEnumValue = 10; };
 
-template<typename FobTag>
+template<typename Tag>
 class Fob;
 
 template<typename Tag>
-struct NameAndValue;
+struct MidData;
 
-template<typename FobTag>
+template<typename Tag>
+struct TmidData;
+
+template<typename Tag>
 struct Signer {
-  typedef Fob<FobTag> type;
+  typedef Fob<Tag> type;
 };
 
 template<>
@@ -65,11 +67,6 @@ struct Signer<SmidTag> {
 
 template<>
 struct Signer<TmidTag> {
-  typedef Fob<AntmidTag> type;
-};
-
-template<>
-struct Signer<StmidTag> {
   typedef Fob<AntmidTag> type;
 };
 
