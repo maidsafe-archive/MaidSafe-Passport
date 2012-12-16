@@ -31,9 +31,9 @@ template<typename Tag>
 class Fob {
  public:
   typedef TaggedValue<Identity, Tag> name_type;
-  typedef typename Signer<typename Tag>::type signer_type;
-  typedef typename std::is_same<Fob<typename Tag>,
-                                typename Signer<typename Tag>::type> is_self_signed;
+  typedef typename Signer<Tag>::type signer_type;
+  typedef typename std::is_same<Fob<Tag>,
+                                typename Signer<Tag>::type> is_self_signed;
   // This constructor is only available for self-signing Fobs.
   Fob();
   // This constructor is only available for non-self-signing Fobs.

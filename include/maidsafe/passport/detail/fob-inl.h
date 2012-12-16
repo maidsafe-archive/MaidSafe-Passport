@@ -11,7 +11,7 @@
 
 #ifndef MAIDSAFE_PASSPORT_DETAIL_FOB_INL_H_
 #define MAIDSAFE_PASSPORT_DETAIL_FOB_INL_H_
-
+#include "maidsafe/common/utils.h"
 
 namespace maidsafe {
 
@@ -43,7 +43,7 @@ Fob<Tag>::Fob(const protobuf::Fob& proto_fob)
     : keys_(),
       validation_token_(proto_fob.validation_token()),
       name_(name_type(proto_fob.name())) {
-  asymm::PlainText plain(RandomString(64));
+  asymm::PlainText plain(maidsafe::RandomString(64));
   keys_.private_key = asymm::DecodeKey(asymm::EncodedPrivateKey(proto_fob.encoded_private_key()));
   keys_.public_key = asymm::DecodeKey(asymm::EncodedPublicKey(proto_fob.encoded_public_key()));
   if (CreateName() != name_ ||
