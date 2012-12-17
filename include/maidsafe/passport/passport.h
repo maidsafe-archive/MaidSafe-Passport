@@ -48,6 +48,10 @@ NonEmptyString DecryptSession(const UserPassword& keyword,
                               const UserPassword& password,
                               const crypto::CipherText& encrypted_session);
 
+NonEmptyString SerialisePmid(const Pmid& pmid);
+
+Pmid ParsePmid(const NonEmptyString& serialised_pmid);
+
 namespace test { class PassportTest; }
 
 class PassportImpl;

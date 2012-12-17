@@ -60,6 +60,19 @@ void FobToProtobuf(int enum_value,
   proto_fob->set_validation_token(validation_token.string());
 }
 
+NonEmptyString SerialisePmid(const Fob<PmidTag>& pmid) {
+  protobuf::Fob proto_fob;
+  pmid.ToProtobuf(&proto_fob);
+  return NonEmptyString(proto_fob.SerializeAsString());
+}
+
+Fob<PmidTag> ParsePmid(const NonEmptyString& serialised_pmid) {
+  protobuf::Fob proto_fob;
+  proto_fob.ParseFromString(serialised_pmid.string());
+  return Fob<PmidTag>(proto_fob);
+}
+
+
 }  // namespace detail
 
 }  // namespace passport
