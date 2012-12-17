@@ -32,6 +32,23 @@ Smid::name_type SmidName(const NonEmptyString& keyword, uint32_t pin) {
   return Smid::Name(keyword, pin);
 }
 
+NonEmptyString EncryptSession(const UserPassword& keyword,
+                              uint32_t pin,
+                              const UserPassword& password,
+                              const NonEmptyString& serialised_session) {
+  return detail::EncryptSession(keyword, pin, password, serialised_session);
+}
+
+Tmid::name_type TmidName(const NonEmptyString& encrypted_tmid) {
+  return detail::TmidName(encrypted_tmid);
+}
+
+NonEmptyString EncryptTmidName(const UserPassword& keyword,
+                               uint32_t pin,
+                               const Tmid::name_type& tmid_name) {
+  return detail::EncryptTmidName(keyword, pin, tmid_name);
+}
+
 Tmid::name_type DecryptTmidName(const UserPassword& keyword,
                                 uint32_t pin,
                                 const crypto::CipherText& encrypted_tmid_name) {
@@ -48,69 +65,31 @@ NonEmptyString DecryptSession(const UserPassword& keyword,
 
 Passport::Passport() : impl_(new detail::PassportImpl) {}
 
-//void Passport::CreateSigningPackets() { impl_->CreateSigningPackets(); }
-//
-//int Passport::ConfirmSigningPackets() { return impl_->ConfirmSigningPackets(); }
-//
-//int Passport::SetIdentityPackets(const NonEmptyString& keyword,
-//                                 const uint32_t pin,
-//                                 const NonEmptyString& password,
-//                                 const NonEmptyString& master_data,
-//                                 const NonEmptyString& surrogate_data) {
-//  return impl_->SetIdentityPackets(keyword, pin, password, master_data, surrogate_data);
-//}
-//
-//int Passport::ConfirmIdentityPackets() { return impl_->ConfirmIdentityPackets(); }
-//
-//void Passport::Clear(bool signature, bool identity, bool selectable) {
-//  return impl_->Clear(signature, identity, selectable);
-//}
-//
-//// Getters
-//Identity Passport::IdentityPacketName(PacketType packet_type, bool confirmed) {
-//  return impl_->IdentityPacketName(packet_type, confirmed);
-//}
-//
-//NonEmptyString Passport::IdentityPacketValue(PacketType packet_type, bool confirmed) {
-//  return impl_->IdentityPacketValue(packet_type, confirmed);
-//}
-//
-//Fob Passport::SignaturePacketDetails(PacketType packet_type,
-//                                     bool confirmed,
-//                                     const NonEmptyString& public_id) {
-//  return impl_->SignaturePacketDetails(packet_type, confirmed, public_id);
-//}
-//
-//Fob Passport::SignaturePacketDetails(PacketType packet_type, bool confirmed) {
-//  return impl_->SignaturePacketDetails(packet_type, confirmed);
-//}
-//
-//// Selectable Identity (MPID)
-//void Passport::CreateSelectableIdentity(const NonEmptyString& public_id) {
-//  impl_->CreateSelectableIdentity(public_id);
-//}
-//
-//int Passport::ConfirmSelectableIdentity(const NonEmptyString& public_id) {
-//  return impl_->ConfirmSelectableIdentity(public_id);
-//}
-//
-//int Passport::DeleteSelectableIdentity(const NonEmptyString& public_id) {
-//  return impl_->DeleteSelectableIdentity(public_id);
-//}
-//
-//int Passport::MoveMaidsafeInbox(const NonEmptyString& public_id) {
-//  return impl_->MoveMaidsafeInbox(public_id);
-//}
-//
-//int Passport::ConfirmMovedMaidsafeInbox(const NonEmptyString& public_id) {
-//  return impl_->ConfirmMovedMaidsafeInbox(public_id);
-//}
-//
-//NonEmptyString Passport::Serialise() { return impl_->Serialise(); }
-//
-//int Passport::Parse(const NonEmptyString& serialised_passport) {
-//  return impl_->Parse(serialised_passport);
-//}
+void Passport::CreateFobs() {
+  impl_->CreateFobs();
+}
+
+void Passport::ConfirmFobs() {
+  return impl_->ConfirmFobs();
+}
+
+NonEmptyString Passport::Serialise() {
+  return impl_->Serialise();
+}
+
+void Passport::Parse(const NonEmptyString& serialised_passport) {
+  impl_->Parse(serialised_passport);
+}
+
+template<typename FobType>
+FobType Passport::Get(bool confirmed) {
+  return impl_->Get<FobType>(confirmed);
+}
+
+template<typename FobType>
+FobType Passport::GetSelectableFob(bool confirmed, const NonEmptyString &chosen_name) {
+  return impl_->GetSelectableFob<FobType>(confirmed, chosen_name);
+}
 
 }  // namespace passport
 

@@ -9,6 +9,9 @@
  *  permission of the board of directors of MaidSafe.net.                                          *
  **************************************************************************************************/
 
+#ifndef MAIDSAFE_PASSPORT_DETAIL_IDENTITY_DATA_INL_H_
+#define MAIDSAFE_PASSPORT_DETAIL_IDENTITY_DATA_INL_H_
+
 #include <cstdio>
 #include <string>
 
@@ -31,7 +34,7 @@ crypto::SHA512Hash HashOfPin(uint32_t pin);
 
 template<typename Tag>
 typename MidData<Tag>::name_type MidData<Tag>::Name(const NonEmptyString& keyword, uint32_t pin) {
-  return MidData<Tag>::name_type(GenerateMidName<MidData<Tag>>(
+  return MidData<Tag>::name_type(GenerateMidName<MidData<Tag>>(  // NOLINT (Fraser)
       crypto::Hash<crypto::SHA512>(keyword),
       HashOfPin(pin)));
 }
@@ -41,3 +44,5 @@ typename MidData<Tag>::name_type MidData<Tag>::Name(const NonEmptyString& keywor
 }  // namespace passport
 
 }  // namespace maidsafe
+
+#endif  // MAIDSAFE_PASSPORT_DETAIL_IDENTITY_DATA_INL_H_

@@ -58,4 +58,4 @@ struct is_short_term_cacheable<passport::Mpid::name_type> : public std::true_typ
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_PASSPORT_CONFIG_H_
+#endif  // MAIDSAFE_PASSPORT_TYPES_H_

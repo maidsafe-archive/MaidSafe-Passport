@@ -9,8 +9,8 @@
  *  permission of the board of directors of MaidSafe.net.                                          *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_PASSPORT_PASSPORT_IMPL_H_
-#define MAIDSAFE_PASSPORT_PASSPORT_IMPL_H_
+#ifndef MAIDSAFE_PASSPORT_DETAIL_PASSPORT_IMPL_H_
+#define MAIDSAFE_PASSPORT_DETAIL_PASSPORT_IMPL_H_
 
 #include <cstdint>
 #include <map>
@@ -23,91 +23,87 @@
 #include "maidsafe/passport/detail/fob.h"
 #include "maidsafe/passport/types.h"
 
+
 namespace maidsafe {
 
 namespace passport {
 
 namespace detail {
 
-//struct SignatureElements {
-//  SignatureElements() : anmid(), ansmid(), antmid(), anmaid(), maid(), pmid(), anmpid(), mpid() {}
-//  Anmid anmid;
-//  Ansmid ansmid;
-//  Antmid antmid;
-//  Anmaid anmaid;
-//  Maid maid;
-//  Pmid pmid;
-//  Anmpid anmpid;
-//  Mpid mpid;
-//};
-//
-//struct IdentityElements {
-//  IdentityElements()
-//      : mid_name(),
-//        smid_name(),
-//        tmid_name(),
-//        stmid_name(),
-//        mid_value(),
-//        smid_value(),
-//        tmid_value(),
-//        stmid_value() {}
-//  Mid::name_type mid_name;
-//  Smid::name_type smid_name;
-//  Tmid::name_type tmid_name, stmid_name;
-//  NonEmptyString mid_value, smid_value, tmid_value, stmid_value;
-//};
-//
-//struct SelectableIdentity {
-//  SelectableIdentity() : anmpid(), mpid() {}
-//  Anmpid anmpid;
-//  Mpid mpid;
-//};
-
 class PassportImpl {
  public:
   PassportImpl();
-  void CreateSigningPackets();
-  int ConfirmSigningPackets();
-  int SetIdentityPackets(const NonEmptyString &keyword,
-                         const uint32_t pin,
-                         const NonEmptyString &password,
-                         const NonEmptyString &master_data,
-                         const NonEmptyString &surrogate_data);
-  int ConfirmIdentityPackets();
-  void Clear(bool signature, bool identity, bool selectable);
+  void CreateFobs();
+  void ConfirmFobs();
 
-  // Serialisation
   NonEmptyString Serialise();
-  int Parse(const NonEmptyString& serialised_passport);
+  void Parse(const NonEmptyString& serialised_passport);
 
-  // Getters
-  template<typename IdentityDataType>
-  typename IdentityDataType::name_type Name(bool confirmed);
-  template<typename IdentityDataType>
-  NonEmptyString Value(bool confirmed);
-  template<typename SignatureDataType>
-  SignatureDataType SignatureData(bool confirmed);
-  template<typename SignatureDataType>
-  SignatureDataType SignatureData(bool confirmed, const NonEmptyString &chosen_name);
+  template<typename FobType>
+  FobType Get(bool confirmed);
 
-  // Selectable Identity (aka MPID)
-  void CreateSelectableIdentity(const NonEmptyString &chosen_name);
-  int ConfirmSelectableIdentity(const NonEmptyString &chosen_name);
-  int DeleteSelectableIdentity(const NonEmptyString &chosen_name);
-
-
-  int MoveMaidsafeInbox(const NonEmptyString &chosen_identity);
-  int ConfirmMovedMaidsafeInbox(const NonEmptyString &chosen_identity);
+  template<typename FobType>
+  FobType GetSelectableFob(bool confirmed, const NonEmptyString &chosen_name);
+  void CreateSelectableFob(const NonEmptyString &chosen_name);
+  int ConfirmSelectableFob(const NonEmptyString &chosen_name);
+  int DeleteSelectableFob(const NonEmptyString &chosen_name);
 
  private:
+  struct Fobs {
+    Fobs() : anmid(), ansmid(), antmid(), anmaid(), maid(), pmid() {}
+    Fobs(Fobs&& other)
+        : anmid(std::move(other.anmid)),
+          ansmid(std::move(other.ansmid)),
+          antmid(std::move(other.antmid)),
+          anmaid(std::move(other.anmaid)),
+          maid(std::move(other.maid)),
+          pmid(std::move(other.pmid)) {}
+    Fobs& operator=(Fobs&& other) {
+      anmid = std::move(other.anmid);
+      ansmid = std::move(other.ansmid);
+      antmid = std::move(other.antmid);
+      anmaid = std::move(other.anmaid);
+      maid = std::move(other.maid);
+      pmid = std::move(other.pmid);
+      return *this;
+    }
+    std::unique_ptr<Anmid> anmid;
+    std::unique_ptr<Ansmid> ansmid;
+    std::unique_ptr<Antmid> antmid;
+    std::unique_ptr<Anmaid> anmaid;
+    std::unique_ptr<Maid> maid;
+    std::unique_ptr<Pmid> pmid;
+
+   private:
+    Fobs(const Fobs&);
+    Fobs& operator=(const Fobs&);
+  };
+
+  struct SelectableFob {
+    SelectableFob() : anmpid(), mpid() {}
+    SelectableFob(SelectableFob&& other)
+        : anmpid(std::move(other.anmpid)),
+          mpid(std::move(other.mpid)) {}
+    SelectableFob& operator=(SelectableFob&& other) {
+      anmpid = std::move(other.anmpid);
+      mpid = std::move(other.mpid);
+      return *this;
+    }
+    std::unique_ptr<Anmpid> anmpid;
+    std::unique_ptr<Mpid> mpid;
+
+   private:
+    SelectableFob(const SelectableFob&);
+    SelectableFob& operator=(const SelectableFob&);
+  };
+
   PassportImpl(const PassportImpl&);
   PassportImpl& operator=(const PassportImpl&);
+  bool NoFobsNull(bool confirmed);
 
-  //SignatureElements pending_signature_data_, confirmed_signature_data_;
-  //IdentityElements pending_identity_data_, confirmed_identity_data_;
-  //std::map<NonEmptyString, SelectableIdentity> pending_selectable_data_,
-  //                                             confirmed_selectable_data_;
-  std::mutex signature_mutex_, identity_mutex_, selectable_mutex_;
+  Fobs pending_fobs_, confirmed_fobs_;
+  std::map<NonEmptyString, SelectableFob> pending_selectable_fobs_, confirmed_selectable_fobs_;
+  std::mutex fobs_mutex_, selectable_mutex_;
 };
 
 }  // namespace detail
@@ -117,4 +113,4 @@ class PassportImpl {
 }  // namespace maidsafe
 
 
-#endif  // MAIDSAFE_PASSPORT_PASSPORT_IMPL_H_
+#endif  // MAIDSAFE_PASSPORT_DETAIL_PASSPORT_IMPL_H_

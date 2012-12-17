@@ -18,7 +18,7 @@ set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 cmake_minimum_required(VERSION 2.8.7 FATAL_ERROR)
 project(passport)
 
-set(PROTO_SOURCE_DIR ${PROJECT_SOURCE_DIR}/include)
+set(PROTO_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src)
 file(GLOB PROTO_FILES RELATIVE ${PROTO_SOURCE_DIR} "${PROTO_SOURCE_DIR}/maidsafe/passport/detail/*.proto")
 include(../../cmake_modules/maidsafe_standard_setup.cmake)
 
@@ -51,8 +51,8 @@ source_group("Tests Source Files" FILES ${PassportTestsSources})
 source_group("Tests Header Files" FILES ${PassportTestsHeaders})
 
 set(StyleAllFiles ${PassportAllFiles} ${PassportTestsAllFiles})
-list(REMOVE_ITEM StyleAllFiles ${PassportSourcesRootDir}/packets.pb.cc)
-list(REMOVE_ITEM StyleAllFiles ${PassportSourcesRootDir}/packets.pb.h)
+list(REMOVE_ITEM StyleAllFiles ${PassportSourcesRootDir}/passport.pb.cc)
+list(REMOVE_ITEM StyleAllFiles ${PassportSourcesRootDir}/passport.pb.h)
 
 
 #==================================================================================================#
@@ -73,7 +73,7 @@ rename_outdated_built_exes()
 # Set compiler and linker flags                                                                    #
 #==================================================================================================#
 include(maidsafe_standard_flags)
-ms_disable_warnings(${PassportSourcesRootDir}/packets.pb.cc)
+ms_disable_warnings(${PassportSourcesRootDir}/detail/passport.pb.cc)
 
 
 #==================================================================================================#

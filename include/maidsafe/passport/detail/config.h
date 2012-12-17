@@ -19,19 +19,19 @@ namespace passport {
 
 namespace detail {
 
-struct AnmidTag  { static const int kEnumValue = 0; };
-struct AnsmidTag { static const int kEnumValue = 1; };
-struct AntmidTag { static const int kEnumValue = 2; };
-struct AnmaidTag { static const int kEnumValue = 3; };
-struct MaidTag   { static const int kEnumValue = 4; };
-struct PmidTag   { static const int kEnumValue = 5; };
-struct MidTag    { static const int kEnumValue = 6; };
-struct SmidTag   { static const int kEnumValue = 7; };
-struct TmidTag   { static const int kEnumValue = 8; };
-struct AnmpidTag { static const int kEnumValue = 9; };
-struct MpidTag   { static const int kEnumValue = 10; };
+struct AnmidTag  { static const int kEnumValue = 0; };  // NOLINT (Fraser)
+struct AnsmidTag { static const int kEnumValue = 1; };  // NOLINT (Fraser)
+struct AntmidTag { static const int kEnumValue = 2; };  // NOLINT (Fraser)
+struct AnmaidTag { static const int kEnumValue = 3; };  // NOLINT (Fraser)
+struct MaidTag   { static const int kEnumValue = 4; };  // NOLINT (Fraser)
+struct PmidTag   { static const int kEnumValue = 5; };  // NOLINT (Fraser)
+struct MidTag    { static const int kEnumValue = 6; };  // NOLINT (Fraser)
+struct SmidTag   { static const int kEnumValue = 7; };  // NOLINT (Fraser)
+struct TmidTag   { static const int kEnumValue = 8; };  // NOLINT (Fraser)
+struct AnmpidTag { static const int kEnumValue = 9; };  // NOLINT (Fraser)
+struct MpidTag   { static const int kEnumValue = 10; };  // NOLINT (Fraser)
 
-template<typename Tag>
+template<typename Tag, class Enable = void>
 class Fob;
 
 template<typename Tag>

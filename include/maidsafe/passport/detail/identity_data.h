@@ -9,8 +9,8 @@
  *  permission of the board of directors of MaidSafe.net.                                          *
  **************************************************************************************************/
 
-#ifndef MAIDSAFE_PASSPORT_IDENTITY_PACKETS_H_
-#define MAIDSAFE_PASSPORT_IDENTITY_PACKETS_H_
+#ifndef MAIDSAFE_PASSPORT_DETAIL_IDENTITY_DATA_H_
+#define MAIDSAFE_PASSPORT_DETAIL_IDENTITY_DATA_H_
 
 #include <cstdint>
 #include <memory>
@@ -41,26 +41,26 @@ struct TmidData {
   typedef typename Signer<typename Tag>::type signer_type;
 };
 
+NonEmptyString EncryptSession(const UserPassword& keyword,
+                              uint32_t pin,
+                              const UserPassword& password,
+                              const NonEmptyString& serialised_session);
+
+TmidData<TmidTag>::name_type TmidName(const NonEmptyString& encrypted_tmid);
+
 // TMID name is now what used to be RID (Random ID)
+NonEmptyString EncryptTmidName(const UserPassword& keyword,
+                               uint32_t pin,
+                               const TmidData<TmidTag>::name_type& tmid_name);
+
 TmidData<TmidTag>::name_type DecryptTmidName(const UserPassword& keyword,
                                              uint32_t pin,
-                                             const crypto::CipherText& encrypted_tmid_name);
-
-crypto::CipherText EncryptTmidName(const UserPassword& keyword,
-                                   uint32_t pin,
-                                   const TmidData<TmidTag>::name_type& tmid_name);
-
-TmidData<TmidTag>::name_type TmidName(const crypto::CipherText& encrypted_tmid);
-
-crypto::CipherText EncryptSession(const UserPassword& keyword,
-                                  uint32_t pin,
-                                  const UserPassword& password,
-                                  const NonEmptyString& serialised_session);
+                                             const NonEmptyString& encrypted_tmid_name);
 
 NonEmptyString DecryptSession(const UserPassword& keyword,
                               uint32_t pin,
                               const UserPassword password,
-                              const crypto::CipherText& encrypted_session);
+                              const NonEmptyString& encrypted_session);
 
 }  // namespace detail
 
@@ -70,4 +70,4 @@ NonEmptyString DecryptSession(const UserPassword& keyword,
 
 #include "maidsafe/passport/detail/identity_data-inl.h"
 
-#endif  // MAIDSAFE_PASSPORT_IDENTITY_PACKETS_H_
+#endif  // MAIDSAFE_PASSPORT_DETAIL_IDENTITY_DATA_H_

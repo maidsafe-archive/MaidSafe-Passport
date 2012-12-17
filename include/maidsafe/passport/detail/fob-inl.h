@@ -12,6 +12,8 @@
 #ifndef MAIDSAFE_PASSPORT_DETAIL_FOB_INL_H_
 #define MAIDSAFE_PASSPORT_DETAIL_FOB_INL_H_
 
+#include <string>
+
 
 namespace maidsafe {
 
@@ -19,72 +21,149 @@ namespace passport {
 
 namespace detail {
 
+Identity CreateFobName(const asymm::PublicKey& public_key,
+                       const asymm::Signature& validation_token);
+
+void FobFromProtobuf(const protobuf::Fob& proto_fob,
+                     int enum_value,
+                     asymm::Keys& keys,
+                     asymm::Signature& validation_token,
+                     Identity& name);
+
+void FobToProtobuf(int enum_value,
+                   const asymm::Keys& keys,
+                   const asymm::Signature& validation_token,
+                   const std::string& name,
+                   protobuf::Fob* proto_fob);
+
+// Default constructor (exclusive to self-signing fobs)
 template<typename Tag>
-Fob<Tag>::Fob()
+Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>::Fob()
     : keys_(asymm::GenerateKeyPair()),
       validation_token_(asymm::Sign(asymm::PlainText(asymm::EncodeKey(keys_.public_key)),
                                     keys_.private_key)),
-      name_(CreateName()) {
-  static_assert(is_self_signed::value, "This constructor can only be used with self-signing fobs.");
+      name_(CreateFobName(keys_.public_key, validation_token_)) {
+  static_assert(std::is_same<Fob<typename Tag>, signer_type>::value,
+                "This constructor is only applicable for self-signing fobs.");
+}
+
+
+// Copy constructors
+template<typename Tag>
+Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>::Fob(
+    const Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>& other)
+        : keys_(other.keys_),
+          validation_token_(other.validation_token_),
+          name_(other.name_) {}
+
+template<typename Tag>
+Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>::Fob(
+    const Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>& other)
+        : keys_(other.keys_),
+          validation_token_(other.validation_token_),
+          name_(other.name_) {}
+
+
+// Explicit constructor initialising with different signing fob (exclusive to non-self-signing fobs)
+template<typename Tag>
+Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>::Fob(
+    const typename signer_type& signing_fob,
+    typename std::enable_if<!std::is_same<Fob<typename Tag>, signer_type>::value>::type*)
+        : keys_(asymm::GenerateKeyPair()),
+          validation_token_(asymm::Sign(asymm::PlainText(asymm::EncodeKey(keys_.public_key)),
+                                        signing_fob.private_key())),
+          name_(CreateFobName(keys_.public_key, validation_token_)) {}
+
+
+// Assignment operators
+template<typename Tag>
+Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>&
+    Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>::operator=(
+        const Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>& other) {
+  keys_ = other.keys_;
+  validation_token_ = other.validation_token_;
+  name_ = other.name_;
+  return *this;
 }
 
 template<typename Tag>
-Fob<Tag>::Fob(const signer_type& signing_fob)
-    : keys_(asymm::GenerateKeyPair()),
-      validation_token_(asymm::Sign(asymm::PlainText(asymm::EncodeKey(keys_.public_key)),
-                                    signing_fob.private_key())),
-      name_(CreateName()) {
-  static_assert(!is_self_signed::value,
-                "This constructor can only be used with non-self-signing fobs.");
+Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>&
+    Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>::operator=(
+        const Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>& other) {
+  keys_ = other.keys_;
+  validation_token_ = other.validation_token_;
+  name_ = other.name_;
+  return *this;
+}
+
+
+// Move constructors
+template<typename Tag>
+Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>::Fob(
+    Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>&& other)
+        : keys_(std::move(other.keys_)),
+          validation_token_(std::move(other.validation_token_)),
+          name_(std::move(other.name_)) {}
+
+template<typename Tag>
+Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>::Fob(
+    Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>&& other)
+        : keys_(std::move(other.keys_)),
+          validation_token_(std::move(other.validation_token_)),
+          name_(std::move(other.name_)) {}
+
+
+// Move assignment operators
+template<typename Tag>
+Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>&
+    Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>::operator=(
+        Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>&& other) {
+  keys_ = std::move(other.keys_);
+  validation_token_ = std::move(other.validation_token_);
+  name_ = std::move(other.name_);
+  return *this;
 }
 
 template<typename Tag>
-Fob<Tag>::Fob(const protobuf::Fob& proto_fob)
-    : keys_(),
-      validation_token_(proto_fob.validation_token()),
-      name_(name_type(proto_fob.name())) {
-  asymm::PlainText plain(RandomString(64));
-  keys_.private_key = asymm::DecodeKey(asymm::EncodedPrivateKey(proto_fob.encoded_private_key()));
-  keys_.public_key = asymm::DecodeKey(asymm::EncodedPublicKey(proto_fob.encoded_public_key()));
-  if (CreateName() != name_ ||
-      (is_self_signed::value && name_ != signed_by_)
-      asymm::Decrypt(asymm::Encrypt(plain, public_key_), private_key_) != plain) {
-    ThrowError(CommonErrors::uninitialised);
-  }
+Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>&
+    Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>::operator=(
+        Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>&& other) {
+  keys_ = std::move(other.keys_);
+  validation_token_ = std::move(other.validation_token_);
+  name_ = std::move(other.name_);
+  return *this;
+}
+
+
+// From protobuf constructors
+template<typename Tag>
+Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>::Fob(
+    const protobuf::Fob& proto_fob) : keys_(), validation_token_(), name_() {
+  Identity name;
+  FobFromProtobuf(proto_fob, Tag::kEnumValue, keys_, validation_token_, name);
+  name_ = name_type(name);
 }
 
 template<typename Tag>
-NonEmptyString Fob<Tag>::Serialise() const {
-  protobuf::Fob proto_fob;
-  proto_fob.set_type(Tag::kEnumValue);
-  proto_fob.set_name(name_.string());
-  proto_fob.set_encoded_private_key(asymm::EncodeKey(keys_.private_key).string());
-  proto_fob.set_encoded_public_key(asymm::EncodeKey(keys_.public_key).string());
-  proto_fob.set_validation_token(validation_token().string());
-  std::string result(proto_fob.SerializeAsString());
-  if (result.empty())
-    ThrowError(FobErrors::fob_serialisation_error);
-  return NonEmptyString(result);
+Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>::Fob(
+    const protobuf::Fob& proto_fob) : keys_(), validation_token_(), name_() {
+  Identity name;
+  FobFromProtobuf(proto_fob, Tag::kEnumValue, keys_, validation_token_, name);
+  name_ = name_type(name);
+}
+
+
+template<typename Tag>
+void Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>::ToProtobuf(
+    protobuf::Fob* proto_fob) const {
+  FobToProtobuf(Tag::kEnumValue, keys_, validation_token_, name_.data.string(), proto_fob);
 }
 
 template<typename Tag>
-typename Fob<Tag>::name_type Fob<Tag>::name() const { return name_; }
-
-template<typename Tag>
-asymm::Signature Fob<Tag>::validation_token() const { return validation_token_; }
-
-template<typename Tag>
-asymm::PrivateKey Fob<Tag>::private_key() const { return keys_.private_key; }
-
-template<typename Tag>
-asymm::PublicKey Fob<Tag>::public_key() const { return keys_.public_key; }
-
-template<typename Tag>
-typename Fob<Tag>::name_type Fob<Tag>::CreateName() {
-  return name_type(crypto::Hash<crypto::SHA512>(
-      asymm::EncodeKey(keys_.public_key) + validation_token_));
+void Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>::ToProtobuf(
+    protobuf::Fob* proto_fob) const {
+  FobToProtobuf(Tag::kEnumValue, keys_, validation_token_, name_.data.string(), proto_fob);
 }
-
 
 }  // namespace detail
 

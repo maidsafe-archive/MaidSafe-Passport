@@ -12,11 +12,12 @@
 #ifndef MAIDSAFE_PASSPORT_DETAIL_FOB_H_
 #define MAIDSAFE_PASSPORT_DETAIL_FOB_H_
 
+#include <type_traits>
+
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/common/types.h"
 
 #include "maidsafe/passport/detail/config.h"
-#include "maidsafe/passport/detail/passport_pb.h"
 
 
 namespace maidsafe {
@@ -27,27 +28,91 @@ namespace detail {
 
 class PassportImpl;
 
-template<typename Tag>
+namespace protobuf { class Fob; }
+
+template<typename FobType>
+struct is_self_signed : public std::false_type {};
+
+template<>
+struct is_self_signed<AnmidTag> : public std::true_type {};
+template<>
+struct is_self_signed<AnsmidTag> : public std::true_type {};
+template<>
+struct is_self_signed<AntmidTag> : public std::true_type {};
+template<>
+struct is_self_signed<AnmaidTag> : public std::true_type {};
+template<>
+struct is_self_signed<AnmpidTag> : public std::true_type {};
+
+
+template<typename Tag, typename Enable>
 class Fob {
  public:
   typedef TaggedValue<Identity, Tag> name_type;
   typedef typename Signer<typename Tag>::type signer_type;
-  typedef typename std::is_same<Fob<typename Tag>,
-                                typename Signer<typename Tag>::type> is_self_signed;
-  // This constructor is only available for self-signing Fobs.
-  Fob();
-  // This constructor is only available for non-self-signing Fobs.
-  Fob(const signer_type& signing_fob);
-  // This constructor is used for parsing a Fob which was serialised to the Passport protobuf.
-  Fob(const protobuf::Fob& proto_fob);
-  NonEmptyString Serialise() const;
+  Fob(const Fob& other);
+  Fob& operator=(const Fob& other);
+  Fob(Fob&& other);
+  Fob& operator=(Fob&& other);
+  explicit Fob(const protobuf::Fob& proto_fob);
+  void ToProtobuf(protobuf::Fob* proto_fob) const;
   name_type name() const;
   asymm::Signature validation_token() const;
   asymm::PrivateKey private_key() const;
   asymm::PublicKey public_key() const;
 
  private:
-  name_type CreateName();
+  asymm::Keys keys_;
+  asymm::Signature validation_token_;
+  name_type name_;
+};
+
+template<typename Tag>
+class Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type> {
+ public:
+  typedef TaggedValue<Identity, Tag> name_type;
+  typedef typename Signer<typename Tag>::type signer_type;
+  // This constructor is only available to this specialisation (i.e. self-signed fob)
+  Fob();
+  Fob(const Fob& other);
+  Fob& operator=(const Fob& other);
+  Fob(Fob&& other);
+  Fob& operator=(Fob&& other);
+  explicit Fob(const protobuf::Fob& proto_fob);
+  void ToProtobuf(protobuf::Fob* proto_fob) const;
+  name_type name() const { return name_; }
+  asymm::Signature validation_token() const { return validation_token_; }
+  asymm::PrivateKey private_key() const { return keys_.private_key; }
+  asymm::PublicKey public_key() const { return keys_.public_key; }
+
+ private:
+  asymm::Keys keys_;
+  asymm::Signature validation_token_;
+  name_type name_;
+};
+
+template<typename Tag>
+class Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type> {
+ public:
+  typedef TaggedValue<Identity, Tag> name_type;
+  typedef typename Signer<typename Tag>::type signer_type;
+  Fob(const Fob& other);
+  // This constructor is only available to this specialisation (i.e. non-self-signed fob)
+  explicit Fob(const signer_type& signing_fob,
+               typename std::enable_if<!std::is_same<Fob<typename Tag>,
+                                                     signer_type>::value>::type* = 0);
+  Fob& operator=(const Fob& other);
+  Fob(Fob&& other);
+  Fob& operator=(Fob&& other);
+  explicit Fob(const protobuf::Fob& proto_fob);
+  void ToProtobuf(protobuf::Fob* proto_fob) const;
+  name_type name() const { return name_; }
+  asymm::Signature validation_token() const { return validation_token_; }
+  asymm::PrivateKey private_key() const { return keys_.private_key; }
+  asymm::PublicKey public_key() const { return keys_.public_key; }
+
+ private:
+  Fob();
   asymm::Keys keys_;
   asymm::Signature validation_token_;
   name_type name_;

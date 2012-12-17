@@ -25,7 +25,19 @@ namespace maidsafe {
 namespace passport {
 
 Mid::name_type MidName(const NonEmptyString& keyword, uint32_t pin);
+
 Smid::name_type SmidName(const NonEmptyString& keyword, uint32_t pin);
+
+NonEmptyString EncryptSession(const UserPassword& keyword,
+                              uint32_t pin,
+                              const UserPassword& password,
+                              const NonEmptyString& serialised_session);
+
+Tmid::name_type TmidName(const NonEmptyString& encrypted_tmid);
+
+NonEmptyString EncryptTmidName(const UserPassword& keyword,
+                               uint32_t pin,
+                               const Tmid::name_type& tmid_name);
 
 Tmid::name_type DecryptTmidName(const UserPassword& keyword,
                                 uint32_t pin,
@@ -43,37 +55,21 @@ class PassportImpl;
 class Passport {
  public:
   Passport();
-  void CreateSigningPackets();
-  int ConfirmSigningPackets();
-  int SetIdentityPackets(const NonEmptyString& keyword,
-                         const uint32_t pin,
-                         const NonEmptyString& password,
-                         const NonEmptyString& master_data,
-                         const NonEmptyString& surrogate_data);
-  int ConfirmIdentityPackets();
-  void Clear(bool signature, bool identity, bool selectable);
+  void CreateFobs();
+  void ConfirmFobs();
 
-  // Serialisation
   NonEmptyString Serialise();
-  int Parse(const NonEmptyString& serialised_passport);
+  void Parse(const NonEmptyString& serialised_passport);
 
-  // Getters
-  template<typename IdentityDataType>
-  typename IdentityDataType::name_type Name(bool confirmed);
-  template<typename IdentityDataType>
-  NonEmptyString Value(bool confirmed);
-  template<typename SignatureDataType>
-  SignatureDataType SignatureData(bool confirmed);
-  template<typename SignatureDataType>
-  SignatureDataType SignatureData(bool confirmed, const NonEmptyString &chosen_name);
+  template<typename FobType>
+  FobType Get(bool confirmed);
 
-  // Selectable Identity (aka MPID)
-  void CreateSelectableIdentity(const NonEmptyString& chosen_name);
-  int ConfirmSelectableIdentity(const NonEmptyString& chosen_name);
-  int DeleteSelectableIdentity(const NonEmptyString& chosen_name);
-
-  int MoveMaidsafeInbox(const NonEmptyString& chosen_identity);
-  int ConfirmMovedMaidsafeInbox(const NonEmptyString& chosen_identity);
+  // Selectable Fob (aka ANMPID & MPID)
+  template<typename FobType>
+  FobType GetSelectableFob(bool confirmed, const NonEmptyString &chosen_name);
+  void CreateSelectableFob(const NonEmptyString &chosen_name);
+  int ConfirmSelectableFob(const NonEmptyString &chosen_name);
+  int DeleteSelectableFob(const NonEmptyString &chosen_name);
 
   friend class test::PassportTest;
 
