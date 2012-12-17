@@ -44,9 +44,9 @@ class PassportImpl {
 
   template<typename FobType>
   FobType GetSelectableFob(bool confirmed, const NonEmptyString &chosen_name);
-  void CreateSelectableFob(const NonEmptyString &chosen_name);
-  int ConfirmSelectableFob(const NonEmptyString &chosen_name);
-  int DeleteSelectableFob(const NonEmptyString &chosen_name);
+  void CreateSelectableFobPair(const NonEmptyString &chosen_name);
+  void ConfirmSelectableFobPair(const NonEmptyString &chosen_name);
+  void DeleteSelectableFobPair(const NonEmptyString &chosen_name);
 
  private:
   struct Fobs {
@@ -79,12 +79,12 @@ class PassportImpl {
     Fobs& operator=(const Fobs&);
   };
 
-  struct SelectableFob {
-    SelectableFob() : anmpid(), mpid() {}
-    SelectableFob(SelectableFob&& other)
+  struct SelectableFobPair {
+    SelectableFobPair() : anmpid(), mpid() {}
+    SelectableFobPair(SelectableFobPair&& other)
         : anmpid(std::move(other.anmpid)),
           mpid(std::move(other.mpid)) {}
-    SelectableFob& operator=(SelectableFob&& other) {
+    SelectableFobPair& operator=(SelectableFobPair&& other) {
       anmpid = std::move(other.anmpid);
       mpid = std::move(other.mpid);
       return *this;
@@ -93,16 +93,18 @@ class PassportImpl {
     std::unique_ptr<Mpid> mpid;
 
    private:
-    SelectableFob(const SelectableFob&);
-    SelectableFob& operator=(const SelectableFob&);
+    SelectableFobPair(const SelectableFobPair&);
+    SelectableFobPair& operator=(const SelectableFobPair&);
   };
 
   PassportImpl(const PassportImpl&);
   PassportImpl& operator=(const PassportImpl&);
   bool NoFobsNull(bool confirmed);
+  template<typename FobType>
+  FobType GetFromSelectableFobPair(bool confirmed, const SelectableFobPair& selectable_fob_pair);
 
   Fobs pending_fobs_, confirmed_fobs_;
-  std::map<NonEmptyString, SelectableFob> pending_selectable_fobs_, confirmed_selectable_fobs_;
+  std::map<NonEmptyString, SelectableFobPair> pending_selectable_fobs_, confirmed_selectable_fobs_;
   std::mutex fobs_mutex_, selectable_mutex_;
 };
 

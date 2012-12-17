@@ -67,9 +67,9 @@ class Passport {
   // Selectable Fob (aka ANMPID & MPID)
   template<typename FobType>
   FobType GetSelectableFob(bool confirmed, const NonEmptyString &chosen_name);
-  void CreateSelectableFob(const NonEmptyString &chosen_name);
-  int ConfirmSelectableFob(const NonEmptyString &chosen_name);
-  int DeleteSelectableFob(const NonEmptyString &chosen_name);
+  void CreateSelectableFobPair(const NonEmptyString &chosen_name);
+  void ConfirmSelectableFobPair(const NonEmptyString &chosen_name);
+  void DeleteSelectableFobPair(const NonEmptyString &chosen_name);
 
   friend class test::PassportTest;
 

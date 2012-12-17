@@ -91,6 +91,18 @@ FobType Passport::GetSelectableFob(bool confirmed, const NonEmptyString &chosen_
   return impl_->GetSelectableFob<FobType>(confirmed, chosen_name);
 }
 
+void Passport::CreateSelectableFobPair(const NonEmptyString &chosen_name) {
+  impl_->CreateSelectableFobPair(chosen_name);
+}
+
+void Passport::ConfirmSelectableFobPair(const NonEmptyString &chosen_name) {
+  impl_->ConfirmSelectableFobPair(chosen_name);
+}
+
+void Passport::DeleteSelectableFobPair(const NonEmptyString &chosen_name) {
+  impl_->DeleteSelectableFobPair(chosen_name);
+}
+
 }  // namespace passport
 
 }  // namespace maidsafe

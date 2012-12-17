@@ -31,8 +31,6 @@ namespace detail {
 
 namespace {
 
-
-
 //void FobsToProtobuf(const Fob& packet_keys,
 //                                 int type,
 //                                 PacketContainer &packet_container) {
@@ -209,7 +207,7 @@ void PassportImpl::Parse(const NonEmptyString& serialised_passport) {
 
   for (int i(0); i != proto_passport.public_identity_size(); ++i) {
     NonEmptyString public_id(proto_passport.public_identity(i).public_id());
-    SelectableFob fob;
+    SelectableFobPair fob;
     fob.anmpid.reset(new Anmpid(proto_passport.public_identity(i).anmpid()));
     fob.mpid.reset(new Mpid(proto_passport.public_identity(i).mpid()));
     confirmed_selectable_fobs_[public_id] = std::move(fob);
@@ -300,76 +298,68 @@ Pmid PassportImpl::Get<Pmid>(bool confirmed) {
   }
 }
 
-template<typename FobType>
-FobType GetSelectableFob(bool confirmed, const NonEmptyString &chosen_name);
+template<>
+Anmpid PassportImpl::GetFromSelectableFobPair(bool confirmed,
+                                              const SelectableFobPair& selectable_fob_pair) {
+  if (!selectable_fob_pair.anmpid)
+    ThrowError(confirmed ? PassportErrors::no_confirmed_fob : PassportErrors::no_pending_fob);
+  return *selectable_fob_pair.anmpid;
+}
 
-//Fob PassportImpl::SignaturePacketDetails(PacketType packet_type,
-//                                         bool confirmed,
-//                                         const NonEmptyString &chosen_name) {
-//  std::lock_guard<std::mutex> lock(selectable_mutex_);
-//  if (confirmed) {
-//    auto it(confirmed_selectable_packets_.find(chosen_name));
-//    if (it != confirmed_selectable_packets_.end())  {
-//      if (packet_type == kAnmpid)
-//        return it->second.anmpid;
-//      if (packet_type == kMpid)
-//        return it->second.mpid;
-//      if (packet_type == kMmid)
-//        return it->second.mmid;
-//    }
-//  } else {
-//    auto it(pending_selectable_packets_.find(chosen_name));
-//    if (it != pending_selectable_packets_.end())  {
-//      if (packet_type == kAnmpid)
-//        return it->second.anmpid;
-//      if (packet_type == kMpid)
-//        return it->second.mpid;
-//      if (packet_type == kMmid)
-//        return it->second.mmid;
-//    }
-//  }
-//
-//  return Fob();
-//}
-//
-//// Selectable Identity (MPID)
-//void PassportImpl::CreateSelectableIdentity(const NonEmptyString &chosen_name) {
-//  SelectableIdentity selectable_identity;
-//  selectable_identity.anmpid = pu::GenerateFob(nullptr);
-//  selectable_identity.mpid = pu::GenerateFob(&selectable_identity.anmpid.keys.private_key);
-//  selectable_identity.mmid = pu::GenerateFob(&selectable_identity.mpid.keys.private_key);
-//  {
-//    std::lock_guard<std::mutex> lock(selectable_mutex_);
-//    pending_selectable_packets_[chosen_name] = selectable_identity;
-//    // TODO(Team): Throw exception here to ensure that users of the function have checked the
-//    //             chosen name doesn't exist yet.
-//  }
-//}
-//
-//int PassportImpl::ConfirmSelectableIdentity(const NonEmptyString &chosen_name) {
-//  std::lock_guard<std::mutex> lock(selectable_mutex_);
-//
-//  if (pending_selectable_packets_.find(chosen_name) == pending_selectable_packets_.end()) {
-//    LOG(kError) << "No such pending selectable identity: " << chosen_name.string();
-//    return -1;
-//  }
-//
-//  confirmed_selectable_packets_[chosen_name] = pending_selectable_packets_[chosen_name];
-//
-//  pending_selectable_packets_.erase(chosen_name);
-//
-//  return kSuccess;
-//}
-//
-//int PassportImpl::DeleteSelectableIdentity(const NonEmptyString &chosen_name) {
-//  std::lock_guard<std::mutex> lock(selectable_mutex_);
-//
-//  confirmed_selectable_packets_.erase(chosen_name);
-//  pending_selectable_packets_.erase(chosen_name);
-//
-//  return kSuccess;
-//}
-//
+template<>
+Mpid PassportImpl::GetFromSelectableFobPair(bool confirmed,
+                                            const SelectableFobPair& selectable_fob_pair) {
+  if (!selectable_fob_pair.mpid)
+    ThrowError(confirmed ? PassportErrors::no_confirmed_fob : PassportErrors::no_pending_fob);
+  return *selectable_fob_pair.mpid;
+}
+
+template<typename FobType>
+FobType GetSelectableFob(bool confirmed, const NonEmptyString &chosen_name) {
+  std::lock_guard<std::mutex> lock(selectable_mutex_);
+  if (confirmed) {
+    auto itr(confirmed_selectable_fobs_.find(chosen_name));
+    if (itr == confirmed_selectable_fobs_.end())
+      ThrowError(PassportErrors::no_pending_fob);
+    return GetFromSelectableFobPair<FobType>((*itr).second);
+  } else {
+    auto itr(pending_selectable_fobs_.find(chosen_name));
+    if (itr == pending_selectable_fobs_.end())
+      ThrowError(PassportErrors::no_pending_fob);
+    return GetFromSelectableFobPair<FobType>((*itr).second);
+  }
+}
+
+void PassportImpl::CreateSelectableFobPair(const NonEmptyString &chosen_name) {
+  SelectableFobPair selectable_fob_pair;
+  selectable_fob_pair.anmpid.reset(new Anmpid);
+  selectable_fob_pair.mpid.reset(new Mpid(*selectable_fob_pair.anmpid));
+  std::lock_guard<std::mutex> lock(selectable_mutex_);
+  auto result(pending_selectable_fobs_.insert(std::make_pair(chosen_name,
+                                                             std::move(selectable_fob_pair))));
+  if (!result.second)
+    ThrowError(PassportErrors::public_id_already_exists);
+}
+
+void PassportImpl::ConfirmSelectableFobPair(const NonEmptyString &chosen_name) {
+  std::lock_guard<std::mutex> lock(selectable_mutex_);
+  auto itr(pending_selectable_fobs_.find(chosen_name));
+  if (itr == pending_selectable_fobs_.end())
+    ThrowError(PassportErrors::no_such_public_id);
+
+  auto result(confirmed_selectable_fobs_.insert(std::make_pair(chosen_name,
+                                                               std::move((*itr).second))));
+  if (!result.second)
+    ThrowError(PassportErrors::public_id_already_exists);
+
+  pending_selectable_fobs_.erase(itr);
+}
+
+void PassportImpl::DeleteSelectableFobPair(const NonEmptyString &chosen_name) {
+  std::lock_guard<std::mutex> lock(selectable_mutex_);
+  confirmed_selectable_fobs_.erase(chosen_name);
+  pending_selectable_fobs_.erase(chosen_name);
+}
 
 }  // namespace detail
 
