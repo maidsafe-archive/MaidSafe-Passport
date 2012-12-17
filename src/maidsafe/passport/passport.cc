@@ -62,6 +62,14 @@ NonEmptyString DecryptSession(const UserPassword& keyword,
   return detail::DecryptSession(keyword, pin, password, encrypted_session);
 }
 
+NonEmptyString SerialisePmid(const Pmid& pmid) {
+  return detail::SerialisePmid(pmid);
+}
+
+Pmid ParsePmid(const NonEmptyString& serialised_pmid) {
+  return detail::ParsePmid(serialised_pmid);
+}
+
 
 Passport::Passport() : impl_(new detail::PassportImpl) {}
 

@@ -118,6 +118,10 @@ class Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type> {
   name_type name_;
 };
 
+NonEmptyString SerialisePmid(const Fob<PmidTag>& pmid);
+
+Fob<PmidTag> ParsePmid(const NonEmptyString& serialised_pmid);
+
 }  // namespace detail
 
 }  // namespace passport
