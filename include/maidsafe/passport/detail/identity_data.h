@@ -31,14 +31,14 @@ namespace detail {
 template<typename Tag>
 struct MidData {
   typedef TaggedValue<Identity, Tag> name_type;
-  typedef typename Signer<typename Tag>::type signer_type;
+  typedef typename Signer<Tag>::type signer_type;
   static name_type Name(const NonEmptyString& keyword, uint32_t pin);
 };
 
 template<typename Tag>
 struct TmidData {
   typedef TaggedValue<Identity, Tag> name_type;
-  typedef typename Signer<typename Tag>::type signer_type;
+  typedef typename Signer<Tag>::type signer_type;
 };
 
 NonEmptyString EncryptSession(const UserPassword& keyword,

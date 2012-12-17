@@ -315,7 +315,7 @@ Mpid PassportImpl::GetFromSelectableFobPair(bool confirmed,
 }
 
 template<typename FobType>
-FobType GetSelectableFob(bool confirmed, const NonEmptyString &chosen_name) {
+FobType PassportImpl::GetSelectableFob(bool confirmed, const NonEmptyString &chosen_name) {
   std::lock_guard<std::mutex> lock(selectable_mutex_);
   if (confirmed) {
     auto itr(confirmed_selectable_fobs_.find(chosen_name));

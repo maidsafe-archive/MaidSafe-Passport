@@ -49,7 +49,7 @@ template<typename Tag, typename Enable>
 class Fob {
  public:
   typedef TaggedValue<Identity, Tag> name_type;
-  typedef typename Signer<typename Tag>::type signer_type;
+  typedef typename Signer<Tag>::type signer_type;
   Fob(const Fob& other);
   Fob& operator=(const Fob& other);
   Fob(Fob&& other);
@@ -71,7 +71,7 @@ template<typename Tag>
 class Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type> {
  public:
   typedef TaggedValue<Identity, Tag> name_type;
-  typedef typename Signer<typename Tag>::type signer_type;
+  typedef typename Signer<Tag>::type signer_type;
   // This constructor is only available to this specialisation (i.e. self-signed fob)
   Fob();
   Fob(const Fob& other);
@@ -95,11 +95,11 @@ template<typename Tag>
 class Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type> {
  public:
   typedef TaggedValue<Identity, Tag> name_type;
-  typedef typename Signer<typename Tag>::type signer_type;
+  typedef typename Signer<Tag>::type signer_type;
   Fob(const Fob& other);
   // This constructor is only available to this specialisation (i.e. non-self-signed fob)
   explicit Fob(const signer_type& signing_fob,
-               typename std::enable_if<!std::is_same<Fob<typename Tag>,
+               typename std::enable_if<!std::is_same<Fob<Tag>,
                                                      signer_type>::value>::type* = 0);
   Fob& operator=(const Fob& other);
   Fob(Fob&& other);

@@ -43,7 +43,7 @@ Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>::Fob()
       validation_token_(asymm::Sign(asymm::PlainText(asymm::EncodeKey(keys_.public_key)),
                                     keys_.private_key)),
       name_(CreateFobName(keys_.public_key, validation_token_)) {
-  static_assert(std::is_same<Fob<typename Tag>, signer_type>::value,
+  static_assert(std::is_same<Fob<Tag>, signer_type>::value,
                 "This constructor is only applicable for self-signing fobs.");
 }
 
@@ -67,8 +67,8 @@ Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>::Fob(
 // Explicit constructor initialising with different signing fob (exclusive to non-self-signing fobs)
 template<typename Tag>
 Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>::Fob(
-    const typename signer_type& signing_fob,
-    typename std::enable_if<!std::is_same<Fob<typename Tag>, signer_type>::value>::type*)
+    const signer_type& signing_fob,
+    typename std::enable_if<!std::is_same<Fob<Tag>, signer_type>::value>::type*)
         : keys_(asymm::GenerateKeyPair()),
           validation_token_(asymm::Sign(asymm::PlainText(asymm::EncodeKey(keys_.public_key)),
                                         signing_fob.private_key())),
