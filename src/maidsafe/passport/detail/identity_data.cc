@@ -69,22 +69,23 @@ NonEmptyString XorData(const UserPassword& keyword,
 template<>
 crypto::SHA512Hash GenerateMidName<MidData<MidTag>>(const crypto::SHA512Hash& keyword_hash,  // NOLINT (Fraser)
                                                     const crypto::SHA512Hash& pin_hash) {
-  return crypto::Hash<crypto::SHA512>(keyword_hash + pin_hash);
+  return crypto::Hash<crypto::SHA512>(keyword_hash.string() + pin_hash.string());
 }
 
 template<>
 crypto::SHA512Hash GenerateMidName<MidData<SmidTag>>(const crypto::SHA512Hash& keyword_hash,  // NOLINT (Fraser)
                                                      const crypto::SHA512Hash& pin_hash) {
-  return crypto::Hash<crypto::SHA512>(crypto::Hash<crypto::SHA512>(keyword_hash + pin_hash));
+  return crypto::Hash<crypto::SHA512>(crypto::Hash<crypto::SHA512>(keyword_hash.string() +
+                                                                   pin_hash.string()));
 }
 
 crypto::SHA512Hash HashOfPin(uint32_t pin) {
   return crypto::Hash<crypto::SHA512>(std::to_string(pin));
 }
 
-NonEmptyString EncryptSession(UserPassword keyword,
+NonEmptyString EncryptSession(const UserPassword& keyword,
                               uint32_t pin,
-                              UserPassword password,
+                              const UserPassword& password,
                               const NonEmptyString& serialised_session) {
   auto pin_hash(HashOfPin(pin));
   crypto::SecurePassword secure_password(CreateSecureTmidPassword(password, pin, pin_hash));
