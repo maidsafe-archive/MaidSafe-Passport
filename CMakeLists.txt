@@ -75,6 +75,10 @@ rename_outdated_built_exes()
 include(maidsafe_standard_flags)
 ms_disable_warnings(${PassportSourcesRootDir}/detail/passport.pb.cc)
 
+if(UNIX)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-effc++")
+endif()
+
 
 #==================================================================================================#
 # Tests                                                                                            #
