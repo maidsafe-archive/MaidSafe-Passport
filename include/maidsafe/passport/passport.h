@@ -19,7 +19,6 @@
 
 #include "maidsafe/passport/types.h"
 
-
 namespace maidsafe {
 
 namespace passport {
@@ -54,7 +53,11 @@ Pmid ParsePmid(const NonEmptyString& serialised_pmid);
 
 namespace test { class PassportTest; }
 
+namespace detail {
+
 class PassportImpl;
+
+}  // namespace detail
 
 class Passport {
  public:
