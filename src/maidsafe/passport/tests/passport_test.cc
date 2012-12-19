@@ -32,6 +32,7 @@
 #include "maidsafe/passport/detail/passport_pb.h"
 #include "maidsafe/passport/passport.h"
 
+namespace pb = maidsafe::passport::detail::protobuf;
 
 namespace maidsafe {
 
@@ -85,8 +86,6 @@ class PassportTest2 : public testing::Test {
  public:
   PassportTest2()
     : passport_() {}
-
-
 
  protected:
   Passport passport_;
@@ -184,60 +183,6 @@ TEST_F(PassportTest2, FUNC_ConfirmFobs) {
 //  EXPECT_TRUE(AllFieldsMatch(old_p_pmid, new_c_pmid));
 }
 
-TEST_F(PassportTest2, FUNC_SerialiseParseNoSelectables) {
-  // TODO(Alison) - get all old components from passport_
-
-  passport_.CreateFobs();
-  passport_.ConfirmFobs();
-
-  NonEmptyString serialised(passport_.Serialise());
-  passport_.Parse(serialised);
-
-  // TODO(Alison) - get all new components from passport_
-  // TODO(Alison) - check old and new components match
-
-  NonEmptyString serialised_2(passport_.Serialise());
-  EXPECT_EQ(serialised, serialised_2);
-  passport_.Parse(serialised);
-
-  // TODO(Alison) - check components match again
-}
-
-TEST_F(PassportTest2, FUNC_SerialiseParseWithSelectables) {
-  // TODO(Alison) - get all old components from passport_
-
-  passport_.CreateFobs();
-  passport_.ConfirmFobs();
-
-  std::vector<NonEmptyString> chosen_names;
-  for (uint16_t i(0); i < 20; ++i) {  // choice of max value?
-    NonEmptyString chosen_name(RandomAlphaNumericString(static_cast<size_t>(i + 1)));
-    passport_.CreateSelectableFobPair(chosen_name);
-    passport_.ConfirmSelectableFobPair(chosen_name);
-    chosen_names.push_back(chosen_name);
-  }
-
-  NonEmptyString serialised(passport_.Serialise());
-  passport_.Parse(serialised);
-
-  // TODO(Alison) - get all new components from passport_
-  // TODO(Alison) - check old and new components match
-
-  NonEmptyString serialised_2(passport_.Serialise());
-  EXPECT_EQ(serialised, serialised_2);
-}
-
-TEST_F(PassportTest2, FUNC_ParseBadString) {
-  NonEmptyString bad_string(RandomAlphaNumericString(1 + RandomUint32() % 1000));
-  EXPECT_THROW(passport_.Parse(bad_string), std::exception);
-}
-
-// TODO(Alison) - test uninitialised profobuf::Passport (possible?)
-
-// TODO(Alison) - test parsing string that has bad fields (e.g. wrong type)
-
-// TODO(Alison) - test proto_passport.fob_size() != 6
-
 TEST_F(PassportTest2, FUNC_CreateConfirmGetSelectableFobs) {
 //  NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 100));  // length?
 
@@ -332,6 +277,278 @@ TEST_F(PassportTest2, FUNC_MultipleSelectableFobs) {
 //    EXPECT_NO_THROW(passport_.GetSelectableFob<Mpid>(false, chosen_names.at(i)));
 //    EXPECT_NO_THROW(passport_.GetSelectableFob<Anmpid>(false, chosen_names.at(i)));
 //  }
+}
+
+TEST_F(PassportTest2, FUNC_SerialiseParseNoSelectables) {
+  // TODO(Alison) - get all old components from passport_
+
+  passport_.CreateFobs();
+  passport_.ConfirmFobs();
+
+  NonEmptyString serialised(passport_.Serialise());
+  passport_.Parse(serialised);
+
+  // TODO(Alison) - get all new components from passport_
+  // TODO(Alison) - check old and new components match
+
+  NonEmptyString serialised_2(passport_.Serialise());
+  EXPECT_EQ(serialised, serialised_2);
+  passport_.Parse(serialised);
+
+  // TODO(Alison) - check components match again
+}
+
+TEST_F(PassportTest2, FUNC_SerialiseParseWithSelectables) {
+  // TODO(Alison) - get all old components from passport_
+
+  passport_.CreateFobs();
+  passport_.ConfirmFobs();
+
+  std::vector<NonEmptyString> chosen_names;
+  for (uint16_t i(0); i < 20; ++i) {  // choice of max value?
+    NonEmptyString chosen_name(RandomAlphaNumericString(static_cast<size_t>(i + 1)));
+    passport_.CreateSelectableFobPair(chosen_name);
+    passport_.ConfirmSelectableFobPair(chosen_name);
+    chosen_names.push_back(chosen_name);
+  }
+
+  NonEmptyString serialised(passport_.Serialise());
+  passport_.Parse(serialised);
+
+  // TODO(Alison) - get all new components from passport_
+  // TODO(Alison) - check old and new components match
+
+  NonEmptyString serialised_2(passport_.Serialise());
+  EXPECT_EQ(serialised, serialised_2);
+}
+
+TEST_F(PassportTest2, FUNC_ParseBadString) {
+  NonEmptyString bad_string(RandomAlphaNumericString(1 + RandomUint32() % 1000));
+  EXPECT_THROW(passport_.Parse(bad_string), std::exception);
+}
+
+class PassportParsePbTest : public PassportTest2 {
+ public:
+  PassportParsePbTest()
+    : anmid_(),
+      ansmid_(),
+      antmid_(),
+      anmaid_(),
+      maid_(anmaid_),
+      pmid_(maid_),
+      proto_passport_() {}
+  Anmid anmid_;
+  Ansmid ansmid_;
+  Antmid antmid_;
+  Anmaid anmaid_;
+  Maid maid_;
+  Pmid pmid_;
+  pb::Passport proto_passport_;
+};
+
+TEST_F(PassportParsePbTest, FUNC_GoodProtobuf) {
+  auto proto_fob(proto_passport_.add_fob());
+  anmid_.ToProtobuf(proto_fob);
+  proto_fob = proto_passport_.add_fob();
+  ansmid_.ToProtobuf(proto_fob);
+  proto_fob = proto_passport_.add_fob();
+  antmid_.ToProtobuf(proto_fob);
+  proto_fob = proto_passport_.add_fob();
+  anmaid_.ToProtobuf(proto_fob);
+  proto_fob = proto_passport_.add_fob();
+  maid_.ToProtobuf(proto_fob);
+  proto_fob = proto_passport_.add_fob();
+  pmid_.ToProtobuf(proto_fob);
+
+  NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 20));  // length?
+  Anmpid anmpid;
+  Mpid mpid(anmpid);
+
+  auto proto_public_identity(proto_passport_.add_public_identity());
+  proto_public_identity->set_public_id(chosen_name.string());
+  auto proto_anmpid(proto_public_identity->mutable_anmpid());
+  anmpid.ToProtobuf(proto_anmpid);
+  auto proto_mpid(proto_public_identity->mutable_mpid());
+  mpid.ToProtobuf(proto_mpid);
+
+  NonEmptyString string(proto_passport_.SerializeAsString());
+  EXPECT_NO_THROW(passport_.Parse(string));
+}
+
+TEST_F(PassportParsePbTest, FUNC_FiveFobs) {
+  auto proto_fob(proto_passport_.add_fob());
+  anmid_.ToProtobuf(proto_fob);
+  proto_fob = proto_passport_.add_fob();
+  ansmid_.ToProtobuf(proto_fob);
+  proto_fob = proto_passport_.add_fob();
+  antmid_.ToProtobuf(proto_fob);
+  proto_fob = proto_passport_.add_fob();
+  anmaid_.ToProtobuf(proto_fob);
+  proto_fob = proto_passport_.add_fob();
+  maid_.ToProtobuf(proto_fob);
+
+  NonEmptyString string(proto_passport_.SerializeAsString());
+  EXPECT_THROW(passport_.Parse(string), std::exception);
+}
+
+TEST_F(PassportParsePbTest, FUNC_SevenFobs) {
+  auto proto_fob(proto_passport_.add_fob());
+  anmid_.ToProtobuf(proto_fob);
+  proto_fob = proto_passport_.add_fob();
+  ansmid_.ToProtobuf(proto_fob);
+  proto_fob = proto_passport_.add_fob();
+  antmid_.ToProtobuf(proto_fob);
+  proto_fob = proto_passport_.add_fob();
+  anmaid_.ToProtobuf(proto_fob);
+  proto_fob = proto_passport_.add_fob();
+  maid_.ToProtobuf(proto_fob);
+  proto_fob = proto_passport_.add_fob();
+  pmid_.ToProtobuf(proto_fob);
+  proto_fob = proto_passport_.add_fob();
+  pmid_.ToProtobuf(proto_fob);
+
+  NonEmptyString string(proto_passport_.SerializeAsString());
+  EXPECT_THROW(passport_.Parse(string), std::exception);
+}
+
+TEST_F(PassportParsePbTest, FUNC_ParseReorderedFobs) {
+  // TODO(Alison) - randomise incorrect order?
+  auto proto_fob(proto_passport_.add_fob());
+  ansmid_.ToProtobuf(proto_fob);
+  proto_fob = proto_passport_.add_fob();
+  anmid_.ToProtobuf(proto_fob);
+  proto_fob = proto_passport_.add_fob();
+  maid_.ToProtobuf(proto_fob);
+  proto_fob = proto_passport_.add_fob();
+  pmid_.ToProtobuf(proto_fob);
+  proto_fob = proto_passport_.add_fob();
+  anmaid_.ToProtobuf(proto_fob);
+  proto_fob = proto_passport_.add_fob();
+  antmid_.ToProtobuf(proto_fob);
+
+  NonEmptyString string(proto_passport_.SerializeAsString());
+  EXPECT_THROW(passport_.Parse(string), std::exception);
+}
+
+class PassportParsePbSelectableTest : public PassportParsePbTest {
+  void SetUp() {
+    auto proto_fob(proto_passport_.add_fob());
+    anmid_.ToProtobuf(proto_fob);
+    proto_fob = proto_passport_.add_fob();
+    ansmid_.ToProtobuf(proto_fob);
+    proto_fob = proto_passport_.add_fob();
+    antmid_.ToProtobuf(proto_fob);
+    proto_fob = proto_passport_.add_fob();
+    anmaid_.ToProtobuf(proto_fob);
+    proto_fob = proto_passport_.add_fob();
+    maid_.ToProtobuf(proto_fob);
+    proto_fob = proto_passport_.add_fob();
+    pmid_.ToProtobuf(proto_fob);
+  }
+};
+
+TEST_F(PassportParsePbSelectableTest, FUNC_GoodProtobuf) {
+  NonEmptyString string(proto_passport_.SerializeAsString());
+  EXPECT_NO_THROW(passport_.Parse(string));
+}
+
+TEST_F(PassportParsePbSelectableTest, FUNC_ReorderedFobs) {
+  // TODO(Alison) - is this test applicable/correct?
+  NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 20));  // length?
+  Anmpid anmpid;
+  Mpid mpid(anmpid);
+
+  auto proto_public_identity(proto_passport_.add_public_identity());
+  proto_public_identity->set_public_id(chosen_name.string());
+  auto proto_mpid(proto_public_identity->mutable_mpid());
+  mpid.ToProtobuf(proto_mpid);
+  auto proto_anmpid(proto_public_identity->mutable_anmpid());
+  anmpid.ToProtobuf(proto_anmpid);
+
+  NonEmptyString string(proto_passport_.SerializeAsString());
+  EXPECT_THROW(passport_.Parse(string), std::exception);
+}
+
+TEST(PassportIndependentSerialiseTest, FUNC_Uninitialised) {
+  pb::Passport proto_passport;
+  EXPECT_THROW(NonEmptyString(proto_passport.SerializeAsString()), std::exception);
+}
+
+class PassportSerialiseTest : public testing::Test {
+ public:
+  PassportSerialiseTest()
+    : anmid_(),
+      ansmid_(),
+      antmid_(),
+      anmaid_(),
+      maid_(anmaid_),
+      pmid_(maid_),
+      proto_passport_() {}
+
+  void SetUp() {
+    auto proto_fob(proto_passport_.add_fob());
+    anmid_.ToProtobuf(proto_fob);
+    proto_fob = proto_passport_.add_fob();
+    ansmid_.ToProtobuf(proto_fob);
+    proto_fob = proto_passport_.add_fob();
+    antmid_.ToProtobuf(proto_fob);
+    proto_fob = proto_passport_.add_fob();
+    anmaid_.ToProtobuf(proto_fob);
+    proto_fob = proto_passport_.add_fob();
+    maid_.ToProtobuf(proto_fob);
+    proto_fob = proto_passport_.add_fob();
+    pmid_.ToProtobuf(proto_fob);
+  }
+
+  Anmid anmid_;
+  Ansmid ansmid_;
+  Antmid antmid_;
+  Anmaid anmaid_;
+  Maid maid_;
+  Pmid pmid_;
+  pb::Passport proto_passport_;
+};
+
+TEST_F(PassportSerialiseTest, FUNC_GoodProtobuf) {
+  EXPECT_NO_THROW(NonEmptyString(proto_passport_.SerializeAsString()));
+}
+
+TEST_F(PassportSerialiseTest, FUNC_NoChosenName) {
+  Anmpid anmpid;
+  Mpid mpid(anmpid);
+
+  auto proto_public_identity(proto_passport_.add_public_identity());
+  auto proto_anmpid(proto_public_identity->mutable_anmpid());
+  anmpid.ToProtobuf(proto_anmpid);
+  auto proto_mpid(proto_public_identity->mutable_mpid());
+  mpid.ToProtobuf(proto_mpid);
+
+  EXPECT_THROW(NonEmptyString(proto_passport_.SerializeAsString()), std::exception);
+}
+
+TEST_F(PassportSerialiseTest, FUNC_NoAnmpid) {
+  NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 20));  // length?
+  Anmpid anmpid;
+  Mpid mpid(anmpid);
+
+  auto proto_public_identity(proto_passport_.add_public_identity());
+  proto_public_identity->set_public_id(chosen_name.string());
+  auto proto_mpid(proto_public_identity->mutable_mpid());
+  mpid.ToProtobuf(proto_mpid);
+
+  EXPECT_THROW(NonEmptyString(proto_passport_.SerializeAsString()), std::exception);
+}
+
+TEST_F(PassportSerialiseTest, FUNC_NoMpid) {
+  NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 20));  // length?
+  Anmpid anmpid;
+
+  auto proto_public_identity(proto_passport_.add_public_identity());
+  proto_public_identity->set_public_id(chosen_name.string());
+  auto proto_anmpid(proto_public_identity->mutable_anmpid());
+  anmpid.ToProtobuf(proto_anmpid);
+
+  EXPECT_THROW(NonEmptyString(proto_passport_.SerializeAsString()), std::exception);
 }
 
 TEST(TempTest, BEH_Passport) {
