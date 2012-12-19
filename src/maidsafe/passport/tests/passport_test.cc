@@ -337,7 +337,7 @@ TEST_F(PassportTest2, FUNC_MultipleSelectableFobs) {
 TEST(TempTest, BEH_Passport) {
   // TODO(Alison) - remove this when 'Get' compile errors are fixed
   Passport passport;
-  EXPECT_THROW(passport.Get<Maid>(false), std::exception);
+  EXPECT_THROW(passport.Get<Maid>(true), std::exception);
   NonEmptyString name("123");
   EXPECT_THROW(passport.GetSelectableFob<Mpid>(false, name), std::exception);
 }

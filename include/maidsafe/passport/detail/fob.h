@@ -26,8 +26,6 @@ namespace passport {
 
 namespace detail {
 
-class PassportImpl;
-
 namespace protobuf { class Fob; }
 
 template<typename FobType>

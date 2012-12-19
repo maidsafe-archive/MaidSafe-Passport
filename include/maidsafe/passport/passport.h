@@ -13,11 +13,16 @@
 #define MAIDSAFE_PASSPORT_PASSPORT_H_
 
 #include <cstdint>
+#include <map>
 #include <memory>
-#include <string>
-#include <vector>
+#include <mutex>
+
+#include "maidsafe/common/rsa.h"
+#include "maidsafe/common/types.h"
 
 #include "maidsafe/passport/types.h"
+#include "maidsafe/passport/detail/fob.h"
+
 
 namespace maidsafe {
 
@@ -53,11 +58,6 @@ Pmid ParsePmid(const NonEmptyString& serialised_pmid);
 
 namespace test { class PassportTest; }
 
-namespace detail {
-
-class PassportImpl;
-
-}  // namespace detail
 
 class Passport {
  public:
@@ -84,11 +84,67 @@ class Passport {
   Passport(const Passport&);
   Passport& operator=(const Passport&);
 
-  std::unique_ptr<detail::PassportImpl> impl_;
+  struct Fobs {
+    Fobs() : anmid(), ansmid(), antmid(), anmaid(), maid(), pmid() {}
+    Fobs(Fobs&& other)
+        : anmid(std::move(other.anmid)),
+          ansmid(std::move(other.ansmid)),
+          antmid(std::move(other.antmid)),
+          anmaid(std::move(other.anmaid)),
+          maid(std::move(other.maid)),
+          pmid(std::move(other.pmid)) {}
+    Fobs& operator=(Fobs&& other) {
+      anmid = std::move(other.anmid);
+      ansmid = std::move(other.ansmid);
+      antmid = std::move(other.antmid);
+      anmaid = std::move(other.anmaid);
+      maid = std::move(other.maid);
+      pmid = std::move(other.pmid);
+      return *this;
+    }
+    std::unique_ptr<Anmid> anmid;
+    std::unique_ptr<Ansmid> ansmid;
+    std::unique_ptr<Antmid> antmid;
+    std::unique_ptr<Anmaid> anmaid;
+    std::unique_ptr<Maid> maid;
+    std::unique_ptr<Pmid> pmid;
+
+   private:
+    Fobs(const Fobs&);
+    Fobs& operator=(const Fobs&);
+  };
+
+  struct SelectableFobPair {
+    SelectableFobPair() : anmpid(), mpid() {}
+    SelectableFobPair(SelectableFobPair&& other)
+        : anmpid(std::move(other.anmpid)),
+          mpid(std::move(other.mpid)) {}
+    SelectableFobPair& operator=(SelectableFobPair&& other) {
+      anmpid = std::move(other.anmpid);
+      mpid = std::move(other.mpid);
+      return *this;
+    }
+    std::unique_ptr<Anmpid> anmpid;
+    std::unique_ptr<Mpid> mpid;
+
+   private:
+    SelectableFobPair(const SelectableFobPair&);
+    SelectableFobPair& operator=(const SelectableFobPair&);
+  };
+
+  bool NoFobsNull(bool confirmed);
+  template<typename FobType>
+  FobType GetFromSelectableFobPair(bool confirmed, const SelectableFobPair& selectable_fob_pair);
+
+  Fobs pending_fobs_, confirmed_fobs_;
+  std::map<NonEmptyString, SelectableFobPair> pending_selectable_fobs_, confirmed_selectable_fobs_;
+  std::mutex fobs_mutex_, selectable_mutex_;
 };
 
 }  // namespace passport
 
 }  // namespace maidsafe
+
+#include "maidsafe/passport/detail/passport-inl.h"
 
 #endif  // MAIDSAFE_PASSPORT_PASSPORT_H_

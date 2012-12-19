@@ -9,14 +9,14 @@
  *  permission of the board of directors of MaidSafe.net.                                          *
  **************************************************************************************************/
 
-#include "maidsafe/passport/detail/passport_impl.h"
+#include "maidsafe/passport/passport.h"
 
 #include <map>
 #include <vector>
 
 #include "maidsafe/common/crypto.h"
+#include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
-#include "maidsafe/common/rsa.h"
 #include "maidsafe/common/utils.h"
 
 #include "maidsafe/passport/detail/identity_data.h"
@@ -27,70 +27,54 @@ namespace maidsafe {
 
 namespace passport {
 
-namespace detail {
+Mid::name_type MidName(const NonEmptyString& keyword, uint32_t pin) {
+  return Mid::Name(keyword, pin);
+}
 
-namespace {
+Smid::name_type SmidName(const NonEmptyString& keyword, uint32_t pin) {
+  return Smid::Name(keyword, pin);
+}
 
-//void FobsToProtobuf(const Fob& packet_keys,
-//                                 int type,
-//                                 PacketContainer &packet_container) {
-//  SignaturePacketContainer* container = packet_container.add_signature_packet();
-//  container->set_identity(packet_keys.identity.string());
-//  container->set_public_key(asymm::EncodeKey(packet_keys.keys.public_key).string());
-//  container->set_private_key(asymm::EncodeKey(packet_keys.keys.private_key).string());
-//  container->set_signature(packet_keys.validation_token.string());
-//  container->set_type(type);
-//}
+NonEmptyString EncryptSession(const UserPassword& keyword,
+                              uint32_t pin,
+                              const UserPassword& password,
+                              const NonEmptyString& serialised_session) {
+  return detail::EncryptSession(keyword, pin, password, serialised_session);
+}
 
-//void SelectableAsymmKeysToProtobuf(const Fob& anmpid,
-//                                   const Fob& mpid,
-//                                   const Fob& mmid,
-//                                   const NonEmptyString& id,
-//                                   PacketContainer &packet_container) {
-//  SelectableIdentityContainer* id_container = packet_container.add_selectable_packet();
-//  id_container->set_public_id(id.string());
-//  SignaturePacketContainer *anmpid_container = id_container->mutable_anmpid();
-//  anmpid_container->set_identity(anmpid.identity.string());
-//  anmpid_container->set_public_key(asymm::EncodeKey(anmpid.keys.public_key).string());
-//  anmpid_container->set_private_key(asymm::EncodeKey(anmpid.keys.private_key).string());
-//  anmpid_container->set_signature(anmpid.validation_token.string());
-//  anmpid_container->set_type(kAnmpid);
-//
-//  SignaturePacketContainer *mpid_container = id_container->mutable_mpid();
-//  mpid_container->set_identity(mpid.identity.string());
-//  mpid_container->set_public_key(asymm::EncodeKey(mpid.keys.public_key).string());
-//  mpid_container->set_private_key(asymm::EncodeKey(mpid.keys.private_key).string());
-//  mpid_container->set_signature(mpid.validation_token.string());
-//  mpid_container->set_type(kMpid);
-//
-//  SignaturePacketContainer *mmid_container = id_container->mutable_mmid();
-//  mmid_container->set_identity(mmid.identity.string());
-//  mmid_container->set_public_key(asymm::EncodeKey(mmid.keys.public_key).string());
-//  mmid_container->set_private_key(asymm::EncodeKey(mmid.keys.private_key).string());
-//  mmid_container->set_signature(mmid.validation_token.string());
-//  mmid_container->set_type(kMmid);
-//}
-//
-//Fob ProtobufToPacketKeys(const SignaturePacketContainer& spc) {
-//  Fob fob;
-//  fob.identity = Identity(spc.identity());
-//  fob.validation_token = NonEmptyString(spc.signature());
-//  fob.keys.public_key = asymm::DecodeKey(asymm::EncodedPublicKey(spc.public_key()));
-//  fob.keys.private_key = asymm::DecodeKey(asymm::EncodedPrivateKey(spc.private_key()));
-//  return fob;
-//}
-//
-//void ClearIdentityPackets(IdentityPackets &identity_packets) {
-//  identity_packets.mid = MidPacket();
-//  identity_packets.smid = MidPacket();
-//  identity_packets.tmid = TmidPacket();
-//  identity_packets.stmid = TmidPacket();
-//}
+Tmid::name_type TmidName(const NonEmptyString& encrypted_tmid) {
+  return detail::TmidName(encrypted_tmid);
+}
 
-}  // namespace
+NonEmptyString EncryptTmidName(const UserPassword& keyword,
+                               uint32_t pin,
+                               const Tmid::name_type& tmid_name) {
+  return detail::EncryptTmidName(keyword, pin, tmid_name);
+}
+
+Tmid::name_type DecryptTmidName(const UserPassword& keyword,
+                                uint32_t pin,
+                                const crypto::CipherText& encrypted_tmid_name) {
+  return detail::DecryptTmidName(keyword, pin, encrypted_tmid_name);
+}
+
+NonEmptyString DecryptSession(const UserPassword& keyword,
+                              uint32_t pin,
+                              const UserPassword& password,
+                              const crypto::CipherText& encrypted_session) {
+  return detail::DecryptSession(keyword, pin, password, encrypted_session);
+}
+
+NonEmptyString SerialisePmid(const Pmid& pmid) {
+  return detail::SerialisePmid(pmid);
+}
+
+Pmid ParsePmid(const NonEmptyString& serialised_pmid) {
+  return detail::ParsePmid(serialised_pmid);
+}
 
 
-PassportImpl::PassportImpl()
+Passport::Passport()
     : pending_fobs_(),
       confirmed_fobs_(),
       pending_selectable_fobs_(),
@@ -98,7 +82,7 @@ PassportImpl::PassportImpl()
       fobs_mutex_(),
       selectable_mutex_() {}
 
-void PassportImpl::CreateFobs() {
+void Passport::CreateFobs() {
   std::lock_guard<std::mutex> lock(fobs_mutex_);
   pending_fobs_.anmid.reset(new Anmid);
   pending_fobs_.ansmid.reset(new Ansmid);
@@ -108,7 +92,7 @@ void PassportImpl::CreateFobs() {
   pending_fobs_.pmid.reset(new Pmid(*pending_fobs_.maid));
 }
 
-bool PassportImpl::NoFobsNull(bool confirmed) {
+bool Passport::NoFobsNull(bool confirmed) {
   const Fobs& fobs(confirmed ? confirmed_fobs_ : pending_fobs_);
   std::string error_message(confirmed ? "Not all fobs were found in confirmed container." :
                                         "Not all fobs were found in pending container.");
@@ -139,15 +123,15 @@ bool PassportImpl::NoFobsNull(bool confirmed) {
   return true;
 }
 
-void PassportImpl::ConfirmFobs() {
+void Passport::ConfirmFobs() {
   std::lock_guard<std::mutex> lock(fobs_mutex_);
   assert(NoFobsNull(false));
   confirmed_fobs_ = std::move(pending_fobs_);
   pending_fobs_ = std::move(Fobs());
 }
 
-NonEmptyString PassportImpl::Serialise() {
-  protobuf::Passport proto_passport;
+NonEmptyString Passport::Serialise() {
+  detail::protobuf::Passport proto_passport;
   assert(NoFobsNull(true));
 
   std::lock(fobs_mutex_, selectable_mutex_);
@@ -181,8 +165,8 @@ NonEmptyString PassportImpl::Serialise() {
   return NonEmptyString(proto_passport.SerializeAsString());
 }
 
-void PassportImpl::Parse(const NonEmptyString& serialised_passport) {
-  protobuf::Passport proto_passport;
+void Passport::Parse(const NonEmptyString& serialised_passport) {
+  detail::protobuf::Passport proto_passport;
   if (!proto_passport.ParseFromString(serialised_passport.string()) ||
       !proto_passport.IsInitialized()) {
     LOG(kError) << "Failed to parse passport.";
@@ -214,123 +198,7 @@ void PassportImpl::Parse(const NonEmptyString& serialised_passport) {
   }
 }
 
-template<>
-Anmid PassportImpl::Get<Anmid>(bool confirmed) {
-  std::lock_guard<std::mutex> lock(fobs_mutex_);
-  if (confirmed) {
-    if (!confirmed_fobs_.anmid)
-      ThrowError(PassportErrors::no_confirmed_fob);
-    return *confirmed_fobs_.anmid;
-  } else {
-    if (!pending_fobs_.anmid)
-      ThrowError(PassportErrors::no_pending_fob);
-    return *pending_fobs_.anmid;
-  }
-}
-
-template<>
-Ansmid PassportImpl::Get<Ansmid>(bool confirmed) {
-  std::lock_guard<std::mutex> lock(fobs_mutex_);
-  if (confirmed) {
-    if (!confirmed_fobs_.ansmid)
-      ThrowError(PassportErrors::no_confirmed_fob);
-    return *confirmed_fobs_.ansmid;
-  } else {
-    if (!pending_fobs_.ansmid)
-      ThrowError(PassportErrors::no_pending_fob);
-    return *pending_fobs_.ansmid;
-  }
-}
-
-template<>
-Antmid PassportImpl::Get<Antmid>(bool confirmed) {
-  std::lock_guard<std::mutex> lock(fobs_mutex_);
-  if (confirmed) {
-    if (!confirmed_fobs_.antmid)
-      ThrowError(PassportErrors::no_confirmed_fob);
-    return *confirmed_fobs_.antmid;
-  } else {
-    if (!pending_fobs_.antmid)
-      ThrowError(PassportErrors::no_pending_fob);
-    return *pending_fobs_.antmid;
-  }
-}
-
-template<>
-Anmaid PassportImpl::Get<Anmaid>(bool confirmed) {
-  std::lock_guard<std::mutex> lock(fobs_mutex_);
-  if (confirmed) {
-    if (!confirmed_fobs_.anmaid)
-      ThrowError(PassportErrors::no_confirmed_fob);
-    return *confirmed_fobs_.anmaid;
-  } else {
-    if (!pending_fobs_.anmaid)
-      ThrowError(PassportErrors::no_pending_fob);
-    return *pending_fobs_.anmaid;
-  }
-}
-
-template<>
-Maid PassportImpl::Get<Maid>(bool confirmed) {
-  std::lock_guard<std::mutex> lock(fobs_mutex_);
-  if (confirmed) {
-    if (!confirmed_fobs_.maid)
-      ThrowError(PassportErrors::no_confirmed_fob);
-    return *confirmed_fobs_.maid;
-  } else {
-    if (!pending_fobs_.maid)
-      ThrowError(PassportErrors::no_pending_fob);
-    return *pending_fobs_.maid;
-  }
-}
-
-template<>
-Pmid PassportImpl::Get<Pmid>(bool confirmed) {
-  std::lock_guard<std::mutex> lock(fobs_mutex_);
-  if (confirmed) {
-    if (!confirmed_fobs_.pmid)
-      ThrowError(PassportErrors::no_confirmed_fob);
-    return *confirmed_fobs_.pmid;
-  } else {
-    if (!pending_fobs_.pmid)
-      ThrowError(PassportErrors::no_pending_fob);
-    return *pending_fobs_.pmid;
-  }
-}
-
-template<>
-Anmpid PassportImpl::GetFromSelectableFobPair(bool confirmed,
-                                              const SelectableFobPair& selectable_fob_pair) {
-  if (!selectable_fob_pair.anmpid)
-    ThrowError(confirmed ? PassportErrors::no_confirmed_fob : PassportErrors::no_pending_fob);
-  return *selectable_fob_pair.anmpid;
-}
-
-template<>
-Mpid PassportImpl::GetFromSelectableFobPair(bool confirmed,
-                                            const SelectableFobPair& selectable_fob_pair) {
-  if (!selectable_fob_pair.mpid)
-    ThrowError(confirmed ? PassportErrors::no_confirmed_fob : PassportErrors::no_pending_fob);
-  return *selectable_fob_pair.mpid;
-}
-
-template<typename FobType>
-FobType PassportImpl::GetSelectableFob(bool confirmed, const NonEmptyString &chosen_name) {
-  std::lock_guard<std::mutex> lock(selectable_mutex_);
-  if (confirmed) {
-    auto itr(confirmed_selectable_fobs_.find(chosen_name));
-    if (itr == confirmed_selectable_fobs_.end())
-      ThrowError(PassportErrors::no_pending_fob);
-    return GetFromSelectableFobPair<FobType>((*itr).second);
-  } else {
-    auto itr(pending_selectable_fobs_.find(chosen_name));
-    if (itr == pending_selectable_fobs_.end())
-      ThrowError(PassportErrors::no_pending_fob);
-    return GetFromSelectableFobPair<FobType>((*itr).second);
-  }
-}
-
-void PassportImpl::CreateSelectableFobPair(const NonEmptyString &chosen_name) {
+void Passport::CreateSelectableFobPair(const NonEmptyString &chosen_name) {
   SelectableFobPair selectable_fob_pair;
   selectable_fob_pair.anmpid.reset(new Anmpid);
   selectable_fob_pair.mpid.reset(new Mpid(*selectable_fob_pair.anmpid));
@@ -341,7 +209,7 @@ void PassportImpl::CreateSelectableFobPair(const NonEmptyString &chosen_name) {
     ThrowError(PassportErrors::public_id_already_exists);
 }
 
-void PassportImpl::ConfirmSelectableFobPair(const NonEmptyString &chosen_name) {
+void Passport::ConfirmSelectableFobPair(const NonEmptyString &chosen_name) {
   std::lock_guard<std::mutex> lock(selectable_mutex_);
   auto itr(pending_selectable_fobs_.find(chosen_name));
   if (itr == pending_selectable_fobs_.end())
@@ -355,13 +223,114 @@ void PassportImpl::ConfirmSelectableFobPair(const NonEmptyString &chosen_name) {
   pending_selectable_fobs_.erase(itr);
 }
 
-void PassportImpl::DeleteSelectableFobPair(const NonEmptyString &chosen_name) {
+void Passport::DeleteSelectableFobPair(const NonEmptyString &chosen_name) {
   std::lock_guard<std::mutex> lock(selectable_mutex_);
   confirmed_selectable_fobs_.erase(chosen_name);
   pending_selectable_fobs_.erase(chosen_name);
 }
 
-}  // namespace detail
+
+
+template<>
+Anmid Passport::Get<Anmid>(bool confirmed) {
+  std::lock_guard<std::mutex> lock(fobs_mutex_);
+  if (confirmed) {
+    if (!confirmed_fobs_.anmid)
+      ThrowError(PassportErrors::no_confirmed_fob);
+    return *confirmed_fobs_.anmid;
+  } else {
+    if (!pending_fobs_.anmid)
+      ThrowError(PassportErrors::no_pending_fob);
+    return *pending_fobs_.anmid;
+  }
+}
+
+template<>
+Ansmid Passport::Get<Ansmid>(bool confirmed) {
+  std::lock_guard<std::mutex> lock(fobs_mutex_);
+  if (confirmed) {
+    if (!confirmed_fobs_.ansmid)
+      ThrowError(PassportErrors::no_confirmed_fob);
+    return *confirmed_fobs_.ansmid;
+  } else {
+    if (!pending_fobs_.ansmid)
+      ThrowError(PassportErrors::no_pending_fob);
+    return *pending_fobs_.ansmid;
+  }
+}
+
+template<>
+Antmid Passport::Get<Antmid>(bool confirmed) {
+  std::lock_guard<std::mutex> lock(fobs_mutex_);
+  if (confirmed) {
+    if (!confirmed_fobs_.antmid)
+      ThrowError(PassportErrors::no_confirmed_fob);
+    return *confirmed_fobs_.antmid;
+  } else {
+    if (!pending_fobs_.antmid)
+      ThrowError(PassportErrors::no_pending_fob);
+    return *pending_fobs_.antmid;
+  }
+}
+
+template<>
+Anmaid Passport::Get<Anmaid>(bool confirmed) {
+  std::lock_guard<std::mutex> lock(fobs_mutex_);
+  if (confirmed) {
+    if (!confirmed_fobs_.anmaid)
+      ThrowError(PassportErrors::no_confirmed_fob);
+    return *confirmed_fobs_.anmaid;
+  } else {
+    if (!pending_fobs_.anmaid)
+      ThrowError(PassportErrors::no_pending_fob);
+    return *pending_fobs_.anmaid;
+  }
+}
+
+template<>
+Maid Passport::Get<Maid>(bool confirmed) {
+  std::lock_guard<std::mutex> lock(fobs_mutex_);
+  if (confirmed) {
+    if (!confirmed_fobs_.maid)
+      ThrowError(PassportErrors::no_confirmed_fob);
+    return *confirmed_fobs_.maid;
+  } else {
+    if (!pending_fobs_.maid)
+      ThrowError(PassportErrors::no_pending_fob);
+    return *pending_fobs_.maid;
+  }
+}
+
+template<>
+Pmid Passport::Get<Pmid>(bool confirmed) {
+  std::lock_guard<std::mutex> lock(fobs_mutex_);
+  if (confirmed) {
+    if (!confirmed_fobs_.pmid)
+      ThrowError(PassportErrors::no_confirmed_fob);
+    return *confirmed_fobs_.pmid;
+  } else {
+    if (!pending_fobs_.pmid)
+      ThrowError(PassportErrors::no_pending_fob);
+    return *pending_fobs_.pmid;
+  }
+}
+
+template<>
+Anmpid Passport::GetFromSelectableFobPair(bool confirmed,
+                                          const SelectableFobPair& selectable_fob_pair) {
+  if (!selectable_fob_pair.anmpid)
+    ThrowError(confirmed ? PassportErrors::no_confirmed_fob : PassportErrors::no_pending_fob);
+  return *selectable_fob_pair.anmpid;
+}
+
+template<>
+Mpid Passport::GetFromSelectableFobPair(bool confirmed,
+                                        const SelectableFobPair& selectable_fob_pair) {
+  if (!selectable_fob_pair.mpid)
+    ThrowError(confirmed ? PassportErrors::no_confirmed_fob : PassportErrors::no_pending_fob);
+  return *selectable_fob_pair.mpid;
+}
+
 
 }  // namespace passport
 
