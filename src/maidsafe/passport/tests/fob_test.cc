@@ -108,6 +108,10 @@ bool CheckSerialisationAndParsing(Fobtype fob) {
     LOG(kError) << "Public keys don't match.";
     return false;
   }
+  if (fob.name() != fob2.name()) {
+    LOG(kError) << "Names don't match.";
+    return false;
+  }
   return true;
 }
 
@@ -129,6 +133,64 @@ TEST(FobTest, BEH_FobSerialisationAndParsing) {
   CheckSerialisationAndParsing(pmid);
   CheckSerialisationAndParsing(anmpid);
   CheckSerialisationAndParsing(mpid);
+}
+
+
+
+bool CheckTokenAndName(const asymm::PublicKey& public_key,
+                       const asymm::Signature& signature,
+                       const asymm::PublicKey& signer_key,
+                       const Identity& name) {
+  bool validation_result(asymm::CheckSignature(asymm::PlainText(asymm::EncodeKey(public_key)),
+                                               signature,
+                                               signer_key));
+  if (!validation_result) {
+    LOG(kError) << "Bad validation token.";
+    return false;
+  }
+
+  Identity name_result(crypto::Hash<crypto::SHA512>(asymm::EncodeKey(public_key) + signature));
+  if (name_result != name) {
+    LOG(kError) << "Bad name.";
+    return false;
+  }
+  return true;
+}
+
+template<typename Fobtype>
+bool CheckNamingAndValidation(Fobtype fob) {
+  return CheckTokenAndName(fob.public_key(),
+                           fob.validation_token(),
+                           fob.private_key(),
+                           Identity(fob.name()));
+}
+
+template<typename Fobtype>
+bool CheckNamingAndValidation(Fobtype fob, asymm::PublicKey signer_public_key) {
+  return CheckTokenAndName(fob.public_key(),
+                           fob.validation_token(),
+                           signer_public_key,
+                           Identity(fob.name()));
+}
+
+TEST(FobTest, BEH_NamingAndValidation) {
+  Anmid anmid;
+  Ansmid ansmid;
+  Antmid antmid;
+  Anmaid anmaid;
+  Maid maid(anmaid);
+  Pmid pmid(maid);
+  Anmpid anmpid;
+  Mpid mpid(anmpid);
+
+  EXPECT_TRUE(CheckNamingAndValidation(anmid));
+  EXPECT_TRUE(CheckNamingAndValidation(ansmid));
+  EXPECT_TRUE(CheckNamingAndValidation(antmid));
+  EXPECT_TRUE(CheckNamingAndValidation(anmaid));
+  EXPECT_TRUE(CheckNamingAndValidation(maid, anmaid.public_key()));
+  EXPECT_TRUE(CheckNamingAndValidation(pmid, maid.public_key()));
+  EXPECT_TRUE(CheckNamingAndValidation(anmpid));
+  EXPECT_TRUE(CheckNamingAndValidation(mpid, anmpid.public_key()));
 }
 
 }  // namespace test

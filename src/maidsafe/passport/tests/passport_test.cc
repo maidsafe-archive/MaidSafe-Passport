@@ -44,7 +44,8 @@ template<typename Fobtype>
 bool AllFieldsMatch(const Fobtype& lhs, const Fobtype& rhs) {
   if (lhs.validation_token() != rhs.validation_token() ||
       !rsa::MatchingKeys(lhs.private_key(), rhs.private_key()) ||
-      !rsa::MatchingKeys(lhs.public_key(), rhs.public_key()))
+      !rsa::MatchingKeys(lhs.public_key(), rhs.public_key()) ||
+      lhs.name() != rhs.name())
     return false;
   return true;
 }
@@ -61,6 +62,10 @@ bool NoFieldsMatch(const Fobtype& lhs, const Fobtype& rhs) {
   }
   if (rsa::MatchingKeys(lhs.public_key(), rhs.public_key())) {
     LOG(kError) << "Public keys match.";
+    return false;
+  }
+  if (lhs.name() == rhs.name()) {
+    LOG(kError) << "Names match";
     return false;
   }
   return true;
@@ -336,6 +341,41 @@ class PassportParsePbTest : public PassportTest2 {
       maid_(anmaid_),
       pmid_(maid_),
       proto_passport_() {}
+
+  void GenerateSixFobs(uint16_t bad_index = 7) {  // generate all good fobs by default
+    for (uint16_t i(0); i < 6; ++i) {
+      auto proto_fob(proto_passport_.add_fob());
+      uint16_t type(i);
+      if (i == bad_index) {
+        while (type == i)
+          type = RandomUint32() % 6;
+        LOG(kInfo) << "Entry in position " << bad_index << " will be of type " << type;
+      }
+      switch (type) {
+        case 0:
+          anmid_.ToProtobuf(proto_fob);
+          break;
+        case 1:
+          ansmid_.ToProtobuf(proto_fob);
+          break;
+        case 2:
+          antmid_.ToProtobuf(proto_fob);
+          break;
+        case 3:
+          anmaid_.ToProtobuf(proto_fob);
+          break;
+        case 4:
+          maid_.ToProtobuf(proto_fob);
+          break;
+        case 5:
+          pmid_.ToProtobuf(proto_fob);
+          break;
+        default:
+          LOG(kError) << "Type " << type << " is not permitted here.";
+      }
+    }
+  }
+
   Anmid anmid_;
   Ansmid ansmid_;
   Antmid antmid_;
@@ -346,18 +386,7 @@ class PassportParsePbTest : public PassportTest2 {
 };
 
 TEST_F(PassportParsePbTest, FUNC_GoodProtobuf) {
-  auto proto_fob(proto_passport_.add_fob());
-  anmid_.ToProtobuf(proto_fob);
-  proto_fob = proto_passport_.add_fob();
-  ansmid_.ToProtobuf(proto_fob);
-  proto_fob = proto_passport_.add_fob();
-  antmid_.ToProtobuf(proto_fob);
-  proto_fob = proto_passport_.add_fob();
-  anmaid_.ToProtobuf(proto_fob);
-  proto_fob = proto_passport_.add_fob();
-  maid_.ToProtobuf(proto_fob);
-  proto_fob = proto_passport_.add_fob();
-  pmid_.ToProtobuf(proto_fob);
+  GenerateSixFobs();
 
   NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 20));  // length?
   Anmpid anmpid;
@@ -391,19 +420,8 @@ TEST_F(PassportParsePbTest, FUNC_FiveFobs) {
 }
 
 TEST_F(PassportParsePbTest, FUNC_SevenFobs) {
+  GenerateSixFobs();
   auto proto_fob(proto_passport_.add_fob());
-  anmid_.ToProtobuf(proto_fob);
-  proto_fob = proto_passport_.add_fob();
-  ansmid_.ToProtobuf(proto_fob);
-  proto_fob = proto_passport_.add_fob();
-  antmid_.ToProtobuf(proto_fob);
-  proto_fob = proto_passport_.add_fob();
-  anmaid_.ToProtobuf(proto_fob);
-  proto_fob = proto_passport_.add_fob();
-  maid_.ToProtobuf(proto_fob);
-  proto_fob = proto_passport_.add_fob();
-  pmid_.ToProtobuf(proto_fob);
-  proto_fob = proto_passport_.add_fob();
   pmid_.ToProtobuf(proto_fob);
 
   NonEmptyString string(proto_passport_.SerializeAsString());
@@ -411,19 +429,7 @@ TEST_F(PassportParsePbTest, FUNC_SevenFobs) {
 }
 
 TEST_F(PassportParsePbTest, FUNC_ParseReorderedFobs) {
-  // TODO(Alison) - randomise incorrect order
-  auto proto_fob(proto_passport_.add_fob());
-  ansmid_.ToProtobuf(proto_fob);
-  proto_fob = proto_passport_.add_fob();
-  anmid_.ToProtobuf(proto_fob);
-  proto_fob = proto_passport_.add_fob();
-  maid_.ToProtobuf(proto_fob);
-  proto_fob = proto_passport_.add_fob();
-  pmid_.ToProtobuf(proto_fob);
-  proto_fob = proto_passport_.add_fob();
-  anmaid_.ToProtobuf(proto_fob);
-  proto_fob = proto_passport_.add_fob();
-  antmid_.ToProtobuf(proto_fob);
+  GenerateSixFobs(RandomUint32() % 6);
 
   NonEmptyString string(proto_passport_.SerializeAsString());
   EXPECT_THROW(passport_.Parse(string), std::exception);
