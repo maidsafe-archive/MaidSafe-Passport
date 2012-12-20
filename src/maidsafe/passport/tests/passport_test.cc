@@ -124,7 +124,7 @@ class PassportTest : public testing::Test {
   Passport passport_;
 };
 
-TEST_F(PassportTest, FUNC_CreateFobs) {
+TEST_F(PassportTest, BEH_CreateFobs) {
   passport_.CreateFobs();
 
   TestFobs old_p_fobs(GetFobs(false));
@@ -153,7 +153,7 @@ TEST_F(PassportTest, FUNC_CreateFobs) {
   EXPECT_TRUE(NoFieldsMatch(old_p_fobs.pmid, new_p_fobs.pmid));
 }
 
-TEST_F(PassportTest, FUNC_ConfirmFobs) {
+TEST_F(PassportTest, BEH_ConfirmFobs) {
   passport_.CreateFobs();
 
   TestFobs old_p_fobs(GetFobs(false));
@@ -165,7 +165,7 @@ TEST_F(PassportTest, FUNC_ConfirmFobs) {
   EXPECT_TRUE(AllFobFieldsMatch(old_p_fobs, new_c_fobs));
 }
 
-TEST_F(PassportTest, FUNC_CreateConfirmGetSelectableFobs) {
+TEST_F(PassportTest, BEH_CreateConfirmGetSelectableFobs) {
   NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 100));  // length?
 
   EXPECT_THROW(passport_.GetSelectableFob<Mpid>(false, chosen_name), std::exception);
@@ -196,7 +196,7 @@ TEST_F(PassportTest, FUNC_CreateConfirmGetSelectableFobs) {
   EXPECT_THROW(passport_.ConfirmSelectableFobPair(chosen_name), std::exception);
 }
 
-TEST_F(PassportTest, FUNC_DeleteSelectableFobs) {
+TEST_F(PassportTest, BEH_DeleteSelectableFobs) {
   NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 100));  // length?
 
   passport_.DeleteSelectableFobPair(chosen_name);
@@ -295,7 +295,7 @@ class PassportParallelTest : public PassportTest {
       EXPECT_NO_THROW(passport_.Get<Maid>(confirmed));
       EXPECT_NO_THROW(passport_.Get<Pmid>(confirmed));
       LOG(kInfo) << "...ConsistentFobStates successful (no throw)";
-    } catch(const std::exception& ex) {
+    } catch(const std::exception&) {
       EXPECT_THROW(passport_.Get<Ansmid>(confirmed), std::exception);
       EXPECT_THROW(passport_.Get<Antmid>(confirmed), std::exception);
       EXPECT_THROW(passport_.Get<Anmaid>(confirmed), std::exception);
@@ -311,7 +311,7 @@ class PassportParallelTest : public PassportTest {
       passport_.GetSelectableFob<Mpid>(confirmed, chosen_name);
       EXPECT_NO_THROW(passport_.GetSelectableFob<Anmpid>(confirmed, chosen_name));
       LOG(kInfo) << "...ConsistentSelectableFobStates successful (no throw)";
-    } catch(const std::exception& ex) {
+    } catch(const std::exception&) {
       EXPECT_THROW(passport_.GetSelectableFob<Anmpid>(confirmed, chosen_name), std::exception);
       LOG(kInfo) << "...ConsistentSelectableFobStates successful (throw)";
     }
@@ -421,7 +421,7 @@ TEST_F(PassportParallelTest, FUNC_ParallelSerialiseParse) {
   passport_.Parse(string);
 }
 
-TEST_F(PassportTest, FUNC_SerialiseParseNoSelectables) {
+TEST_F(PassportTest, BEH_SerialiseParseNoSelectables) {
   passport_.CreateFobs();
   passport_.ConfirmFobs();
 
@@ -487,7 +487,7 @@ TEST_F(PassportTest, FUNC_SerialiseParseWithSelectables) {
   EXPECT_EQ(serialised, serialised_2);
 }
 
-TEST_F(PassportTest, FUNC_ParseBadString) {
+TEST_F(PassportTest, BEH_ParseBadString) {
   NonEmptyString bad_string(RandomAlphaNumericString(1 + RandomUint32() % 1000));
   EXPECT_THROW(passport_.Parse(bad_string), std::exception);
 }
@@ -546,7 +546,7 @@ class PassportParsePbTest : public PassportTest {
   pb::Passport proto_passport_;
 };
 
-TEST_F(PassportParsePbTest, FUNC_GoodProtobuf) {
+TEST_F(PassportParsePbTest, BEH_GoodProtobuf) {
   GenerateSixFobs();
 
   NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 20));  // length?
@@ -564,7 +564,7 @@ TEST_F(PassportParsePbTest, FUNC_GoodProtobuf) {
   EXPECT_NO_THROW(passport_.Parse(string));
 }
 
-TEST_F(PassportParsePbTest, FUNC_FiveFobs) {
+TEST_F(PassportParsePbTest, BEH_FiveFobs) {
   auto proto_fob(proto_passport_.add_fob());
   anmid_.ToProtobuf(proto_fob);
   proto_fob = proto_passport_.add_fob();
@@ -580,7 +580,7 @@ TEST_F(PassportParsePbTest, FUNC_FiveFobs) {
   EXPECT_THROW(passport_.Parse(string), std::exception);
 }
 
-TEST_F(PassportParsePbTest, FUNC_SevenFobs) {
+TEST_F(PassportParsePbTest, BEH_SevenFobs) {
   GenerateSixFobs();
   auto proto_fob(proto_passport_.add_fob());
   pmid_.ToProtobuf(proto_fob);
@@ -589,7 +589,7 @@ TEST_F(PassportParsePbTest, FUNC_SevenFobs) {
   EXPECT_THROW(passport_.Parse(string), std::exception);
 }
 
-TEST_F(PassportParsePbTest, FUNC_ParseReorderedFobs) {
+TEST_F(PassportParsePbTest, BEH_ParseReorderedFobs) {
   GenerateSixFobs(RandomUint32() % 6);
 
   NonEmptyString string(proto_passport_.SerializeAsString());
@@ -613,12 +613,12 @@ class PassportParsePbSelectableTest : public PassportParsePbTest {
   }
 };
 
-TEST_F(PassportParsePbSelectableTest, FUNC_GoodProtobuf) {
+TEST_F(PassportParsePbSelectableTest, BEH_GoodProtobuf) {
   NonEmptyString string(proto_passport_.SerializeAsString());
   EXPECT_NO_THROW(passport_.Parse(string));
 }
 
-TEST_F(PassportParsePbSelectableTest, FUNC_ReorderedFobs) {
+TEST_F(PassportParsePbSelectableTest, BEH_ReorderedFobs) {
   // TODO(Alison) - is this test applicable/correct?
   NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 20));  // length?
   Anmpid anmpid;
@@ -635,7 +635,7 @@ TEST_F(PassportParsePbSelectableTest, FUNC_ReorderedFobs) {
   EXPECT_THROW(passport_.Parse(string), std::exception);
 }
 
-TEST(PassportIndependentSerialiseTest, FUNC_Uninitialised) {
+TEST(PassportIndependentSerialiseTest, BEH_Uninitialised) {
   pb::Passport proto_passport;
   EXPECT_THROW(NonEmptyString(proto_passport.SerializeAsString()), std::exception);
 }
@@ -675,11 +675,11 @@ class PassportSerialiseTest : public testing::Test {
   pb::Passport proto_passport_;
 };
 
-TEST_F(PassportSerialiseTest, FUNC_GoodProtobuf) {
+TEST_F(PassportSerialiseTest, BEH_GoodProtobuf) {
   EXPECT_NO_THROW(NonEmptyString(proto_passport_.SerializeAsString()));
 }
 
-TEST_F(PassportSerialiseTest, FUNC_NoChosenName) {
+TEST_F(PassportSerialiseTest, BEH_NoChosenName) {
   Anmpid anmpid;
   Mpid mpid(anmpid);
 
@@ -692,7 +692,7 @@ TEST_F(PassportSerialiseTest, FUNC_NoChosenName) {
   EXPECT_THROW(NonEmptyString(proto_passport_.SerializeAsString()), std::exception);
 }
 
-TEST_F(PassportSerialiseTest, FUNC_NoAnmpid) {
+TEST_F(PassportSerialiseTest, BEH_NoAnmpid) {
   NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 20));  // length?
   Anmpid anmpid;
   Mpid mpid(anmpid);
@@ -705,7 +705,7 @@ TEST_F(PassportSerialiseTest, FUNC_NoAnmpid) {
   EXPECT_THROW(NonEmptyString(proto_passport_.SerializeAsString()), std::exception);
 }
 
-TEST_F(PassportSerialiseTest, FUNC_NoMpid) {
+TEST_F(PassportSerialiseTest, BEH_NoMpid) {
   NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 20));  // length?
   Anmpid anmpid;
 
