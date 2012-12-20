@@ -50,12 +50,22 @@ bool AllFieldsMatch(const Fobtype& lhs, const Fobtype& rhs) {
 }
 
 template<typename Fobtype>
-bool KeysMatch(const Fobtype& lhs, const Fobtype& rhs) {
-  if (!rsa::MatchingKeys(lhs.private_key(), rhs.private_key()) ||
-      !rsa::MatchingKeys(lhs.public_key(), rhs.public_key()))
+bool NoFieldsMatch(const Fobtype& lhs, const Fobtype& rhs) {
+  if (lhs.validation_token() == rhs.validation_token()) {
+    LOG(kError) << "Validation tokens match.";
     return false;
+  }
+  if (rsa::MatchingKeys(lhs.private_key(), rhs.private_key())) {
+    LOG(kError) << "Private keys match.";
+    return false;
+  }
+  if (rsa::MatchingKeys(lhs.public_key(), rhs.public_key())) {
+    LOG(kError) << "Public keys match.";
+    return false;
+  }
   return true;
 }
+
 
 struct TestFobs {
   TestFobs(Anmid anmid1, Ansmid ansmid1, Antmid antmid1, Anmaid anmaid1, Maid maid1, Pmid pmid1)
@@ -129,12 +139,12 @@ TEST_F(PassportTest2, FUNC_CreateFobs) {
   EXPECT_THROW(passport_.Get<Maid>(true), std::exception);
   EXPECT_THROW(passport_.Get<Pmid>(true), std::exception);
 
-  EXPECT_FALSE(KeysMatch(old_p_fobs.anmid, new_p_fobs.anmid));
-  EXPECT_FALSE(KeysMatch(old_p_fobs.ansmid, new_p_fobs.ansmid));
-  EXPECT_FALSE(KeysMatch(old_p_fobs.antmid, new_p_fobs.antmid));
-  EXPECT_FALSE(KeysMatch(old_p_fobs.anmaid, new_p_fobs.anmaid));
-  EXPECT_FALSE(KeysMatch(old_p_fobs.maid, new_p_fobs.maid));
-  EXPECT_FALSE(KeysMatch(old_p_fobs.pmid, new_p_fobs.pmid));
+  EXPECT_TRUE(NoFieldsMatch(old_p_fobs.anmid, new_p_fobs.anmid));
+  EXPECT_TRUE(NoFieldsMatch(old_p_fobs.ansmid, new_p_fobs.ansmid));
+  EXPECT_TRUE(NoFieldsMatch(old_p_fobs.antmid, new_p_fobs.antmid));
+  EXPECT_TRUE(NoFieldsMatch(old_p_fobs.anmaid, new_p_fobs.anmaid));
+  EXPECT_TRUE(NoFieldsMatch(old_p_fobs.maid, new_p_fobs.maid));
+  EXPECT_TRUE(NoFieldsMatch(old_p_fobs.pmid, new_p_fobs.pmid));
 }
 
 TEST_F(PassportTest2, FUNC_ConfirmFobs) {
