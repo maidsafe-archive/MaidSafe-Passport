@@ -88,11 +88,6 @@ if(MAIDSAFE_TESTING)
   add_gtests(TESTpassport)
   label_as_critical_tests(IdentityPacketsTest.BEH_Full
                           IdentityPacketsTest.BEH_ChangeDetails
-                          PassportTest.BEH_SigningPackets
-                          PassportTest.BEH_IdentityPackets
-                          PassportTest.BEH_ChangingIdentityPackets
-                          PassportTest.BEH_MoveMaidsafeInbox
-                          PassportTest.BEH_SerialiseParse
                           )
   add_project_experimental()
   test_summary_output()
