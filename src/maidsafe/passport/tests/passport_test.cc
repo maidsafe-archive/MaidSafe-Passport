@@ -21,6 +21,7 @@
 */
 
 #include <cstdint>
+#include <future>
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
@@ -258,6 +259,166 @@ TEST_F(PassportTest2, FUNC_MultipleSelectableFobs) {
     EXPECT_NO_THROW(passport_.GetSelectableFob<Mpid>(true, chosen_names.at(i)));
     EXPECT_NO_THROW(passport_.GetSelectableFob<Anmpid>(true, chosen_names.at(i)));
   }
+}
+
+class PassportParallelTest : public PassportTest2 {
+ public:
+  PassportParallelTest()
+    : chosen_name_1_(RandomAlphaNumericString(1 + RandomUint32() % 100)),  // length?
+      chosen_name_2_(RandomAlphaNumericString(1 + RandomUint32() % 100)),
+      chosen_name_3_(RandomAlphaNumericString(1 + RandomUint32() % 100)),
+      chosen_name_4_(RandomAlphaNumericString(1 + RandomUint32() % 100)),
+      chosen_name_5_(RandomAlphaNumericString(1 + RandomUint32() % 100)) {}
+
+  void TearDown() {
+    ConsistentFobStates(false);
+    ConsistentFobStates(true);
+    ConsistentSelectableFobStates(false, chosen_name_1_);
+    ConsistentSelectableFobStates(false, chosen_name_2_);
+    ConsistentSelectableFobStates(false, chosen_name_3_);
+    ConsistentSelectableFobStates(false, chosen_name_4_);
+    ConsistentSelectableFobStates(false, chosen_name_5_);
+    ConsistentSelectableFobStates(true, chosen_name_1_);
+    ConsistentSelectableFobStates(true, chosen_name_2_);
+    ConsistentSelectableFobStates(true, chosen_name_3_);
+    ConsistentSelectableFobStates(true, chosen_name_4_);
+    ConsistentSelectableFobStates(true, chosen_name_5_);
+  }
+
+  void ConsistentFobStates(bool confirmed) {
+    try {
+      LOG(kInfo) << "Trying ConsistentFobStates...";
+      passport_.Get<Anmid>(confirmed);
+      EXPECT_NO_THROW(passport_.Get<Ansmid>(confirmed));
+      EXPECT_NO_THROW(passport_.Get<Antmid>(confirmed));
+      EXPECT_NO_THROW(passport_.Get<Anmaid>(confirmed));
+      EXPECT_NO_THROW(passport_.Get<Maid>(confirmed));
+      EXPECT_NO_THROW(passport_.Get<Pmid>(confirmed));
+      LOG(kInfo) << "...ConsistentFobStates successful (no throw)";
+    } catch(const std::exception& ex) {
+      EXPECT_THROW(passport_.Get<Ansmid>(confirmed), std::exception);
+      EXPECT_THROW(passport_.Get<Antmid>(confirmed), std::exception);
+      EXPECT_THROW(passport_.Get<Anmaid>(confirmed), std::exception);
+      EXPECT_THROW(passport_.Get<Maid>(confirmed), std::exception);
+      EXPECT_THROW(passport_.Get<Pmid>(confirmed), std::exception);
+      LOG(kInfo) << "...ConsistentFobStates successful (throw)";
+    }
+  }
+
+  void ConsistentSelectableFobStates(bool confirmed, const NonEmptyString& chosen_name) {
+    try {
+      LOG(kInfo) << "Trying ConsistentSelectableFobStates...";
+      passport_.GetSelectableFob<Mpid>(confirmed, chosen_name);
+      EXPECT_NO_THROW(passport_.GetSelectableFob<Anmpid>(confirmed, chosen_name));
+      LOG(kInfo) << "...ConsistentSelectableFobStates successful (no throw)";
+    } catch(const std::exception& ex) {
+      EXPECT_THROW(passport_.GetSelectableFob<Anmpid>(confirmed, chosen_name), std::exception);
+      LOG(kInfo) << "...ConsistentSelectableFobStates successful (throw)";
+    }
+  }
+
+  NonEmptyString chosen_name_1_;
+  NonEmptyString chosen_name_2_;
+  NonEmptyString chosen_name_3_;
+  NonEmptyString chosen_name_4_;
+  NonEmptyString chosen_name_5_;
+};
+
+TEST_F(PassportParallelTest, FUNC_ParallelCreateConfirmGetDelete) {
+  {
+    auto a1 = std::async([&] { return passport_.CreateFobs(); });  // NOLINT (Alison)
+    auto a2 = std::async([&] { return passport_.CreateSelectableFobPair(chosen_name_1_); });  // NOLINT (Alison)
+    auto a3 = std::async([&] { return passport_.CreateSelectableFobPair(chosen_name_2_); });  // NOLINT (Alison)
+    auto a4 = std::async([&] { return passport_.CreateSelectableFobPair(chosen_name_5_); });  // NOLINT (Alison)
+    a4.get();
+    a3.get();
+    a2.get();
+    a1.get();
+  }
+
+  passport_.ConfirmSelectableFobPair(chosen_name_5_);
+  TestFobs pending_fobs(GetFobs(false));
+
+  {
+    auto a1 = std::async([&] { return passport_.ConfirmFobs(); });                             // NOLINT (Alison)
+    auto a2 = std::async([&] { return passport_.ConfirmSelectableFobPair(chosen_name_2_); });  // NOLINT (Alison)
+    auto a3 = std::async([&] { return passport_.CreateFobs(); });                              // NOLINT (Alison)
+    auto a4 = std::async([&] { return passport_.GetSelectableFob<Anmpid>(false, chosen_name_1_); });  // NOLINT (Alison)
+    auto a5 = std::async([&] { return passport_.GetSelectableFob<Mpid>(false, chosen_name_1_); });    // NOLINT (Alison)
+    auto a6 = std::async([&] { return passport_.GetSelectableFob<Anmpid>(true, chosen_name_5_); });   // NOLINT (Alison)
+    auto a7 = std::async([&] { return passport_.GetSelectableFob<Mpid>(true, chosen_name_5_); });     // NOLINT (Alison)
+    a7.get();
+    a6.get();
+    a5.get();
+    a4.get();
+    a3.get();
+    a2.get();
+    a1.get();
+  }
+
+  TestFobs confirmed_fobs(GetFobs(true));
+  EXPECT_TRUE(AllFobFieldsMatch(pending_fobs, confirmed_fobs));
+  passport_.CreateSelectableFobPair(chosen_name_3_);
+
+  {
+    auto a1 = std::async([&] { return passport_.CreateSelectableFobPair(chosen_name_4_); });   // NOLINT (Alison)
+    auto a2 = std::async([&] { return passport_.ConfirmSelectableFobPair(chosen_name_3_); });  // NOLINT (Alison)
+    auto a3 = std::async([&] { return passport_.DeleteSelectableFobPair(chosen_name_1_); });   // NOLINT (Alison)
+    auto a4 = std::async([&] { return passport_.DeleteSelectableFobPair(chosen_name_2_); });   // NOLINT (Alison)
+    a4.get();
+    a3.get();
+    a2.get();
+    a1.get();
+  }
+
+  NonEmptyString string(passport_.Serialise());
+  passport_.Parse(string);
+}
+
+TEST_F(PassportParallelTest, FUNC_ParallelSerialiseParse) {
+  passport_.CreateFobs();
+  passport_.ConfirmFobs();
+  passport_.CreateSelectableFobPair(chosen_name_1_);
+  passport_.ConfirmSelectableFobPair(chosen_name_1_);
+  passport_.CreateSelectableFobPair(chosen_name_2_);
+  NonEmptyString serialised;
+  {
+    auto a1 = std::async([&] { return passport_.CreateFobs(); });                              // NOLINT (Alison)
+    auto a2 = std::async([&] { return passport_.ConfirmSelectableFobPair(chosen_name_2_); });  // NOLINT (Alison)
+    auto a3 = std::async([&] { return passport_.CreateSelectableFobPair(chosen_name_3_); });   // NOLINT (Alison)
+    auto a4 = std::async([&] { return passport_.Serialise(); });                               // NOLINT (Alison)
+    auto a5 = std::async([&] { return passport_.DeleteSelectableFobPair(chosen_name_1_); });   // NOLINT (Alison)
+    a5.get();
+    serialised = a4.get();
+    a3.get();
+    a2.get();
+    a1.get();
+  }
+
+  passport_.Parse(serialised);
+  passport_.CreateSelectableFobPair(chosen_name_1_);
+  passport_.CreateSelectableFobPair(chosen_name_5_);
+  passport_.ConfirmSelectableFobPair(chosen_name_5_);
+
+  {
+    auto a1 = std::async([&] { return passport_.Parse(serialised); });                        // NOLINT (Alison)
+    auto a2 = std::async([&] { return passport_.ConfirmFobs(); });                            // NOLINT (Alison)
+    auto a3 = std::async([&] { return passport_.CreateSelectableFobPair(chosen_name_4_); });  // NOLINT (Alison)
+    auto a4 = std::async([&] { return passport_.GetSelectableFob<Anmpid>(false, chosen_name_1_); });  // NOLINT (Alison)
+    auto a5 = std::async([&] { return passport_.GetSelectableFob<Mpid>(false, chosen_name_1_); });    // NOLINT (Alison)
+    auto a6 = std::async([&] { return passport_.GetSelectableFob<Anmpid>(true, chosen_name_5_); });   // NOLINT (Alison)
+    auto a7 = std::async([&] { return passport_.GetSelectableFob<Mpid>(true, chosen_name_5_); });     // NOLINT (Alison)
+    a7.get();
+    a6.get();
+    a5.get();
+    a4.get();
+    a3.get();
+    a2.get();
+    a1.get();
+  }
+
+  NonEmptyString string(passport_.Serialise());
+  passport_.Parse(string);
 }
 
 TEST_F(PassportTest2, FUNC_SerialiseParseNoSelectables) {
