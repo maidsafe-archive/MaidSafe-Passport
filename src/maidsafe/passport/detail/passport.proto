@@ -18,3 +18,10 @@ message Passport {
   repeated Fob fob = 1;
   repeated PublicIdentity public_identity = 2;
 }
+
+message PublicFob {
+  required int32 type = 1;
+  required bytes name = 2;
+  required bytes encoded_public_key = 3;
+  required bytes validation_token = 4;
+}

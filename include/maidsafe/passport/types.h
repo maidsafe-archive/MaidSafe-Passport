@@ -16,6 +16,7 @@
 
 #include "maidsafe/passport/detail/config.h"
 #include "maidsafe/passport/detail/fob.h"
+#include "maidsafe/passport/detail/public_fob.h"
 #include "maidsafe/passport/detail/identity_data.h"
 
 
@@ -30,12 +31,22 @@ typedef detail::Fob<detail::AnmaidTag> Anmaid;
 typedef detail::Fob<detail::MaidTag> Maid;
 typedef detail::Fob<detail::PmidTag> Pmid;
 
+typedef detail::PublicFob<detail::AnmidTag> PublicAnmid;
+typedef detail::PublicFob<detail::AnsmidTag> PublicAnsmid;
+typedef detail::PublicFob<detail::AntmidTag> PublicAntmid;
+typedef detail::PublicFob<detail::AnmaidTag> PublicAnmaid;
+typedef detail::PublicFob<detail::MaidTag> PublicMaid;
+typedef detail::PublicFob<detail::PmidTag> PublicPmid;
+
 typedef detail::MidData<detail::MidTag> Mid;
 typedef detail::MidData<detail::SmidTag> Smid;
 typedef detail::TmidData<detail::TmidTag> Tmid, Stmid;
 
 typedef detail::Fob<detail::AnmpidTag> Anmpid;
 typedef detail::Fob<detail::MpidTag> Mpid;
+
+typedef detail::PublicFob<detail::AnmpidTag> PublicAnmpid;
+typedef detail::PublicFob<detail::MpidTag> PublicMpid;
 
 }  // namespace passport
 

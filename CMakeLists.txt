@@ -29,20 +29,34 @@ include_directories(${private_SOURCE_DIR}/include)
 #==================================================================================================#
 # Set up all files as GLOBs                                                                        #
 #==================================================================================================#
+file(GLOB PassportApi ${PROJECT_SOURCE_DIR}/include/maidsafe/passport/*.h)
+file(GLOB PassportApiDetails ${PROJECT_SOURCE_DIR}/include/maidsafe/passport/detail/*.h)
+
 set(PassportSourcesRootDir ${PROJECT_SOURCE_DIR}/src/maidsafe/passport)
 file(GLOB PassportSources ${PassportSourcesRootDir}/*.cc)
 file(GLOB PassportHeaders ${PassportSourcesRootDir}/*.h)
+
 file(GLOB PassportDetailSources ${PassportSourcesRootDir}/detail/*.cc)
 file(GLOB PassportDetailHeaders ${PassportSourcesRootDir}/detail/*.h)
-file(GLOB PassportApi ${PROJECT_SOURCE_DIR}/include/maidsafe/passport/*.h)
-file(GLOB PassportApiDetails ${PROJECT_SOURCE_DIR}/include/maidsafe/passport/detail/*.h)
-set(PassportAllFiles ${PassportSources} ${PassportHeaders} ${PassportDetailSources} ${PassportDetailHeaders} ${PassportApi} ${PassportApiDetails})
+
+file(GLOB PassportDetailProtos ${PassportSourcesRootDir}/detail/*.proto)
+file(GLOB PassportDetailProtoSources ${PassportSourcesRootDir}/detail/*.pb.cc)
+file(GLOB PassportDetailProtoHeaders ${PassportSourcesRootDir}/detail/*pb.h)
+list(REMOVE_ITEM PassportDetailSources ${PassportDetailProtoSources})
+list(REMOVE_ITEM PassportDetailHeaders ${PassportDetailProtoHeaders})
+
+source_group("Passport API Files" FILES ${PassportApi})
+source_group("Passport API Detail Files" FILES ${PassportApiDetails})
 source_group("Passport Source Files" FILES ${PassportSources})
 source_group("Passport Header Files" FILES ${PassportHeaders})
 source_group("Passport Detail Source Files" FILES ${PassportDetailSources})
 source_group("Passport Detail Header Files" FILES ${PassportDetailHeaders})
-source_group("Passport API Files" FILES ${PassportApi})
-source_group("Passport API Detail Files" FILES ${PassportApiDetails})
+source_group("Passport Detail Proto Files" FILES ${PassportDetailProtos} ${PassportDetailProtoSources} ${PassportDetailProtoHeaders})
+
+set(PassportAllFiles ${PassportApi} ${PassportApiDetails}
+                     ${PassportSources} ${PassportHeaders}
+                     ${PassportDetailSources} ${PassportDetailHeaders}
+                     ${PassportDetailProtos} ${PassportDetailProtoSources} ${PassportDetailProtoHeaders})
 
 file(GLOB PassportTestsSources ${PassportSourcesRootDir}/tests/*.cc)
 file(GLOB PassportTestsHeaders ${PassportSourcesRootDir}/tests/*.h)
@@ -73,7 +87,7 @@ rename_outdated_built_exes()
 # Set compiler and linker flags                                                                    #
 #==================================================================================================#
 include(maidsafe_standard_flags)
-ms_disable_warnings(${PassportSourcesRootDir}/detail/passport.pb.cc)
+ms_disable_warnings(${PassportDetailProtoSources})
 
 if(UNIX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-effc++")

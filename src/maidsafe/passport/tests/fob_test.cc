@@ -9,6 +9,7 @@
  *  permission of the board of directors of MaidSafe.net.                                          *
  **************************************************************************************************/
 
+#include "maidsafe/passport/detail/fob.h"
 
 #include <string>
 
@@ -16,7 +17,6 @@
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/common/test.h"
 
-#include "maidsafe/passport/detail/fob.h"
 #include "maidsafe/passport/detail/passport_pb.h"
 #include "maidsafe/passport/types.h"
 

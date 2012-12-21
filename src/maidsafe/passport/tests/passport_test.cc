@@ -1,24 +1,15 @@
-/*
-* ============================================================================
-*
-* Copyright [2010] maidsafe.net limited
-*
-* Description:  Unit tests for Passport class
-* Version:      1.0
-* Created:      2010-10-19-23.59.27
-* Revision:     none
-* Company:      maidsafe.net limited
-*
-* The following source code is property of maidsafe.net limited and is not
-* meant for external use.  The use of this code is governed by the license
-* file LICENSE.TXT found in the root of this directory and also on
-* www.maidsafe.net.
-*
-* You are not free to copy, amend or otherwise use this source code without
-* the explicit written permission of the board of directors of maidsafe.net.
-*
-* ============================================================================
-*/
+/***************************************************************************************************
+ *  Copyright 2012 maidsafe.net limited                                                            *
+ *                                                                                                 *
+ *  The following source code is property of MaidSafe.net limited and is not meant for external    *
+ *  use. The use of this code is governed by the licence file licence.txt found in the root of     *
+ *  this directory and also on www.maidsafe.net.                                                   *
+ *                                                                                                 *
+ *  You are not free to copy, amend or otherwise use this source code without the explicit written *
+ *  permission of the board of directors of MaidSafe.net.                                          *
+ **************************************************************************************************/
+
+#include "maidsafe/passport/passport.h"
 
 #include <cstdint>
 #include <future>
@@ -31,7 +22,7 @@
 #include "maidsafe/passport/detail/fob.h"
 #include "maidsafe/passport/detail/identity_data.h"
 #include "maidsafe/passport/detail/passport_pb.h"
-#include "maidsafe/passport/passport.h"
+
 
 namespace pb = maidsafe::passport::detail::protobuf;
 
