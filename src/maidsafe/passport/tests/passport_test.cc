@@ -609,23 +609,6 @@ TEST_F(PassportParsePbSelectableTest, BEH_GoodProtobuf) {
   EXPECT_NO_THROW(passport_.Parse(string));
 }
 
-TEST_F(PassportParsePbSelectableTest, BEH_ReorderedFobs) {
-  // TODO(Alison) - is this test applicable/correct?
-  NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 20));  // length?
-  Anmpid anmpid;
-  Mpid mpid(anmpid);
-
-  auto proto_public_identity(proto_passport_.add_public_identity());
-  proto_public_identity->set_public_id(chosen_name.string());
-  auto proto_mpid(proto_public_identity->mutable_mpid());
-  mpid.ToProtobuf(proto_mpid);
-  auto proto_anmpid(proto_public_identity->mutable_anmpid());
-  anmpid.ToProtobuf(proto_anmpid);
-
-  NonEmptyString string(proto_passport_.SerializeAsString());
-  EXPECT_THROW(passport_.Parse(string), std::exception);
-}
-
 TEST(PassportIndependentSerialiseTest, BEH_Uninitialised) {
   pb::Passport proto_passport;
   EXPECT_THROW(NonEmptyString(proto_passport.SerializeAsString()), std::exception);
