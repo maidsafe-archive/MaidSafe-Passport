@@ -16,6 +16,7 @@
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/common/test.h"
+#include "maidsafe/common/utils.h"
 
 #include "maidsafe/passport/detail/passport_pb.h"
 #include "maidsafe/passport/types.h"
@@ -35,7 +36,7 @@ TEST(FobTest, BEH_FobGenerationAndValidation) {
   Maid maid(anmaid);
   Pmid pmid(maid);
   Anmpid anmpid;
-  Mpid mpid(anmpid);
+  Mpid mpid(NonEmptyString(RandomAlphaNumericString(1 + RandomUint32() % 100)), anmpid);
 
   Anmid anmid1(anmid);
   Ansmid ansmid1(ansmid);
@@ -123,7 +124,7 @@ TEST(FobTest, BEH_FobSerialisationAndParsing) {
   Maid maid(anmaid);
   Pmid pmid(maid);
   Anmpid anmpid;
-  Mpid mpid(anmpid);
+  Mpid mpid(NonEmptyString(RandomAlphaNumericString(1 + RandomUint32() % 100)), anmpid);
 
   CheckSerialisationAndParsing(anmid);
   CheckSerialisationAndParsing(ansmid);
@@ -140,7 +141,8 @@ TEST(FobTest, BEH_FobSerialisationAndParsing) {
 bool CheckTokenAndName(const asymm::PublicKey& public_key,
                        const asymm::Signature& signature,
                        const asymm::PublicKey& signer_key,
-                       const Identity& name) {
+                       const Identity& name,
+                       NonEmptyString chosen_name = NonEmptyString()) {
   bool validation_result(asymm::CheckSignature(asymm::PlainText(asymm::EncodeKey(public_key)),
                                                signature,
                                                signer_key));
@@ -149,7 +151,11 @@ bool CheckTokenAndName(const asymm::PublicKey& public_key,
     return false;
   }
 
-  Identity name_result(crypto::Hash<crypto::SHA512>(asymm::EncodeKey(public_key) + signature));
+  Identity name_result;
+  if (chosen_name.IsInitialised())
+    name_result = crypto::Hash<crypto::SHA512>(chosen_name);
+  else
+    name_result = crypto::Hash<crypto::SHA512>(asymm::EncodeKey(public_key) + signature);
   if (name_result != name) {
     LOG(kError) << "Bad name.";
     return false;
@@ -166,11 +172,14 @@ bool CheckNamingAndValidation(Fobtype fob) {
 }
 
 template<typename Fobtype>
-bool CheckNamingAndValidation(Fobtype fob, asymm::PublicKey signer_public_key) {
+bool CheckNamingAndValidation(Fobtype fob,
+                              asymm::PublicKey signer_public_key,
+                              NonEmptyString chosen_name = NonEmptyString()) {
   return CheckTokenAndName(fob.public_key(),
                            fob.validation_token(),
                            signer_public_key,
-                           Identity(fob.name()));
+                           Identity(fob.name()),
+                           chosen_name);
 }
 
 TEST(FobTest, BEH_NamingAndValidation) {
@@ -181,7 +190,8 @@ TEST(FobTest, BEH_NamingAndValidation) {
   Maid maid(anmaid);
   Pmid pmid(maid);
   Anmpid anmpid;
-  Mpid mpid(anmpid);
+  NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 100));
+  Mpid mpid(chosen_name, anmpid);
 
   EXPECT_TRUE(CheckNamingAndValidation(anmid));
   EXPECT_TRUE(CheckNamingAndValidation(ansmid));
@@ -190,7 +200,7 @@ TEST(FobTest, BEH_NamingAndValidation) {
   EXPECT_TRUE(CheckNamingAndValidation(maid, anmaid.public_key()));
   EXPECT_TRUE(CheckNamingAndValidation(pmid, maid.public_key()));
   EXPECT_TRUE(CheckNamingAndValidation(anmpid));
-  EXPECT_TRUE(CheckNamingAndValidation(mpid, anmpid.public_key()));
+  EXPECT_TRUE(CheckNamingAndValidation(mpid, anmpid.public_key(), chosen_name));
 }
 
 }  // namespace test

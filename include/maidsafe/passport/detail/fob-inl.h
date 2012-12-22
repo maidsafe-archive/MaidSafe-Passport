@@ -24,6 +24,8 @@ namespace detail {
 Identity CreateFobName(const asymm::PublicKey& public_key,
                        const asymm::Signature& validation_token);
 
+Identity CreateMpidName(const NonEmptyString& chosen_name);
+
 void FobFromProtobuf(const protobuf::Fob& proto_fob,
                      int enum_value,
                      asymm::Keys& keys,
@@ -35,6 +37,7 @@ void FobToProtobuf(int enum_value,
                    const asymm::Signature& validation_token,
                    const std::string& name,
                    protobuf::Fob* proto_fob);
+
 
 // Default constructor (exclusive to self-signing fobs)
 template<typename Tag>

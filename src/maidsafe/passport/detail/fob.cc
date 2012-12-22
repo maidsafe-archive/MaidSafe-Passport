@@ -27,6 +27,52 @@ Identity CreateFobName(const asymm::PublicKey& public_key,
   return Identity(crypto::Hash<crypto::SHA512>(asymm::EncodeKey(public_key) + validation_token));
 }
 
+Identity CreateMpidName(const NonEmptyString& chosen_name) {
+  return Identity(crypto::Hash<crypto::SHA512>(chosen_name));
+}
+
+
+Fob<MpidTag>::Fob(const Fob<MpidTag>& other)
+    : keys_(other.keys_),
+      validation_token_(other.validation_token_),
+      name_(other.name_) {}
+
+Fob<MpidTag>::Fob(const NonEmptyString& chosen_name, const signer_type& signing_fob)
+    : keys_(asymm::GenerateKeyPair()),
+      validation_token_(asymm::Sign(asymm::PlainText(asymm::EncodeKey(keys_.public_key)),
+                                    signing_fob.private_key())),
+      name_(CreateMpidName(chosen_name)) {}
+
+Fob<MpidTag>& Fob<MpidTag>::operator=(const Fob<MpidTag>& other) {
+  keys_ = other.keys_;
+  validation_token_ = other.validation_token_;
+  name_ = other.name_;
+  return *this;
+}
+
+Fob<MpidTag>::Fob(Fob<MpidTag>&& other)
+    : keys_(std::move(other.keys_)),
+      validation_token_(std::move(other.validation_token_)),
+      name_(std::move(other.name_)) {}
+
+Fob<MpidTag>& Fob<MpidTag>::operator=(Fob<MpidTag>&& other) {
+  keys_ = std::move(other.keys_);
+  validation_token_ = std::move(other.validation_token_);
+  name_ = std::move(other.name_);
+  return *this;
+}
+
+Fob<MpidTag>::Fob(const protobuf::Fob& proto_fob) : keys_(), validation_token_(), name_() {
+  Identity name;
+  FobFromProtobuf(proto_fob, MpidTag::kEnumValue, keys_, validation_token_, name);
+  name_ = name_type(name);
+}
+
+void Fob<MpidTag>::ToProtobuf(protobuf::Fob* proto_fob) const {
+  FobToProtobuf(MpidTag::kEnumValue, keys_, validation_token_, name_.data.string(), proto_fob);
+}
+
+
 void FobFromProtobuf(const protobuf::Fob& proto_fob,
                      int enum_value,
                      asymm::Keys& keys,
@@ -41,7 +87,8 @@ void FobFromProtobuf(const protobuf::Fob& proto_fob,
   asymm::PlainText plain(RandomString(64));
   keys.private_key = asymm::DecodeKey(asymm::EncodedPrivateKey(proto_fob.encoded_private_key()));
   keys.public_key = asymm::DecodeKey(asymm::EncodedPublicKey(proto_fob.encoded_public_key()));
-  if (CreateFobName(keys.public_key, validation_token) != name ||
+  if ((enum_value != MpidTag::kEnumValue &&
+       CreateFobName(keys.public_key, validation_token) != name) ||
       asymm::Decrypt(asymm::Encrypt(plain, keys.public_key), keys.private_key) != plain ||
       enum_value != proto_fob.type()) {
     ThrowError(PassportErrors::fob_parsing_error);

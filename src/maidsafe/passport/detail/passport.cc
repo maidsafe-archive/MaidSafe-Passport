@@ -198,10 +198,10 @@ void Passport::Parse(const NonEmptyString& serialised_passport) {
   }
 }
 
-void Passport::CreateSelectableFobPair(const NonEmptyString &chosen_name) {
+void Passport::CreateSelectableFobPair(const NonEmptyString& chosen_name) {
   SelectableFobPair selectable_fob_pair;
   selectable_fob_pair.anmpid.reset(new Anmpid);
-  selectable_fob_pair.mpid.reset(new Mpid(*selectable_fob_pair.anmpid));
+  selectable_fob_pair.mpid.reset(new Mpid(chosen_name, *selectable_fob_pair.anmpid));
   std::lock_guard<std::mutex> lock(selectable_mutex_);
   auto result(pending_selectable_fobs_.insert(std::make_pair(chosen_name,
                                                              std::move(selectable_fob_pair))));
@@ -209,7 +209,7 @@ void Passport::CreateSelectableFobPair(const NonEmptyString &chosen_name) {
     ThrowError(PassportErrors::public_id_already_exists);
 }
 
-void Passport::ConfirmSelectableFobPair(const NonEmptyString &chosen_name) {
+void Passport::ConfirmSelectableFobPair(const NonEmptyString& chosen_name) {
   std::lock_guard<std::mutex> lock(selectable_mutex_);
   auto itr(pending_selectable_fobs_.find(chosen_name));
   if (itr == pending_selectable_fobs_.end())
@@ -223,7 +223,7 @@ void Passport::ConfirmSelectableFobPair(const NonEmptyString &chosen_name) {
   pending_selectable_fobs_.erase(itr);
 }
 
-void Passport::DeleteSelectableFobPair(const NonEmptyString &chosen_name) {
+void Passport::DeleteSelectableFobPair(const NonEmptyString& chosen_name) {
   std::lock_guard<std::mutex> lock(selectable_mutex_);
   confirmed_selectable_fobs_.erase(chosen_name);
   pending_selectable_fobs_.erase(chosen_name);

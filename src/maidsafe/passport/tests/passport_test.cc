@@ -157,7 +157,7 @@ TEST_F(PassportTest, BEH_ConfirmFobs) {
 }
 
 TEST_F(PassportTest, BEH_CreateConfirmGetSelectableFobs) {
-  NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 100));  // length?
+  NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 100));
 
   EXPECT_THROW(passport_.GetSelectableFob<Mpid>(false, chosen_name), std::exception);
   EXPECT_THROW(passport_.GetSelectableFob<Anmpid>(false, chosen_name), std::exception);
@@ -188,7 +188,7 @@ TEST_F(PassportTest, BEH_CreateConfirmGetSelectableFobs) {
 }
 
 TEST_F(PassportTest, BEH_DeleteSelectableFobs) {
-  NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 100));  // length?
+  NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 100));
 
   passport_.DeleteSelectableFobPair(chosen_name);
 
@@ -255,7 +255,7 @@ TEST_F(PassportTest, FUNC_MultipleSelectableFobs) {
 class PassportParallelTest : public PassportTest {
  public:
   PassportParallelTest()
-    : chosen_name_1_(RandomAlphaNumericString(1 + RandomUint32() % 100)),  // length?
+    : chosen_name_1_(RandomAlphaNumericString(1 + RandomUint32() % 100)),
       chosen_name_2_(RandomAlphaNumericString(1 + RandomUint32() % 100)),
       chosen_name_3_(RandomAlphaNumericString(1 + RandomUint32() % 100)),
       chosen_name_4_(RandomAlphaNumericString(1 + RandomUint32() % 100)),
@@ -540,9 +540,9 @@ class PassportParsePbTest : public PassportTest {
 TEST_F(PassportParsePbTest, BEH_GoodProtobuf) {
   GenerateSixFobs();
 
-  NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 20));  // length?
+  NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 20));
   Anmpid anmpid;
-  Mpid mpid(anmpid);
+  Mpid mpid(chosen_name, anmpid);
 
   auto proto_public_identity(proto_passport_.add_public_identity());
   proto_public_identity->set_public_id(chosen_name.string());
@@ -655,7 +655,8 @@ TEST_F(PassportSerialiseTest, BEH_GoodProtobuf) {
 
 TEST_F(PassportSerialiseTest, BEH_NoChosenName) {
   Anmpid anmpid;
-  Mpid mpid(anmpid);
+  EXPECT_THROW(Mpid mpid_bad(NonEmptyString(), anmpid), std::exception);
+  Mpid mpid(NonEmptyString(RandomAlphaNumericString(1 + RandomUint32() % 100)), anmpid);
 
   auto proto_public_identity(proto_passport_.add_public_identity());
   auto proto_anmpid(proto_public_identity->mutable_anmpid());
@@ -667,9 +668,9 @@ TEST_F(PassportSerialiseTest, BEH_NoChosenName) {
 }
 
 TEST_F(PassportSerialiseTest, BEH_NoAnmpid) {
-  NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 20));  // length?
+  NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 20));
   Anmpid anmpid;
-  Mpid mpid(anmpid);
+  Mpid mpid(chosen_name, anmpid);
 
   auto proto_public_identity(proto_passport_.add_public_identity());
   proto_public_identity->set_public_id(chosen_name.string());
@@ -680,7 +681,7 @@ TEST_F(PassportSerialiseTest, BEH_NoAnmpid) {
 }
 
 TEST_F(PassportSerialiseTest, BEH_NoMpid) {
-  NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 20));  // length?
+  NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 20));
   Anmpid anmpid;
 
   auto proto_public_identity(proto_passport_.add_public_identity());

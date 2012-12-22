@@ -33,7 +33,7 @@ TEST(PublicFobTest, BEH_FobGenerationAndValidation) {
   Maid maid(anmaid);
   Pmid pmid(maid);
   Anmpid anmpid;
-  Mpid mpid(anmpid);
+  Mpid mpid(NonEmptyString(RandomAlphaNumericString(1 + RandomUint32() % 100)), anmpid);
 
   PublicAnmid public_anmid(anmid);
   PublicAnsmid public_ansmid(ansmid);
@@ -108,7 +108,7 @@ TEST(PublicFobTest, BEH_FobSerialisationAndParsing) {
   Maid maid(anmaid);
   Pmid pmid(maid);
   Anmpid anmpid;
-  Mpid mpid(anmpid);
+  Mpid mpid(NonEmptyString(RandomAlphaNumericString(1 + RandomUint32() % 100)), anmpid);
 
   PublicAnmid public_anmid(anmid);
   PublicAnsmid public_ansmid(ansmid);

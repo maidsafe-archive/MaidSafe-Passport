@@ -89,6 +89,31 @@ class Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type> {
   name_type name_;
 };
 
+template<>
+class Fob<MpidTag> {
+ public:
+  typedef TaggedValue<Identity, MpidTag> name_type;
+  typedef Signer<MpidTag>::type signer_type;
+  Fob(const Fob& other);
+  // This constructor is only available to this specialisation (i.e. Mpid)
+  Fob(const NonEmptyString& chosen_name, const signer_type& signing_fob);
+  Fob& operator=(const Fob& other);
+  Fob(Fob&& other);
+  Fob& operator=(Fob&& other);
+  explicit Fob(const protobuf::Fob& proto_fob);
+  void ToProtobuf(protobuf::Fob* proto_fob) const;
+  name_type name() const { return name_; }
+  asymm::Signature validation_token() const { return validation_token_; }
+  asymm::PrivateKey private_key() const { return keys_.private_key; }
+  asymm::PublicKey public_key() const { return keys_.public_key; }
+
+ private:
+  Fob();
+  asymm::Keys keys_;
+  asymm::Signature validation_token_;
+  name_type name_;
+};
+
 template<typename Tag>
 class Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type> {
  public:
