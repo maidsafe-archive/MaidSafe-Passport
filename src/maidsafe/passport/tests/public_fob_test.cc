@@ -131,74 +131,34 @@ TEST(PublicFobTest, BEH_FobSerialisationAndParsing) {
 
 TEST(PublicFobTest, BEH_ConstructFromBadStrings) {
   NonEmptyString string(RandomAlphaNumericString(1 + RandomUint32() % 100));
-
-  PublicAnmid::serialised_type anmid_string(string);
-  PublicAnsmid::serialised_type ansmid_string(string);
-  PublicAntmid::serialised_type antmid_string(string);
-  PublicAnmaid::serialised_type anmaid_string(string);
-  PublicMaid::serialised_type maid_string(string);
-  PublicPmid::serialised_type pmid_string(string);
-  PublicAnmpid::serialised_type anmpid_string(string);
-  PublicMpid::serialised_type mpid_string(string);
-
-  EXPECT_THROW(PublicAnmid public_anmid1(anmid_string), std::exception);
-  EXPECT_THROW(PublicAnsmid public_anmid1(ansmid_string), std::exception);
-  EXPECT_THROW(PublicAntmid public_anmid1(antmid_string), std::exception);
-  EXPECT_THROW(PublicAnmaid public_anmid1(anmaid_string), std::exception);
-  EXPECT_THROW(PublicMaid public_anmid1(maid_string), std::exception);
-  EXPECT_THROW(PublicPmid public_anmid1(pmid_string), std::exception);
-  EXPECT_THROW(PublicAnmpid public_anmid1(anmpid_string), std::exception);
-  EXPECT_THROW(PublicMpid public_anmid1(mpid_string), std::exception);
-
-  // TODO(Fraser) - enable these and investigate
-//  EXPECT_THROW(PublicAnmid public_anmid2(PublicAnmid::serialised_type(string)), std::exception);
-//  EXPECT_THROW(PublicAnsmid public_anmid2(PublicAnsmid::serialised_type(string)), std::exception);
-//  EXPECT_THROW(PublicAntmid public_anmid2(PublicAntmid::serialised_type(string)), std::exception);
-//  EXPECT_THROW(PublicAnmaid public_anmid2(PublicAnmaid::serialised_type(string)), std::exception);
-//  EXPECT_THROW(PublicMaid public_anmid2(PublicMaid::serialised_type(string)), std::exception);
-//  EXPECT_THROW(PublicPmid public_anmid2(PublicPmid::serialised_type(string)), std::exception);
-//  EXPECT_THROW(PublicAnmpid public_anmid2(PublicAnmpid::serialised_type(string)), std::exception);
-//  EXPECT_THROW(PublicMpid public_anmid2(PublicMpid::serialised_type(string)), std::exception);
+  EXPECT_THROW(PublicAnmid public_anmid2((PublicAnmid::serialised_type(string))), std::exception);
+  EXPECT_THROW(PublicAnsmid public_anmid2((PublicAnsmid::serialised_type(string))), std::exception);
+  EXPECT_THROW(PublicAntmid public_anmid2((PublicAntmid::serialised_type(string))), std::exception);
+  EXPECT_THROW(PublicAnmaid public_anmid2((PublicAnmaid::serialised_type(string))), std::exception);
+  EXPECT_THROW(PublicMaid public_anmid2((PublicMaid::serialised_type(string))), std::exception);
+  EXPECT_THROW(PublicPmid public_anmid2((PublicPmid::serialised_type(string))), std::exception);
+  EXPECT_THROW(PublicAnmpid public_anmid2((PublicAnmpid::serialised_type(string))), std::exception);
+  EXPECT_THROW(PublicMpid public_anmid2((PublicMpid::serialised_type(string))), std::exception);
 }
 
 TEST(PublicFobTest, BEH_ConstructFromUninitialisedStrings) {
   NonEmptyString uninitialised_string;
-
-  PublicAnmid::serialised_type u_anmid_string(uninitialised_string);
-  PublicAnsmid::serialised_type u_ansmid_string(uninitialised_string);
-  PublicAntmid::serialised_type u_antmid_string(uninitialised_string);
-  PublicAnmaid::serialised_type u_anmaid_string(uninitialised_string);
-  PublicMaid::serialised_type u_maid_string(uninitialised_string);
-  PublicPmid::serialised_type u_pmid_string(uninitialised_string);
-  PublicAnmpid::serialised_type u_anmpid_string(uninitialised_string);
-  PublicMpid::serialised_type u_mpid_string(uninitialised_string);
-
-  EXPECT_THROW(PublicAnmid public_anmid1(u_anmid_string), std::exception);
-  EXPECT_THROW(PublicAnsmid public_anmid1(u_ansmid_string), std::exception);
-  EXPECT_THROW(PublicAntmid public_anmid1(u_antmid_string), std::exception);
-  EXPECT_THROW(PublicAnmaid public_anmid1(u_anmaid_string), std::exception);
-  EXPECT_THROW(PublicMaid public_anmid1(u_maid_string), std::exception);
-  EXPECT_THROW(PublicPmid public_anmid1(u_pmid_string), std::exception);
-  EXPECT_THROW(PublicAnmpid public_anmid1(u_anmpid_string), std::exception);
-  EXPECT_THROW(PublicMpid public_anmid1(u_mpid_string), std::exception);
-
-  // TODO(Fraser) - enable these and investigate
-//  EXPECT_THROW(PublicAnmid public_anmid2(PublicAnmid::serialised_type(uninitialised_string)),
-//               std::exception);
-//  EXPECT_THROW(PublicAnsmid public_anmid2(PublicAnsmid::serialised_type(uninitialised_string)),
-//               std::exception);
-//  EXPECT_THROW(PublicAntmid public_anmid2(PublicAntmid::serialised_type(uninitialised_string)),
-//               std::exception);
-//  EXPECT_THROW(PublicAnmaid public_anmid2(PublicAnmaid::serialised_type(uninitialised_string)),
-//               std::exception);
-//  EXPECT_THROW(PublicMaid public_anmid2(PublicMaid::serialised_type(uninitialised_string)),
-//               std::exception);
-//  EXPECT_THROW(PublicPmid public_anmid2(PublicPmid::serialised_type(uninitialised_string)),
-//               std::exception);
-//  EXPECT_THROW(PublicAnmpid public_anmid2(PublicAnmpid::serialised_type(uninitialised_string)),
-//               std::exception);
-//  EXPECT_THROW(PublicMpid public_anmid2(PublicMpid::serialised_type(uninitialised_string)),
-//               std::exception);
+  EXPECT_THROW(PublicAnmid public_anmid2((PublicAnmid::serialised_type(uninitialised_string))),
+               std::exception);
+  EXPECT_THROW(PublicAnsmid public_anmid2((PublicAnsmid::serialised_type(uninitialised_string))),
+               std::exception);
+  EXPECT_THROW(PublicAntmid public_anmid2((PublicAntmid::serialised_type(uninitialised_string))),
+               std::exception);
+  EXPECT_THROW(PublicAnmaid public_anmid2((PublicAnmaid::serialised_type(uninitialised_string))),
+               std::exception);
+  EXPECT_THROW(PublicMaid public_anmid2((PublicMaid::serialised_type(uninitialised_string))),
+               std::exception);
+  EXPECT_THROW(PublicPmid public_anmid2((PublicPmid::serialised_type(uninitialised_string))),
+               std::exception);
+  EXPECT_THROW(PublicAnmpid public_anmid2((PublicAnmpid::serialised_type(uninitialised_string))),
+               std::exception);
+  EXPECT_THROW(PublicMpid public_anmid2((PublicMpid::serialised_type(uninitialised_string))),
+               std::exception);
 }
 
 TEST(PublicFobTest, BEH_SerialiseUninitialisedMessage) {
