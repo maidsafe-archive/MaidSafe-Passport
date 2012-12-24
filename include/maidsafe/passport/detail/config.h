@@ -12,6 +12,7 @@
 #ifndef MAIDSAFE_PASSPORT_DETAIL_CONFIG_H_
 #define MAIDSAFE_PASSPORT_DETAIL_CONFIG_H_
 
+#include "maidsafe/detail/data_type_values.h"
 
 namespace maidsafe {
 
@@ -19,17 +20,17 @@ namespace passport {
 
 namespace detail {
 
-struct AnmidTag  { static const int kEnumValue = 0; };  // NOLINT (Fraser)
-struct AnsmidTag { static const int kEnumValue = 1; };  // NOLINT (Fraser)
-struct AntmidTag { static const int kEnumValue = 2; };  // NOLINT (Fraser)
-struct AnmaidTag { static const int kEnumValue = 3; };  // NOLINT (Fraser)
-struct MaidTag   { static const int kEnumValue = 4; };  // NOLINT (Fraser)
-struct PmidTag   { static const int kEnumValue = 5; };  // NOLINT (Fraser)
-struct MidTag    { static const int kEnumValue = 6; };  // NOLINT (Fraser)
-struct SmidTag   { static const int kEnumValue = 7; };  // NOLINT (Fraser)
-struct TmidTag   { static const int kEnumValue = 8; };  // NOLINT (Fraser)
-struct AnmpidTag { static const int kEnumValue = 9; };  // NOLINT (Fraser)
-struct MpidTag   { static const int kEnumValue = 10; };  // NOLINT (Fraser)
+struct AnmidTag  { static const int kEnumValue = maidsafe::detail::kAnmidValue;  };  // NOLINT (Fraser)
+struct AnsmidTag { static const int kEnumValue = maidsafe::detail::kAnsmidValue; };  // NOLINT (Fraser)
+struct AntmidTag { static const int kEnumValue = maidsafe::detail::kAntmidValue; };  // NOLINT (Fraser)
+struct AnmaidTag { static const int kEnumValue = maidsafe::detail::kAnmaidValue; };  // NOLINT (Fraser)
+struct MaidTag   { static const int kEnumValue = maidsafe::detail::kMaidValue;   };  // NOLINT (Fraser)
+struct PmidTag   { static const int kEnumValue = maidsafe::detail::kPmidValue;   };  // NOLINT (Fraser)
+struct MidTag    { static const int kEnumValue = maidsafe::detail::kMidValue;    };  // NOLINT (Fraser)
+struct SmidTag   { static const int kEnumValue = maidsafe::detail::kSmidValue;   };  // NOLINT (Fraser)
+struct TmidTag   { static const int kEnumValue = maidsafe::detail::kTmidValue;   };  // NOLINT (Fraser)
+struct AnmpidTag { static const int kEnumValue = maidsafe::detail::kAnmpidValue; };  // NOLINT (Fraser)
+struct MpidTag   { static const int kEnumValue = maidsafe::detail::kMpidValue;   };  // NOLINT (Fraser)
 
 template<typename Tag, class Enable = void>
 class Fob;
