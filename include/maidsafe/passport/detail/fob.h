@@ -145,6 +145,11 @@ NonEmptyString SerialisePmid(const Fob<PmidTag>& pmid);
 
 Fob<PmidTag> ParsePmid(const NonEmptyString& serialised_pmid);
 
+std::vector<Fob<PmidTag>> ReadPmidList(const boost::filesystem::path &file_path);
+
+bool WritePmidList(const boost::filesystem::path &file_path,
+                   const std::vector<Fob<PmidTag>> &pmid_list);
+
 }  // namespace detail
 
 }  // namespace passport

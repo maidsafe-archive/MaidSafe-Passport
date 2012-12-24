@@ -119,6 +119,26 @@ Fob<PmidTag> ParsePmid(const NonEmptyString& serialised_pmid) {
   return Fob<PmidTag>(proto_fob);
 }
 
+std::vector<Fob<PmidTag>> ReadPmidList(const boost::filesystem::path &file_path) {
+  std::vector<Fob<PmidTag>> pmid_list;
+  protobuf::PmidList pmid_list_msg;
+  pmid_list_msg.ParseFromString(ReadFile(file_path).string());
+  for (int i = 0; i < pmid_list_msg.pmids_size(); ++i)
+    pmid_list.push_back(std::move(
+        passport::detail::ParsePmid(NonEmptyString(pmid_list_msg.pmids(i).pmid()))));
+  return pmid_list;
+}
+
+bool WritePmidList(const boost::filesystem::path &file_path,
+                   const std::vector<Fob<PmidTag>> &pmid_list) {
+  protobuf::PmidList pmid_list_msg;
+  for (auto &pmid : pmid_list) {
+    auto entry = pmid_list_msg.add_pmids();
+    entry->set_pmid(passport::detail::SerialisePmid(pmid).string());
+  }
+  return WriteFile(file_path, pmid_list_msg.SerializeAsString());
+}
+
 
 }  // namespace detail
 
