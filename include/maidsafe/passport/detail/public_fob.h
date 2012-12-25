@@ -40,7 +40,7 @@ class PublicFob {
   PublicFob& operator=(PublicFob&& other);
 
   explicit PublicFob(const Fob<Tag>& fob);
-  explicit PublicFob(const serialised_type& serialised_public_fob);
+  PublicFob(const name_type& name, const serialised_type& serialised_public_fob);
   serialised_type Serialise() const;
 
   name_type name() const { return name_; }

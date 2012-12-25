@@ -11,6 +11,8 @@
 
 #include "maidsafe/passport/detail/identity_data.h"
 
+#include "maidsafe/common/utils.h"
+
 
 namespace maidsafe {
 
@@ -128,6 +130,27 @@ NonEmptyString DecryptSession(const UserPassword& keyword,
                                      SecureKey(secure_password),
                                      SecureIv(secure_password)));
 }
+
+
+#ifdef TESTING
+
+template<>
+std::string DebugString<MidData<MidTag>::name_type>(const MidData<MidTag>::name_type& name) {
+  return "Mid     " + HexSubstr(name.data);
+}
+
+template<>
+std::string DebugString<MidData<SmidTag>::name_type>(const MidData<SmidTag>::name_type& name) {
+  return "Smid    " + HexSubstr(name.data);
+}
+
+template<>
+std::string DebugString<TmidData<TmidTag>::name_type>(const TmidData<TmidTag>::name_type& name) {
+  return "Tmid    " + HexSubstr(name.data);
+}
+
+#endif  // TESTING
+
 
 }  // namespace detail
 

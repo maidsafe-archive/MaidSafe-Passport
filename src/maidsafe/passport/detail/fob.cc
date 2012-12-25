@@ -119,6 +119,8 @@ Fob<PmidTag> ParsePmid(const NonEmptyString& serialised_pmid) {
   return Fob<PmidTag>(proto_fob);
 }
 
+#ifdef TESTING
+
 std::vector<Fob<PmidTag>> ReadPmidList(const boost::filesystem::path &file_path) {
   std::vector<Fob<PmidTag>> pmid_list;
   protobuf::PmidList pmid_list_msg;
@@ -139,6 +141,47 @@ bool WritePmidList(const boost::filesystem::path &file_path,
   return WriteFile(file_path, pmid_list_msg.SerializeAsString());
 }
 
+template<>
+std::string DebugString<Fob<AnmidTag>::name_type>(const Fob<AnmidTag>::name_type& name) {
+  return "[" + HexSubstr(name.data) + " Anmid] ";
+}
+
+template<>
+std::string DebugString<Fob<AnsmidTag>::name_type>(const Fob<AnsmidTag>::name_type& name) {
+  return "[" + HexSubstr(name.data) + " Ansmid]";
+}
+
+template<>
+std::string DebugString<Fob<AntmidTag>::name_type>(const Fob<AntmidTag>::name_type& name) {
+  return "[" + HexSubstr(name.data) + " Antmid]";
+}
+
+template<>
+std::string DebugString<Fob<AnmaidTag>::name_type>(const Fob<AnmaidTag>::name_type& name) {
+  return "[" + HexSubstr(name.data) + " Anmaid]";
+}
+
+template<>
+std::string DebugString<Fob<MaidTag>::name_type>(const Fob<MaidTag>::name_type& name) {
+  return "[" + HexSubstr(name.data) + " Maid]  ";
+}
+
+template<>
+std::string DebugString<Fob<PmidTag>::name_type>(const Fob<PmidTag>::name_type& name) {
+  return "[" + HexSubstr(name.data) + " Pmid]  ";
+}
+
+template<>
+std::string DebugString<Fob<AnmpidTag>::name_type>(const Fob<AnmpidTag>::name_type& name) {
+  return "[" + HexSubstr(name.data) + " Anmpid]";
+}
+
+template<>
+std::string DebugString<Fob<MpidTag>::name_type>(const Fob<MpidTag>::name_type& name) {
+  return "[" + HexSubstr(name.data) + " Mpid]  ";
+}
+
+#endif  // TESTING
 
 }  // namespace detail
 

@@ -23,12 +23,10 @@ namespace detail {
 
 void PublicFobFromProtobuf(const NonEmptyString& serialised_public_fob,
                            int enum_value,
-                           Identity& name,
                            asymm::PublicKey& public_key,
                            asymm::Signature& validation_token);
 
 NonEmptyString PublicFobToProtobuf(int enum_value,
-                                   const std::string& name,
                                    const asymm::PublicKey& public_key,
                                    const asymm::Signature& validation_token);
 
@@ -67,23 +65,22 @@ PublicFob<Tag>::PublicFob(const Fob<Tag>& fob)
       validation_token_(fob.validation_token()) {}
 
 // TODO(Fraser#5#): 2012-12-21 - Once MSVC eventually handles delegating constructors, we can make
-//                  this more efficient by using a lambda which returns the parsed protobuf fob
-//                  inside a private constructor taking a single arg of type protobuf fob.
+//                  this more efficient by using a lambda which returns the parsed protobuf
+//                  inside a private constructor taking a single arg of type protobuf.
 template<typename Tag>
-PublicFob<Tag>::PublicFob(const serialised_type& serialised_public_fob)
-    : name_(),
+PublicFob<Tag>::PublicFob(const name_type& name, const serialised_type& serialised_public_fob)
+    : name_(name),
       public_key_(),
       validation_token_() {
-  Identity name;
-  PublicFobFromProtobuf(serialised_public_fob.data, Tag::kEnumValue, name, public_key_,
+  if (!name_.data.IsInitialised())
+    ThrowError(PassportErrors::fob_parsing_error);
+  PublicFobFromProtobuf(serialised_public_fob.data, Tag::kEnumValue, public_key_,
                         validation_token_);
-  name_ = name_type(name);
 }
 
 template<typename Tag>
 typename PublicFob<Tag>::serialised_type PublicFob<Tag>::Serialise() const {
-  return serialised_type(PublicFobToProtobuf(Tag::kEnumValue, name_.data.string(), public_key_,
-                                             validation_token_));
+  return serialised_type(PublicFobToProtobuf(Tag::kEnumValue, public_key_, validation_token_));
 }
 
 }  // namespace detail

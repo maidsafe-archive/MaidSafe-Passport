@@ -21,9 +21,8 @@ message Passport {
 
 message PublicFob {
   required int32 type = 1;
-  required bytes name = 2;
-  required bytes encoded_public_key = 3;
-  required bytes validation_token = 4;
+  required bytes encoded_public_key = 2;
+  required bytes validation_token = 3;
 }
 
 message PmidList {

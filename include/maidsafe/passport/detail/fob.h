@@ -13,6 +13,9 @@
 #define MAIDSAFE_PASSPORT_DETAIL_FOB_H_
 
 #include <type_traits>
+#include <vector>
+
+#include "boost/filesystem/path.hpp"
 
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/common/types.h"
@@ -145,10 +148,14 @@ NonEmptyString SerialisePmid(const Fob<PmidTag>& pmid);
 
 Fob<PmidTag> ParsePmid(const NonEmptyString& serialised_pmid);
 
+#ifdef TESTING
+
 std::vector<Fob<PmidTag>> ReadPmidList(const boost::filesystem::path &file_path);
 
-bool WritePmidList(const boost::filesystem::path &file_path,
-                   const std::vector<Fob<PmidTag>> &pmid_list);
+bool WritePmidList(const boost::filesystem::path& file_path,
+                   const std::vector<Fob<PmidTag>>& pmid_list);  // NOLINT (Fraser)
+
+#endif
 
 }  // namespace detail
 

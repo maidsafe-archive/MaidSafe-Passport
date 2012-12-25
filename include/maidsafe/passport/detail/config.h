@@ -12,7 +12,10 @@
 #ifndef MAIDSAFE_PASSPORT_DETAIL_CONFIG_H_
 #define MAIDSAFE_PASSPORT_DETAIL_CONFIG_H_
 
+#include <string>
+
 #include "maidsafe/detail/data_type_values.h"
+
 
 namespace maidsafe {
 
@@ -75,6 +78,14 @@ template<>
 struct Signer<MpidTag> {
   typedef Fob<AnmpidTag> type;
 };
+
+
+#ifdef TESTING
+
+template<typename NameType>
+std::string DebugString(const NameType& name);
+
+#endif
 
 }  // namespace detail
 
