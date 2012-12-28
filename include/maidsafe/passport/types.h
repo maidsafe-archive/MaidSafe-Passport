@@ -12,6 +12,7 @@
 #ifndef MAIDSAFE_PASSPORT_TYPES_H_
 #define MAIDSAFE_PASSPORT_TYPES_H_
 
+#include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/types.h"
 
 #include "maidsafe/passport/detail/config.h"
@@ -40,7 +41,7 @@ typedef detail::PublicFob<detail::PmidTag> PublicPmid;
 
 typedef detail::MidData<detail::MidTag> Mid;
 typedef detail::MidData<detail::SmidTag> Smid;
-typedef detail::TmidData<detail::TmidTag> Tmid, Stmid;
+typedef detail::TmidData Tmid, Stmid;
 
 typedef detail::Fob<detail::AnmpidTag> Anmpid;
 typedef detail::Fob<detail::MpidTag> Mpid;

@@ -46,6 +46,7 @@ class PublicFob {
   name_type name() const { return name_; }
   asymm::PublicKey public_key() const { return public_key_; }
   asymm::Signature validation_token() const { return validation_token_; }
+  static int type_enum_value() { return Tag::kEnumValue; }
 
  private:
   PublicFob();

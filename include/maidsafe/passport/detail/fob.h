@@ -150,7 +150,7 @@ Fob<PmidTag> ParsePmid(const NonEmptyString& serialised_pmid);
 
 #ifdef TESTING
 
-std::vector<Fob<PmidTag>> ReadPmidList(const boost::filesystem::path &file_path);
+std::vector<Fob<PmidTag>> ReadPmidList(const boost::filesystem::path& file_path);
 
 bool WritePmidList(const boost::filesystem::path& file_path,
                    const std::vector<Fob<PmidTag>>& pmid_list);  // NOLINT (Fraser)

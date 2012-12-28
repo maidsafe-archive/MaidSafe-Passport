@@ -28,40 +28,36 @@ namespace maidsafe {
 namespace passport {
 
 Mid::name_type MidName(const NonEmptyString& keyword, uint32_t pin) {
-  return Mid::Name(keyword, pin);
+  return Mid::GenerateName(keyword, pin);
 }
 
 Smid::name_type SmidName(const NonEmptyString& keyword, uint32_t pin) {
-  return Smid::Name(keyword, pin);
+  return Smid::GenerateName(keyword, pin);
 }
 
-NonEmptyString EncryptSession(const UserPassword& keyword,
-                              uint32_t pin,
-                              const UserPassword& password,
-                              const NonEmptyString& serialised_session) {
+EncryptedSession EncryptSession(const UserPassword& keyword,
+                                uint32_t pin,
+                                const UserPassword& password,
+                                const NonEmptyString& serialised_session) {
   return detail::EncryptSession(keyword, pin, password, serialised_session);
 }
 
-Tmid::name_type TmidName(const NonEmptyString& encrypted_tmid) {
-  return detail::TmidName(encrypted_tmid);
-}
-
-NonEmptyString EncryptTmidName(const UserPassword& keyword,
-                               uint32_t pin,
-                               const Tmid::name_type& tmid_name) {
+EncryptedTmidName EncryptTmidName(const UserPassword& keyword,
+                                  uint32_t pin,
+                                  const Tmid::name_type& tmid_name) {
   return detail::EncryptTmidName(keyword, pin, tmid_name);
 }
 
 Tmid::name_type DecryptTmidName(const UserPassword& keyword,
                                 uint32_t pin,
-                                const crypto::CipherText& encrypted_tmid_name) {
+                                const EncryptedTmidName& encrypted_tmid_name) {
   return detail::DecryptTmidName(keyword, pin, encrypted_tmid_name);
 }
 
 NonEmptyString DecryptSession(const UserPassword& keyword,
                               uint32_t pin,
                               const UserPassword& password,
-                              const crypto::CipherText& encrypted_session) {
+                              const EncryptedSession& encrypted_session) {
   return detail::DecryptSession(keyword, pin, password, encrypted_session);
 }
 

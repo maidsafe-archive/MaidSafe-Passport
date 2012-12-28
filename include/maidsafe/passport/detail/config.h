@@ -39,10 +39,9 @@ template<typename Tag, class Enable = void>
 class Fob;
 
 template<typename Tag>
-struct MidData;
+class MidData;
 
-template<typename Tag>
-struct TmidData;
+class TmidData;
 
 template<typename Tag>
 struct Signer {

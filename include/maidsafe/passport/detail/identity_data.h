@@ -17,6 +17,7 @@
 #include <string>
 
 #include "maidsafe/common/crypto.h"
+#include "maidsafe/common/rsa.h"
 #include "maidsafe/common/types.h"
 
 #include "maidsafe/passport/detail/config.h"
@@ -26,41 +27,91 @@ namespace maidsafe {
 
 namespace passport {
 
+typedef TaggedValue<NonEmptyString, struct EncryptedTmidNameTag> EncryptedTmidName;
+typedef TaggedValue<NonEmptyString, struct EncryptedSessionTag> EncryptedSession;
+
+
 namespace detail {
 
 template<typename Tag>
-struct MidData {
+class MidData {
+ public:
   typedef TaggedValue<Identity, Tag> name_type;
   typedef typename Signer<Tag>::type signer_type;
-  static name_type Name(const NonEmptyString& keyword, uint32_t pin);
+  typedef TaggedValue<NonEmptyString, Tag> serialised_type;
+
+  static name_type GenerateName(const NonEmptyString& keyword, uint32_t pin);
+
+  MidData(const MidData& other);
+  MidData& operator=(const MidData& other);
+  MidData(MidData&& other);
+  MidData& operator=(MidData&& other);
+
+  MidData(const name_type& name,
+          const EncryptedTmidName& encrypted_tmid_name,
+          const signer_type& signing_fob);
+  MidData(const name_type& name, const serialised_type& serialised_mid);
+  serialised_type Serialise() const;
+
+  name_type name() const { return name_; }
+  EncryptedTmidName encrypted_tmid_name() const { return encrypted_tmid_name_; }
+  asymm::Signature validation_token() const { return validation_token_; }
+  static int type_enum_value() { return Tag::kEnumValue; }
+
+ private:
+  MidData();
+  name_type name_;
+  EncryptedTmidName encrypted_tmid_name_;
+  asymm::Signature validation_token_;
 };
 
-template<typename Tag>
-struct TmidData {
-  typedef TaggedValue<Identity, Tag> name_type;
-  typedef typename Signer<Tag>::type signer_type;
+
+class TmidData {
+ public:
+  typedef TaggedValue<Identity, detail::TmidTag> name_type;
+  typedef Signer<detail::TmidTag>::type signer_type;
+  typedef TaggedValue<NonEmptyString, detail::TmidTag> serialised_type;
+
+  TmidData(const TmidData& other);
+  TmidData& operator=(const TmidData& other);
+  TmidData(TmidData&& other);
+  TmidData& operator=(TmidData&& other);
+
+  TmidData(const EncryptedSession& encrypted_session, const signer_type& signing_fob);
+  TmidData(const name_type& name, const serialised_type& serialised_tmid);
+  serialised_type Serialise() const;
+
+  name_type name() const { return name_; }
+  EncryptedSession encrypted_session() const { return encrypted_session_; }
+  asymm::Signature validation_token() const { return validation_token_; }
+  static int type_enum_value() { return detail::TmidTag::kEnumValue; }
+
+ private:
+  TmidData();
+  name_type name_;
+  EncryptedSession encrypted_session_;
+  asymm::Signature validation_token_;
 };
 
-NonEmptyString EncryptSession(const UserPassword& keyword,
-                              uint32_t pin,
-                              const UserPassword& password,
-                              const NonEmptyString& serialised_session);
 
-TmidData<TmidTag>::name_type TmidName(const NonEmptyString& encrypted_tmid);
+EncryptedSession EncryptSession(const UserPassword& keyword,
+                                uint32_t pin,
+                                const UserPassword& password,
+                                const NonEmptyString& serialised_session);
 
 // TMID name is now what used to be RID (Random ID)
-NonEmptyString EncryptTmidName(const UserPassword& keyword,
-                               uint32_t pin,
-                               const TmidData<TmidTag>::name_type& tmid_name);
+EncryptedTmidName EncryptTmidName(const UserPassword& keyword,
+                                  uint32_t pin,
+                                  const TmidData::name_type& tmid_name);
 
-TmidData<TmidTag>::name_type DecryptTmidName(const UserPassword& keyword,
-                                             uint32_t pin,
-                                             const NonEmptyString& encrypted_tmid_name);
+TmidData::name_type DecryptTmidName(const UserPassword& keyword,
+                                    uint32_t pin,
+                                    const EncryptedTmidName& encrypted_tmid_name);
 
 NonEmptyString DecryptSession(const UserPassword& keyword,
                               uint32_t pin,
-                              const UserPassword password,
-                              const NonEmptyString& encrypted_session);
+                              const UserPassword& password,
+                              const EncryptedSession& encrypted_session);
 
 }  // namespace detail
 

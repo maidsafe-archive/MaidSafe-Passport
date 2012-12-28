@@ -121,7 +121,7 @@ Fob<PmidTag> ParsePmid(const NonEmptyString& serialised_pmid) {
 
 #ifdef TESTING
 
-std::vector<Fob<PmidTag>> ReadPmidList(const boost::filesystem::path &file_path) {
+std::vector<Fob<PmidTag>> ReadPmidList(const boost::filesystem::path& file_path) {
   std::vector<Fob<PmidTag>> pmid_list;
   protobuf::PmidList pmid_list_msg;
   pmid_list_msg.ParseFromString(ReadFile(file_path).string());
@@ -131,8 +131,8 @@ std::vector<Fob<PmidTag>> ReadPmidList(const boost::filesystem::path &file_path)
   return pmid_list;
 }
 
-bool WritePmidList(const boost::filesystem::path &file_path,
-                   const std::vector<Fob<PmidTag>> &pmid_list) {
+bool WritePmidList(const boost::filesystem::path& file_path,
+                   const std::vector<Fob<PmidTag>>& pmid_list) {  // NOLINT (Fraser)
   protobuf::PmidList pmid_list_msg;
   for (auto &pmid : pmid_list) {
     auto entry = pmid_list_msg.add_pmids();

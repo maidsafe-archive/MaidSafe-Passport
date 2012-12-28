@@ -25,6 +25,18 @@ message PublicFob {
   required bytes validation_token = 3;
 }
 
+message Mid {
+  required int32 type = 1;
+  required bytes encrypted_tmid_name = 2;
+  required bytes validation_token = 3;
+}
+
+message Tmid {
+  required int32 type = 1;
+  required bytes encrypted_session = 2;
+  required bytes validation_token = 3;
+}
+
 message PmidList {
   message Pmid {
     required bytes pmid = 1;

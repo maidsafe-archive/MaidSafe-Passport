@@ -22,6 +22,7 @@
 
 #include "maidsafe/passport/types.h"
 #include "maidsafe/passport/detail/fob.h"
+#include "maidsafe/passport/detail/identity_data.h"
 
 
 namespace maidsafe {
@@ -32,25 +33,23 @@ Mid::name_type MidName(const NonEmptyString& keyword, uint32_t pin);
 
 Smid::name_type SmidName(const NonEmptyString& keyword, uint32_t pin);
 
-NonEmptyString EncryptSession(const UserPassword& keyword,
-                              uint32_t pin,
-                              const UserPassword& password,
-                              const NonEmptyString& serialised_session);
+EncryptedSession EncryptSession(const UserPassword& keyword,
+                                uint32_t pin,
+                                const UserPassword& password,
+                                const NonEmptyString& serialised_session);
 
-Tmid::name_type TmidName(const NonEmptyString& encrypted_tmid);
-
-NonEmptyString EncryptTmidName(const UserPassword& keyword,
-                               uint32_t pin,
-                               const Tmid::name_type& tmid_name);
+EncryptedTmidName EncryptTmidName(const UserPassword& keyword,
+                                  uint32_t pin,
+                                  const Tmid::name_type& tmid_name);
 
 Tmid::name_type DecryptTmidName(const UserPassword& keyword,
                                 uint32_t pin,
-                                const crypto::CipherText& encrypted_tmid_name);
+                                const EncryptedTmidName& encrypted_tmid_name);
 
 NonEmptyString DecryptSession(const UserPassword& keyword,
                               uint32_t pin,
                               const UserPassword& password,
-                              const crypto::CipherText& encrypted_session);
+                              const EncryptedSession& encrypted_session);
 
 NonEmptyString SerialisePmid(const Pmid& pmid);
 
