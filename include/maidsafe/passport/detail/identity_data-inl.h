@@ -27,11 +27,11 @@ namespace passport {
 namespace detail {
 
 void MidFromProtobuf(const NonEmptyString& serialised_mid,
-                     int enum_value,
+                     maidsafe::detail::DataTagValue enum_value,
                      EncryptedTmidName& encrypted_tmid_name,
                      asymm::Signature& validation_token);
 
-NonEmptyString MidToProtobuf(int enum_value,
+NonEmptyString MidToProtobuf(maidsafe::detail::DataTagValue enum_value,
                              const EncryptedTmidName& encrypted_tmid_name,
                              const asymm::Signature& validation_token);
 

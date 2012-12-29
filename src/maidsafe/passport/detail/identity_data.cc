@@ -72,7 +72,7 @@ NonEmptyString XorData(const UserPassword& keyword,
 
 
 void MidFromProtobuf(const NonEmptyString& serialised_mid,
-                     int enum_value,
+                     maidsafe::detail::DataTagValue enum_value,
                      EncryptedTmidName& encrypted_tmid_name,
                      asymm::Signature& validation_token) {
   protobuf::Mid proto_mid;
@@ -80,15 +80,15 @@ void MidFromProtobuf(const NonEmptyString& serialised_mid,
     ThrowError(PassportErrors::mid_parsing_error);
   validation_token = asymm::Signature(proto_mid.validation_token());
   encrypted_tmid_name = EncryptedTmidName(NonEmptyString(proto_mid.encrypted_tmid_name()));
-  if (enum_value != proto_mid.type())
+  if (static_cast<int>(enum_value) != proto_mid.type())
     ThrowError(PassportErrors::mid_parsing_error);
 }
 
-NonEmptyString MidToProtobuf(int enum_value,
+NonEmptyString MidToProtobuf(maidsafe::detail::DataTagValue enum_value,
                              const EncryptedTmidName& encrypted_tmid_name,
                              const asymm::Signature& validation_token) {
   protobuf::Mid proto_mid;
-  proto_mid.set_type(enum_value);
+  proto_mid.set_type(static_cast<int>(enum_value));
   proto_mid.set_encrypted_tmid_name(encrypted_tmid_name.data.string());
   proto_mid.set_validation_token(validation_token.string());
   return NonEmptyString(proto_mid.SerializeAsString());
@@ -152,7 +152,7 @@ TmidData::TmidData(const name_type& name, const serialised_type& serialised_tmid
     ThrowError(PassportErrors::tmid_parsing_error);
   validation_token_ = asymm::Signature(proto_tmid.validation_token());
   encrypted_session_ = EncryptedSession(NonEmptyString(proto_tmid.encrypted_session()));
-  if (detail::TmidTag::kEnumValue != maidsafe::detail::DataTagValue(proto_tmid.type()))
+  if (static_cast<int>(detail::TmidTag::kEnumValue) != proto_tmid.type())
     ThrowError(PassportErrors::tmid_parsing_error);
 }
 
