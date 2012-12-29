@@ -23,17 +23,50 @@ namespace passport {
 
 namespace detail {
 
-struct AnmidTag  { static const int kEnumValue = maidsafe::detail::kAnmidValue;  };  // NOLINT (Fraser)
-struct AnsmidTag { static const int kEnumValue = maidsafe::detail::kAnsmidValue; };  // NOLINT (Fraser)
-struct AntmidTag { static const int kEnumValue = maidsafe::detail::kAntmidValue; };  // NOLINT (Fraser)
-struct AnmaidTag { static const int kEnumValue = maidsafe::detail::kAnmaidValue; };  // NOLINT (Fraser)
-struct MaidTag   { static const int kEnumValue = maidsafe::detail::kMaidValue;   };  // NOLINT (Fraser)
-struct PmidTag   { static const int kEnumValue = maidsafe::detail::kPmidValue;   };  // NOLINT (Fraser)
-struct MidTag    { static const int kEnumValue = maidsafe::detail::kMidValue;    };  // NOLINT (Fraser)
-struct SmidTag   { static const int kEnumValue = maidsafe::detail::kSmidValue;   };  // NOLINT (Fraser)
-struct TmidTag   { static const int kEnumValue = maidsafe::detail::kTmidValue;   };  // NOLINT (Fraser)
-struct AnmpidTag { static const int kEnumValue = maidsafe::detail::kAnmpidValue; };  // NOLINT (Fraser)
-struct MpidTag   { static const int kEnumValue = maidsafe::detail::kMpidValue;   };  // NOLINT (Fraser)
+struct AnmidTag {
+  typedef maidsafe::detail::DataTagValue DataTagValue;
+  static const DataTagValue kEnumValue = DataTagValue::kAnmidValue;
+};
+struct AnsmidTag {
+  typedef maidsafe::detail::DataTagValue DataTagValue;
+  static const DataTagValue kEnumValue = DataTagValue::kAnsmidValue;
+};
+struct AntmidTag {
+  typedef maidsafe::detail::DataTagValue DataTagValue;
+  static const DataTagValue kEnumValue = DataTagValue::kAntmidValue;
+};
+struct AnmaidTag {
+  typedef maidsafe::detail::DataTagValue DataTagValue;
+  static const DataTagValue kEnumValue = DataTagValue::kAnmaidValue;
+};
+struct MaidTag {
+  typedef maidsafe::detail::DataTagValue DataTagValue;
+  static const DataTagValue kEnumValue = DataTagValue::kMaidValue;
+};
+struct PmidTag {
+  typedef maidsafe::detail::DataTagValue DataTagValue;
+  static const DataTagValue kEnumValue = DataTagValue::kPmidValue;
+};
+struct MidTag {
+  typedef maidsafe::detail::DataTagValue DataTagValue;
+  static const DataTagValue kEnumValue = DataTagValue::kMidValue;
+};
+struct SmidTag {
+  typedef maidsafe::detail::DataTagValue DataTagValue;
+  static const DataTagValue kEnumValue = DataTagValue::kSmidValue;
+};
+struct TmidTag {
+  typedef maidsafe::detail::DataTagValue DataTagValue;
+  static const DataTagValue kEnumValue = DataTagValue::kTmidValue;
+};
+struct AnmpidTag {
+  typedef maidsafe::detail::DataTagValue DataTagValue;
+  static const DataTagValue kEnumValue = DataTagValue::kAnmpidValue;
+};
+struct MpidTag {
+  typedef maidsafe::detail::DataTagValue DataTagValue;
+  static const DataTagValue kEnumValue = DataTagValue::kMpidValue;
+};
 
 template<typename Tag, class Enable = void>
 class Fob;

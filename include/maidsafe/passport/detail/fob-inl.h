@@ -27,12 +27,12 @@ Identity CreateFobName(const asymm::PublicKey& public_key,
 Identity CreateMpidName(const NonEmptyString& chosen_name);
 
 void FobFromProtobuf(const protobuf::Fob& proto_fob,
-                     int enum_value,
+                     maidsafe::detail::DataTagValue enum_value,
                      asymm::Keys& keys,
                      asymm::Signature& validation_token,
                      Identity& name);
 
-void FobToProtobuf(int enum_value,
+void FobToProtobuf(maidsafe::detail::DataTagValue enum_value,
                    const asymm::Keys& keys,
                    const asymm::Signature& validation_token,
                    const std::string& name,
