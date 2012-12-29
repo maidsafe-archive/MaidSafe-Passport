@@ -22,11 +22,11 @@ namespace passport {
 namespace detail {
 
 void PublicFobFromProtobuf(const NonEmptyString& serialised_public_fob,
-                           int enum_value,
+                           maidsafe::detail::DataTagValue enum_value,
                            asymm::PublicKey& public_key,
                            asymm::Signature& validation_token);
 
-NonEmptyString PublicFobToProtobuf(int enum_value,
+NonEmptyString PublicFobToProtobuf(maidsafe::detail::DataTagValue enum_value,
                                    const asymm::PublicKey& public_key,
                                    const asymm::Signature& validation_token);
 
