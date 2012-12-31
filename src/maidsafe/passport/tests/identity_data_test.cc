@@ -108,6 +108,13 @@ TEST(IdentityPacketsTest, BEH_Full) {
   ASSERT_EQ(tmid_name1, decrypted_mid_value2);
   ASSERT_EQ(decrypted_smid_value1, decrypted_smid_value2);
   ASSERT_EQ(stmid_name1, decrypted_smid_value2);
+
+  static_assert(!is_short_term_cacheable<Mid>::value, "");
+  static_assert(!is_short_term_cacheable<Smid>::value, "");
+  static_assert(!is_short_term_cacheable<Tmid>::value, "");
+  static_assert(!is_long_term_cacheable<Mid>::value, "");
+  static_assert(!is_long_term_cacheable<Smid>::value, "");
+  static_assert(!is_long_term_cacheable<Tmid>::value, "");
 }
 
 TEST(IdentityPacketsTest, BEH_ChangeDetails) {

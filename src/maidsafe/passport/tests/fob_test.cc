@@ -74,22 +74,22 @@ TEST(FobTest, BEH_FobGenerationAndValidation) {
   anmpid2 = std::move(anmpid1);
   mpid2 = std::move(mpid1);
 
-  static_assert(is_short_term_cacheable<Anmid::name_type>::value, "");
-  static_assert(is_short_term_cacheable<Ansmid::name_type>::value, "");
-  static_assert(is_short_term_cacheable<Antmid::name_type>::value, "");
-  static_assert(is_short_term_cacheable<Anmaid::name_type>::value, "");
-  static_assert(is_short_term_cacheable<Maid::name_type>::value, "");
-  static_assert(is_short_term_cacheable<Pmid::name_type>::value, "");
-  static_assert(is_short_term_cacheable<Anmpid::name_type>::value, "");
-  static_assert(is_short_term_cacheable<Mpid::name_type>::value, "");
-  static_assert(!is_long_term_cacheable<Anmid::name_type>::value, "");
-  static_assert(!is_long_term_cacheable<Ansmid::name_type>::value, "");
-  static_assert(!is_long_term_cacheable<Antmid::name_type>::value, "");
-  static_assert(!is_long_term_cacheable<Anmaid::name_type>::value, "");
-  static_assert(!is_long_term_cacheable<Maid::name_type>::value, "");
-  static_assert(!is_long_term_cacheable<Pmid::name_type>::value, "");
-  static_assert(!is_long_term_cacheable<Anmpid::name_type>::value, "");
-  static_assert(!is_long_term_cacheable<Mpid::name_type>::value, "");
+  static_assert(!is_short_term_cacheable<Anmid>::value, "");
+  static_assert(!is_short_term_cacheable<Ansmid>::value, "");
+  static_assert(!is_short_term_cacheable<Antmid>::value, "");
+  static_assert(!is_short_term_cacheable<Anmaid>::value, "");
+  static_assert(!is_short_term_cacheable<Maid>::value, "");
+  static_assert(!is_short_term_cacheable<Pmid>::value, "");
+  static_assert(!is_short_term_cacheable<Anmpid>::value, "");
+  static_assert(!is_short_term_cacheable<Mpid>::value, "");
+  static_assert(!is_long_term_cacheable<Anmid>::value, "");
+  static_assert(!is_long_term_cacheable<Ansmid>::value, "");
+  static_assert(!is_long_term_cacheable<Antmid>::value, "");
+  static_assert(!is_long_term_cacheable<Anmaid>::value, "");
+  static_assert(!is_long_term_cacheable<Maid>::value, "");
+  static_assert(!is_long_term_cacheable<Pmid>::value, "");
+  static_assert(!is_long_term_cacheable<Anmpid>::value, "");
+  static_assert(!is_long_term_cacheable<Mpid>::value, "");
 }
 
 template<typename Fobtype>

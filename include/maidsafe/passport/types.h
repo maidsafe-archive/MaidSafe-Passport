@@ -52,21 +52,21 @@ typedef detail::PublicFob<detail::MpidTag> PublicMpid;
 }  // namespace passport
 
 template<>
-struct is_short_term_cacheable<passport::Anmid::name_type> : public std::true_type {};
+struct is_short_term_cacheable<passport::PublicAnmid> : public std::true_type {};
 template<>
-struct is_short_term_cacheable<passport::Ansmid::name_type> : public std::true_type {};
+struct is_short_term_cacheable<passport::PublicAnsmid> : public std::true_type {};
 template<>
-struct is_short_term_cacheable<passport::Antmid::name_type> : public std::true_type {};
+struct is_short_term_cacheable<passport::PublicAntmid> : public std::true_type {};
 template<>
-struct is_short_term_cacheable<passport::Anmaid::name_type> : public std::true_type {};
+struct is_short_term_cacheable<passport::PublicAnmaid> : public std::true_type {};
 template<>
-struct is_short_term_cacheable<passport::Maid::name_type> : public std::true_type {};
+struct is_short_term_cacheable<passport::PublicMaid> : public std::true_type {};
 template<>
-struct is_short_term_cacheable<passport::Pmid::name_type> : public std::true_type {};
+struct is_short_term_cacheable<passport::PublicPmid> : public std::true_type {};
 template<>
-struct is_short_term_cacheable<passport::Anmpid::name_type> : public std::true_type {};
+struct is_short_term_cacheable<passport::PublicAnmpid> : public std::true_type {};
 template<>
-struct is_short_term_cacheable<passport::Mpid::name_type> : public std::true_type {};
+struct is_short_term_cacheable<passport::PublicMpid> : public std::true_type {};
 
 }  // namespace maidsafe
 

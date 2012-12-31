@@ -79,6 +79,23 @@ TEST(PublicFobTest, BEH_FobGenerationAndValidation) {
   public_pmid2 = std::move(public_pmid1);
   public_anmpid2 = std::move(public_anmpid1);
   public_mpid2 = std::move(public_mpid1);
+
+  static_assert(is_short_term_cacheable<PublicAnmid>::value, "");
+  static_assert(is_short_term_cacheable<PublicAnsmid>::value, "");
+  static_assert(is_short_term_cacheable<PublicAntmid>::value, "");
+  static_assert(is_short_term_cacheable<PublicAnmaid>::value, "");
+  static_assert(is_short_term_cacheable<PublicMaid>::value, "");
+  static_assert(is_short_term_cacheable<PublicPmid>::value, "");
+  static_assert(is_short_term_cacheable<PublicAnmpid>::value, "");
+  static_assert(is_short_term_cacheable<PublicMpid>::value, "");
+  static_assert(!is_long_term_cacheable<PublicAnmid>::value, "");
+  static_assert(!is_long_term_cacheable<PublicAnsmid>::value, "");
+  static_assert(!is_long_term_cacheable<PublicAntmid>::value, "");
+  static_assert(!is_long_term_cacheable<PublicAnmaid>::value, "");
+  static_assert(!is_long_term_cacheable<PublicMaid>::value, "");
+  static_assert(!is_long_term_cacheable<PublicPmid>::value, "");
+  static_assert(!is_long_term_cacheable<PublicAnmpid>::value, "");
+  static_assert(!is_long_term_cacheable<PublicMpid>::value, "");
 }
 
 template<typename PublicFobType>
