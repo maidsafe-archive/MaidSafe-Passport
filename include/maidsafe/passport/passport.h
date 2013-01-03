@@ -127,7 +127,11 @@ class Passport {
     std::unique_ptr<Mpid> mpid;
 
    private:
+#ifdef MAIDSAFE_WIN32
     SelectableFobPair(const SelectableFobPair&);
+#else
+    SelectableFobPair(const SelectableFobPair&) = delete;
+#endif
     SelectableFobPair& operator=(const SelectableFobPair&);
   };
 
