@@ -74,7 +74,7 @@ void Fob<MpidTag>::ToProtobuf(protobuf::Fob* proto_fob) const {
 
 
 void FobFromProtobuf(const protobuf::Fob& proto_fob,
-                     maidsafe::detail::DataTagValue enum_value,
+                     DataTagValue enum_value,
                      asymm::Keys& keys,
                      asymm::Signature& validation_token,
                      Identity& name) {
@@ -90,12 +90,12 @@ void FobFromProtobuf(const protobuf::Fob& proto_fob,
   if ((enum_value != MpidTag::kEnumValue &&
        CreateFobName(keys.public_key, validation_token) != name) ||
       asymm::Decrypt(asymm::Encrypt(plain, keys.public_key), keys.private_key) != plain ||
-      enum_value != maidsafe::detail::DataTagValue(proto_fob.type())) {
+      enum_value != DataTagValue(proto_fob.type())) {
     ThrowError(PassportErrors::fob_parsing_error);
   }
 }
 
-void FobToProtobuf(maidsafe::detail::DataTagValue enum_value,
+void FobToProtobuf(DataTagValue enum_value,
                    const asymm::Keys& keys,
                    const asymm::Signature& validation_token,
                    const std::string& name,

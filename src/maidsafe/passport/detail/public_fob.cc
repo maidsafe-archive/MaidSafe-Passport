@@ -23,7 +23,7 @@ namespace passport {
 namespace detail {
 
 void PublicFobFromProtobuf(const NonEmptyString& serialised_public_fob,
-                           maidsafe::detail::DataTagValue enum_value,
+                           DataTagValue enum_value,
                            asymm::PublicKey& public_key,
                            asymm::Signature& validation_token) {
   protobuf::PublicFob proto_public_fob;
@@ -35,7 +35,7 @@ void PublicFobFromProtobuf(const NonEmptyString& serialised_public_fob,
     ThrowError(PassportErrors::fob_parsing_error);
 }
 
-NonEmptyString PublicFobToProtobuf(maidsafe::detail::DataTagValue enum_value,
+NonEmptyString PublicFobToProtobuf(DataTagValue enum_value,
                                    const asymm::PublicKey& public_key,
                                    const asymm::Signature& validation_token) {
   protobuf::PublicFob proto_public_fob;

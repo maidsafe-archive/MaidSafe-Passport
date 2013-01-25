@@ -84,7 +84,7 @@ class TmidData {
   name_type name() const { return name_; }
   EncryptedSession encrypted_session() const { return encrypted_session_; }
   asymm::Signature validation_token() const { return validation_token_; }
-  static maidsafe::detail::DataTagValue type_enum_value() { return detail::TmidTag::kEnumValue; }
+  static DataTagValue type_enum_value() { return detail::TmidTag::kEnumValue; }
 
  private:
   TmidData();

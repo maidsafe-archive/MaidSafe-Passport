@@ -14,7 +14,7 @@
 
 #include <string>
 
-#include "maidsafe/data_types/detail/data_type_values.h"
+#include "maidsafe/data_types/data_type_values.h"
 
 
 namespace maidsafe {
@@ -24,47 +24,46 @@ namespace passport {
 namespace detail {
 
 struct AnmidTag {
-  typedef maidsafe::detail::DataTagValue DataTagValue;
   static const DataTagValue kEnumValue = DataTagValue::kAnmidValue;
 };
+
 struct AnsmidTag {
-  typedef maidsafe::detail::DataTagValue DataTagValue;
   static const DataTagValue kEnumValue = DataTagValue::kAnsmidValue;
 };
+
 struct AntmidTag {
-  typedef maidsafe::detail::DataTagValue DataTagValue;
   static const DataTagValue kEnumValue = DataTagValue::kAntmidValue;
 };
+
 struct AnmaidTag {
-  typedef maidsafe::detail::DataTagValue DataTagValue;
   static const DataTagValue kEnumValue = DataTagValue::kAnmaidValue;
 };
+
 struct MaidTag {
-  typedef maidsafe::detail::DataTagValue DataTagValue;
   static const DataTagValue kEnumValue = DataTagValue::kMaidValue;
 };
+
 struct PmidTag {
-  typedef maidsafe::detail::DataTagValue DataTagValue;
   static const DataTagValue kEnumValue = DataTagValue::kPmidValue;
 };
+
 struct MidTag {
-  typedef maidsafe::detail::DataTagValue DataTagValue;
   static const DataTagValue kEnumValue = DataTagValue::kMidValue;
 };
+
 struct SmidTag {
-  typedef maidsafe::detail::DataTagValue DataTagValue;
   static const DataTagValue kEnumValue = DataTagValue::kSmidValue;
 };
+
 struct TmidTag {
-  typedef maidsafe::detail::DataTagValue DataTagValue;
   static const DataTagValue kEnumValue = DataTagValue::kTmidValue;
 };
+
 struct AnmpidTag {
-  typedef maidsafe::detail::DataTagValue DataTagValue;
   static const DataTagValue kEnumValue = DataTagValue::kAnmpidValue;
 };
+
 struct MpidTag {
-  typedef maidsafe::detail::DataTagValue DataTagValue;
   static const DataTagValue kEnumValue = DataTagValue::kMpidValue;
 };
 
