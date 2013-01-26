@@ -24,47 +24,47 @@ namespace passport {
 namespace detail {
 
 struct AnmidTag {
-  static const DataTagValue kEnumValue = DataTagValue::kAnmidValue;
+  static const DataTagValue kEnumValue;
 };
 
 struct AnsmidTag {
-  static const DataTagValue kEnumValue = DataTagValue::kAnsmidValue;
+  static const DataTagValue kEnumValue;
 };
 
 struct AntmidTag {
-  static const DataTagValue kEnumValue = DataTagValue::kAntmidValue;
+  static const DataTagValue kEnumValue;
 };
 
 struct AnmaidTag {
-  static const DataTagValue kEnumValue = DataTagValue::kAnmaidValue;
+  static const DataTagValue kEnumValue;
 };
 
 struct MaidTag {
-  static const DataTagValue kEnumValue = DataTagValue::kMaidValue;
+  static const DataTagValue kEnumValue;
 };
 
 struct PmidTag {
-  static const DataTagValue kEnumValue = DataTagValue::kPmidValue;
+  static const DataTagValue kEnumValue;
 };
 
 struct MidTag {
-  static const DataTagValue kEnumValue = DataTagValue::kMidValue;
+  static const DataTagValue kEnumValue;
 };
 
 struct SmidTag {
-  static const DataTagValue kEnumValue = DataTagValue::kSmidValue;
+  static const DataTagValue kEnumValue;
 };
 
 struct TmidTag {
-  static const DataTagValue kEnumValue = DataTagValue::kTmidValue;
+  static const DataTagValue kEnumValue;
 };
 
 struct AnmpidTag {
-  static const DataTagValue kEnumValue = DataTagValue::kAnmpidValue;
+  static const DataTagValue kEnumValue;
 };
 
 struct MpidTag {
-  static const DataTagValue kEnumValue = DataTagValue::kMpidValue;
+  static const DataTagValue kEnumValue;
 };
 
 template<typename Tag, class Enable = void>
