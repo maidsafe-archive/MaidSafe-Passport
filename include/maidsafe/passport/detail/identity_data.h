@@ -56,7 +56,7 @@ class MidData {
   name_type name() const { return name_; }
   EncryptedTmidName encrypted_tmid_name() const { return encrypted_tmid_name_; }
   asymm::Signature validation_token() const { return validation_token_; }
-  static int type_enum_value() { return Tag::kEnumValue; }
+  static DataTagValue type_enum_value() { return Tag::kEnumValue; }
 
  private:
   MidData();
