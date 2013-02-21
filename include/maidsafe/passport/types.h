@@ -49,6 +49,26 @@ typedef detail::Fob<detail::MpidTag> Mpid;
 typedef detail::PublicFob<detail::AnmpidTag> PublicAnmpid;
 typedef detail::PublicFob<detail::MpidTag> PublicMpid;
 
+template<typename T>
+struct is_public_key_type : public std::false_type {};
+
+template<>
+struct is_public_key_type<PublicAnmid> : public std::true_type {};
+template<>
+struct is_public_key_type<PublicAnsmid> : public std::true_type {};
+template<>
+struct is_public_key_type<PublicAntmid> : public std::true_type {};
+template<>
+struct is_public_key_type<PublicAnmaid> : public std::true_type {};
+template<>
+struct is_public_key_type<PublicMaid> : public std::true_type {};
+template<>
+struct is_public_key_type<PublicPmid> : public std::true_type {};
+template<>
+struct is_public_key_type<PublicAnmpid> : public std::true_type {};
+template<>
+struct is_public_key_type<PublicMpid> : public std::true_type {};
+
 }  // namespace passport
 
 template<>
