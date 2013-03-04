@@ -43,3 +43,12 @@ message PmidList {
   }
   repeated Pmid pmids = 1;
 }
+
+message KeyChainList {
+  message KeyChain {
+    required bytes anmaid = 1;
+    required bytes maid = 2;
+    required bytes pmid = 3;
+  }
+  repeated KeyChain keychains = 1;
+}
