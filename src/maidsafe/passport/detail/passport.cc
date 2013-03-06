@@ -35,26 +35,26 @@ Smid::name_type SmidName(const NonEmptyString& keyword, uint32_t pin) {
   return Smid::GenerateName(keyword, pin);
 }
 
-EncryptedSession EncryptSession(const UserPassword& keyword,
+EncryptedSession EncryptSession(const UserKeyword& keyword,
                                 uint32_t pin,
                                 const UserPassword& password,
                                 const NonEmptyString& serialised_session) {
   return detail::EncryptSession(keyword, pin, password, serialised_session);
 }
 
-EncryptedTmidName EncryptTmidName(const UserPassword& keyword,
+EncryptedTmidName EncryptTmidName(const UserKeyword& keyword,
                                   uint32_t pin,
                                   const Tmid::name_type& tmid_name) {
   return detail::EncryptTmidName(keyword, pin, tmid_name);
 }
 
-Tmid::name_type DecryptTmidName(const UserPassword& keyword,
+Tmid::name_type DecryptTmidName(const UserKeyword& keyword,
                                 uint32_t pin,
                                 const EncryptedTmidName& encrypted_tmid_name) {
   return detail::DecryptTmidName(keyword, pin, encrypted_tmid_name);
 }
 
-NonEmptyString DecryptSession(const UserPassword& keyword,
+NonEmptyString DecryptSession(const UserKeyword& keyword,
                               uint32_t pin,
                               const UserPassword& password,
                               const EncryptedSession& encrypted_session) {
