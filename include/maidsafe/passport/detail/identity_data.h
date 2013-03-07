@@ -94,21 +94,21 @@ class TmidData {
 };
 
 
-EncryptedSession EncryptSession(const UserPassword& keyword,
+EncryptedSession EncryptSession(const UserKeyword& keyword,
                                 uint32_t pin,
                                 const UserPassword& password,
                                 const NonEmptyString& serialised_session);
 
 // TMID name is now what used to be RID (Random ID)
-EncryptedTmidName EncryptTmidName(const UserPassword& keyword,
+EncryptedTmidName EncryptTmidName(const UserKeyword& keyword,
                                   uint32_t pin,
                                   const TmidData::name_type& tmid_name);
 
-TmidData::name_type DecryptTmidName(const UserPassword& keyword,
+TmidData::name_type DecryptTmidName(const UserKeyword& keyword,
                                     uint32_t pin,
                                     const EncryptedTmidName& encrypted_tmid_name);
 
-NonEmptyString DecryptSession(const UserPassword& keyword,
+NonEmptyString DecryptSession(const UserKeyword& keyword,
                               uint32_t pin,
                               const UserPassword& password,
                               const EncryptedSession& encrypted_session);

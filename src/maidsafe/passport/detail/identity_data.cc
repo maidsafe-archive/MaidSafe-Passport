@@ -165,7 +165,7 @@ TmidData::serialised_type TmidData::Serialise() const {
 }
 
 
-EncryptedSession EncryptSession(const UserPassword& keyword,
+EncryptedSession EncryptSession(const UserKeyword& keyword,
                                 uint32_t pin,
                                 const UserPassword& password,
                                 const NonEmptyString& serialised_session) {
@@ -177,7 +177,7 @@ EncryptedSession EncryptSession(const UserPassword& keyword,
                           SecureIv(secure_password)));
 }
 
-EncryptedTmidName EncryptTmidName(const UserPassword& keyword,
+EncryptedTmidName EncryptTmidName(const UserKeyword& keyword,
                                   uint32_t pin,
                                   const TmidData::name_type& tmid_name) {
   crypto::SecurePassword secure_password(CreateSecureMidPassword(keyword, pin));
@@ -186,7 +186,7 @@ EncryptedTmidName EncryptTmidName(const UserPassword& keyword,
                                                SecureIv(secure_password)));
 }
 
-TmidData::name_type DecryptTmidName(const UserPassword& keyword,
+TmidData::name_type DecryptTmidName(const UserKeyword& keyword,
                                     uint32_t pin,
                                     const EncryptedTmidName& encrypted_tmid_name) {
   crypto::SecurePassword secure_password(CreateSecureMidPassword(keyword, pin));
@@ -195,7 +195,7 @@ TmidData::name_type DecryptTmidName(const UserPassword& keyword,
                                                           SecureIv(secure_password)).string()));
 }
 
-NonEmptyString DecryptSession(const UserPassword& keyword,
+NonEmptyString DecryptSession(const UserKeyword& keyword,
                               uint32_t pin,
                               const UserPassword& password,
                               const EncryptedSession& encrypted_session) {
