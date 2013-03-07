@@ -42,7 +42,7 @@ crypto::SHA512Hash GenerateMidName(const crypto::SHA512Hash& keyword_hash,
 crypto::SHA512Hash HashOfPin(uint32_t pin);
 
 template<typename Tag>
-typename MidData<Tag>::name_type MidData<Tag>::GenerateName(const NonEmptyString& keyword,
+typename MidData<Tag>::name_type MidData<Tag>::GenerateName(const UserKeyword& keyword,
                                                             uint32_t pin) {
   return MidData<Tag>::name_type(GenerateMidName<MidData<Tag>>(  // NOLINT (Fraser)
       crypto::Hash<crypto::SHA512>(keyword),
