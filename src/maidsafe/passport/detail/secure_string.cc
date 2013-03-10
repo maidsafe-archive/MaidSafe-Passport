@@ -11,8 +11,6 @@
 
 #include "maidsafe/passport/detail/secure_string.h"
 
-#include <regex>
-
 #include "maidsafe/common/utils.h"
 
 namespace maidsafe {
@@ -34,7 +32,7 @@ SecureString::String::~String() {}
 
 SecureString::SecureString()
   : regex_("\\w"),
-    phrase_(RandomAlphaNumericString(64)),
+    phrase_(RandomAlphaNumericString(16)),
     string_(),
     encryptor_(Encryptor(phrase_.data(), new Encoder(new Sink(string_)))) {}
 
@@ -43,26 +41,27 @@ SecureString::~SecureString() {}
 void SecureString::Append(char character) {
   if (!IsValid(character))
     ThrowError(CommonErrors::invalid_parameter);
-  encryptor_.Put(character, 1);
+  encryptor_.Put(character);
 }
 
 void SecureString::Finalise() {
   encryptor_.MessageEnd();
 }
 
-void SecureString::PlainText(String& plain_text) {
+SecureString::String SecureString::PlainText() const {
+  String plain_text;
   Decoder decryptor(new Decryptor(phrase_.data(), new Sink(plain_text)));
-  decryptor.Put(reinterpret_cast<byte*>(const_cast<char*>(string_.data())), string_.length());
+  decryptor.Put(reinterpret_cast<const byte*>(string_.data()), string_.length());
   decryptor.MessageEnd();
-  return;
+  return plain_text;
 }
 
-SecureString::String SecureString::CipherText() {
+SecureString::String SecureString::CipherText() const {
   return string_;
 }
 
 bool SecureString::IsValid(char& character) {
-  return std::regex_match(String(1, character), regex_);
+  return boost::regex_match(String(1, character), regex_);
 }
 
 }  // namespace detail

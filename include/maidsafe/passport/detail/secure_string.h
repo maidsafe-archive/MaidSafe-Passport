@@ -13,7 +13,8 @@
 #define MAIDSAFE_PASSPORT_DETAIL_SECURE_STRING_H_
 
 #include <string>
-#include <regex>
+
+#include "boost/regex.hpp"
 
 #ifdef __MSVC__
 #  pragma warning(push, 1)
@@ -43,8 +44,8 @@ class SecureString {
   void Append(char character);
   void Finalise();
 
-  void PlainText(String& plain_text);
-  String CipherText();
+  String PlainText() const;
+  String CipherText() const;
 
   class String
     : public StringBase {
@@ -66,7 +67,7 @@ class SecureString {
 
   bool IsValid(char& character);
 
-  std::regex regex_;
+  boost::regex regex_;
   String phrase_;
   String string_;
   Encryptor encryptor_;
