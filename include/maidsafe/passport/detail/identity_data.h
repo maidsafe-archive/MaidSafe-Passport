@@ -100,11 +100,11 @@ EncryptedSession EncryptSession(const UserKeyword& keyword,
                                 const NonEmptyString& serialised_session);
 
 // TMID name is now what used to be RID (Random ID)
-EncryptedTmidName EncryptTmidName(const UserKeyword& keyword,
+EncryptedTmidName EncryptTmidName(const UserPassword& password,
                                   uint32_t pin,
                                   const TmidData::name_type& tmid_name);
 
-TmidData::name_type DecryptTmidName(const UserKeyword& keyword,
+TmidData::name_type DecryptTmidName(const UserPassword& password,
                                     uint32_t pin,
                                     const EncryptedTmidName& encrypted_tmid_name);
 

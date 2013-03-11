@@ -177,19 +177,19 @@ EncryptedSession EncryptSession(const UserKeyword& keyword,
                           SecureIv(secure_password)));
 }
 
-EncryptedTmidName EncryptTmidName(const UserKeyword& keyword,
+EncryptedTmidName EncryptTmidName(const UserPassword& password,
                                   uint32_t pin,
                                   const TmidData::name_type& tmid_name) {
-  crypto::SecurePassword secure_password(CreateSecureMidPassword(keyword, pin));
+  crypto::SecurePassword secure_password(CreateSecureMidPassword(password, pin));
   return EncryptedTmidName(crypto::SymmEncrypt(crypto::PlainText(tmid_name.data),
                                                SecureKey(secure_password),
                                                SecureIv(secure_password)));
 }
 
-TmidData::name_type DecryptTmidName(const UserKeyword& keyword,
+TmidData::name_type DecryptTmidName(const UserPassword& password,
                                     uint32_t pin,
                                     const EncryptedTmidName& encrypted_tmid_name) {
-  crypto::SecurePassword secure_password(CreateSecureMidPassword(keyword, pin));
+  crypto::SecurePassword secure_password(CreateSecureMidPassword(password, pin));
   return TmidData::name_type(Identity(crypto::SymmDecrypt(encrypted_tmid_name.data,
                                                           SecureKey(secure_password),
                                                           SecureIv(secure_password)).string()));

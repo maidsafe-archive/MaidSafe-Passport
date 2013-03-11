@@ -27,11 +27,11 @@ namespace maidsafe {
 
 namespace passport {
 
-Mid::name_type MidName(const NonEmptyString& keyword, uint32_t pin) {
+Mid::name_type MidName(const UserKeyword& keyword, uint32_t pin) {
   return Mid::GenerateName(keyword, pin);
 }
 
-Smid::name_type SmidName(const NonEmptyString& keyword, uint32_t pin) {
+Smid::name_type SmidName(const UserKeyword& keyword, uint32_t pin) {
   return Smid::GenerateName(keyword, pin);
 }
 
@@ -42,16 +42,16 @@ EncryptedSession EncryptSession(const UserKeyword& keyword,
   return detail::EncryptSession(keyword, pin, password, serialised_session);
 }
 
-EncryptedTmidName EncryptTmidName(const UserKeyword& keyword,
+EncryptedTmidName EncryptTmidName(const UserPassword& password,
                                   uint32_t pin,
                                   const Tmid::name_type& tmid_name) {
-  return detail::EncryptTmidName(keyword, pin, tmid_name);
+  return detail::EncryptTmidName(password, pin, tmid_name);
 }
 
-Tmid::name_type DecryptTmidName(const UserKeyword& keyword,
+Tmid::name_type DecryptTmidName(const UserPassword& password,
                                 uint32_t pin,
                                 const EncryptedTmidName& encrypted_tmid_name) {
-  return detail::DecryptTmidName(keyword, pin, encrypted_tmid_name);
+  return detail::DecryptTmidName(password, pin, encrypted_tmid_name);
 }
 
 NonEmptyString DecryptSession(const UserKeyword& keyword,
