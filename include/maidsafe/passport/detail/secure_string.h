@@ -36,7 +36,7 @@ class SecureString {
   typedef std::basic_string<char, std::char_traits<char>, Allocator> StringBase;
 
  public:
-  typedef class String;
+  class String;
 
   SecureString();
   ~SecureString();

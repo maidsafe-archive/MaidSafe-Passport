@@ -34,7 +34,7 @@ SecureString::SecureString()
   : regex_("\\w"),
     phrase_(RandomAlphaNumericString(16)),
     string_(),
-    encryptor_(Encryptor(phrase_.data(), new Encoder(new Sink(string_)))) {}
+    encryptor_(phrase_.data(), new Encoder(new Sink(string_))) {}
 
 SecureString::~SecureString() {}
 
