@@ -31,21 +31,23 @@ SecureString::String::String(size_type size, char character)
 SecureString::String::~String() {}
 
 SecureString::SecureString()
-  : regex_("\\w"),
-    phrase_(RandomAlphaNumericString(16)),
+  : phrase_(RandomAlphaNumericString(16)),
     string_(),
-    encryptor_(phrase_.data(), new Encoder(new Sink(string_))) {}
+    encryptor_(new Encryptor(phrase_.data(), new Encoder(new Sink(string_)))) {}
 
 SecureString::~SecureString() {}
 
 void SecureString::Append(char character) {
-  if (!IsValid(character))
-    ThrowError(CommonErrors::invalid_parameter);
-  encryptor_.Put(character);
+  encryptor_->Put(character);
 }
 
 void SecureString::Finalise() {
-  encryptor_.MessageEnd();
+  encryptor_->MessageEnd();
+}
+
+void SecureString::Clear() {
+  string_.clear();
+  encryptor_.reset(new Encryptor(phrase_.data(), new Encoder(new Sink(string_))));
 }
 
 SecureString::String SecureString::PlainText() const {
@@ -60,8 +62,198 @@ SecureString::String SecureString::CipherText() const {
   return string_;
 }
 
-bool SecureString::IsValid(char& character) {
-  return boost::regex_match(String(1, character), regex_);
+// Class Password...
+Password::Password()
+  : regex_("\\w"),
+    secure_chars_(),
+    secure_string_(),
+    phrase_(RandomAlphaNumericString(16)),
+    finalised_(false) {}
+
+Password::~Password() {}
+
+void Password::Insert(size_type position, char character) {
+  if (!IsValid(character) || finalised_)
+    ThrowError(CommonErrors::invalid_parameter);
+  SecureString::String secure_char;
+  Encryptor encryptor(phrase_.data(), new Encoder(new Sink(secure_char)));
+  encryptor.Put(character);
+  encryptor.MessageEnd();
+  auto it(secure_chars_.find(position));
+  if (it == secure_chars_.end()) {
+    secure_chars_.insert(std::make_pair(position, secure_char));
+  } else {
+    while (it != secure_chars_.end()) {
+      auto old_secure_char = it->second;
+      it = secure_chars_.erase(it);
+      secure_chars_.emplace_hint(it, std::make_pair(position, secure_char));
+      secure_char = old_secure_char;
+      position += 1;
+    }
+    secure_chars_.insert(std::make_pair(position, secure_char));
+  }
+  return;
+}
+
+void Password::Remove(size_type position, size_type length) {
+  if (finalised_)
+    ThrowError(CommonErrors::symmetric_encryption_error);
+  auto it(secure_chars_.find(position));
+  if (it == secure_chars_.end() || length == 0)
+    ThrowError(CommonErrors::invalid_parameter);
+  while (length != 0) {
+    it = secure_chars_.erase(it);
+    if ((length -= 1 != 0) && it == secure_chars_.end())
+      ThrowError(CommonErrors::invalid_parameter);
+  }
+  while (it != secure_chars_.end()) {
+    auto secure_char = it->second;
+    it = secure_chars_.erase(it);
+    secure_chars_.emplace_hint(it, std::make_pair(position, secure_char));
+    position += 1;
+  }
+  return;
+}
+
+void Password::Finalise() {
+  if (secure_chars_.size() < min_size)
+    ThrowError(CommonErrors::invalid_parameter);
+  uint32_t counter(0);
+  for (auto& secure_char : secure_chars_) {
+    if (secure_char.first != counter) {
+      secure_string_.Clear();
+      ThrowError(CommonErrors::invalid_parameter);
+    }
+    SecureString::String plain_char;
+    Decoder decryptor(new Decryptor(phrase_.data(), new Sink(plain_char)));
+    decryptor.Put(reinterpret_cast<const byte*>(secure_char.second.data()),
+                  secure_char.second.length());
+    decryptor.MessageEnd();
+    secure_string_.Append(plain_char[0]);
+    ++counter;
+  }
+  secure_string_.Finalise();
+  finalised_ = true;
+  return;
+}
+
+void Password::Clear() {
+  if (finalised_)
+    ThrowError(CommonErrors::symmetric_encryption_error);
+  secure_chars_.clear();
+  return;
+}
+
+SecureString::String Password::PlainText() const {
+  if (!finalised_)
+    ThrowError(CommonErrors::symmetric_encryption_error);
+  return secure_string_.PlainText();
+}
+
+SecureString::String Password::CipherText() const {
+  if (!finalised_)
+    ThrowError(CommonErrors::symmetric_encryption_error);
+  return secure_string_.CipherText();
+}
+
+bool Password::IsValid(char& character) {
+  return boost::regex_search(SecureString::String(1, character), regex_);
+}
+
+// Class Pin...
+Pin::Pin()
+  : regex_("\\d"),
+    secure_chars_(),
+    secure_string_(),
+    phrase_(RandomAlphaNumericString(16)),
+    finalised_(false) {}
+
+Pin::~Pin() {}
+
+void Pin::Insert(size_type position, char character) {
+  if (!IsValid(character) || finalised_)
+    ThrowError(CommonErrors::invalid_parameter);
+  SecureString::String secure_char;
+  Encryptor encryptor(phrase_.data(), new Encoder(new Sink(secure_char)));
+  encryptor.Put(character);
+  encryptor.MessageEnd();
+  auto it(secure_chars_.find(position));
+  if (it == secure_chars_.end()) {
+    secure_chars_.insert(std::make_pair(position, secure_char));
+  } else {
+    while (it != secure_chars_.end()) {
+      auto old_secure_char = it->second;
+      it = secure_chars_.erase(it);
+      secure_chars_.emplace_hint(it, std::make_pair(position, secure_char));
+      secure_char = old_secure_char;
+      position += 1;
+    }
+    secure_chars_.insert(std::make_pair(position, secure_char));
+  }
+  return;
+}
+
+void Pin::Remove(size_type position, size_type length) {
+  if (finalised_)
+    ThrowError(CommonErrors::symmetric_encryption_error);
+  auto it(secure_chars_.find(position));
+  if (it == secure_chars_.end() || length == 0)
+    ThrowError(CommonErrors::invalid_parameter);
+  while (length != 0) {
+    it = secure_chars_.erase(it);
+    if ((length -= 1 != 0) && it == secure_chars_.end())
+      ThrowError(CommonErrors::invalid_parameter);
+  }
+  while (it != secure_chars_.end()) {
+    auto secure_char = it->second;
+    it = secure_chars_.erase(it);
+    secure_chars_.emplace_hint(it, std::make_pair(position, secure_char));
+    position += 1;
+  }
+  return;
+}
+
+void Pin::Finalise() {
+  if (secure_chars_.size() != size)
+    ThrowError(CommonErrors::invalid_parameter);
+  uint32_t counter(0);
+  for (auto& secure_char : secure_chars_) {
+    if (secure_char.first != counter)
+      ThrowError(CommonErrors::invalid_parameter);
+    SecureString::String plain_char;
+    Decoder decryptor(new Decryptor(phrase_.data(), new Sink(plain_char)));
+    decryptor.Put(reinterpret_cast<const byte*>(secure_char.second.data()),
+                  secure_char.second.length());
+    decryptor.MessageEnd();
+    secure_string_.Append(plain_char[0]);
+    ++counter;
+  }
+  secure_string_.Finalise();
+  finalised_ = true;
+  return;
+}
+
+void Pin::Clear() {
+  if (finalised_)
+    ThrowError(CommonErrors::symmetric_encryption_error);
+  secure_chars_.clear();
+  return;
+}
+
+SecureString::String Pin::PlainText() const {
+  if (!finalised_)
+    ThrowError(CommonErrors::symmetric_encryption_error);
+  return secure_string_.PlainText();
+}
+
+SecureString::String Pin::CipherText() const {
+  if (!finalised_)
+    ThrowError(CommonErrors::symmetric_encryption_error);
+  return secure_string_.CipherText();
+}
+
+bool Pin::IsValid(char& character) {
+  return boost::regex_search(SecureString::String(1, character), regex_);
 }
 
 }  // namespace detail
