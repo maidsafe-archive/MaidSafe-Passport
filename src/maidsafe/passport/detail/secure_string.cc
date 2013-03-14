@@ -86,7 +86,7 @@ void Password::Insert(size_type position, char character) {
     while (it != secure_chars_.end()) {
       auto old_secure_char = it->second;
       it = secure_chars_.erase(it);
-      secure_chars_.emplace_hint(it, std::make_pair(position, secure_char));
+      secure_chars_.insert(it, std::make_pair(position, secure_char));
       secure_char = old_secure_char;
       position += 1;
     }
@@ -109,7 +109,7 @@ void Password::Remove(size_type position, size_type length) {
   while (it != secure_chars_.end()) {
     auto secure_char = it->second;
     it = secure_chars_.erase(it);
-    secure_chars_.emplace_hint(it, std::make_pair(position, secure_char));
+    secure_chars_.insert(it, std::make_pair(position, secure_char));
     position += 1;
   }
   return;
@@ -184,7 +184,7 @@ void Pin::Insert(size_type position, char character) {
     while (it != secure_chars_.end()) {
       auto old_secure_char = it->second;
       it = secure_chars_.erase(it);
-      secure_chars_.emplace_hint(it, std::make_pair(position, secure_char));
+      secure_chars_.insert(it, std::make_pair(position, secure_char));
       secure_char = old_secure_char;
       position += 1;
     }
@@ -207,7 +207,7 @@ void Pin::Remove(size_type position, size_type length) {
   while (it != secure_chars_.end()) {
     auto secure_char = it->second;
     it = secure_chars_.erase(it);
-    secure_chars_.emplace_hint(it, std::make_pair(position, secure_char));
+    secure_chars_.insert(it, std::make_pair(position, secure_char));
     position += 1;
   }
   return;
