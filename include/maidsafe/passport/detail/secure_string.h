@@ -13,6 +13,7 @@
 #define MAIDSAFE_PASSPORT_DETAIL_SECURE_STRING_H_
 
 #include <string>
+#include <map>
 
 #include "boost/regex.hpp"
 
@@ -43,6 +44,7 @@ class SecureString {
 
   void Append(char character);
   void Finalise();
+  void Clear();
 
   String PlainText() const;
   String CipherText() const;
@@ -59,18 +61,89 @@ class SecureString {
   };
 
  private:
-  typedef CryptoPP::DefaultEncryptorWithMAC Encryptor;
-  typedef CryptoPP::DefaultDecryptorWithMAC Decryptor;
+  typedef CryptoPP::DefaultEncryptor Encryptor;
+  typedef CryptoPP::DefaultDecryptor Decryptor;
   typedef CryptoPP::HexEncoder Encoder;
   typedef CryptoPP::HexDecoder Decoder;
   typedef CryptoPP::StringSinkTemplate<String> Sink;
 
+  String phrase_;
+  String string_;
+  std::unique_ptr<Encryptor> encryptor_;
+};
+
+class Password {
+ public:
+  class String;
+
+  typedef CryptoPP::AllocatorWithCleanup<char> Allocator;
+  typedef std::basic_string<char, std::char_traits<char>, Allocator> StringBase;
+  typedef StringBase::size_type size_type;
+
+  enum { min_size = 5 };
+
+  Password();
+  ~Password();
+
+  void Insert(size_type position, char character);
+  void Remove(size_type position, size_type length = 1);
+  void Finalise();
+  void Clear();
+
+  SecureString::String PlainText() const;
+  SecureString::String CipherText() const;
+
+ private:
+  typedef CryptoPP::DefaultEncryptor Encryptor;
+  typedef CryptoPP::DefaultDecryptor Decryptor;
+  typedef CryptoPP::HexEncoder Encoder;
+  typedef CryptoPP::HexDecoder Decoder;
+  typedef CryptoPP::StringSinkTemplate<SecureString::String> Sink;
+
   bool IsValid(char& character);
 
   boost::regex regex_;
-  String phrase_;
-  String string_;
-  Encryptor encryptor_;
+  std::map<uint32_t, SecureString::String> secure_chars_;
+  SecureString secure_string_;
+  SecureString::String phrase_;
+  bool finalised_;
+};
+
+class Pin {
+ public:
+  class String;
+
+  typedef CryptoPP::AllocatorWithCleanup<char> Allocator;
+  typedef std::basic_string<char, std::char_traits<char>, Allocator> StringBase;
+  typedef StringBase::size_type size_type;
+
+  enum { size = 4 };
+
+  Pin();
+  ~Pin();
+
+  void Insert(size_type position, char character);
+  void Remove(size_type position, size_type length = 1);
+  void Finalise();
+  void Clear();
+
+  SecureString::String PlainText() const;
+  SecureString::String CipherText() const;
+
+ private:
+  typedef CryptoPP::DefaultEncryptor Encryptor;
+  typedef CryptoPP::DefaultDecryptor Decryptor;
+  typedef CryptoPP::HexEncoder Encoder;
+  typedef CryptoPP::HexDecoder Decoder;
+  typedef CryptoPP::StringSinkTemplate<SecureString::String> Sink;
+
+  bool IsValid(char& character);
+
+  boost::regex regex_;
+  std::map<uint32_t, SecureString::String> secure_chars_;
+  SecureString secure_string_;
+  SecureString::String phrase_;
+  bool finalised_;
 };
 
 }  // namespace detail

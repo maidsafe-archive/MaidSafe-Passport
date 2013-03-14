@@ -77,7 +77,7 @@ target_link_libraries(maidsafe_passport maidsafe_common)
 
 if(MAIDSAFE_TESTING)
   ms_add_executable(TESTpassport "Tests/Passport" ${PassportTestsAllFiles})
-  target_link_libraries(TESTpassport maidsafe_passport)
+  target_link_libraries(TESTpassport maidsafe_passport ${BoostRegexLibs})
 endif()
 
 rename_outdated_built_exes()
