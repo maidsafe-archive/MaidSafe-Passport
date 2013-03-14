@@ -15,6 +15,8 @@
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
+#include "maidsafe/common/crypto.h"
+#include "maidsafe/common/bounded_string.h"
 
 #include "maidsafe/passport/detail/secure_string.h"
 
@@ -40,6 +42,13 @@ TEST(SecureStringTest, BEH_CreateSecureString) {
   EXPECT_NO_THROW(secure_string.Finalise());
 
   ASSERT_EQ(SecureString::String("password"), secure_string.PlainText());
+}
+
+TEST(SecureStringTest, BEH_HashSecureStringString) {
+  typedef maidsafe::detail::BoundedString<crypto::SHA512::DIGESTSIZE, crypto::SHA512::DIGESTSIZE>
+      BoundedString;
+  SecureString::String string("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+  BoundedString hash(crypto::Hash<crypto::SHA512>(string));
 }
 
 TEST(SecureStringTest, BEH_CreatePassword) {
@@ -253,6 +262,7 @@ TEST(SecureStringTest, BEH_CreatePin) {
   EXPECT_NO_THROW(pin.Finalise());
 
   ASSERT_EQ(SecureString::String("0123"), pin.PlainText());
+  ASSERT_EQ(123, pin.Value().data);
 }
 
 TEST(SecureStringTest, BEH_CreateInvalidLengthPin) {

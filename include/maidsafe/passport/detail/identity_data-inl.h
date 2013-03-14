@@ -36,17 +36,15 @@ NonEmptyString MidToProtobuf(DataTagValue enum_value,
                              const asymm::Signature& validation_token);
 
 template<typename MidType>
-crypto::SHA512Hash GenerateMidName(const crypto::SHA512Hash& keyword_hash,
-                                   const crypto::SHA512Hash& pin_hash);
+crypto::SHA512Hash GenerateMidName(const Keyword& keyword,
+                                   const Pin& pin);
 
 crypto::SHA512Hash HashOfPin(uint32_t pin);
 
 template<typename Tag>
-typename MidData<Tag>::name_type MidData<Tag>::GenerateName(const UserKeyword& keyword,
-                                                            uint32_t pin) {
-  return MidData<Tag>::name_type(GenerateMidName<MidData<Tag>>(  // NOLINT (Fraser)
-      crypto::Hash<crypto::SHA512>(keyword),
-      HashOfPin(pin)));
+typename MidData<Tag>::name_type MidData<Tag>::GenerateName(const Keyword& keyword,
+                                                            const Pin& pin) {
+  return MidData<Tag>::name_type(GenerateMidName<MidData<Tag>>(keyword, pin));
 }
 
 template<typename Tag>

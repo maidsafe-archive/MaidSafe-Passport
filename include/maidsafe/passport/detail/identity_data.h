@@ -19,17 +19,16 @@
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/common/types.h"
+#include "maidsafe/common/bounded_string.h"
 
 #include "maidsafe/passport/detail/config.h"
-
+#include "maidsafe/passport/detail/secure_string.h"
 
 namespace maidsafe {
-
 namespace passport {
 
 typedef TaggedValue<NonEmptyString, struct EncryptedTmidNameTag> EncryptedTmidName;
 typedef TaggedValue<NonEmptyString, struct EncryptedSessionTag> EncryptedSession;
-
 
 namespace detail {
 
@@ -40,7 +39,7 @@ class MidData {
   typedef typename Signer<Tag>::type signer_type;
   typedef TaggedValue<NonEmptyString, Tag> serialised_type;
 
-  static name_type GenerateName(const NonEmptyString& keyword, uint32_t pin);
+  static name_type GenerateName(const Keyword& keyword, const Pin& pin);
 
   MidData(const MidData& other);
   MidData& operator=(const MidData& other);
@@ -94,29 +93,27 @@ class TmidData {
 };
 
 
-EncryptedSession EncryptSession(const UserKeyword& keyword,
-                                uint32_t pin,
-                                const UserPassword& password,
+EncryptedSession EncryptSession(const Keyword& keyword,
+                                const Pin& pin,
+                                const Password& password,
                                 const NonEmptyString& serialised_session);
 
-// TMID name is now what used to be RID (Random ID)
-EncryptedTmidName EncryptTmidName(const UserPassword& password,
-                                  uint32_t pin,
-                                  const TmidData::name_type& tmid_name);
-
-TmidData::name_type DecryptTmidName(const UserPassword& password,
-                                    uint32_t pin,
-                                    const EncryptedTmidName& encrypted_tmid_name);
-
-NonEmptyString DecryptSession(const UserKeyword& keyword,
-                              uint32_t pin,
-                              const UserPassword& password,
+NonEmptyString DecryptSession(const Keyword& keyword,
+                              const Pin& pin,
+                              const Password& password,
                               const EncryptedSession& encrypted_session);
 
+// TMID name is now what used to be RID (Random ID)
+EncryptedTmidName EncryptTmidName(const Keyword& keyword,
+                                  const Pin& pin,
+                                  const TmidData::name_type& tmid_name);
+
+TmidData::name_type DecryptTmidName(const Keyword& keyword,
+                                    const Pin& pin,
+                                    const EncryptedTmidName& encrypted_tmid_name);
+
 }  // namespace detail
-
 }  // namespace passport
-
 }  // namespace maidsafe
 
 #include "maidsafe/passport/detail/identity_data-inl.h"

@@ -28,6 +28,9 @@
 #  pragma warning(pop)
 #endif
 
+#include "maidsafe/common/crypto.h"
+#include "maidsafe/common/tagged_value.h"
+
 namespace maidsafe {
 namespace passport {
 namespace detail {
@@ -72,10 +75,15 @@ class SecureString {
   std::unique_ptr<Encryptor> encryptor_;
 };
 
+SecureString::String operator+(const SecureString::String& first,
+                               const SecureString::String& second);
+SecureString::String operator+(const NonEmptyString& first,
+                               const SecureString::String& second);
+SecureString::String operator+(const SecureString::String& first,
+                               const NonEmptyString& second);
+
 class Password {
  public:
-  class String;
-
   typedef CryptoPP::AllocatorWithCleanup<char> Allocator;
   typedef std::basic_string<char, std::char_traits<char>, Allocator> StringBase;
   typedef StringBase::size_type size_type;
@@ -89,6 +97,49 @@ class Password {
   void Remove(size_type position, size_type length = 1);
   void Finalise();
   void Clear();
+  bool IsInitialised() const;
+
+  template<typename HashType> crypto::Salt Hash() const;
+  SecureString::String string() const;  // plain text
+
+  SecureString::String PlainText() const;
+  SecureString::String CipherText() const;
+
+ private:
+  typedef CryptoPP::DefaultEncryptor Encryptor;
+  typedef CryptoPP::DefaultDecryptor Decryptor;
+  typedef CryptoPP::HexEncoder Encoder;
+  typedef CryptoPP::HexDecoder Decoder;
+  typedef CryptoPP::StringSinkTemplate<SecureString::String> Sink;
+
+  bool IsValid(char& character);
+
+  boost::regex regex_;
+  std::map<uint32_t, SecureString::String> secure_chars_;
+  SecureString secure_string_;
+  SecureString::String phrase_;
+  bool finalised_;
+};
+
+class Keyword {
+ public:
+  typedef CryptoPP::AllocatorWithCleanup<char> Allocator;
+  typedef std::basic_string<char, std::char_traits<char>, Allocator> StringBase;
+  typedef StringBase::size_type size_type;
+
+  enum { min_size = 5 };
+
+  Keyword();
+  ~Keyword();
+
+  void Insert(size_type position, char character);
+  void Remove(size_type position, size_type length = 1);
+  void Finalise();
+  void Clear();
+  bool IsInitialised() const;
+
+  template<typename HashType> crypto::Salt Hash() const;
+  SecureString::String string() const;  // plain text
 
   SecureString::String PlainText() const;
   SecureString::String CipherText() const;
@@ -116,6 +167,7 @@ class Pin {
   typedef CryptoPP::AllocatorWithCleanup<char> Allocator;
   typedef std::basic_string<char, std::char_traits<char>, Allocator> StringBase;
   typedef StringBase::size_type size_type;
+  typedef TaggedValue<int32_t, struct PinValueTag> pin_value;
 
   enum { size = 4 };
 
@@ -126,6 +178,11 @@ class Pin {
   void Remove(size_type position, size_type length = 1);
   void Finalise();
   void Clear();
+  bool IsInitialised() const;
+
+  pin_value Value() const;
+  template<typename HashType> crypto::Salt Hash() const;
+  SecureString::String string() const;  // plain text
 
   SecureString::String PlainText() const;
   SecureString::String CipherText() const;

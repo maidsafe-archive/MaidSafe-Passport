@@ -23,33 +23,32 @@
 #include "maidsafe/passport/types.h"
 #include "maidsafe/passport/detail/fob.h"
 #include "maidsafe/passport/detail/identity_data.h"
-
+#include "maidsafe/passport/detail/secure_string.h"
 
 namespace maidsafe {
-
 namespace passport {
 
-Mid::name_type MidName(const UserKeyword& keyword, uint32_t pin);
+Mid::name_type MidName(const detail::Keyword& keyword, const detail::Pin& pin);
 
-Smid::name_type SmidName(const UserKeyword& keyword, uint32_t pin);
+Smid::name_type SmidName(const detail::Keyword& keyword, const detail::Pin& pin);
 
-EncryptedSession EncryptSession(const UserKeyword& keyword,
-                                uint32_t pin,
-                                const UserPassword& password,
+EncryptedSession EncryptSession(const detail::Keyword& keyword,
+                                const detail::Pin& pin,
+                                const detail::Password& password,
                                 const NonEmptyString& serialised_session);
 
-EncryptedTmidName EncryptTmidName(const UserPassword& password,
-                                  uint32_t pin,
+NonEmptyString DecryptSession(const detail::Keyword& keyword,
+                              const detail::Pin& pin,
+                              const detail::Password& password,
+                              const EncryptedSession& encrypted_session);
+
+EncryptedTmidName EncryptTmidName(const detail::Keyword& keyword,
+                                  const detail::Pin& pin,
                                   const Tmid::name_type& tmid_name);
 
-Tmid::name_type DecryptTmidName(const UserPassword& password,
-                                uint32_t pin,
+Tmid::name_type DecryptTmidName(const detail::Keyword& keyword,
+                                const detail::Pin& pin,
                                 const EncryptedTmidName& encrypted_tmid_name);
-
-NonEmptyString DecryptSession(const UserKeyword& keyword,
-                              uint32_t pin,
-                              const UserPassword& password,
-                              const EncryptedSession& encrypted_session);
 
 NonEmptyString SerialisePmid(const Pmid& pmid);
 
@@ -145,7 +144,6 @@ class Passport {
 };
 
 }  // namespace passport
-
 }  // namespace maidsafe
 
 #include "maidsafe/passport/detail/passport-inl.h"
