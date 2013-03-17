@@ -15,7 +15,7 @@
 #include "maidsafe/common/utils.h"
 
 #include "maidsafe/passport/types.h"
-#include "maidsafe/passport/detail/passport_pb.h"
+#include "maidsafe/passport/detail/passport.pb.h"
 
 namespace pb = maidsafe::passport::detail::protobuf;
 
