@@ -164,6 +164,10 @@ bool Password::IsInitialised() const {
   return finalised_;
 }
 
+bool Password::IsFinalised() const {
+  return finalised_;
+}
+
 template<typename HashType>
 crypto::Salt Password::Hash() const {
   if (!finalised_)
@@ -279,6 +283,10 @@ bool Keyword::IsInitialised() const {
   return finalised_;
 }
 
+bool Keyword::IsFinalised() const {
+  return finalised_;
+}
+
 template<typename HashType>
 crypto::Salt Keyword::Hash() const {
   if (!finalised_)
@@ -389,6 +397,10 @@ void Pin::Clear() {
 }
 
 bool Pin::IsInitialised() const {
+  return finalised_;
+}
+
+bool Pin::IsFinalised() const {
   return finalised_;
 }
 

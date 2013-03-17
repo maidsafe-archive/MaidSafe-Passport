@@ -98,6 +98,7 @@ class Password {
   void Finalise();
   void Clear();
   bool IsInitialised() const;
+  bool IsFinalised() const;
 
   template<typename HashType> crypto::Salt Hash() const;
   SecureString::String string() const;  // plain text
@@ -137,6 +138,7 @@ class Keyword {
   void Finalise();
   void Clear();
   bool IsInitialised() const;
+  bool IsFinalised() const;
 
   template<typename HashType> crypto::Salt Hash() const;
   SecureString::String string() const;  // plain text
@@ -179,6 +181,7 @@ class Pin {
   void Finalise();
   void Clear();
   bool IsInitialised() const;
+  bool IsFinalised() const;
 
   pin_value Value() const;
   template<typename HashType> crypto::Salt Hash() const;
