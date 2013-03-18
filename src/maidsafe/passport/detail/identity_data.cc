@@ -16,7 +16,6 @@
 #include "maidsafe/passport/detail/fob.h"
 #include "maidsafe/passport/detail/passport_pb.h"
 
-
 namespace maidsafe {
 namespace passport {
 namespace detail {
@@ -37,10 +36,9 @@ crypto::SecurePassword CreateSecureMidPassword(const Keyword& keyword, const Pin
   return crypto::CreateSecurePassword<Keyword>(keyword, salt, pin.Value().data);
 }
 
-crypto::SecurePassword CreateSecureTmidPassword(const Password& password,
-                                                const Pin& pin) {
+crypto::SecurePassword CreateSecureTmidPassword(const Password& password, const Pin& pin) {
   crypto::Salt salt(crypto::Hash<crypto::SHA512>(pin.Hash<crypto::SHA512>() + password.string()));
-  return crypto::CreateSecurePassword(password, salt, pin.Value().data);
+  return crypto::CreateSecurePassword<Password>(password, salt, pin.Value().data);
 }
 
 NonEmptyString XorData(const Keyword& keyword,
@@ -50,7 +48,7 @@ NonEmptyString XorData(const Keyword& keyword,
   uint32_t pin_value(pin.Value().data);
   uint32_t rounds(pin_value / 2 == 0 ? (pin_value * 3) / 2 : pin_value / 2);
   std::string obfuscation_str =
-      crypto::CreateSecurePassword(keyword,
+      crypto::CreateSecurePassword<Keyword>(keyword,
                                    crypto::Salt(crypto::Hash<crypto::SHA512>(
                                                   password.string() + pin.Hash<crypto::SHA512>())),
                                    rounds).string();
@@ -94,18 +92,19 @@ NonEmptyString MidToProtobuf(DataTagValue enum_value,
 
 
 template<>
-crypto::SHA512Hash GenerateMidName<MidData<MidTag>>(const Keyword& keyword,  // NOLINT (Fraser)
+SecureStringHash GenerateMidName<MidData<MidTag>>(const Keyword& keyword,  // NOLINT (Fraser)
                                                     const Pin& pin) {
   return crypto::Hash<crypto::SHA512>(keyword.Hash<crypto::SHA512>().string() +
                                       pin.Hash<crypto::SHA512>().string());
 }
 
 template<>
-crypto::SHA512Hash GenerateMidName<MidData<SmidTag>>(const Keyword& keyword,  // NOLINT (Fraser)
+SecureStringHash GenerateMidName<MidData<SmidTag>>(const Keyword& keyword,  // NOLINT (Fraser)
                                                      const Pin& pin) {
-  return crypto::Hash<crypto::SHA512>(
-            crypto::Hash<crypto::SHA512>(keyword.Hash<crypto::SHA512>().string() +
-                                         pin.Hash<crypto::SHA512>().string()));
+  SecureStringHash secure_string_hash(
+      crypto::Hash<crypto::SHA512>(keyword.Hash<crypto::SHA512>().string() +
+                                   pin.Hash<crypto::SHA512>().string()));
+  return crypto::Hash<crypto::SHA512>(secure_string_hash.string());
 }
 
 crypto::SHA512Hash HashOfPin(uint32_t pin) {

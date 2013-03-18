@@ -20,20 +20,18 @@
 #include "maidsafe/common/utils.h"
 
 #include "maidsafe/passport/passport.h"
-
+#include "maidsafe/passport/detail/secure_string.h"
 
 namespace maidsafe {
-
 namespace passport {
-
 namespace detail {
-
 namespace test {
 
 TEST(IdentityPacketsTest, BEH_Full) {
-  const UserPassword kKeyword(RandomAlphaNumericString(20));
-  const UserPassword kPassword(RandomAlphaNumericString(20));
-  const uint32_t kPin(RandomUint32() % 9999 + 1);
+  const Keyword kKeyword(RandomAlphaNumericString(20));
+  const Password kPassword(RandomAlphaNumericString(20));
+  const uint32_t kPinValue(RandomUint32() % 9999 + 1);
+  const Pin kPin(std::to_string(kPinValue));
   const NonEmptyString kMasterData(RandomString(34567));
   const NonEmptyString kSurrogateData(RandomString(23456));
 
@@ -118,11 +116,13 @@ TEST(IdentityPacketsTest, BEH_Full) {
 }
 
 TEST(IdentityPacketsTest, BEH_ChangeDetails) {
-  const UserPassword kKeyword(RandomAlphaNumericString(20)),
-                     kPassword(RandomAlphaNumericString(20)),
-                     kNewKeyword(RandomAlphaNumericString(20));
-  const uint32_t kPin(RandomUint32() % 9999 + 1),
-                 kNewPin(RandomUint32() % 9999 + 1);
+  const Keyword kKeyword(RandomAlphaNumericString(20)),
+                kNewKeyword(RandomAlphaNumericString(20));
+  const Password kPassword(RandomAlphaNumericString(20));
+  const uint32_t kPinValue(RandomUint32() % 9999 + 1),
+                 kNewPinValue(RandomUint32() % 9999 + 1);
+  const Pin kPin(std::to_string(kPinValue)),
+            kNewPin(std::to_string(kNewPinValue));
   NonEmptyString next_master2(RandomString(1000));
   auto nes2(EncryptSession(kKeyword, kPin, kPassword, next_master2));
   auto nes1(EncryptSession(kNewKeyword, kNewPin, kPassword, next_master2));
@@ -134,9 +134,6 @@ TEST(IdentityPacketsTest, BEH_ChangeDetails) {
 }
 
 }  // namespace test
-
 }  // namespace detail
-
 }  // namespace passport
-
 }  // namespace maidsafe

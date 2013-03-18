@@ -36,14 +36,16 @@ SecureString::String operator+(const SecureString::String& first,
                               std::string(second.begin(), second.end()));
 }
 
-SecureString::String operator+(const NonEmptyString& first,
+SecureString::String operator+(const SecureStringHash& first,
                                const SecureString::String& second) {
-  return SecureString::String(first.string() + std::string(second.begin(), second.end()));
+  return SecureString::String(std::string(first.string().begin(), first.string().end()) +
+                              std::string(second.begin(), second.end()));
 }
 
 SecureString::String operator+(const SecureString::String& first,
-                               const NonEmptyString& second) {
-  return SecureString::String(std::string(first.begin(), first.end()) + second.string());
+                               const SecureStringHash& second) {
+  return SecureString::String(std::string(first.begin(), first.end()) +
+                              std::string(second.string().begin(), second.string().end()));
 }
 
 SecureString::SecureString()
@@ -132,6 +134,8 @@ void Password::Remove(size_type position, size_type length) {
 }
 
 void Password::Finalise() {
+  if (finalised_)
+    return;
   if (secure_chars_.size() < min_size)
     ThrowError(CommonErrors::invalid_parameter);
   uint32_t counter(0);
@@ -166,13 +170,6 @@ bool Password::IsInitialised() const {
 
 bool Password::IsFinalised() const {
   return finalised_;
-}
-
-template<typename HashType>
-crypto::Salt Password::Hash() const {
-  if (!finalised_)
-    ThrowError(CommonErrors::symmetric_encryption_error);
-  return crypto::Hash<HashType>(secure_string_.PlainText());
 }
 
 SecureString::String Password::string() const {
@@ -251,6 +248,8 @@ void Keyword::Remove(size_type position, size_type length) {
 }
 
 void Keyword::Finalise() {
+  if (finalised_)
+    return;
   if (secure_chars_.size() < min_size)
     ThrowError(CommonErrors::invalid_parameter);
   uint32_t counter(0);
@@ -285,13 +284,6 @@ bool Keyword::IsInitialised() const {
 
 bool Keyword::IsFinalised() const {
   return finalised_;
-}
-
-template<typename HashType>
-crypto::Salt Keyword::Hash() const {
-  if (!finalised_)
-    ThrowError(CommonErrors::symmetric_encryption_error);
-  return crypto::Hash<HashType>(secure_string_.PlainText());
 }
 
 SecureString::String Keyword::string() const {
@@ -370,6 +362,8 @@ void Pin::Remove(size_type position, size_type length) {
 }
 
 void Pin::Finalise() {
+  if (finalised_)
+    return;
   if (secure_chars_.size() != size)
     ThrowError(CommonErrors::invalid_parameter);
   uint32_t counter(0);
@@ -409,13 +403,6 @@ Pin::pin_value Pin::Value() const {
     ThrowError(CommonErrors::symmetric_encryption_error);
   SecureString::String data(secure_string_.PlainText());
   return pin_value(std::stoul(std::string(data.begin(), data.end())));
-}
-
-template<typename HashType>
-crypto::Salt Pin::Hash() const {
-  if (!finalised_)
-    ThrowError(CommonErrors::symmetric_encryption_error);
-  return crypto::Hash<HashType>(secure_string_.PlainText());
 }
 
 SecureString::String Pin::string() const {

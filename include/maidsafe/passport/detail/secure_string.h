@@ -75,12 +75,15 @@ class SecureString {
   std::unique_ptr<Encryptor> encryptor_;
 };
 
+typedef maidsafe::detail::BoundedString<
+    crypto::SHA512::DIGESTSIZE, crypto::SHA512::DIGESTSIZE, SecureString::String> SecureStringHash;
+
 SecureString::String operator+(const SecureString::String& first,
                                const SecureString::String& second);
-SecureString::String operator+(const NonEmptyString& first,
+SecureString::String operator+(const SecureStringHash& first,
                                const SecureString::String& second);
 SecureString::String operator+(const SecureString::String& first,
-                               const NonEmptyString& second);
+                               const SecureStringHash& second);
 
 class Password {
  public:
@@ -91,6 +94,7 @@ class Password {
   enum { min_size = 5 };
 
   Password();
+  template<typename StringType> Password(const StringType& string);
   ~Password();
 
   void Insert(size_type position, char character);
@@ -100,7 +104,7 @@ class Password {
   bool IsInitialised() const;
   bool IsFinalised() const;
 
-  template<typename HashType> crypto::Salt Hash() const;
+  template<typename HashType> SecureStringHash Hash() const;
   SecureString::String string() const;  // plain text
 
   SecureString::String PlainText() const;
@@ -121,6 +125,30 @@ class Password {
   SecureString::String phrase_;
   bool finalised_;
 };
+
+template<typename StringType>
+Password::Password(const StringType& string)
+  : regex_("\\w"),
+    secure_chars_(),
+    secure_string_(),
+    phrase_(RandomAlphaNumericString(16)),
+    finalised_(false) {
+  for (StringType::size_type i = 0; i != string.size(); ++i) {
+    char character(string[i]);
+    if (!IsValid(character))
+      ThrowError(CommonErrors::invalid_parameter);
+    secure_string_.Append(character);
+  }
+  secure_string_.Finalise();
+  finalised_ = true;
+}
+
+template<typename HashType>
+SecureStringHash Password::Hash() const {
+  if (!finalised_)
+    ThrowError(CommonErrors::symmetric_encryption_error);
+  return crypto::Hash<HashType>(secure_string_.PlainText());
+}
 
 class Keyword {
  public:
@@ -131,6 +159,7 @@ class Keyword {
   enum { min_size = 5 };
 
   Keyword();
+  template<typename StringType> Keyword(const StringType& string);
   ~Keyword();
 
   void Insert(size_type position, char character);
@@ -140,7 +169,7 @@ class Keyword {
   bool IsInitialised() const;
   bool IsFinalised() const;
 
-  template<typename HashType> crypto::Salt Hash() const;
+  template<typename HashType> SecureStringHash Hash() const;
   SecureString::String string() const;  // plain text
 
   SecureString::String PlainText() const;
@@ -161,6 +190,30 @@ class Keyword {
   SecureString::String phrase_;
   bool finalised_;
 };
+
+template<typename StringType>
+Keyword::Keyword(const StringType& string)
+  : regex_("\\w"),
+    secure_chars_(),
+    secure_string_(),
+    phrase_(RandomAlphaNumericString(16)),
+    finalised_(false) {
+  for (StringType::size_type i = 0; i != string.size(); ++i) {
+    char character(string[i]);
+    if (!IsValid(character))
+      ThrowError(CommonErrors::invalid_parameter);
+    secure_string_.Append(character);
+  }
+  secure_string_.Finalise();
+  finalised_ = true;
+}
+
+template<typename HashType>
+SecureStringHash Keyword::Hash() const {
+  if (!finalised_)
+    ThrowError(CommonErrors::symmetric_encryption_error);
+  return crypto::Hash<HashType>(secure_string_.PlainText());
+}
 
 class Pin {
  public:
@@ -174,6 +227,7 @@ class Pin {
   enum { size = 4 };
 
   Pin();
+  template<typename StringType> Pin(const StringType& string);
   ~Pin();
 
   void Insert(size_type position, char character);
@@ -184,7 +238,7 @@ class Pin {
   bool IsFinalised() const;
 
   pin_value Value() const;
-  template<typename HashType> crypto::Salt Hash() const;
+  template<typename HashType> SecureStringHash Hash() const;
   SecureString::String string() const;  // plain text
 
   SecureString::String PlainText() const;
@@ -205,6 +259,30 @@ class Pin {
   SecureString::String phrase_;
   bool finalised_;
 };
+
+template<typename StringType>
+Pin::Pin(const StringType& string)
+  : regex_("\\d"),
+    secure_chars_(),
+    secure_string_(),
+    phrase_(RandomAlphaNumericString(16)),
+    finalised_(false) {
+  for (StringType::size_type i = 0; i != string.size(); ++i) {
+    char character(string[i]);
+    if (!IsValid(character))
+      ThrowError(CommonErrors::invalid_parameter);
+    secure_string_.Append(character);
+  }
+  secure_string_.Finalise();
+  finalised_ = true;
+}
+
+template<typename HashType>
+SecureStringHash Pin::Hash() const {
+  if (!finalised_)
+    ThrowError(CommonErrors::symmetric_encryption_error);
+  return crypto::Hash<HashType>(secure_string_.PlainText());
+}
 
 }  // namespace detail
 }  // namespace passport
