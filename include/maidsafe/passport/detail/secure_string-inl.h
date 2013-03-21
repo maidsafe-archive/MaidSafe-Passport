@@ -138,7 +138,7 @@ bool SecureInputString<Predicate, Size>::IsFinalised() const {
 }
 
 template<typename Predicate, std::size_t Size>
-bool SecureInputString<Predicate, Size>::IsValid(const boost::regex& regex) {
+bool SecureInputString<Predicate, Size>::IsValid(const boost::regex& regex) const {
   Predicate predicate;
   if (!predicate(secure_chars_.size(), Size))
     return false;
@@ -158,19 +158,19 @@ bool SecureInputString<Predicate, Size>::IsValid(const boost::regex& regex) {
   return true;
 }
 
+template<typename Predicate, std::size_t Size> template<typename HashType>
+typename SecureString::Hash SecureInputString<Predicate, Size>::Hash() const {
+  if (!finalised_)
+    ThrowError(CommonErrors::symmetric_encryption_error);
+  return crypto::Hash<HashType>(secure_string_.string());
+}
+
 template<typename Predicate, std::size_t Size>
 typename SecureString::size_type SecureInputString<Predicate, Size>::Value() const {
   if (!finalised_)
     ThrowError(CommonErrors::symmetric_encryption_error);
   SecureString::String string(secure_string_.string());
   return std::stoul(std::string(string.begin(), string.end()));
-}
-
-template<typename Predicate, std::size_t Size> template<typename HashType>
-typename SecureString::Hash SecureInputString<Predicate, Size>::Hash() const {
-  if (!finalised_)
-    ThrowError(CommonErrors::symmetric_encryption_error);
-  return crypto::Hash<HashType>(secure_string_.string());
 }
 
 template<typename Predicate, std::size_t Size>

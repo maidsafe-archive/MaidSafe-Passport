@@ -191,6 +191,26 @@ TEST(SecureStringTest, BEH_ClearPasswordThenRedo) {
 
   EXPECT_NO_THROW(password.Finalise());
 
+  EXPECT_NO_THROW(password.Remove(7, 1));
+  EXPECT_NO_THROW(password.Remove(2, 1));
+  EXPECT_NO_THROW(password.Remove(4, 1));
+  EXPECT_NO_THROW(password.Remove(4, 1));
+  EXPECT_NO_THROW(password.Remove(1, 1));
+  EXPECT_NO_THROW(password.Remove(2, 1));
+  EXPECT_NO_THROW(password.Remove(1, 1));
+  EXPECT_NO_THROW(password.Remove(0, 1));
+
+  EXPECT_NO_THROW(password.Insert(7, 'd'));
+  EXPECT_NO_THROW(password.Insert(2, 's'));
+  EXPECT_NO_THROW(password.Insert(1, 'a'));
+  EXPECT_NO_THROW(password.Insert(0, 'p'));
+  EXPECT_NO_THROW(password.Insert(6, 'r'));
+  EXPECT_NO_THROW(password.Insert(3, 's'));
+  EXPECT_NO_THROW(password.Insert(5, 'o'));
+  EXPECT_NO_THROW(password.Insert(4, 'w'));
+
+  EXPECT_NO_THROW(password.Finalise());
+
   ASSERT_EQ(SecureString::String("password"), password.string());
 }
 
@@ -231,6 +251,38 @@ TEST(SecureStringTest, BEH_GetPasswordTextBeforeFinalise) {
   EXPECT_NO_THROW(password.Finalise());
 
   ASSERT_EQ(SecureString::String("password"), password.string());
+}
+
+TEST(SecureStringTest, BEH_CheckPasswordValidForAllChars) {
+  Password password;
+
+  EXPECT_NO_THROW(password.Insert(0, '"'));
+  EXPECT_NO_THROW(password.Insert(1, 'E'));
+  EXPECT_NO_THROW(password.Insert(2, 'c'));
+  EXPECT_NO_THROW(password.Insert(3, '$'));
+  EXPECT_NO_THROW(password.Insert(4, '>'));
+  EXPECT_NO_THROW(password.Insert(5, ']'));
+  EXPECT_NO_THROW(password.Insert(6, '-'));
+  EXPECT_NO_THROW(password.Insert(7, '5'));
+  EXPECT_NO_THROW(password.Insert(8, '!'));
+  EXPECT_NO_THROW(password.Insert(9, ' '));
+  EXPECT_NO_THROW(password.Insert(10, '£'));
+  EXPECT_NO_THROW(password.Insert(11, 'c'));
+  EXPECT_NO_THROW(password.Insert(12, '>'));
+  EXPECT_NO_THROW(password.Insert(13, 'b'));
+  EXPECT_NO_THROW(password.Insert(14, '{'));
+  EXPECT_NO_THROW(password.Insert(15, '='));
+  EXPECT_NO_THROW(password.Insert(16, '%'));
+  EXPECT_NO_THROW(password.Insert(17, '^'));
+  EXPECT_NO_THROW(password.Insert(18, '<'));
+  EXPECT_NO_THROW(password.Insert(19, '?'));
+  EXPECT_NO_THROW(password.Insert(20, '/'));
+  EXPECT_NO_THROW(password.Insert(21, '\\'));
+  EXPECT_NO_THROW(password.Insert(22, '|'));
+
+  ASSERT_TRUE(password.IsValid(boost::regex(".")));
+
+  EXPECT_NO_THROW(password.Finalise());
 }
 
 TEST(SecureStringTest, BEH_CreatePin) {

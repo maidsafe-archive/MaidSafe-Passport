@@ -97,10 +97,10 @@ class SecureInputString {
 
   bool IsInitialised() const;
   bool IsFinalised() const;
-  bool IsValid(const boost::regex& regex);
+  bool IsValid(const boost::regex& regex) const;
 
-  size_type Value() const;
   template<typename HashType> SecureString::Hash Hash() const;
+  size_type Value() const;
 
   SecureString::String string() const;  // plain text
   SecureString::String PlainText() const;
