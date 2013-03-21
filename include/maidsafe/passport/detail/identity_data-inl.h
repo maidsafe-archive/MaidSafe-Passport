@@ -36,7 +36,7 @@ NonEmptyString MidToProtobuf(DataTagValue enum_value,
                              const asymm::Signature& validation_token);
 
 template<typename MidType>
-SecureStringHash GenerateMidName(const Keyword& keyword,
+SecureString::Hash GenerateMidName(const Keyword& keyword,
                                    const Pin& pin);
 
 crypto::SHA512Hash HashOfPin(uint32_t pin);

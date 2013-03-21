@@ -33,19 +33,19 @@ crypto::AES256InitialisationVector SecureIv(const crypto::SecurePassword& secure
 
 crypto::SecurePassword CreateSecureMidPassword(const Keyword& keyword, const Pin& pin) {
   crypto::Salt salt(crypto::Hash<crypto::SHA512>(pin.string() + keyword.string()));
-  return crypto::CreateSecurePassword<Keyword>(keyword, salt, pin.Value().data);
+  return crypto::CreateSecurePassword<Keyword>(keyword, salt, pin.Value());
 }
 
 crypto::SecurePassword CreateSecureTmidPassword(const Password& password, const Pin& pin) {
   crypto::Salt salt(crypto::Hash<crypto::SHA512>(pin.Hash<crypto::SHA512>() + password.string()));
-  return crypto::CreateSecurePassword<Password>(password, salt, pin.Value().data);
+  return crypto::CreateSecurePassword<Password>(password, salt, pin.Value());
 }
 
 NonEmptyString XorData(const Keyword& keyword,
                        const Pin& pin,
                        const Password& password,
                        const NonEmptyString& data) {
-  uint32_t pin_value(pin.Value().data);
+  uint32_t pin_value(pin.Value());
   uint32_t rounds(pin_value / 2 == 0 ? (pin_value * 3) / 2 : pin_value / 2);
   std::string obfuscation_str =
       crypto::CreateSecurePassword<Keyword>(keyword,
@@ -92,16 +92,16 @@ NonEmptyString MidToProtobuf(DataTagValue enum_value,
 
 
 template<>
-SecureStringHash GenerateMidName<MidData<MidTag>>(const Keyword& keyword,  // NOLINT (Fraser)
+SecureString::Hash GenerateMidName<MidData<MidTag>>(const Keyword& keyword,  // NOLINT (Fraser)
                                                     const Pin& pin) {
   return crypto::Hash<crypto::SHA512>(keyword.Hash<crypto::SHA512>().string() +
                                       pin.Hash<crypto::SHA512>().string());
 }
 
 template<>
-SecureStringHash GenerateMidName<MidData<SmidTag>>(const Keyword& keyword,  // NOLINT (Fraser)
+SecureString::Hash GenerateMidName<MidData<SmidTag>>(const Keyword& keyword,  // NOLINT (Fraser)
                                                      const Pin& pin) {
-  SecureStringHash secure_string_hash(
+  SecureString::Hash secure_string_hash(
       crypto::Hash<crypto::SHA512>(keyword.Hash<crypto::SHA512>().string() +
                                    pin.Hash<crypto::SHA512>().string()));
   return crypto::Hash<crypto::SHA512>(secure_string_hash.string());
