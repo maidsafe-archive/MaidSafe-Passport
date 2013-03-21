@@ -103,7 +103,7 @@ class Password {
   bool IsValid(char& character);
 
   boost::regex regex_;
-  std::map<uint32_t, SecureString::String> secure_chars_;
+  std::map<size_type, SecureString::String> secure_chars_;
   SecureString secure_string_;
   SecureString::String phrase_;
   bool finalised_;
@@ -140,7 +140,7 @@ class Pin {
   bool IsValid(char& character);
 
   boost::regex regex_;
-  std::map<uint32_t, SecureString::String> secure_chars_;
+  std::map<size_type, SecureString::String> secure_chars_;
   SecureString secure_string_;
   SecureString::String phrase_;
   bool finalised_;

@@ -15,12 +15,10 @@
 set(CMAKE_DISABLE_SOURCE_CHANGES ON)
 set(CMAKE_DISABLE_IN_SOURCE_BUILD ON)
 
-cmake_minimum_required(VERSION 2.8.7 FATAL_ERROR)
+cmake_minimum_required(VERSION 2.8.10 FATAL_ERROR)
 project(passport)
 
-set(PROTO_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src)
-file(GLOB PROTO_FILES RELATIVE ${PROTO_SOURCE_DIR} "${PROTO_SOURCE_DIR}/maidsafe/passport/detail/*.proto")
-include(../../cmake_modules/maidsafe_standard_setup.cmake)
+include(../../cmake_modules/standard_setup.cmake)
 
 include_directories(${common_SOURCE_DIR}/include)
 include_directories(${private_SOURCE_DIR}/include)
@@ -29,53 +27,18 @@ include_directories(${private_SOURCE_DIR}/include)
 #==================================================================================================#
 # Set up all files as GLOBs                                                                        #
 #==================================================================================================#
-file(GLOB PassportApi ${PROJECT_SOURCE_DIR}/include/maidsafe/passport/*.h)
-file(GLOB PassportApiDetails ${PROJECT_SOURCE_DIR}/include/maidsafe/passport/detail/*.h)
-
-set(PassportSourcesRootDir ${PROJECT_SOURCE_DIR}/src/maidsafe/passport)
-file(GLOB PassportSources ${PassportSourcesRootDir}/*.cc)
-file(GLOB PassportHeaders ${PassportSourcesRootDir}/*.h)
-
-file(GLOB PassportDetailSources ${PassportSourcesRootDir}/detail/*.cc)
-file(GLOB PassportDetailHeaders ${PassportSourcesRootDir}/detail/*.h)
-
-file(GLOB PassportDetailProtos ${PassportSourcesRootDir}/detail/*.proto)
-file(GLOB PassportDetailProtoSources ${PassportSourcesRootDir}/detail/*.pb.cc)
-file(GLOB PassportDetailProtoHeaders ${PassportSourcesRootDir}/detail/*pb.h)
-list(REMOVE_ITEM PassportDetailSources ${PassportDetailProtoSources})
-list(REMOVE_ITEM PassportDetailHeaders ${PassportDetailProtoHeaders})
-
-source_group("Passport API Files" FILES ${PassportApi})
-source_group("Passport API Detail Files" FILES ${PassportApiDetails})
-source_group("Passport Source Files" FILES ${PassportSources})
-source_group("Passport Header Files" FILES ${PassportHeaders})
-source_group("Passport Detail Source Files" FILES ${PassportDetailSources})
-source_group("Passport Detail Header Files" FILES ${PassportDetailHeaders})
-source_group("Passport Detail Proto Files" FILES ${PassportDetailProtos} ${PassportDetailProtoSources} ${PassportDetailProtoHeaders})
-
-set(PassportAllFiles ${PassportApi} ${PassportApiDetails}
-                     ${PassportSources} ${PassportHeaders}
-                     ${PassportDetailSources} ${PassportDetailHeaders}
-                     ${PassportDetailProtos} ${PassportDetailProtoSources} ${PassportDetailProtoHeaders})
-
-file(GLOB PassportTestsSources ${PassportSourcesRootDir}/tests/*.cc)
-file(GLOB PassportTestsHeaders ${PassportSourcesRootDir}/tests/*.h)
-set(PassportTestsAllFiles ${PassportTestsSources} ${PassportTestsHeaders})
-source_group("Tests Source Files" FILES ${PassportTestsSources})
-source_group("Tests Header Files" FILES ${PassportTestsHeaders})
-
-set(StyleAllFiles ${PassportAllFiles} ${PassportTestsAllFiles})
-list(REMOVE_ITEM StyleAllFiles ${PassportSourcesRootDir}/passport.pb.cc)
-list(REMOVE_ITEM StyleAllFiles ${PassportSourcesRootDir}/passport.pb.h)
+glob_dir(Passport ${PROJECT_SOURCE_DIR}/src/maidsafe/passport Passport)
+glob_dir(PassportDetail ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/detail "Passport Detail")
+glob_dir(PassportTests ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/tests Tests)
 
 
 #==================================================================================================#
 # Define MaidSafe libraries and executables                                                        #
 #==================================================================================================#
-ms_add_static_library(passport ${PassportAllFiles})
+ms_add_static_library(passport ${PassportAllFiles} ${PassportDetailAllFiles})
 target_link_libraries(maidsafe_passport maidsafe_common)
 
-if(MAIDSAFE_TESTING)
+if(MaidsafeTesting)
   ms_add_executable(TESTpassport "Tests/Passport" ${PassportTestsAllFiles})
   target_link_libraries(TESTpassport maidsafe_passport ${BoostRegexLibs})
 endif()
@@ -86,9 +49,7 @@ rename_outdated_built_exes()
 #==================================================================================================#
 # Set compiler and linker flags                                                                    #
 #==================================================================================================#
-include(maidsafe_standard_flags)
-ms_disable_warnings(${PassportDetailProtoSources})
-
+include(standard_flags)
 if(UNIX)
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-effc++")
 endif()
@@ -97,8 +58,8 @@ endif()
 #==================================================================================================#
 # Tests                                                                                            #
 #==================================================================================================#
-if(MAIDSAFE_TESTING)
-  add_style_test(${StyleAllFiles})
+if(MaidsafeTesting)
+  add_style_test()
   add_gtests(TESTpassport)
   label_as_critical_tests(IdentityPacketsTest.BEH_Full
                           IdentityPacketsTest.BEH_ChangeDetails

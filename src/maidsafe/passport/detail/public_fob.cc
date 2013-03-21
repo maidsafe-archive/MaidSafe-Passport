@@ -13,7 +13,7 @@
 
 #include "maidsafe/common/utils.h"
 
-#include "maidsafe/passport/detail/passport_pb.h"
+#include "maidsafe/passport/detail/passport.pb.h"
 
 
 namespace maidsafe {

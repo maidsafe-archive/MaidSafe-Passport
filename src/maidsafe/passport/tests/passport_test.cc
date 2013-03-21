@@ -21,7 +21,7 @@
 
 #include "maidsafe/passport/detail/fob.h"
 #include "maidsafe/passport/detail/identity_data.h"
-#include "maidsafe/passport/detail/passport_pb.h"
+#include "maidsafe/passport/detail/passport.pb.h"
 
 
 namespace pb = maidsafe::passport::detail::protobuf;
