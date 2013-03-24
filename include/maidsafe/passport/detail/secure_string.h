@@ -14,6 +14,7 @@
 
 #include <string>
 #include <map>
+#include <functional>
 
 #include "boost/regex.hpp"
 
@@ -28,126 +29,93 @@
 #  pragma warning(pop)
 #endif
 
+#include "maidsafe/common/crypto.h"
+#include "maidsafe/common/tagged_value.h"
+
 namespace maidsafe {
 namespace passport {
 namespace detail {
 
+typedef CryptoPP::AllocatorWithCleanup<char> CryptoSafeAllocator;
+typedef std::basic_string<char, std::char_traits<char>, CryptoSafeAllocator> SafeString;
+
 class SecureString {
-  typedef CryptoPP::AllocatorWithCleanup<char> Allocator;
-  typedef std::basic_string<char, std::char_traits<char>, Allocator> StringBase;
+  typedef crypto::SHA512 SHA512;
 
  public:
-  class String;
-
-  SecureString();
-  ~SecureString();
-
-  void Append(char character);
-  void Finalise();
-  void Clear();
-
-  String PlainText() const;
-  String CipherText() const;
-
-  class String
-    : public StringBase {
-   public:
-    String();
-    explicit String(const std::string& string);
-    explicit String(const char* character_ptr);
-    String(size_type size, char character);
-
-    ~String();
-  };
-
- private:
   typedef CryptoPP::DefaultEncryptor Encryptor;
   typedef CryptoPP::DefaultDecryptor Decryptor;
   typedef CryptoPP::HexEncoder Encoder;
   typedef CryptoPP::HexDecoder Decoder;
-  typedef CryptoPP::StringSinkTemplate<String> Sink;
+  typedef CryptoPP::StringSinkTemplate<SafeString> Sink;
+  typedef maidsafe::detail::BoundedString<SHA512::DIGESTSIZE, SHA512::DIGESTSIZE, SafeString> Hash;
+  typedef SafeString::size_type size_type;
 
-  String phrase_;
-  String string_;
+  SecureString();
+  template<typename StringType> SecureString(const StringType& string);
+  ~SecureString();
+
+  void Append(char decrypted_char);
+  void Finalise();
+  void Clear();
+
+  SafeString string() const;
+
+ private:
+  SafeString phrase_;
+  SafeString string_;
   std::unique_ptr<Encryptor> encryptor_;
 };
 
-class Password {
+template<typename Predicate, SecureString::size_type Size>
+class SecureInputString {
  public:
-  class String;
+  typedef typename SecureString::Encryptor Encryptor;
+  typedef typename SecureString::Decryptor Decryptor;
+  typedef typename SecureString::Encoder Encoder;
+  typedef typename SecureString::Decoder Decoder;
+  typedef typename SecureString::Sink Sink;
+  typedef typename SecureString::size_type size_type;
 
-  typedef CryptoPP::AllocatorWithCleanup<char> Allocator;
-  typedef std::basic_string<char, std::char_traits<char>, Allocator> StringBase;
-  typedef StringBase::size_type size_type;
+  SecureInputString();
+  template<typename StringType> SecureInputString(const StringType& string);
+  ~SecureInputString();
 
-  enum { min_size = 5 };
-
-  Password();
-  ~Password();
-
-  void Insert(size_type position, char character);
+  void Insert(size_type position, char decrypted_char);
   void Remove(size_type position, size_type length = 1);
-  void Finalise();
   void Clear();
+  void Finalise();
 
-  SecureString::String PlainText() const;
-  SecureString::String CipherText() const;
+  bool IsInitialised() const;
+  bool IsFinalised() const;
+  bool IsValid(const boost::regex& regex) const;
+
+  template<typename HashType> SecureString::Hash Hash() const;
+  size_type Value() const;
+
+  SafeString string() const;
 
  private:
-  typedef CryptoPP::DefaultEncryptor Encryptor;
-  typedef CryptoPP::DefaultDecryptor Decryptor;
-  typedef CryptoPP::HexEncoder Encoder;
-  typedef CryptoPP::HexDecoder Decoder;
-  typedef CryptoPP::StringSinkTemplate<SecureString::String> Sink;
+  void Reset();
+  SafeString Encrypt(const char& decrypted_char) const;
+  char Decrypt(const SafeString& encrypted_char) const;
+  bool ValidateEncryptedChars(const boost::regex& regex) const;
+  bool ValidateSecureString(const boost::regex& regex) const;
 
-  bool IsValid(char& character);
-
-  boost::regex regex_;
-  std::map<size_type, SecureString::String> secure_chars_;
+  std::map<size_type, SafeString> encrypted_chars_;
   SecureString secure_string_;
-  SecureString::String phrase_;
+  SafeString phrase_;
   bool finalised_;
 };
 
-class Pin {
- public:
-  class String;
-
-  typedef CryptoPP::AllocatorWithCleanup<char> Allocator;
-  typedef std::basic_string<char, std::char_traits<char>, Allocator> StringBase;
-  typedef StringBase::size_type size_type;
-
-  enum { size = 4 };
-
-  Pin();
-  ~Pin();
-
-  void Insert(size_type position, char character);
-  void Remove(size_type position, size_type length = 1);
-  void Finalise();
-  void Clear();
-
-  SecureString::String PlainText() const;
-  SecureString::String CipherText() const;
-
- private:
-  typedef CryptoPP::DefaultEncryptor Encryptor;
-  typedef CryptoPP::DefaultDecryptor Decryptor;
-  typedef CryptoPP::HexEncoder Encoder;
-  typedef CryptoPP::HexDecoder Decoder;
-  typedef CryptoPP::StringSinkTemplate<SecureString::String> Sink;
-
-  bool IsValid(char& character);
-
-  boost::regex regex_;
-  std::map<size_type, SecureString::String> secure_chars_;
-  SecureString secure_string_;
-  SecureString::String phrase_;
-  bool finalised_;
-};
+typedef SecureInputString<std::greater_equal<SecureString::size_type>, 5> Password;
+typedef SecureInputString<std::greater_equal<SecureString::size_type>, 5> Keyword;
+typedef SecureInputString<std::equal_to<SecureString::size_type>, 4> Pin;
 
 }  // namespace detail
 }  // namespace passport
 }  // namespace maidsafe
+
+#include "maidsafe/passport/detail/secure_string-inl.h"
 
 #endif  // MAIDSAFE_PASSPORT_DETAIL_SECURE_STRING_H_

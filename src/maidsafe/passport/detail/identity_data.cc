@@ -16,11 +16,8 @@
 #include "maidsafe/passport/detail/fob.h"
 #include "maidsafe/passport/detail/passport.pb.h"
 
-
 namespace maidsafe {
-
 namespace passport {
-
 namespace detail {
 
 namespace {
@@ -34,27 +31,26 @@ crypto::AES256InitialisationVector SecureIv(const crypto::SecurePassword& secure
       secure_password.string().substr(crypto::AES256_KeySize, crypto::AES256_IVSize));
 }
 
-crypto::SecurePassword CreateSecureMidPassword(const UserPassword& keyword, uint32_t pin) {
-  crypto::Salt salt(crypto::Hash<crypto::SHA512>(std::to_string(pin) + keyword.string()));
-  return crypto::CreateSecurePassword(keyword, salt, pin);
+crypto::SecurePassword CreateSecureMidPassword(const Keyword& keyword, const Pin& pin) {
+  crypto::Salt salt(crypto::Hash<crypto::SHA512>(pin.string() + keyword.string()));
+  return crypto::CreateSecurePassword<Keyword>(keyword, salt, pin.Value());
 }
 
-crypto::SecurePassword CreateSecureTmidPassword(const UserPassword& password,
-                                                uint32_t pin,
-                                                const crypto::SHA512Hash& pin_hash) {
-  crypto::Salt salt(crypto::Hash<crypto::SHA512>(pin_hash.string() + password.string()));
-  return crypto::CreateSecurePassword(password, salt, pin);
+crypto::SecurePassword CreateSecureTmidPassword(const Password& password, const Pin& pin) {
+  crypto::Salt salt(crypto::Hash<crypto::SHA512>(pin.Hash<crypto::SHA512>() + password.string()));
+  return crypto::CreateSecurePassword<Password>(password, salt, pin.Value());
 }
 
-NonEmptyString XorData(const UserPassword& keyword,
-                       uint32_t pin,
-                       const UserPassword& password,
-                       const crypto::SHA512Hash& pin_hash,
+NonEmptyString XorData(const Keyword& keyword,
+                       const Pin& pin,
+                       const Password& password,
                        const NonEmptyString& data) {
-  uint32_t rounds(pin / 2 == 0 ? (pin * 3) / 2 : pin / 2);
+  uint32_t pin_value(pin.Value());
+  uint32_t rounds(pin_value / 2 == 0 ? (pin_value * 3) / 2 : pin_value / 2);
   std::string obfuscation_str =
-      crypto::CreateSecurePassword(keyword,
-                                   crypto::Salt(crypto::Hash<crypto::SHA512>(password + pin_hash)),
+      crypto::CreateSecurePassword<Keyword>(keyword,
+                                   crypto::Salt(crypto::Hash<crypto::SHA512>(
+                                                  password.string() + pin.Hash<crypto::SHA512>())),
                                    rounds).string();
   // make the obfuscation_str of same size for XOR
   if (data.string().size() < obfuscation_str.size()) {
@@ -96,16 +92,19 @@ NonEmptyString MidToProtobuf(DataTagValue enum_value,
 
 
 template<>
-crypto::SHA512Hash GenerateMidName<MidData<MidTag>>(const crypto::SHA512Hash& keyword_hash,  // NOLINT (Fraser)
-                                                    const crypto::SHA512Hash& pin_hash) {
-  return crypto::Hash<crypto::SHA512>(keyword_hash.string() + pin_hash.string());
+SecureString::Hash GenerateMidName<MidData<MidTag>>(const Keyword& keyword,  // NOLINT (Fraser)
+                                                    const Pin& pin) {
+  return crypto::Hash<crypto::SHA512>(keyword.Hash<crypto::SHA512>().string() +
+                                      pin.Hash<crypto::SHA512>().string());
 }
 
 template<>
-crypto::SHA512Hash GenerateMidName<MidData<SmidTag>>(const crypto::SHA512Hash& keyword_hash,  // NOLINT (Fraser)
-                                                     const crypto::SHA512Hash& pin_hash) {
-  return crypto::Hash<crypto::SHA512>(crypto::Hash<crypto::SHA512>(keyword_hash.string() +
-                                                                   pin_hash.string()));
+SecureString::Hash GenerateMidName<MidData<SmidTag>>(const Keyword& keyword,  // NOLINT (Fraser)
+                                                     const Pin& pin) {
+  SecureString::Hash secure_string_hash(
+      crypto::Hash<crypto::SHA512>(keyword.Hash<crypto::SHA512>().string() +
+                                   pin.Hash<crypto::SHA512>().string()));
+  return crypto::Hash<crypto::SHA512>(secure_string_hash.string());
 }
 
 crypto::SHA512Hash HashOfPin(uint32_t pin) {
@@ -165,48 +164,45 @@ TmidData::serialised_type TmidData::Serialise() const {
 }
 
 
-EncryptedSession EncryptSession(const UserKeyword& keyword,
-                                uint32_t pin,
-                                const UserPassword& password,
+EncryptedSession EncryptSession(const Keyword& keyword,
+                                const Pin& pin,
+                                const Password& password,
                                 const NonEmptyString& serialised_session) {
-  auto pin_hash(HashOfPin(pin));
-  crypto::SecurePassword secure_password(CreateSecureTmidPassword(password, pin, pin_hash));
+  crypto::SecurePassword secure_password(CreateSecureTmidPassword(password, pin));
   return EncryptedSession(
-      crypto::SymmEncrypt(XorData(keyword, pin, password, pin_hash, serialised_session),
+      crypto::SymmEncrypt(XorData(keyword, pin, password, serialised_session),
                           SecureKey(secure_password),
                           SecureIv(secure_password)));
 }
 
-EncryptedTmidName EncryptTmidName(const UserPassword& password,
-                                  uint32_t pin,
-                                  const TmidData::name_type& tmid_name) {
-  crypto::SecurePassword secure_password(CreateSecureMidPassword(password, pin));
-  return EncryptedTmidName(crypto::SymmEncrypt(crypto::PlainText(tmid_name.data),
-                                               SecureKey(secure_password),
-                                               SecureIv(secure_password)));
-}
-
-TmidData::name_type DecryptTmidName(const UserPassword& password,
-                                    uint32_t pin,
-                                    const EncryptedTmidName& encrypted_tmid_name) {
-  crypto::SecurePassword secure_password(CreateSecureMidPassword(password, pin));
-  return TmidData::name_type(Identity(crypto::SymmDecrypt(encrypted_tmid_name.data,
-                                                          SecureKey(secure_password),
-                                                          SecureIv(secure_password)).string()));
-}
-
-NonEmptyString DecryptSession(const UserKeyword& keyword,
-                              uint32_t pin,
-                              const UserPassword& password,
+NonEmptyString DecryptSession(const Keyword& keyword,
+                              const Pin& pin,
+                              const Password& password,
                               const EncryptedSession& encrypted_session) {
-  auto pin_hash(HashOfPin(pin));
-  crypto::SecurePassword secure_password(CreateSecureTmidPassword(password, pin, pin_hash));
-  return XorData(keyword, pin, password, pin_hash,
+  crypto::SecurePassword secure_password(CreateSecureTmidPassword(password, pin));
+  return XorData(keyword, pin, password,
                  crypto::SymmDecrypt(encrypted_session.data,
                                      SecureKey(secure_password),
                                      SecureIv(secure_password)));
 }
 
+EncryptedTmidName EncryptTmidName(const Keyword& keyword,
+                                  const Pin& pin,
+                                  const TmidData::name_type& tmid_name) {
+  crypto::SecurePassword secure_password(CreateSecureMidPassword(keyword, pin));
+  return EncryptedTmidName(crypto::SymmEncrypt(crypto::PlainText(tmid_name.data),
+                                               SecureKey(secure_password),
+                                               SecureIv(secure_password)));
+}
+
+TmidData::name_type DecryptTmidName(const Keyword& keyword,
+                                    const Pin& pin,
+                                    const EncryptedTmidName& encrypted_tmid_name) {
+  crypto::SecurePassword secure_password(CreateSecureMidPassword(keyword, pin));
+  return TmidData::name_type(Identity(crypto::SymmDecrypt(encrypted_tmid_name.data,
+                                                          SecureKey(secure_password),
+                                                          SecureIv(secure_password)).string()));
+}
 
 #ifdef TESTING
 
@@ -229,7 +225,5 @@ std::string DebugString<TmidData::name_type>(const TmidData::name_type& name) {
 
 
 }  // namespace detail
-
 }  // namespace passport
-
 }  // namespace maidsafe

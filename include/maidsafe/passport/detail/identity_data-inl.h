@@ -19,11 +19,8 @@
 #include "maidsafe/common/log.h"
 #include "maidsafe/common/rsa.h"
 
-
 namespace maidsafe {
-
 namespace passport {
-
 namespace detail {
 
 void MidFromProtobuf(const NonEmptyString& serialised_mid,
@@ -36,17 +33,16 @@ NonEmptyString MidToProtobuf(DataTagValue enum_value,
                              const asymm::Signature& validation_token);
 
 template<typename MidType>
-crypto::SHA512Hash GenerateMidName(const crypto::SHA512Hash& keyword_hash,
-                                   const crypto::SHA512Hash& pin_hash);
+SecureString::Hash GenerateMidName(const Keyword& keyword,
+                                   const Pin& pin);
 
 crypto::SHA512Hash HashOfPin(uint32_t pin);
 
 template<typename Tag>
-typename MidData<Tag>::name_type MidData<Tag>::GenerateName(const UserKeyword& keyword,
-                                                            uint32_t pin) {
-  return MidData<Tag>::name_type(GenerateMidName<MidData<Tag>>(  // NOLINT (Fraser)
-      crypto::Hash<crypto::SHA512>(keyword),
-      HashOfPin(pin)));
+typename MidData<Tag>::name_type MidData<Tag>::GenerateName(const Keyword& keyword,
+                                                            const Pin& pin) {
+  SafeString mid_name(GenerateMidName<MidData<Tag>>(keyword, pin).string());
+  return MidData<Tag>::name_type(Identity(std::string(mid_name.begin(), mid_name.end())));
 }
 
 template<typename Tag>
@@ -100,11 +96,8 @@ typename MidData<Tag>::serialised_type MidData<Tag>::Serialise() const {
   return serialised_type(MidToProtobuf(Tag::kEnumValue, encrypted_tmid_name_, validation_token_));
 }
 
-
 }  // namespace detail
-
 }  // namespace passport
-
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_PASSPORT_DETAIL_IDENTITY_DATA_INL_H_
