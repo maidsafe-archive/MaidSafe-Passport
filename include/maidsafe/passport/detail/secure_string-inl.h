@@ -18,197 +18,208 @@ namespace maidsafe {
 namespace passport {
 namespace detail {
 
-SecureString::String operator+(const SecureString::String& first,
-                               const SecureString::String& second);
-SecureString::String operator+(const SecureString::Hash& first,
-                               const SecureString::String& second);
-SecureString::String operator+(const SecureString::String& first,
-                               const SecureString::Hash& second);
+SafeString operator+(const SafeString& first, const SafeString& second);
+SafeString operator+(const SecureString::Hash& first, const SafeString& second);
+SafeString operator+(const SafeString& first, const SecureString::Hash& second);
 
-template<typename Predicate, std::size_t Size>
-SecureInputString<Predicate, Size>::SecureInputString()
-  : secure_chars_(),
-    secure_string_(),
-    phrase_(RandomAlphaNumericString(16)),
-    finalised_(false) {}
-
-template<typename Predicate, std::size_t Size> template<typename StringType>
-SecureInputString<Predicate, Size>::SecureInputString(const StringType& string)
-  : secure_chars_(),
-    secure_string_(),
-    phrase_(RandomAlphaNumericString(16)),
-    finalised_(false) {
-  for (size_type i = 0; i != string.size(); ++i)
-    secure_string_.Append(string[i]);
-  secure_string_.Finalise();
-  finalised_ = true;
+template<typename StringType>
+SecureString::SecureString(const StringType& string)
+  : phrase_(RandomSafeString<SafeString>(64)),
+    string_(),
+    encryptor_(new Encryptor(phrase_.data(), new Encoder(new Sink(string_)))) {
+  encryptor_->Put(reinterpret_cast<const byte*>(string.data()), string.size());
+  encryptor_->MessageEnd();
 }
 
-template<typename Predicate, std::size_t Size>
+template<typename Predicate, SecureString::size_type Size>
+SecureInputString<Predicate, Size>::SecureInputString()
+  : encrypted_chars_(),
+    secure_string_(),
+    phrase_(RandomSafeString<SafeString>(64)),
+    finalised_(false) {}
+
+template<typename Predicate, SecureString::size_type Size> template<typename StringType>
+SecureInputString<Predicate, Size>::SecureInputString(const StringType& string)
+  : encrypted_chars_(),
+    secure_string_(string),
+    phrase_(RandomSafeString<SafeString>(64)),
+    finalised_(true) {}
+
+template<typename Predicate, SecureString::size_type Size>
 SecureInputString<Predicate, Size>::~SecureInputString() {}
 
-template<typename Predicate, std::size_t Size>
-void SecureInputString<Predicate, Size>::Insert(size_type position, char character) {
-  if (finalised_)
+template<typename Predicate, SecureString::size_type Size>
+void SecureInputString<Predicate, Size>::Insert(size_type position, char decrypted_char) {
+  if (IsFinalised())
     Reset();
-  SecureString::String secure_char;
-  Encryptor encryptor(phrase_.data(), new Encoder(new Sink(secure_char)));
-  encryptor.Put(character);
-  encryptor.MessageEnd();
-  auto it(secure_chars_.find(position));
-  if (it == secure_chars_.end()) {
-    secure_chars_.insert(std::make_pair(position, secure_char));
-  } else {
-    while (it != secure_chars_.end()) {
-      auto old_secure_char = it->second;
-      it = secure_chars_.erase(it);
-      secure_chars_.insert(it, std::make_pair(position, secure_char));
-      secure_char = old_secure_char;
-      position += 1;
-    }
-    secure_chars_.insert(std::make_pair(position, secure_char));
+  SafeString encrypted_char(Encrypt(decrypted_char));
+  auto it(encrypted_chars_.find(position));
+  if (it == encrypted_chars_.end()) {
+    encrypted_chars_.insert(std::make_pair(position, encrypted_char));
+    return;
   }
+  while (it != encrypted_chars_.end()) {
+    auto old_encrypted_char = it->second;
+    it = encrypted_chars_.erase(it);
+    encrypted_chars_.insert(it, std::make_pair(position, encrypted_char));
+    encrypted_char = old_encrypted_char;
+    position += 1;
+  }
+  encrypted_chars_.insert(std::make_pair(position, encrypted_char));
   return;
 }
 
-template<typename Predicate, std::size_t Size>
+template<typename Predicate, SecureString::size_type Size>
 void SecureInputString<Predicate, Size>::Remove(size_type position, size_type length) {
-  if (finalised_)
+  if (IsFinalised())
     Reset();
-  auto it(secure_chars_.find(position));
-  if (it == secure_chars_.end() || length == 0)
+  auto it(encrypted_chars_.find(position));
+  if (it == encrypted_chars_.end() || length == 0)
     ThrowError(CommonErrors::invalid_parameter);
   while (length != 0) {
-    it = secure_chars_.erase(it);
-    if ((length -= 1 != 0) && it == secure_chars_.end())
+    it = encrypted_chars_.erase(it);
+    if ((length -= 1 != 0) && it == encrypted_chars_.end())
       ThrowError(CommonErrors::invalid_parameter);
   }
-  while (it != secure_chars_.end()) {
-    auto secure_char = it->second;
-    it = secure_chars_.erase(it);
-    secure_chars_.insert(it, std::make_pair(position, secure_char));
+  while (it != encrypted_chars_.end()) {
+    auto encrypted_char = it->second;
+    it = encrypted_chars_.erase(it);
+    encrypted_chars_.insert(it, std::make_pair(position, encrypted_char));
     position += 1;
   }
   return;
 }
 
-template<typename Predicate, std::size_t Size>
-void SecureInputString<Predicate, Size>::Finalise() {
-  if (finalised_)
-    return;
-  Predicate predicate;
-  if (!predicate(secure_chars_.size(), Size))
-    ThrowError(CommonErrors::invalid_parameter);
-  uint32_t counter(0);
-  for (auto& secure_char : secure_chars_) {
-    if (secure_char.first != counter) {
-      secure_string_.Clear();
-      ThrowError(CommonErrors::invalid_parameter);
-    }
-    SecureString::String plain_char;
-    Decoder decryptor(new Decryptor(phrase_.data(), new Sink(plain_char)));
-    decryptor.Put(reinterpret_cast<const byte*>(secure_char.second.data()),
-                  secure_char.second.length());
-    decryptor.MessageEnd();
-    secure_string_.Append(plain_char[0]);
-    ++counter;
-  }
-  secure_string_.Finalise();
-  secure_chars_.clear();
-  finalised_ = true;
-  return;
-}
-
-template<typename Predicate, std::size_t Size>
+template<typename Predicate, SecureString::size_type Size>
 void SecureInputString<Predicate, Size>::Clear() {
-  secure_chars_.clear();
+  encrypted_chars_.clear();
   secure_string_.Clear();
   finalised_ = false;
   return;
 }
 
-template<typename Predicate, std::size_t Size>
+template<typename Predicate, SecureString::size_type Size>
+void SecureInputString<Predicate, Size>::Finalise() {
+  if (IsFinalised())
+    return;
+  if (!Predicate()(encrypted_chars_.size(), Size))
+    ThrowError(CommonErrors::invalid_parameter);
+  uint32_t counter(0);
+  for (auto& encrypted_char : encrypted_chars_) {
+    if (encrypted_char.first != counter) {
+      secure_string_.Clear();
+      ThrowError(CommonErrors::invalid_parameter);
+    }
+    char decrypted_char(Decrypt(encrypted_char.second));
+    secure_string_.Append(decrypted_char);
+    ++counter;
+  }
+  secure_string_.Finalise();
+  encrypted_chars_.clear();
+  finalised_ = true;
+  return;
+}
+
+template<typename Predicate, SecureString::size_type Size>
 bool SecureInputString<Predicate, Size>::IsInitialised() const {
   return finalised_;
 }
 
-template<typename Predicate, std::size_t Size>
+template<typename Predicate, SecureString::size_type Size>
 bool SecureInputString<Predicate, Size>::IsFinalised() const {
   return finalised_;
 }
 
-template<typename Predicate, std::size_t Size>
+template<typename Predicate, SecureString::size_type Size>
 bool SecureInputString<Predicate, Size>::IsValid(const boost::regex& regex) const {
-  Predicate predicate;
-  if (!predicate(secure_chars_.size(), Size))
+  if (IsFinalised())
+    return ValidateSecureString(regex);
+  else
+    return ValidateEncryptedChars(regex);
+}
+
+template<typename Predicate, SecureString::size_type Size> template<typename HashType>
+typename SecureString::Hash SecureInputString<Predicate, Size>::Hash() const {
+  if (!IsFinalised())
+    ThrowError(CommonErrors::symmetric_encryption_error);
+  return crypto::Hash<HashType>(secure_string_.string());
+}
+
+template<typename Predicate, SecureString::size_type Size>
+typename SecureString::size_type SecureInputString<Predicate, Size>::Value() const {
+  if (!IsFinalised())
+    ThrowError(CommonErrors::symmetric_encryption_error);
+  SafeString decrypted_string(secure_string_.string());
+  return std::stoul(std::string(decrypted_string.begin(), decrypted_string.end()));
+}
+
+template<typename Predicate, SecureString::size_type Size>
+SafeString SecureInputString<Predicate, Size>::string() const {
+  if (!IsFinalised())
+    ThrowError(CommonErrors::symmetric_encryption_error);
+  return secure_string_.string();
+}
+
+template<typename Predicate, SecureString::size_type Size>
+void SecureInputString<Predicate, Size>::Reset() {
+  SafeString decrypted_string(string());
+  encrypted_chars_.clear();
+  size_type decrypted_string_size(decrypted_string.size());
+  for (size_type i = 0; i != decrypted_string_size; ++i) {
+    SafeString encrypted_char(Encrypt(decrypted_string[i]));
+    encrypted_chars_.insert(std::make_pair(i, encrypted_char));
+  }
+  secure_string_.Clear();
+  finalised_ = false;
+  return;
+}
+
+template<typename Predicate, SecureString::size_type Size>
+SafeString SecureInputString<Predicate, Size>::Encrypt(const char& decrypted_char) const {
+  SafeString encrypted_char;
+  Encryptor encryptor(phrase_.data(), new Encoder(new Sink(encrypted_char)));
+  encryptor.Put(decrypted_char);
+  encryptor.MessageEnd();
+  return encrypted_char;
+}
+
+template<typename Predicate, SecureString::size_type Size>
+char SecureInputString<Predicate, Size>::Decrypt(const SafeString& encrypted_char) const {
+  SafeString decrypted_char;
+  Decoder decryptor(new Decryptor(phrase_.data(), new Sink(decrypted_char)));
+  decryptor.Put(reinterpret_cast<const byte*>(encrypted_char.data()), encrypted_char.length());
+  decryptor.MessageEnd();
+  assert(decrypted_char.size() == 1);
+  return decrypted_char[0];
+}
+
+template<typename Predicate, SecureString::size_type Size>
+bool SecureInputString<Predicate, Size>::ValidateEncryptedChars(const boost::regex& regex) const {
+  if (!Predicate()(encrypted_chars_.size(), Size))
     return false;
   uint32_t counter(0);
-  for (auto& secure_char : secure_chars_) {
-    if (secure_char.first != counter)
+  for (auto& encrypted_char : encrypted_chars_) {
+    if (encrypted_char.first != counter)
       return false;
-    SecureString::String plain_char;
-    Decoder decryptor(new Decryptor(phrase_.data(), new Sink(plain_char)));
-    decryptor.Put(reinterpret_cast<const byte*>(secure_char.second.data()),
-                  secure_char.second.length());
-    decryptor.MessageEnd();
-    if (!boost::regex_search(plain_char, regex))
+    char decrypted_char(Decrypt(encrypted_char.second));
+    if (!boost::regex_search(SafeString(1, decrypted_char), regex))
       return false;
     ++counter;
   }
   return true;
 }
 
-template<typename Predicate, std::size_t Size> template<typename HashType>
-typename SecureString::Hash SecureInputString<Predicate, Size>::Hash() const {
-  if (!finalised_)
-    ThrowError(CommonErrors::symmetric_encryption_error);
-  return crypto::Hash<HashType>(secure_string_.string());
-}
-
-template<typename Predicate, std::size_t Size>
-typename SecureString::size_type SecureInputString<Predicate, Size>::Value() const {
-  if (!finalised_)
-    ThrowError(CommonErrors::symmetric_encryption_error);
-  SecureString::String string(secure_string_.string());
-  return std::stoul(std::string(string.begin(), string.end()));
-}
-
-template<typename Predicate, std::size_t Size>
-typename SecureString::String SecureInputString<Predicate, Size>::string() const {
-  if (!finalised_)
-    ThrowError(CommonErrors::symmetric_encryption_error);
-  return secure_string_.string();
-}
-
-template<typename Predicate, std::size_t Size>
-typename SecureString::String SecureInputString<Predicate, Size>::PlainText() const {
-  if (!finalised_)
-    ThrowError(CommonErrors::symmetric_encryption_error);
-  return secure_string_.PlainText();
-}
-
-template<typename Predicate, std::size_t Size>
-typename SecureString::String SecureInputString<Predicate, Size>::CipherText() const {
-  if (!finalised_)
-    ThrowError(CommonErrors::symmetric_encryption_error);
-  return secure_string_.CipherText();
-}
-
-template<typename Predicate, std::size_t Size>
-void SecureInputString<Predicate, Size>::Reset() {
-  SecureString::String string(string());
-  secure_chars_.clear();
-  size_type string_size(string.size());
-  for (size_type i = 0; i != string_size; ++i) {
-    SecureString::String secure_char;
-    Encryptor encryptor(phrase_.data(), new Encoder(new Sink(secure_char)));
-    encryptor.Put(string[i]);
-    encryptor.MessageEnd();
-    secure_chars_.insert(std::make_pair(i, secure_char));
+template<typename Predicate, SecureString::size_type Size>
+bool SecureInputString<Predicate, Size>::ValidateSecureString(const boost::regex& regex) const {
+  SafeString decrypted_string(string());
+  size_type decrypted_string_size(decrypted_string.size());
+  if (!Predicate()(decrypted_string_size, Size))
+    return false;
+  for (size_type i = 0; i != decrypted_string_size; ++i) {
+    if (!boost::regex_search(SafeString(1, decrypted_string[i]), regex))
+      return false;
   }
-  secure_string_.Clear();
-  finalised_ = false;
-  return;
+  return true;
 }
 
 }  // namespace detail

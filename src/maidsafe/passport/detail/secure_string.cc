@@ -17,46 +17,27 @@ namespace maidsafe {
 namespace passport {
 namespace detail {
 
-SecureString::String::String() {}
-
-SecureString::String::String(const std::string& string)
-  : StringBase(string.c_str(), string.length()) {}
-
-SecureString::String::String(const char* character_ptr)
-  : StringBase(character_ptr, std::char_traits<char>::length(character_ptr)) {}
-
-SecureString::String::String(size_type size, char character)
-  : StringBase(size, character) {}
-
-SecureString::String::~String() {}
-
-SecureString::String operator+(const SecureString::String& first,
-                               const SecureString::String& second) {
-  return SecureString::String(std::string(first.begin(), first.end()) +
-                              std::string(second.begin(), second.end()));
+SafeString operator+(const SafeString& first, const SafeString& second) {
+  return SafeString(first.begin(), first.end()) + SafeString(second.begin(), second.end());
 }
 
-SecureString::String operator+(const SecureString::Hash& first,
-                               const SecureString::String& second) {
-  return SecureString::String(std::string(first.string().begin(), first.string().end()) +
-                              std::string(second.begin(), second.end()));
+SafeString operator+(const SecureString::Hash& first, const SafeString& second) {
+  return SafeString(first.string().begin(), first.string().end()) + second;
 }
 
-SecureString::String operator+(const SecureString::String& first,
-                               const SecureString::Hash& second) {
-  return SecureString::String(std::string(first.begin(), first.end()) +
-                              std::string(second.string().begin(), second.string().end()));
+SafeString operator+(const SafeString& first, const SecureString::Hash& second) {
+  return first + SafeString(second.string().begin(), second.string().end());
 }
 
 SecureString::SecureString()
-  : phrase_(RandomAlphaNumericString(16)),
+  : phrase_(RandomSafeString<SafeString>(64)),
     string_(),
     encryptor_(new Encryptor(phrase_.data(), new Encoder(new Sink(string_)))) {}
 
 SecureString::~SecureString() {}
 
-void SecureString::Append(char character) {
-  encryptor_->Put(character);
+void SecureString::Append(char decrypted_char) {
+  encryptor_->Put(decrypted_char);
 }
 
 void SecureString::Finalise() {
@@ -68,24 +49,12 @@ void SecureString::Clear() {
   encryptor_.reset(new Encryptor(phrase_.data(), new Encoder(new Sink(string_))));
 }
 
-SecureString::String SecureString::string() const {
-  String plain_text;
-  Decoder decryptor(new Decryptor(phrase_.data(), new Sink(plain_text)));
+SafeString SecureString::string() const {
+  SafeString decrypted_string;
+  Decoder decryptor(new Decryptor(phrase_.data(), new Sink(decrypted_string)));
   decryptor.Put(reinterpret_cast<const byte*>(string_.data()), string_.length());
   decryptor.MessageEnd();
-  return plain_text;
-}
-
-SecureString::String SecureString::PlainText() const {
-  String plain_text;
-  Decoder decryptor(new Decryptor(phrase_.data(), new Sink(plain_text)));
-  decryptor.Put(reinterpret_cast<const byte*>(string_.data()), string_.length());
-  decryptor.MessageEnd();
-  return plain_text;
-}
-
-SecureString::String SecureString::CipherText() const {
-  return string_;
+  return decrypted_string;
 }
 
 }  // namespace detail
