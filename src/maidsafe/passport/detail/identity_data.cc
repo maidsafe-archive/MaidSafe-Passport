@@ -11,6 +11,8 @@
 
 #include "maidsafe/passport/detail/identity_data.h"
 
+#include <limits>
+
 #include "maidsafe/common/utils.h"
 
 #include "maidsafe/passport/detail/fob.h"
@@ -33,19 +35,22 @@ crypto::AES256InitialisationVector SecureIv(const crypto::SecurePassword& secure
 
 crypto::SecurePassword CreateSecureMidPassword(const Keyword& keyword, const Pin& pin) {
   crypto::Salt salt(crypto::Hash<crypto::SHA512>(pin.string() + keyword.string()));
-  return crypto::CreateSecurePassword<Keyword>(keyword, salt, pin.Value());
+  assert(pin.Value() <= std::numeric_limits<uint32_t>::max());
+  return crypto::CreateSecurePassword<Keyword>(keyword, salt, static_cast<uint32_t>(pin.Value()));
 }
 
 crypto::SecurePassword CreateSecureTmidPassword(const Password& password, const Pin& pin) {
   crypto::Salt salt(crypto::Hash<crypto::SHA512>(pin.Hash<crypto::SHA512>() + password.string()));
-  return crypto::CreateSecurePassword<Password>(password, salt, pin.Value());
+  assert(pin.Value() <= std::numeric_limits<uint32_t>::max());
+  return crypto::CreateSecurePassword<Password>(password, salt, static_cast<uint32_t>(pin.Value()));
 }
 
 NonEmptyString XorData(const Keyword& keyword,
                        const Pin& pin,
                        const Password& password,
                        const NonEmptyString& data) {
-  uint32_t pin_value(pin.Value());
+  assert(pin.Value() <= std::numeric_limits<uint32_t>::max());
+  uint32_t pin_value(static_cast<uint32_t>(pin.Value()));
   uint32_t rounds(pin_value / 2 == 0 ? (pin_value * 3) / 2 : pin_value / 2);
   std::string obfuscation_str =
       crypto::CreateSecurePassword<Keyword>(keyword,
