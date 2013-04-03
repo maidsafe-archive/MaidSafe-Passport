@@ -159,11 +159,6 @@ TEST(SecureStringTest, BEH_CreatePasswordWithMissingIndex) {
 TEST(SecureStringTest, BEH_CreateInvalidLengthPassword) {
   Password password;
 
-  EXPECT_NO_THROW(password.Insert(3, 's'));
-  EXPECT_NO_THROW(password.Insert(1, 'a'));
-  EXPECT_NO_THROW(password.Insert(0, 'p'));
-  EXPECT_NO_THROW(password.Insert(2, 's'));
-
   EXPECT_THROW(password.Finalise(), std::exception);
 }
 
@@ -304,34 +299,13 @@ TEST(SecureStringTest, BEH_CreateInvalidLengthPin) {
   {
     Pin pin;
 
-    EXPECT_NO_THROW(pin.Insert(1, '1'));
-    EXPECT_NO_THROW(pin.Insert(3, '3'));
-    EXPECT_NO_THROW(pin.Insert(0, '0'));
-    EXPECT_NO_THROW(pin.Insert(2, '2'));
-    EXPECT_NO_THROW(pin.Insert(4, '4'));
-
     EXPECT_THROW(pin.Finalise(), std::exception);
 
-    EXPECT_NO_THROW(pin.Remove(4, 1));
+    EXPECT_NO_THROW(pin.Insert(0, '0'));
 
     EXPECT_NO_THROW(pin.Finalise());
 
-    ASSERT_EQ(SafeString("0123"), pin.string());
-  }
-  {
-    Pin pin;
-
-    EXPECT_NO_THROW(pin.Insert(1, '1'));
-    EXPECT_NO_THROW(pin.Insert(3, '3'));
-    EXPECT_NO_THROW(pin.Insert(0, '0'));
-
-    EXPECT_THROW(pin.Finalise(), std::exception);
-
-    EXPECT_NO_THROW(pin.Insert(2, '2'));
-
-    EXPECT_NO_THROW(pin.Finalise());
-
-    ASSERT_EQ(SafeString("0123"), pin.string());
+    ASSERT_EQ(SafeString("0"), pin.string());
   }
 }
 
@@ -346,13 +320,13 @@ TEST(SecureStringTest, BEH_InsertInvalidPinDigit) {
   EXPECT_NO_THROW(pin.Finalise());
 
   ASSERT_EQ(SafeString("a123"), pin.string());
-  EXPECT_FALSE(pin.IsValid(boost::regex("\\d")));
+  EXPECT_TRUE(pin.IsValid(boost::regex(".")));
   EXPECT_THROW(pin.Value(), std::exception);
 
   EXPECT_NO_THROW(pin.Remove(0, 1));
   EXPECT_NO_THROW(pin.Insert(0, '0'));
   EXPECT_NO_THROW(pin.Finalise());
-  EXPECT_TRUE(pin.IsValid(boost::regex("\\d")));
+  EXPECT_TRUE(pin.IsValid(boost::regex(".")));
 
   EXPECT_NO_THROW(pin.Finalise());
   ASSERT_EQ(123, pin.Value());

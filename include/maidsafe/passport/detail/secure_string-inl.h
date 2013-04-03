@@ -33,6 +33,11 @@ SecureString::SecureString(const StringType& string)
   encryptor_->MessageEnd();
 }
 
+template<typename StringType>
+void SecureString::Append(const StringType& decrypted_char) {
+  encryptor_->Put(reinterpret_cast<const byte*>(decrypted_char.data()), decrypted_char.size());
+}
+
 template<typename Predicate, SecureString::size_type Size>
 SecureInputString<Predicate, Size>::SecureInputString()
   : encrypted_chars_(),
@@ -49,6 +54,27 @@ SecureInputString<Predicate, Size>::SecureInputString(const StringType& string)
 
 template<typename Predicate, SecureString::size_type Size>
 SecureInputString<Predicate, Size>::~SecureInputString() {}
+
+template<typename Predicate, SecureString::size_type Size> template<typename CharType>
+void SecureInputString<Predicate, Size>::Insert(size_type position, const CharType& decrypted_char) {
+  if (IsFinalised())
+    Reset();
+  SafeString encrypted_char(Encrypt(decrypted_char));
+  auto it(encrypted_chars_.find(position));
+  if (it == encrypted_chars_.end()) {
+    encrypted_chars_.insert(std::make_pair(position, encrypted_char));
+    return;
+  }
+  while (it != encrypted_chars_.end()) {
+    auto old_encrypted_char = it->second;
+    it = encrypted_chars_.erase(it);
+    encrypted_chars_.insert(it, std::make_pair(position, encrypted_char));
+    encrypted_char = old_encrypted_char;
+    position += 1;
+  }
+  encrypted_chars_.insert(std::make_pair(position, encrypted_char));
+  return;
+}
 
 template<typename Predicate, SecureString::size_type Size>
 void SecureInputString<Predicate, Size>::Insert(size_type position, char decrypted_char) {
@@ -112,7 +138,7 @@ void SecureInputString<Predicate, Size>::Finalise() {
       secure_string_.Clear();
       ThrowError(CommonErrors::invalid_parameter);
     }
-    char decrypted_char(Decrypt(encrypted_char.second));
+    SafeString decrypted_char(Decrypt(encrypted_char.second));
     secure_string_.Append(decrypted_char);
     ++counter;
   }
@@ -185,14 +211,22 @@ SafeString SecureInputString<Predicate, Size>::Encrypt(const char& decrypted_cha
   return encrypted_char;
 }
 
+template<typename Predicate, SecureString::size_type Size> template<typename CharType>
+SafeString SecureInputString<Predicate, Size>::Encrypt(const CharType& decrypted_char) const {
+  SafeString encrypted_char;
+  Encryptor encryptor(phrase_.data(), new Encoder(new Sink(encrypted_char)));
+  encryptor.Put(reinterpret_cast<const byte*>(decrypted_char.data()), decrypted_char.size());
+  encryptor.MessageEnd();
+  return encrypted_char;
+}
+
 template<typename Predicate, SecureString::size_type Size>
-char SecureInputString<Predicate, Size>::Decrypt(const SafeString& encrypted_char) const {
+SafeString SecureInputString<Predicate, Size>::Decrypt(const SafeString& encrypted_char) const {
   SafeString decrypted_char;
   Decoder decryptor(new Decryptor(phrase_.data(), new Sink(decrypted_char)));
   decryptor.Put(reinterpret_cast<const byte*>(encrypted_char.data()), encrypted_char.length());
   decryptor.MessageEnd();
-  assert(decrypted_char.size() == 1);
-  return decrypted_char[0];
+  return decrypted_char;
 }
 
 template<typename Predicate, SecureString::size_type Size>
@@ -203,8 +237,8 @@ bool SecureInputString<Predicate, Size>::ValidateEncryptedChars(const boost::reg
   for (auto& encrypted_char : encrypted_chars_) {
     if (encrypted_char.first != counter)
       return false;
-    char decrypted_char(Decrypt(encrypted_char.second));
-    if (!boost::regex_search(SafeString(1, decrypted_char), regex))
+    SafeString decrypted_char(Decrypt(encrypted_char.second));
+    if (!boost::regex_search(decrypted_char, regex))
       return false;
     ++counter;
   }

@@ -55,6 +55,7 @@ class SecureString {
   template<typename StringType> SecureString(const StringType& string);
   ~SecureString();
 
+  template<typename StringType> void Append(const StringType& decrypted_char);
   void Append(char decrypted_char);
   void Finalise();
   void Clear();
@@ -81,6 +82,8 @@ class SecureInputString {
   template<typename StringType> SecureInputString(const StringType& string);
   ~SecureInputString();
 
+  template<typename CharType>
+  void Insert(size_type position, const CharType& decrypted_char);
   void Insert(size_type position, char decrypted_char);
   void Remove(size_type position, size_type length = 1);
   void Clear();
@@ -97,8 +100,10 @@ class SecureInputString {
 
  private:
   void Reset();
+  template<typename CharType>
+  SafeString Encrypt(const CharType& decrypted_char) const;
   SafeString Encrypt(const char& decrypted_char) const;
-  char Decrypt(const SafeString& encrypted_char) const;
+  SafeString Decrypt(const SafeString& encrypted_char) const;
   bool ValidateEncryptedChars(const boost::regex& regex) const;
   bool ValidateSecureString(const boost::regex& regex) const;
 
@@ -108,9 +113,9 @@ class SecureInputString {
   bool finalised_;
 };
 
-typedef SecureInputString<std::greater_equal<SecureString::size_type>, 5> Password;
-typedef SecureInputString<std::greater_equal<SecureString::size_type>, 5> Keyword;
-typedef SecureInputString<std::equal_to<SecureString::size_type>, 4> Pin;
+typedef SecureInputString<std::greater_equal<SecureString::size_type>, 1> Password;
+typedef SecureInputString<std::greater_equal<SecureString::size_type>, 1> Keyword;
+typedef SecureInputString<std::greater_equal<SecureString::size_type>, 1> Pin;
 
 }  // namespace detail
 }  // namespace passport
