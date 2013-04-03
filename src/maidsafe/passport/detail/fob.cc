@@ -121,24 +121,74 @@ Fob<PmidTag> ParsePmid(const NonEmptyString& serialised_pmid) {
 
 #ifdef TESTING
 
-std::vector<Fob<PmidTag>> ReadPmidList(const boost::filesystem::path& file_path) {
+NonEmptyString SerialiseAnmaid(const Fob<AnmaidTag>& anmaid) {
+  protobuf::Fob proto_fob;
+  anmaid.ToProtobuf(&proto_fob);
+  return NonEmptyString(proto_fob.SerializeAsString());
+}
+
+Fob<AnmaidTag> ParseAnmaid(const NonEmptyString& serialised_anmaid) {
+  protobuf::Fob proto_fob;
+  proto_fob.ParseFromString(serialised_anmaid.string());
+  return Fob<AnmaidTag>(proto_fob);
+}
+
+NonEmptyString SerialiseMaid(const Fob<MaidTag>& maid) {
+  protobuf::Fob proto_fob;
+  maid.ToProtobuf(&proto_fob);
+  return NonEmptyString(proto_fob.SerializeAsString());
+}
+
+Fob<MaidTag> ParseMaid(const NonEmptyString& serialised_maid) {
+  protobuf::Fob proto_fob;
+  proto_fob.ParseFromString(serialised_maid.string());
+  return Fob<MaidTag>(proto_fob);
+}
+
+std::vector<Fob<PmidTag> > ReadPmidList(const boost::filesystem::path& file_path) {
   std::vector<Fob<PmidTag>> pmid_list;
   protobuf::PmidList pmid_list_msg;
   pmid_list_msg.ParseFromString(ReadFile(file_path).string());
   for (int i = 0; i < pmid_list_msg.pmids_size(); ++i)
-    pmid_list.push_back(std::move(
-        passport::detail::ParsePmid(NonEmptyString(pmid_list_msg.pmids(i).pmid()))));
+    pmid_list.push_back(std::move(ParsePmid(NonEmptyString(pmid_list_msg.pmids(i).pmid()))));
   return pmid_list;
 }
 
 bool WritePmidList(const boost::filesystem::path& file_path,
-                   const std::vector<Fob<PmidTag>>& pmid_list) {  // NOLINT (Fraser)
+                   const std::vector<Fob<PmidTag> >& pmid_list) {
   protobuf::PmidList pmid_list_msg;
   for (auto &pmid : pmid_list) {
     auto entry = pmid_list_msg.add_pmids();
-    entry->set_pmid(passport::detail::SerialisePmid(pmid).string());
+    entry->set_pmid(SerialisePmid(pmid).string());
   }
   return WriteFile(file_path, pmid_list_msg.SerializeAsString());
+}
+
+AnmaidToPmid ParseKeys(const protobuf::KeyChainList::KeyChain& key_chain) {
+  return std::move(AnmaidToPmid(ParseAnmaid(NonEmptyString(key_chain.anmaid())),
+                                ParseMaid(NonEmptyString(key_chain.maid())),
+                                ParsePmid(NonEmptyString(key_chain.pmid()))));
+}
+
+std::vector<AnmaidToPmid> ReadKeyChainList(const boost::filesystem::path& file_path) {
+  std::vector<AnmaidToPmid> keychain_list;
+  protobuf::KeyChainList keychain_list_msg;
+  keychain_list_msg.ParseFromString(ReadFile(file_path).string());
+  for (int i = 0; i < keychain_list_msg.keychains_size(); ++i)
+    keychain_list.push_back(std::move(ParseKeys(keychain_list_msg.keychains(i))));
+  return keychain_list;
+}
+
+bool WriteKeyChainList(const boost::filesystem::path& file_path,
+                       const std::vector<AnmaidToPmid>& keychain_list) {
+  protobuf::KeyChainList keychain_list_msg;
+  for (auto &keychain : keychain_list) {
+    auto entry = keychain_list_msg.add_keychains();
+    entry->set_anmaid(SerialiseAnmaid(keychain.anmaid).string());
+    entry->set_maid(SerialiseMaid(keychain.maid).string());
+    entry->set_pmid(SerialisePmid(keychain.pmid).string());
+  }
+  return WriteFile(file_path, keychain_list_msg.SerializeAsString());
 }
 
 template<>

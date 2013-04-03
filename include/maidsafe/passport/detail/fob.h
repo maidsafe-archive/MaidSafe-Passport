@@ -150,10 +150,25 @@ Fob<PmidTag> ParsePmid(const NonEmptyString& serialised_pmid);
 
 #ifdef TESTING
 
-std::vector<Fob<PmidTag>> ReadPmidList(const boost::filesystem::path& file_path);
+std::vector<Fob<PmidTag> > ReadPmidList(const boost::filesystem::path& file_path);
 
 bool WritePmidList(const boost::filesystem::path& file_path,
-                   const std::vector<Fob<PmidTag>>& pmid_list);  // NOLINT (Fraser)
+                   const std::vector<Fob<PmidTag> >& pmid_list);  // NOLINT (Fraser)
+
+struct AnmaidToPmid {
+  AnmaidToPmid(const Fob<AnmaidTag>& anmaid, const Fob<MaidTag>& maid, const Fob<PmidTag>& pmid)
+      : anmaid(anmaid), maid(maid), pmid(pmid), chain_size(3) {}
+  AnmaidToPmid() : anmaid(), maid(anmaid), pmid(maid), chain_size(3) {}
+  Fob<AnmaidTag> anmaid;
+  Fob<MaidTag> maid;
+  Fob<PmidTag> pmid;
+  int chain_size;
+};
+
+std::vector<AnmaidToPmid> ReadKeyChainList(const boost::filesystem::path& file_path);
+
+bool WriteKeyChainList(const boost::filesystem::path& file_path,
+                       const std::vector<AnmaidToPmid>& keychain_list);
 
 #endif
 
