@@ -31,13 +31,17 @@
 
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/tagged_value.h"
+#include "maidsafe/common/allocators.h"
 
 namespace maidsafe {
 namespace passport {
 namespace detail {
 
-typedef CryptoPP::AllocatorWithCleanup<char> CryptoSafeAllocator;
-typedef std::basic_string<char, std::char_traits<char>, CryptoSafeAllocator> SafeString;
+//typedef CryptoPP::AllocatorWithCleanup<char> CryptoSafeAllocator;
+//typedef std::basic_string<char, std::char_traits<char>, CryptoSafeAllocator> SafeString;
+//typedef maidsafe::SecureString NonPagedString;
+
+typedef std::basic_string<char, std::char_traits<char>, maidsafe::secure_allocator<char>> SafeString;
 
 class SecureString {
   typedef crypto::SHA512 SHA512;
