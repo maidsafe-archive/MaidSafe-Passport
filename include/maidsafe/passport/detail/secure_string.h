@@ -41,7 +41,7 @@ namespace detail {
 //typedef std::basic_string<char, std::char_traits<char>, CryptoSafeAllocator> SafeString;
 //typedef maidsafe::SecureString NonPagedString;
 
-typedef std::basic_string<char, std::char_traits<char>, maidsafe::secure_allocator<char>> SafeString;
+typedef std::basic_string<char, std::char_traits<char>, secure_allocator<char>> SafeString;
 
 class SecureString {
   typedef crypto::SHA512 SHA512;
