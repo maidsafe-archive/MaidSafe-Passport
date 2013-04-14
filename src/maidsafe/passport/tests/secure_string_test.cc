@@ -75,6 +75,34 @@ TEST(SecureStringTest, BEH_CreatePassword) {
   ASSERT_EQ(SafeString("payload"), password.string());
 }
 
+TEST(SecureStringTest, BEH_CreatePasswordString) {
+  SafeString safe_password("password");
+  EXPECT_NO_THROW(Password password(safe_password));
+  std::string std_password("drowssap");
+  EXPECT_NO_THROW(Password password(std_password));
+
+  {
+    Password password(safe_password);
+    ASSERT_EQ(SafeString("password"), password.string());
+
+    EXPECT_NO_THROW(password.Insert<std::string>(safe_password.size(), std_password));
+
+    EXPECT_NO_THROW(password.Finalise());
+
+    ASSERT_EQ(SafeString("passworddrowssap"), password.string());
+  }
+
+  {
+    Password password;
+    EXPECT_NO_THROW(password.Insert<SafeString>(0, safe_password));
+    EXPECT_NO_THROW(password.Insert<std::string>(1, std_password));
+
+    EXPECT_NO_THROW(password.Finalise());
+
+    ASSERT_EQ(SafeString("passworddrowssap"), password.string());
+  }
+}
+
 TEST(SecureStringTest, BEH_RemoveFirstPasswordCharacter) {
   Password password;
 

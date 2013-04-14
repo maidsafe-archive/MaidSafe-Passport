@@ -59,7 +59,7 @@ class SecureString {
   template<typename StringType> SecureString(const StringType& string);
   ~SecureString();
 
-  template<typename StringType> void Append(const StringType& decrypted_char);
+  template<typename StringType> void Append(const StringType& decrypted_chars);
   void Append(char decrypted_char);
   void Finalise();
   void Clear();
@@ -86,8 +86,8 @@ class SecureInputString {
   template<typename StringType> SecureInputString(const StringType& string);
   ~SecureInputString();
 
-  template<typename CharType>
-  void Insert(size_type position, const CharType& decrypted_char);
+  template<typename StringType>
+  void Insert(size_type position, const StringType& decrypted_chars);
   void Insert(size_type position, char decrypted_char);
   void Remove(size_type position, size_type length = 1);
   void Clear();
@@ -104,16 +104,16 @@ class SecureInputString {
 
  private:
   void Reset();
-  template<typename CharType>
-  SafeString Encrypt(const CharType& decrypted_char) const;
+  template<typename StringType>
+  SafeString Encrypt(const StringType& decrypted_chars) const;
   SafeString Encrypt(const char& decrypted_char) const;
   SafeString Decrypt(const SafeString& encrypted_char) const;
   bool ValidateEncryptedChars(const boost::regex& regex) const;
   bool ValidateSecureString(const boost::regex& regex) const;
 
   std::map<size_type, SafeString> encrypted_chars_;
-  SecureString secure_string_;
   SafeString phrase_;
+  SecureString secure_string_;
   bool finalised_;
 };
 
