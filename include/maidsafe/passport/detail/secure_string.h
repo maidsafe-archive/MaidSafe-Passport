@@ -37,10 +37,6 @@ namespace maidsafe {
 namespace passport {
 namespace detail {
 
-//typedef CryptoPP::AllocatorWithCleanup<char> CryptoSafeAllocator;
-//typedef std::basic_string<char, std::char_traits<char>, CryptoSafeAllocator> SafeString;
-//typedef maidsafe::SecureString NonPagedString;
-
 typedef std::basic_string<char, std::char_traits<char>, secure_allocator<char>> SafeString;
 
 class SecureString {
@@ -88,7 +84,6 @@ class SecureInputString {
 
   template<typename StringType>
   void Insert(size_type position, const StringType& decrypted_chars);
-  void Insert(size_type position, char decrypted_char);
   void Remove(size_type position, size_type length = 1);
   void Clear();
   void Finalise();

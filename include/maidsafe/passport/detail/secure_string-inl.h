@@ -77,27 +77,6 @@ void SecureInputString<Predicate, Size>::Insert(size_type position, const String
 }
 
 template<typename Predicate, SecureString::size_type Size>
-void SecureInputString<Predicate, Size>::Insert(size_type position, char decrypted_char) {
-  if (IsFinalised())
-    Reset();
-  SafeString encrypted_char(Encrypt(decrypted_char));
-  auto it(encrypted_chars_.find(position));
-  if (it == encrypted_chars_.end()) {
-    encrypted_chars_.insert(std::make_pair(position, encrypted_char));
-    return;
-  }
-  while (it != encrypted_chars_.end()) {
-    auto old_encrypted_char = it->second;
-    it = encrypted_chars_.erase(it);
-    encrypted_chars_.insert(it, std::make_pair(position, encrypted_char));
-    encrypted_char = old_encrypted_char;
-    position += 1;
-  }
-  encrypted_chars_.insert(std::make_pair(position, encrypted_char));
-  return;
-}
-
-template<typename Predicate, SecureString::size_type Size>
 void SecureInputString<Predicate, Size>::Remove(size_type position, size_type length) {
   if (IsFinalised())
     Reset();

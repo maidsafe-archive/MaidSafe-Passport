@@ -85,7 +85,7 @@ TEST(SecureStringTest, BEH_CreatePasswordString) {
     Password password(safe_password);
     ASSERT_EQ(SafeString("password"), password.string());
 
-    EXPECT_NO_THROW(password.Insert<std::string>(safe_password.size(), std_password));
+    EXPECT_NO_THROW(password.Insert(safe_password.size(), std_password));
 
     EXPECT_NO_THROW(password.Finalise());
 
@@ -94,8 +94,8 @@ TEST(SecureStringTest, BEH_CreatePasswordString) {
 
   {
     Password password;
-    EXPECT_NO_THROW(password.Insert<SafeString>(0, safe_password));
-    EXPECT_NO_THROW(password.Insert<std::string>(1, std_password));
+    EXPECT_NO_THROW(password.Insert(0, safe_password));
+    EXPECT_NO_THROW(password.Insert(1, std_password));
 
     EXPECT_NO_THROW(password.Finalise());
 
