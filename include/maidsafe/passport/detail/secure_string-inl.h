@@ -111,15 +111,15 @@ void SecureInputString<Predicate, Size>::Finalise() {
     return;
   if (!Predicate()(encrypted_chars_.size(), Size))
     ThrowError(CommonErrors::invalid_parameter);
-  uint32_t counter(0);
+  uint32_t index(0);
   for (auto& encrypted_char : encrypted_chars_) {
-    if (encrypted_char.first != counter) {
+    if (encrypted_char.first != index) {
       secure_string_.Clear();
       ThrowError(CommonErrors::invalid_parameter);
     }
     SafeString decrypted_char(Decrypt(encrypted_char.second));
     secure_string_.Append(decrypted_char);
-    ++counter;
+    ++index;
   }
   secure_string_.Finalise();
   encrypted_chars_.clear();

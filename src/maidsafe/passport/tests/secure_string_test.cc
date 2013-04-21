@@ -337,7 +337,7 @@ TEST(SecureStringTest, BEH_CreateInvalidLengthPin) {
   }
 }
 
-TEST(SecureStringTest, BEH_InsertInvalidPinDigit) {
+TEST(SecureStringTest, BEH_InsertInvalidPinValue) {
   Pin pin;
 
   EXPECT_NO_THROW(pin.Insert(1, '1'));
