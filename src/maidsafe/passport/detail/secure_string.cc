@@ -57,6 +57,9 @@ SafeString SecureString::string() const {
   return decrypted_string;
 }
 
+// see safe_allocators.h
+LockedPageManager LockedPageManager::instance;
+
 }  // namespace detail
 }  // namespace passport
 }  // namespace maidsafe
