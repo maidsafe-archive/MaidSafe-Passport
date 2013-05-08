@@ -56,7 +56,8 @@ template<typename Predicate, SecureString::size_type Size>
 SecureInputString<Predicate, Size>::~SecureInputString() {}
 
 template<typename Predicate, SecureString::size_type Size> template<typename StringType>
-void SecureInputString<Predicate, Size>::Insert(size_type position, const StringType& decrypted_chars) {
+void SecureInputString<Predicate, Size>::Insert(size_type position,
+                                                const StringType& decrypted_chars) {
   if (IsFinalised())
     Reset();
   SafeString encrypted_chars(Encrypt(decrypted_chars));
