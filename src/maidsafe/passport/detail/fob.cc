@@ -100,7 +100,7 @@ void FobToProtobuf(DataTagValue enum_value,
                    const asymm::Signature& validation_token,
                    const std::string& name,
                    protobuf::Fob* proto_fob) {
-  proto_fob->set_type(static_cast<int>(enum_value));
+  proto_fob->set_type(static_cast<uint32_t>(enum_value));
   proto_fob->set_name(name);
   proto_fob->set_encoded_private_key(asymm::EncodeKey(keys.private_key).string());
   proto_fob->set_encoded_public_key(asymm::EncodeKey(keys.public_key).string());
