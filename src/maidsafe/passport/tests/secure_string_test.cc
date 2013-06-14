@@ -290,7 +290,6 @@ TEST(SecureStringTest, BEH_CheckPasswordValidForAllChars) {
   EXPECT_NO_THROW(password.Insert(7, '5'));
   EXPECT_NO_THROW(password.Insert(8, '!'));
   EXPECT_NO_THROW(password.Insert(9, ' '));
-  EXPECT_NO_THROW(password.Insert(10, '£'));
   EXPECT_NO_THROW(password.Insert(11, 'c'));
   EXPECT_NO_THROW(password.Insert(12, '>'));
   EXPECT_NO_THROW(password.Insert(13, 'b'));
