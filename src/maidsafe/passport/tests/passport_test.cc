@@ -13,6 +13,7 @@
 
 #include <cstdint>
 #include <future>
+#include <memory>
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
@@ -317,10 +318,10 @@ class PassportParallelTest : public PassportTest {
 
 TEST_F(PassportParallelTest, FUNC_ParallelCreateConfirmGetDelete) {
   {
-    auto a1 = std::async([&] { return passport_.CreateFobs(); });  // NOLINT (Alison)
-    auto a2 = std::async([&] { return passport_.CreateSelectableFobPair(chosen_name_1_); });  // NOLINT (Alison)
-    auto a3 = std::async([&] { return passport_.CreateSelectableFobPair(chosen_name_2_); });  // NOLINT (Alison)
-    auto a4 = std::async([&] { return passport_.CreateSelectableFobPair(chosen_name_5_); });  // NOLINT (Alison)
+    auto a1 = std::async([&] { return passport_.CreateFobs(); });
+    auto a2 = std::async([&] { return passport_.CreateSelectableFobPair(chosen_name_1_); });
+    auto a3 = std::async([&] { return passport_.CreateSelectableFobPair(chosen_name_2_); });
+    auto a4 = std::async([&] { return passport_.CreateSelectableFobPair(chosen_name_5_); });
     a4.get();
     a3.get();
     a2.get();
@@ -331,13 +332,17 @@ TEST_F(PassportParallelTest, FUNC_ParallelCreateConfirmGetDelete) {
   TestFobs pending_fobs(GetFobs(false));
 
   {
-    auto a1 = std::async([&] { return passport_.ConfirmFobs(); });                             // NOLINT (Alison)
-    auto a2 = std::async([&] { return passport_.ConfirmSelectableFobPair(chosen_name_2_); });  // NOLINT (Alison)
-    auto a3 = std::async([&] { return passport_.CreateFobs(); });                              // NOLINT (Alison)
-    auto a4 = std::async([&] { return passport_.GetSelectableFob<Anmpid>(false, chosen_name_1_); });  // NOLINT (Alison)
-    auto a5 = std::async([&] { return passport_.GetSelectableFob<Mpid>(false, chosen_name_1_); });    // NOLINT (Alison)
-    auto a6 = std::async([&] { return passport_.GetSelectableFob<Anmpid>(true, chosen_name_5_); });   // NOLINT (Alison)
-    auto a7 = std::async([&] { return passport_.GetSelectableFob<Mpid>(true, chosen_name_5_); });     // NOLINT (Alison)
+    auto a1 = std::async([&] { return passport_.ConfirmFobs(); });
+    auto a2 = std::async([&] { return passport_.ConfirmSelectableFobPair(chosen_name_2_); });
+    auto a3 = std::async([&] { return passport_.CreateFobs(); });
+    auto a4 = std::async([&] { return passport_.GetSelectableFob<Anmpid>(false, chosen_name_1_); });
+    auto a5 = std::async([&] { return std::make_shared<Mpid>(
+                                   passport_.GetSelectableFob<Mpid>(false, chosen_name_1_));
+                             });
+    auto a6 = std::async([&] { return passport_.GetSelectableFob<Anmpid>(true, chosen_name_5_); });
+    auto a7 = std::async([&] { return std::make_shared<Mpid>(
+                                   passport_.GetSelectableFob<Mpid>(true, chosen_name_5_));
+                             });
     a7.get();
     a6.get();
     a5.get();
@@ -352,10 +357,10 @@ TEST_F(PassportParallelTest, FUNC_ParallelCreateConfirmGetDelete) {
   passport_.CreateSelectableFobPair(chosen_name_3_);
 
   {
-    auto a1 = std::async([&] { return passport_.CreateSelectableFobPair(chosen_name_4_); });   // NOLINT (Alison)
-    auto a2 = std::async([&] { return passport_.ConfirmSelectableFobPair(chosen_name_3_); });  // NOLINT (Alison)
-    auto a3 = std::async([&] { return passport_.DeleteSelectableFobPair(chosen_name_1_); });   // NOLINT (Alison)
-    auto a4 = std::async([&] { return passport_.DeleteSelectableFobPair(chosen_name_2_); });   // NOLINT (Alison)
+    auto a1 = std::async([&] { return passport_.CreateSelectableFobPair(chosen_name_4_); });
+    auto a2 = std::async([&] { return passport_.ConfirmSelectableFobPair(chosen_name_3_); });
+    auto a3 = std::async([&] { return passport_.DeleteSelectableFobPair(chosen_name_1_); });
+    auto a4 = std::async([&] { return passport_.DeleteSelectableFobPair(chosen_name_2_); });
     a4.get();
     a3.get();
     a2.get();
@@ -374,11 +379,11 @@ TEST_F(PassportParallelTest, FUNC_ParallelSerialiseParse) {
   passport_.CreateSelectableFobPair(chosen_name_2_);
   NonEmptyString serialised;
   {
-    auto a1 = std::async([&] { return passport_.CreateFobs(); });                              // NOLINT (Alison)
-    auto a2 = std::async([&] { return passport_.ConfirmSelectableFobPair(chosen_name_2_); });  // NOLINT (Alison)
-    auto a3 = std::async([&] { return passport_.CreateSelectableFobPair(chosen_name_3_); });   // NOLINT (Alison)
-    auto a4 = std::async([&] { return passport_.Serialise(); });                               // NOLINT (Alison)
-    auto a5 = std::async([&] { return passport_.DeleteSelectableFobPair(chosen_name_1_); });   // NOLINT (Alison)
+    auto a1 = std::async([&] { return passport_.CreateFobs(); });
+    auto a2 = std::async([&] { return passport_.ConfirmSelectableFobPair(chosen_name_2_); });
+    auto a3 = std::async([&] { return passport_.CreateSelectableFobPair(chosen_name_3_); });
+    auto a4 = std::async([&] { return passport_.Serialise(); });
+    auto a5 = std::async([&] { return passport_.DeleteSelectableFobPair(chosen_name_1_); });
     a5.get();
     serialised = a4.get();
     a3.get();
@@ -392,13 +397,17 @@ TEST_F(PassportParallelTest, FUNC_ParallelSerialiseParse) {
   passport_.ConfirmSelectableFobPair(chosen_name_5_);
 
   {
-    auto a1 = std::async([&] { return passport_.Parse(serialised); });                        // NOLINT (Alison)
-    auto a2 = std::async([&] { return passport_.ConfirmFobs(); });                            // NOLINT (Alison)
-    auto a3 = std::async([&] { return passport_.CreateSelectableFobPair(chosen_name_4_); });  // NOLINT (Alison)
-    auto a4 = std::async([&] { return passport_.GetSelectableFob<Anmpid>(false, chosen_name_1_); });  // NOLINT (Alison)
-    auto a5 = std::async([&] { return passport_.GetSelectableFob<Mpid>(false, chosen_name_1_); });    // NOLINT (Alison)
-    auto a6 = std::async([&] { return passport_.GetSelectableFob<Anmpid>(true, chosen_name_5_); });   // NOLINT (Alison)
-    auto a7 = std::async([&] { return passport_.GetSelectableFob<Mpid>(true, chosen_name_5_); });     // NOLINT (Alison)
+    auto a1 = std::async([&] { return passport_.Parse(serialised); });
+    auto a2 = std::async([&] { return passport_.ConfirmFobs(); });
+    auto a3 = std::async([&] { return passport_.CreateSelectableFobPair(chosen_name_4_); });
+    auto a4 = std::async([&] { return passport_.GetSelectableFob<Anmpid>(false, chosen_name_1_); });
+    auto a5 = std::async([&] { return std::make_shared<Mpid>(
+                                   passport_.GetSelectableFob<Mpid>(false, chosen_name_1_));
+                             });
+    auto a6 = std::async([&] { return passport_.GetSelectableFob<Anmpid>(true, chosen_name_5_); });
+    auto a7 = std::async([&] { return std::make_shared<Mpid>(
+                                   passport_.GetSelectableFob<Mpid>(true, chosen_name_5_));
+                             });
     a7.get();
     a6.get();
     a5.get();
