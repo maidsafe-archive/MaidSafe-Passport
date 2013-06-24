@@ -142,7 +142,7 @@ class MemoryPageLocker {
 // std::allocator templates.
 class LockedPageManager : public LockedPageManagerBase<MemoryPageLocker> {
  public:
-  static LockedPageManager instance;  // instantiated in utils.cc (util.cpp)
+  static LockedPageManager instance;
  private:
   LockedPageManager() : LockedPageManagerBase<MemoryPageLocker>(GetSystemPageSize()) {}
 };

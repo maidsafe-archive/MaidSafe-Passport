@@ -27,6 +27,19 @@ namespace maidsafe {
 
 namespace passport {
 
+EncryptedSession EncryptSession(const detail::Keyword& keyword,
+                                const detail::Pin& pin,
+                                const detail::Password& password,
+                                const NonEmptyString& serialised_session) {
+  return detail::EncryptSession(keyword, pin, password, serialised_session);
+}
+
+EncryptedTmidName EncryptTmidName(const detail::Keyword& keyword,
+                                  const detail::Pin& pin,
+                                  const Tmid::name_type& tmid_name) {
+  return detail::EncryptTmidName(keyword, pin, tmid_name);
+}
+
 Mid::name_type MidName(const detail::Keyword& keyword, const detail::Pin& pin) {
   return Mid::GenerateName(keyword, pin);
 }
@@ -35,25 +48,11 @@ Smid::name_type SmidName(const detail::Keyword& keyword, const detail::Pin& pin)
   return Smid::GenerateName(keyword, pin);
 }
 
-EncryptedSession EncryptSession(const detail::Keyword& keyword,
-                                const detail::Pin& pin,
-                                const detail::Password& password,
-                                const NonEmptyString& serialised_session) {
-  return detail::EncryptSession(keyword, pin, password, serialised_session);
-}
-
-
 NonEmptyString DecryptSession(const detail::Keyword& keyword,
                               const detail::Pin& pin,
                               const detail::Password& password,
                               const EncryptedSession& encrypted_session) {
   return detail::DecryptSession(keyword, pin, password, encrypted_session);
-}
-
-EncryptedTmidName EncryptTmidName(const detail::Keyword& keyword,
-                                  const detail::Pin& pin,
-                                  const Tmid::name_type& tmid_name) {
-  return detail::EncryptTmidName(keyword, pin, tmid_name);
 }
 
 Tmid::name_type DecryptTmidName(const detail::Keyword& keyword,
