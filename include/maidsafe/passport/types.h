@@ -31,8 +31,8 @@ namespace passport {
 // are defined in terms of a Fob.
 
 // Maidsafe Anonymous Identification:
-// The Maid is used authenticate network transactions, it is signed by the Anmaid passed during its
-// construction.
+// The Maid is used for authenticatable network transactions, it is signed by the Anmaid passed
+// during its construction.
 typedef detail::Fob<detail::MaidTag> Maid;
 // Proxy Maidsafe Identification:
 // The Pmid identifies a vault on the network, see http://maidsafe.github.io/MaidSafe-Vault/ for
