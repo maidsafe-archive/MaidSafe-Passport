@@ -13,7 +13,6 @@ implied. See the License for the specific language governing permissions and lim
 License.
 */
 
-
 #ifndef MAIDSAFE_PASSPORT_DETAIL_SECURE_STRING_H_
 #define MAIDSAFE_PASSPORT_DETAIL_SECURE_STRING_H_
 
