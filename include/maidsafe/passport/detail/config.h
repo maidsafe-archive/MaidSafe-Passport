@@ -27,49 +27,17 @@ namespace passport {
 
 namespace detail {
 
-struct AnmidTag {
-  static const DataTagValue kEnumValue;
-};
-
-struct AnsmidTag {
-  static const DataTagValue kEnumValue;
-};
-
-struct AntmidTag {
-  static const DataTagValue kEnumValue;
-};
-
-struct AnmaidTag {
-  static const DataTagValue kEnumValue;
-};
-
-struct MaidTag {
-  static const DataTagValue kEnumValue;
-};
-
-struct PmidTag {
-  static const DataTagValue kEnumValue;
-};
-
-struct MidTag {
-  static const DataTagValue kEnumValue;
-};
-
-struct SmidTag {
-  static const DataTagValue kEnumValue;
-};
-
-struct TmidTag {
-  static const DataTagValue kEnumValue;
-};
-
-struct AnmpidTag {
-  static const DataTagValue kEnumValue;
-};
-
-struct MpidTag {
-  static const DataTagValue kEnumValue;
-};
+typedef maidsafe::detail::Tag<DataTagValue::kAnmidValue> AnmidTag;
+typedef maidsafe::detail::Tag<DataTagValue::kAnsmidValue> AnsmidTag;
+typedef maidsafe::detail::Tag<DataTagValue::kAntmidValue> AntmidTag;
+typedef maidsafe::detail::Tag<DataTagValue::kAnmaidValue> AnmaidTag;
+typedef maidsafe::detail::Tag<DataTagValue::kMaidValue> MaidTag;
+typedef maidsafe::detail::Tag<DataTagValue::kPmidValue> PmidTag;
+typedef maidsafe::detail::Tag<DataTagValue::kMidValue> MidTag;
+typedef maidsafe::detail::Tag<DataTagValue::kSmidValue> SmidTag;
+typedef maidsafe::detail::Tag<DataTagValue::kTmidValue> TmidTag;
+typedef maidsafe::detail::Tag<DataTagValue::kAnmpidValue> AnmpidTag;
+typedef maidsafe::detail::Tag<DataTagValue::kMpidValue> MpidTag;
 
 template<typename Tag, class Enable = void>
 class Fob;

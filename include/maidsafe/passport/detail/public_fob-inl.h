@@ -72,19 +72,18 @@ PublicFob<Tag>::PublicFob(const Fob<Tag>& fob)
 //                  this more efficient by using a lambda which returns the parsed protobuf
 //                  inside a private constructor taking a single arg of type protobuf.
 template<typename Tag>
-PublicFob<Tag>::PublicFob(const name_type& name, const serialised_type& serialised_public_fob)
+PublicFob<Tag>::PublicFob(const Name& name, const serialised_type& serialised_public_fob)
     : name_(name),
       public_key_(),
       validation_token_() {
-  if (!name_.data.IsInitialised())
+  if (!name_->IsInitialised())
     ThrowError(PassportErrors::fob_parsing_error);
-  PublicFobFromProtobuf(serialised_public_fob.data, Tag::kEnumValue, public_key_,
-                        validation_token_);
+  PublicFobFromProtobuf(serialised_public_fob.data, Tag::kValue, public_key_, validation_token_);
 }
 
 template<typename Tag>
 typename PublicFob<Tag>::serialised_type PublicFob<Tag>::Serialise() const {
-  return serialised_type(PublicFobToProtobuf(Tag::kEnumValue, public_key_, validation_token_));
+  return serialised_type(PublicFobToProtobuf(Tag::kValue, public_key_, validation_token_));
 }
 
 }  // namespace detail

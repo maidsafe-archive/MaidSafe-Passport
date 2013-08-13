@@ -63,14 +63,14 @@ NonEmptyString DecryptSession(const detail::Keyword& keyword,
 // PBKDF2 generated location to store Tmid data on network.
 EncryptedTmidName EncryptTmidName(const detail::Keyword& keyword,
                                   const detail::Pin& pin,
-                                  const Tmid::name_type& tmid_name);
-Tmid::name_type DecryptTmidName(const detail::Keyword& keyword,
-                                const detail::Pin& pin,
-                                const EncryptedTmidName& encrypted_tmid_name);
+                                  const Tmid::Name& tmid_name);
+Tmid::Name DecryptTmidName(const detail::Keyword& keyword,
+                           const detail::Pin& pin,
+                           const EncryptedTmidName& encrypted_tmid_name);
 
 // PBKDF2 generated location to store Mid/Smid data on network.
-Mid::name_type MidName(const detail::Keyword& keyword, const detail::Pin& pin);
-Smid::name_type SmidName(const detail::Keyword& keyword, const detail::Pin& pin);
+Mid::Name MidName(const detail::Keyword& keyword, const detail::Pin& pin);
+Smid::Name SmidName(const detail::Keyword& keyword, const detail::Pin& pin);
 
 // Methods for serialising/parsing the identity required for data storage.
 NonEmptyString SerialisePmid(const Pmid& pmid);

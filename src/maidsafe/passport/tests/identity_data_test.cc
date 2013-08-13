@@ -52,10 +52,10 @@ TEST(IdentityPacketsTest, BEH_Full) {
   Tmid stmid1(encrypted_surrogate_data1, antmid);
   Tmid stmid2(encrypted_surrogate_data2, antmid);
 
-  TmidData::name_type tmid_name1(tmid1.name());
-  TmidData::name_type tmid_name2(tmid2.name());
-  TmidData::name_type stmid_name1(stmid1.name());
-  TmidData::name_type stmid_name2(stmid2.name());
+  TmidData::Name tmid_name1(tmid1.name());
+  TmidData::Name tmid_name2(tmid2.name());
+  TmidData::Name stmid_name1(stmid1.name());
+  TmidData::Name stmid_name2(stmid2.name());
   ASSERT_EQ(tmid_name1, tmid_name2);
   ASSERT_EQ(stmid_name1, stmid_name2);
   ASSERT_EQ(tmid1.encrypted_session(), tmid2.encrypted_session());
@@ -68,10 +68,10 @@ TEST(IdentityPacketsTest, BEH_Full) {
   ASSERT_EQ(mid_value1, mid_value2);
   ASSERT_EQ(smid_value1, smid_value2);
 
-  Mid::name_type mid_name1(MidName(kKeyword, kPin));
-  Mid::name_type mid_name2(MidName(kKeyword, kPin));
-  Smid::name_type smid_name1(SmidName(kKeyword, kPin));
-  Smid::name_type smid_name2(SmidName(kKeyword, kPin));
+  Mid::Name mid_name1(MidName(kKeyword, kPin));
+  Mid::Name mid_name2(MidName(kKeyword, kPin));
+  Smid::Name smid_name1(SmidName(kKeyword, kPin));
+  Smid::Name smid_name2(SmidName(kKeyword, kPin));
 
   Anmid anmid;
   Mid mid1(mid_name1, mid_value1, anmid);
@@ -97,14 +97,14 @@ TEST(IdentityPacketsTest, BEH_Full) {
   ASSERT_EQ(decrypted_surrogate_data1, decrypted_surrogate_data2);
   ASSERT_EQ(kSurrogateData, decrypted_surrogate_data2);
 
-  TmidData::name_type decrypted_mid_value1(maidsafe::passport::DecryptTmidName(kKeyword, kPin,
-                                                                               mid_value1));
-  TmidData::name_type decrypted_mid_value2(maidsafe::passport::DecryptTmidName(kKeyword, kPin,
-                                                                               mid_value2));
-  TmidData::name_type decrypted_smid_value1(maidsafe::passport::DecryptTmidName(kKeyword, kPin,
-                                                                                smid_value1));
-  TmidData::name_type decrypted_smid_value2(maidsafe::passport::DecryptTmidName(kKeyword, kPin,
-                                                                                smid_value2));
+  TmidData::Name decrypted_mid_value1(maidsafe::passport::DecryptTmidName(kKeyword, kPin,
+                                                                          mid_value1));
+  TmidData::Name decrypted_mid_value2(maidsafe::passport::DecryptTmidName(kKeyword, kPin,
+                                                                          mid_value2));
+  TmidData::Name decrypted_smid_value1(maidsafe::passport::DecryptTmidName(kKeyword, kPin,
+                                                                           smid_value1));
+  TmidData::Name decrypted_smid_value2(maidsafe::passport::DecryptTmidName(kKeyword, kPin,
+                                                                           smid_value2));
 
   ASSERT_EQ(decrypted_mid_value1, decrypted_mid_value2);
   ASSERT_EQ(tmid_name1, decrypted_mid_value2);

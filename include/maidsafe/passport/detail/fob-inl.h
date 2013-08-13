@@ -147,29 +147,29 @@ template<typename Tag>
 Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>::Fob(
     const protobuf::Fob& proto_fob) : keys_(), validation_token_(), name_() {
   Identity name;
-  FobFromProtobuf(proto_fob, Tag::kEnumValue, keys_, validation_token_, name);
-  name_ = name_type(name);
+  FobFromProtobuf(proto_fob, Tag::kValue, keys_, validation_token_, name);
+  name_ = Name(name);
 }
 
 template<typename Tag>
 Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>::Fob(
     const protobuf::Fob& proto_fob) : keys_(), validation_token_(), name_() {
   Identity name;
-  FobFromProtobuf(proto_fob, Tag::kEnumValue, keys_, validation_token_, name);
-  name_ = name_type(name);
+  FobFromProtobuf(proto_fob, Tag::kValue, keys_, validation_token_, name);
+  name_ = Name(name);
 }
 
 
 template<typename Tag>
 void Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>::ToProtobuf(
     protobuf::Fob* proto_fob) const {
-  FobToProtobuf(Tag::kEnumValue, keys_, validation_token_, name_.data.string(), proto_fob);
+  FobToProtobuf(Tag::kValue, keys_, validation_token_, name_->string(), proto_fob);
 }
 
 template<typename Tag>
 void Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>::ToProtobuf(
     protobuf::Fob* proto_fob) const {
-  FobToProtobuf(Tag::kEnumValue, keys_, validation_token_, name_.data.string(), proto_fob);
+  FobToProtobuf(Tag::kValue, keys_, validation_token_, name_->string(), proto_fob);
 }
 
 }  // namespace detail

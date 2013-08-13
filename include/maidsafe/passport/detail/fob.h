@@ -50,10 +50,11 @@ template<>
 struct is_self_signed<AnmpidTag> : public std::true_type {};
 
 
-template<typename Tag, typename Enable>
+template<typename TagType, typename Enable>
 class Fob {
  public:
-  typedef TaggedValue<Identity, Tag> name_type;
+  typedef maidsafe::detail::Name<Fob> Name;
+  typedef TagType Tag;
   typedef typename Signer<Tag>::type signer_type;
   Fob(const Fob& other);
   Fob& operator=(const Fob& other);
@@ -61,7 +62,7 @@ class Fob {
   Fob& operator=(Fob&& other);
   explicit Fob(const protobuf::Fob& proto_fob);
   void ToProtobuf(protobuf::Fob* proto_fob) const;
-  name_type name() const;
+  Name name() const;
   asymm::Signature validation_token() const;
   asymm::PrivateKey private_key() const;
   asymm::PublicKey public_key() const;
@@ -69,13 +70,14 @@ class Fob {
  private:
   asymm::Keys keys_;
   asymm::Signature validation_token_;
-  name_type name_;
+  Name name_;
 };
 
-template<typename Tag>
-class Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type> {
+template<typename TagType>
+class Fob<TagType, typename std::enable_if<is_self_signed<TagType>::value>::type> {
  public:
-  typedef TaggedValue<Identity, Tag> name_type;
+  typedef maidsafe::detail::Name<Fob> Name;
+  typedef TagType Tag;
   typedef typename Signer<Tag>::type signer_type;
   // This constructor is only available to this specialisation (i.e. self-signed fob)
   Fob();
@@ -85,7 +87,7 @@ class Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type> {
   Fob& operator=(Fob&& other);
   explicit Fob(const protobuf::Fob& proto_fob);
   void ToProtobuf(protobuf::Fob* proto_fob) const;
-  name_type name() const { return name_; }
+  Name name() const { return name_; }
   asymm::Signature validation_token() const { return validation_token_; }
   asymm::PrivateKey private_key() const { return keys_.private_key; }
   asymm::PublicKey public_key() const { return keys_.public_key; }
@@ -93,13 +95,14 @@ class Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type> {
  private:
   asymm::Keys keys_;
   asymm::Signature validation_token_;
-  name_type name_;
+  Name name_;
 };
 
 template<>
 class Fob<MpidTag> {
  public:
-  typedef TaggedValue<Identity, MpidTag> name_type;
+  typedef maidsafe::detail::Name<Fob> Name;
+  typedef MpidTag Tag;
   typedef Signer<MpidTag>::type signer_type;
   Fob(const Fob& other);
   // This constructor is only available to this specialisation (i.e. Mpid)
@@ -109,7 +112,7 @@ class Fob<MpidTag> {
   Fob& operator=(Fob&& other);
   explicit Fob(const protobuf::Fob& proto_fob);
   void ToProtobuf(protobuf::Fob* proto_fob) const;
-  name_type name() const { return name_; }
+  Name name() const { return name_; }
   asymm::Signature validation_token() const { return validation_token_; }
   asymm::PrivateKey private_key() const { return keys_.private_key; }
   asymm::PublicKey public_key() const { return keys_.public_key; }
@@ -118,25 +121,25 @@ class Fob<MpidTag> {
   Fob();
   asymm::Keys keys_;
   asymm::Signature validation_token_;
-  name_type name_;
+  Name name_;
 };
 
-template<typename Tag>
-class Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type> {
+template<typename TagType>
+class Fob<TagType, typename std::enable_if<!is_self_signed<TagType>::value>::type> {
  public:
-  typedef TaggedValue<Identity, Tag> name_type;
+  typedef maidsafe::detail::Name<Fob> Name;
+  typedef TagType Tag;
   typedef typename Signer<Tag>::type signer_type;
   Fob(const Fob& other);
   // This constructor is only available to this specialisation (i.e. non-self-signed fob)
   explicit Fob(const signer_type& signing_fob,
-               typename std::enable_if<!std::is_same<Fob<Tag>,
-                                                     signer_type>::value>::type* = 0);
+               typename std::enable_if<!std::is_same<Fob<Tag>, signer_type>::value>::type* = 0);
   Fob& operator=(const Fob& other);
   Fob(Fob&& other);
   Fob& operator=(Fob&& other);
   explicit Fob(const protobuf::Fob& proto_fob);
   void ToProtobuf(protobuf::Fob* proto_fob) const;
-  name_type name() const { return name_; }
+  Name name() const { return name_; }
   asymm::Signature validation_token() const { return validation_token_; }
   asymm::PrivateKey private_key() const { return keys_.private_key; }
   asymm::PublicKey public_key() const { return keys_.public_key; }
@@ -145,7 +148,7 @@ class Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type> {
   Fob();
   asymm::Keys keys_;
   asymm::Signature validation_token_;
-  name_type name_;
+  Name name_;
 };
 
 NonEmptyString SerialisePmid(const Fob<PmidTag>& pmid);
@@ -161,8 +164,15 @@ bool WritePmidList(const boost::filesystem::path& file_path,
 
 struct AnmaidToPmid {
   AnmaidToPmid(const Fob<AnmaidTag>& anmaid, const Fob<MaidTag>& maid, const Fob<PmidTag>& pmid)
-      : anmaid(anmaid), maid(maid), pmid(pmid), chain_size(3) {}
-  AnmaidToPmid() : anmaid(), maid(anmaid), pmid(maid), chain_size(3) {}
+      : anmaid(anmaid),
+        maid(maid),
+        pmid(pmid),
+        chain_size(3) {}
+  AnmaidToPmid()
+      : anmaid(),
+        maid(anmaid),
+        pmid(maid),
+        chain_size(3) {}
   Fob<AnmaidTag> anmaid;
   Fob<MaidTag> maid;
   Fob<PmidTag> pmid;

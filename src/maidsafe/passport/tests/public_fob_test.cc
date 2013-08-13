@@ -154,21 +154,21 @@ TEST(PublicFobTest, BEH_FobSerialisationAndParsing) {
 TEST(PublicFobTest, BEH_ConstructFromBadStrings) {
   Identity name(RandomString(64));
   NonEmptyString string(RandomAlphaNumericString(1 + RandomUint32() % 100));
-  EXPECT_THROW(PublicAnmid(PublicAnmid::name_type(name), PublicAnmid::serialised_type(string)),
+  EXPECT_THROW(PublicAnmid(PublicAnmid::Name(name), PublicAnmid::serialised_type(string)),
                std::exception);
-  EXPECT_THROW(PublicAnsmid(PublicAnsmid::name_type(name), PublicAnsmid::serialised_type(string)),
+  EXPECT_THROW(PublicAnsmid(PublicAnsmid::Name(name), PublicAnsmid::serialised_type(string)),
                std::exception);
-  EXPECT_THROW(PublicAntmid(PublicAntmid::name_type(name), PublicAntmid::serialised_type(string)),
+  EXPECT_THROW(PublicAntmid(PublicAntmid::Name(name), PublicAntmid::serialised_type(string)),
                std::exception);
-  EXPECT_THROW(PublicAnmaid(PublicAnmaid::name_type(name), PublicAnmaid::serialised_type(string)),
+  EXPECT_THROW(PublicAnmaid(PublicAnmaid::Name(name), PublicAnmaid::serialised_type(string)),
                std::exception);
-  EXPECT_THROW(PublicMaid(PublicMaid::name_type(name), PublicMaid::serialised_type(string)),
+  EXPECT_THROW(PublicMaid(PublicMaid::Name(name), PublicMaid::serialised_type(string)),
                std::exception);
-  EXPECT_THROW(PublicPmid(PublicPmid::name_type(name), PublicPmid::serialised_type(string)),
+  EXPECT_THROW(PublicPmid(PublicPmid::Name(name), PublicPmid::serialised_type(string)),
                std::exception);
-  EXPECT_THROW(PublicAnmpid(PublicAnmpid::name_type(name), PublicAnmpid::serialised_type(string)),
+  EXPECT_THROW(PublicAnmpid(PublicAnmpid::Name(name), PublicAnmpid::serialised_type(string)),
                std::exception);
-  EXPECT_THROW(PublicMpid(PublicMpid::name_type(name), PublicMpid::serialised_type(string)),
+  EXPECT_THROW(PublicMpid(PublicMpid::Name(name), PublicMpid::serialised_type(string)),
                std::exception);
 }
 
@@ -177,53 +177,53 @@ TEST(PublicFobTest, BEH_ConstructFromUninitialisedStrings) {
   Identity name(RandomString(64));
   NonEmptyString uninitialised_string;
   NonEmptyString string(RandomAlphaNumericString(1 + RandomUint32() % 100));
-  EXPECT_THROW(PublicAnmid(PublicAnmid::name_type(name),
+  EXPECT_THROW(PublicAnmid(PublicAnmid::Name(name),
                            (PublicAnmid::serialised_type(uninitialised_string))),
                std::exception);
-  EXPECT_THROW(PublicAnsmid(PublicAnsmid::name_type(name),
+  EXPECT_THROW(PublicAnsmid(PublicAnsmid::Name(name),
                             (PublicAnsmid::serialised_type(uninitialised_string))),
                std::exception);
-  EXPECT_THROW(PublicAntmid(PublicAntmid::name_type(name),
+  EXPECT_THROW(PublicAntmid(PublicAntmid::Name(name),
                             (PublicAntmid::serialised_type(uninitialised_string))),
                std::exception);
-  EXPECT_THROW(PublicAnmaid(PublicAnmaid::name_type(name),
+  EXPECT_THROW(PublicAnmaid(PublicAnmaid::Name(name),
                             (PublicAnmaid::serialised_type(uninitialised_string))),
                std::exception);
-  EXPECT_THROW(PublicMaid(PublicMaid::name_type(name),
+  EXPECT_THROW(PublicMaid(PublicMaid::Name(name),
                           (PublicMaid::serialised_type(uninitialised_string))),
                std::exception);
-  EXPECT_THROW(PublicPmid(PublicPmid::name_type(name),
+  EXPECT_THROW(PublicPmid(PublicPmid::Name(name),
                           (PublicPmid::serialised_type(uninitialised_string))),
                std::exception);
-  EXPECT_THROW(PublicAnmpid(PublicAnmpid::name_type(name),
+  EXPECT_THROW(PublicAnmpid(PublicAnmpid::Name(name),
                             (PublicAnmpid::serialised_type(uninitialised_string))),
                std::exception);
-  EXPECT_THROW(PublicMpid(PublicMpid::name_type(name),
+  EXPECT_THROW(PublicMpid(PublicMpid::Name(name),
                           (PublicMpid::serialised_type(uninitialised_string))),
                std::exception);
 
-  EXPECT_THROW(PublicAnmid(PublicAnmid::name_type(uninitialised_name),
+  EXPECT_THROW(PublicAnmid(PublicAnmid::Name(uninitialised_name),
                            (PublicAnmid::serialised_type(string))),
                std::exception);
-  EXPECT_THROW(PublicAnsmid(PublicAnsmid::name_type(uninitialised_name),
+  EXPECT_THROW(PublicAnsmid(PublicAnsmid::Name(uninitialised_name),
                             (PublicAnsmid::serialised_type(string))),
                std::exception);
-  EXPECT_THROW(PublicAntmid(PublicAntmid::name_type(uninitialised_name),
+  EXPECT_THROW(PublicAntmid(PublicAntmid::Name(uninitialised_name),
                             (PublicAntmid::serialised_type(string))),
                std::exception);
-  EXPECT_THROW(PublicAnmaid(PublicAnmaid::name_type(uninitialised_name),
+  EXPECT_THROW(PublicAnmaid(PublicAnmaid::Name(uninitialised_name),
                             (PublicAnmaid::serialised_type(string))),
                std::exception);
-  EXPECT_THROW(PublicMaid(PublicMaid::name_type(uninitialised_name),
+  EXPECT_THROW(PublicMaid(PublicMaid::Name(uninitialised_name),
                           (PublicMaid::serialised_type(string))),
                std::exception);
-  EXPECT_THROW(PublicPmid(PublicPmid::name_type(uninitialised_name),
+  EXPECT_THROW(PublicPmid(PublicPmid::Name(uninitialised_name),
                           (PublicPmid::serialised_type(string))),
                std::exception);
-  EXPECT_THROW(PublicAnmpid(PublicAnmpid::name_type(uninitialised_name),
+  EXPECT_THROW(PublicAnmpid(PublicAnmpid::Name(uninitialised_name),
                             (PublicAnmpid::serialised_type(string))),
                std::exception);
-  EXPECT_THROW(PublicMpid(PublicMpid::name_type(uninitialised_name),
+  EXPECT_THROW(PublicMpid(PublicMpid::Name(uninitialised_name),
                           (PublicMpid::serialised_type(string))),
                std::exception);
 }

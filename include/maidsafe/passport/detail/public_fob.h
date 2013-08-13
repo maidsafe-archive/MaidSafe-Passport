@@ -31,10 +31,11 @@ namespace passport {
 
 namespace detail {
 
-template<typename Tag>
+template<typename TagType>
 class PublicFob {
  public:
-  typedef TaggedValue<Identity, Tag> name_type;
+  typedef maidsafe::detail::Name<PublicFob> Name;
+  typedef TagType Tag;
   typedef typename Signer<Tag>::type signer_type;
   typedef TaggedValue<NonEmptyString, Tag> serialised_type;
 
@@ -44,17 +45,16 @@ class PublicFob {
   PublicFob& operator=(PublicFob&& other);
 
   explicit PublicFob(const Fob<Tag>& fob);
-  PublicFob(const name_type& name, const serialised_type& serialised_public_fob);
+  PublicFob(const Name& name, const serialised_type& serialised_public_fob);
   serialised_type Serialise() const;
 
-  name_type name() const { return name_; }
+  Name name() const { return name_; }
   asymm::PublicKey public_key() const { return public_key_; }
   asymm::Signature validation_token() const { return validation_token_; }
-  static DataTagValue type_enum_value() { return Tag::kEnumValue; }
 
  private:
   PublicFob();
-  name_type name_;
+  Name name_;
   asymm::PublicKey public_key_;
   asymm::Signature validation_token_;
 };

@@ -43,10 +43,9 @@ SecureString::Hash GenerateMidName(const Keyword& keyword,
 crypto::SHA512Hash HashOfPin(uint32_t pin);
 
 template<typename Tag>
-typename MidData<Tag>::name_type MidData<Tag>::GenerateName(const Keyword& keyword,
-                                                            const Pin& pin) {
+typename MidData<Tag>::Name MidData<Tag>::GenerateName(const Keyword& keyword, const Pin& pin) {
   SafeString mid_name(GenerateMidName<MidData<Tag>>(keyword, pin).string());
-  return MidData<Tag>::name_type(Identity(std::string(mid_name.begin(), mid_name.end())));
+  return MidData<Tag>::Name(Identity(std::string(mid_name.begin(), mid_name.end())));
 }
 
 template<typename Tag>
@@ -78,7 +77,7 @@ MidData<Tag>& MidData<Tag>::operator=(MidData&& other) {
 }
 
 template<typename Tag>
-MidData<Tag>::MidData(const name_type& name,
+MidData<Tag>::MidData(const Name& name,
                       const EncryptedTmidName& encrypted_tmid_name,
                       const signer_type& signing_fob)
     : name_(name),
@@ -86,18 +85,18 @@ MidData<Tag>::MidData(const name_type& name,
       validation_token_(asymm::Sign(encrypted_tmid_name.data, signing_fob.private_key())) {}
 
 template<typename Tag>
-MidData<Tag>::MidData(const name_type& name, const serialised_type& serialised_mid)
+MidData<Tag>::MidData(const Name& name, const serialised_type& serialised_mid)
     : name_(name),
       encrypted_tmid_name_(),
       validation_token_() {
-  if (!name_.data.IsInitialised())
+  if (!name_->IsInitialised())
     ThrowError(PassportErrors::mid_parsing_error);
-  MidFromProtobuf(serialised_mid.data, Tag::kEnumValue, encrypted_tmid_name_, validation_token_);
+  MidFromProtobuf(serialised_mid.data, Tag::kValue, encrypted_tmid_name_, validation_token_);
 }
 
 template<typename Tag>
 typename MidData<Tag>::serialised_type MidData<Tag>::Serialise() const {
-  return serialised_type(MidToProtobuf(Tag::kEnumValue, encrypted_tmid_name_, validation_token_));
+  return serialised_type(MidToProtobuf(Tag::kValue, encrypted_tmid_name_, validation_token_));
 }
 
 }  // namespace detail

@@ -40,15 +40,15 @@ EncryptedSession EncryptSession(const detail::Keyword& keyword,
 
 EncryptedTmidName EncryptTmidName(const detail::Keyword& keyword,
                                   const detail::Pin& pin,
-                                  const Tmid::name_type& tmid_name) {
+                                  const Tmid::Name& tmid_name) {
   return detail::EncryptTmidName(keyword, pin, tmid_name);
 }
 
-Mid::name_type MidName(const detail::Keyword& keyword, const detail::Pin& pin) {
+Mid::Name MidName(const detail::Keyword& keyword, const detail::Pin& pin) {
   return Mid::GenerateName(keyword, pin);
 }
 
-Smid::name_type SmidName(const detail::Keyword& keyword, const detail::Pin& pin) {
+Smid::Name SmidName(const detail::Keyword& keyword, const detail::Pin& pin) {
   return Smid::GenerateName(keyword, pin);
 }
 
@@ -59,9 +59,9 @@ NonEmptyString DecryptSession(const detail::Keyword& keyword,
   return detail::DecryptSession(keyword, pin, password, encrypted_session);
 }
 
-Tmid::name_type DecryptTmidName(const detail::Keyword& keyword,
-                                const detail::Pin& pin,
-                                const EncryptedTmidName& encrypted_tmid_name) {
+Tmid::Name DecryptTmidName(const detail::Keyword& keyword,
+                           const detail::Pin& pin,
+                           const EncryptedTmidName& encrypted_tmid_name) {
   return detail::DecryptTmidName(keyword, pin, encrypted_tmid_name);
 }
 

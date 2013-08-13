@@ -68,12 +68,12 @@ Fob<MpidTag>& Fob<MpidTag>::operator=(Fob<MpidTag>&& other) {
 
 Fob<MpidTag>::Fob(const protobuf::Fob& proto_fob) : keys_(), validation_token_(), name_() {
   Identity name;
-  FobFromProtobuf(proto_fob, MpidTag::kEnumValue, keys_, validation_token_, name);
-  name_ = name_type(name);
+  FobFromProtobuf(proto_fob, MpidTag::kValue, keys_, validation_token_, name);
+  name_ = Name(name);
 }
 
 void Fob<MpidTag>::ToProtobuf(protobuf::Fob* proto_fob) const {
-  FobToProtobuf(MpidTag::kEnumValue, keys_, validation_token_, name_.data.string(), proto_fob);
+  FobToProtobuf(MpidTag::kValue, keys_, validation_token_, name_->string(), proto_fob);
 }
 
 
@@ -91,8 +91,7 @@ void FobFromProtobuf(const protobuf::Fob& proto_fob,
   asymm::PlainText plain(RandomString(64));
   keys.private_key = asymm::DecodeKey(asymm::EncodedPrivateKey(proto_fob.encoded_private_key()));
   keys.public_key = asymm::DecodeKey(asymm::EncodedPublicKey(proto_fob.encoded_public_key()));
-  if ((enum_value != MpidTag::kEnumValue &&
-       CreateFobName(keys.public_key, validation_token) != name) ||
+  if ((enum_value != MpidTag::kValue && CreateFobName(keys.public_key, validation_token) != name) ||
       asymm::Decrypt(asymm::Encrypt(plain, keys.public_key), keys.private_key) != plain ||
       enum_value != DataTagValue(proto_fob.type())) {
     ThrowError(PassportErrors::fob_parsing_error);
@@ -196,43 +195,43 @@ bool WriteKeyChainList(const boost::filesystem::path& file_path,
 }
 
 template<>
-std::string DebugString<Fob<AnmidTag>::name_type>(const Fob<AnmidTag>::name_type& name) {
-  return "[" + HexSubstr(name.data) + " Anmid] ";
+std::string DebugString<Fob<AnmidTag>::Name>(const Fob<AnmidTag>::Name& name) {
+  return "[" + HexSubstr(name.value) + " Anmid] ";
 }
 
 template<>
-std::string DebugString<Fob<AnsmidTag>::name_type>(const Fob<AnsmidTag>::name_type& name) {
-  return "[" + HexSubstr(name.data) + " Ansmid]";
+std::string DebugString<Fob<AnsmidTag>::Name>(const Fob<AnsmidTag>::Name& name) {
+  return "[" + HexSubstr(name.value) + " Ansmid]";
 }
 
 template<>
-std::string DebugString<Fob<AntmidTag>::name_type>(const Fob<AntmidTag>::name_type& name) {
-  return "[" + HexSubstr(name.data) + " Antmid]";
+std::string DebugString<Fob<AntmidTag>::Name>(const Fob<AntmidTag>::Name& name) {
+  return "[" + HexSubstr(name.value) + " Antmid]";
 }
 
 template<>
-std::string DebugString<Fob<AnmaidTag>::name_type>(const Fob<AnmaidTag>::name_type& name) {
-  return "[" + HexSubstr(name.data) + " Anmaid]";
+std::string DebugString<Fob<AnmaidTag>::Name>(const Fob<AnmaidTag>::Name& name) {
+  return "[" + HexSubstr(name.value) + " Anmaid]";
 }
 
 template<>
-std::string DebugString<Fob<MaidTag>::name_type>(const Fob<MaidTag>::name_type& name) {
-  return "[" + HexSubstr(name.data) + " Maid]  ";
+std::string DebugString<Fob<MaidTag>::Name>(const Fob<MaidTag>::Name& name) {
+  return "[" + HexSubstr(name.value) + " Maid]  ";
 }
 
 template<>
-std::string DebugString<Fob<PmidTag>::name_type>(const Fob<PmidTag>::name_type& name) {
-  return "[" + HexSubstr(name.data) + " Pmid]  ";
+std::string DebugString<Fob<PmidTag>::Name>(const Fob<PmidTag>::Name& name) {
+  return "[" + HexSubstr(name.value) + " Pmid]  ";
 }
 
 template<>
-std::string DebugString<Fob<AnmpidTag>::name_type>(const Fob<AnmpidTag>::name_type& name) {
-  return "[" + HexSubstr(name.data) + " Anmpid]";
+std::string DebugString<Fob<AnmpidTag>::Name>(const Fob<AnmpidTag>::Name& name) {
+  return "[" + HexSubstr(name.value) + " Anmpid]";
 }
 
 template<>
-std::string DebugString<Fob<MpidTag>::name_type>(const Fob<MpidTag>::name_type& name) {
-  return "[" + HexSubstr(name.data) + " Mpid]  ";
+std::string DebugString<Fob<MpidTag>::Name>(const Fob<MpidTag>::Name& name) {
+  return "[" + HexSubstr(name.value) + " Mpid]  ";
 }
 
 #endif  // TESTING

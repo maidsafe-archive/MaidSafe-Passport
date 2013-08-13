@@ -94,7 +94,7 @@ NonEmptyString MidToProtobuf(DataTagValue enum_value,
                              const asymm::Signature& validation_token) {
   protobuf::Mid proto_mid;
   proto_mid.set_type(static_cast<uint32_t>(enum_value));
-  proto_mid.set_encrypted_tmid_name(encrypted_tmid_name.data.string());
+  proto_mid.set_encrypted_tmid_name(encrypted_tmid_name->string());
   proto_mid.set_validation_token(validation_token.string());
   return NonEmptyString(proto_mid.SerializeAsString());
 }
@@ -151,23 +151,23 @@ TmidData::TmidData(const EncryptedSession& encrypted_session, const signer_type&
       encrypted_session_(encrypted_session),
       validation_token_(asymm::Sign(encrypted_session.data, signing_fob.private_key())) {}
 
-TmidData::TmidData(const name_type& name, const serialised_type& serialised_tmid)
+TmidData::TmidData(const Name& name, const serialised_type& serialised_tmid)
     : name_(name),
       encrypted_session_(),
       validation_token_() {
   protobuf::Tmid proto_tmid;
-  if (!proto_tmid.ParseFromString(serialised_tmid.data.string()))
+  if (!proto_tmid.ParseFromString(serialised_tmid->string()))
     ThrowError(PassportErrors::tmid_parsing_error);
   validation_token_ = asymm::Signature(proto_tmid.validation_token());
   encrypted_session_ = EncryptedSession(NonEmptyString(proto_tmid.encrypted_session()));
-  if (static_cast<uint32_t>(detail::TmidTag::kEnumValue) != proto_tmid.type())
+  if (static_cast<uint32_t>(detail::TmidTag::kValue) != proto_tmid.type())
     ThrowError(PassportErrors::tmid_parsing_error);
 }
 
 TmidData::serialised_type TmidData::Serialise() const {
   protobuf::Tmid proto_tmid;
-  proto_tmid.set_type(static_cast<uint32_t>(detail::TmidTag::kEnumValue));
-  proto_tmid.set_encrypted_session(encrypted_session_.data.string());
+  proto_tmid.set_type(static_cast<uint32_t>(detail::TmidTag::kValue));
+  proto_tmid.set_encrypted_session(encrypted_session_->string());
   proto_tmid.set_validation_token(validation_token_.string());
   return serialised_type(NonEmptyString(proto_tmid.SerializeAsString()));
 }
@@ -197,37 +197,37 @@ NonEmptyString DecryptSession(const Keyword& keyword,
 
 EncryptedTmidName EncryptTmidName(const Keyword& keyword,
                                   const Pin& pin,
-                                  const TmidData::name_type& tmid_name) {
+                                  const TmidData::Name& tmid_name) {
   crypto::SecurePassword secure_password(CreateSecureMidPassword(keyword, pin));
-  return EncryptedTmidName(crypto::SymmEncrypt(crypto::PlainText(tmid_name.data),
+  return EncryptedTmidName(crypto::SymmEncrypt(crypto::PlainText(tmid_name.value),
                                                SecureKey(secure_password),
                                                SecureIv(secure_password)));
 }
 
-TmidData::name_type DecryptTmidName(const Keyword& keyword,
-                                    const Pin& pin,
-                                    const EncryptedTmidName& encrypted_tmid_name) {
+TmidData::Name DecryptTmidName(const Keyword& keyword,
+                               const Pin& pin,
+                               const EncryptedTmidName& encrypted_tmid_name) {
   crypto::SecurePassword secure_password(CreateSecureMidPassword(keyword, pin));
-  return TmidData::name_type(Identity(crypto::SymmDecrypt(encrypted_tmid_name.data,
-                                                          SecureKey(secure_password),
-                                                          SecureIv(secure_password)).string()));
+  return TmidData::Name(Identity(crypto::SymmDecrypt(encrypted_tmid_name.data,
+                                                     SecureKey(secure_password),
+                                                     SecureIv(secure_password)).string()));
 }
 
 #ifdef TESTING
 
 template<>
-std::string DebugString<MidData<MidTag>::name_type>(const MidData<MidTag>::name_type& name) {
-  return "Mid     " + HexSubstr(name.data);
+std::string DebugString<MidData<MidTag>::Name>(const MidData<MidTag>::Name& name) {
+  return "Mid     " + HexSubstr(name.value);
 }
 
 template<>
-std::string DebugString<MidData<SmidTag>::name_type>(const MidData<SmidTag>::name_type& name) {
-  return "Smid    " + HexSubstr(name.data);
+std::string DebugString<MidData<SmidTag>::Name>(const MidData<SmidTag>::Name& name) {
+  return "Smid    " + HexSubstr(name.value);
 }
 
 template<>
-std::string DebugString<TmidData::name_type>(const TmidData::name_type& name) {
-  return "Tmid    " + HexSubstr(name.data);
+std::string DebugString<TmidData::Name>(const TmidData::Name& name) {
+  return "Tmid    " + HexSubstr(name.value);
 }
 
 #endif  // TESTING

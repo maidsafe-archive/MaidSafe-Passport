@@ -36,34 +36,34 @@ typedef TaggedValue<NonEmptyString, struct EncryptedSessionTag> EncryptedSession
 
 namespace detail {
 
-template<typename Tag>
+template<typename TagType>
 class MidData {
  public:
-  typedef TaggedValue<Identity, Tag> name_type;
+  typedef maidsafe::detail::Name<MidData> Name;
+  typedef TagType Tag;
   typedef typename Signer<Tag>::type signer_type;
   typedef TaggedValue<NonEmptyString, Tag> serialised_type;
 
-  static name_type GenerateName(const Keyword& keyword, const Pin& pin);
+  static Name GenerateName(const Keyword& keyword, const Pin& pin);
 
   MidData(const MidData& other);
   MidData& operator=(const MidData& other);
   MidData(MidData&& other);
   MidData& operator=(MidData&& other);
 
-  MidData(const name_type& name,
+  MidData(const Name& name,
           const EncryptedTmidName& encrypted_tmid_name,
           const signer_type& signing_fob);
-  MidData(const name_type& name, const serialised_type& serialised_mid);
+  MidData(const Name& name, const serialised_type& serialised_mid);
   serialised_type Serialise() const;
 
-  name_type name() const { return name_; }
+  Name name() const { return name_; }
   EncryptedTmidName encrypted_tmid_name() const { return encrypted_tmid_name_; }
   asymm::Signature validation_token() const { return validation_token_; }
-  static DataTagValue type_enum_value() { return Tag::kEnumValue; }
 
  private:
   MidData();
-  name_type name_;
+  Name name_;
   EncryptedTmidName encrypted_tmid_name_;
   asymm::Signature validation_token_;
 };
@@ -71,9 +71,10 @@ class MidData {
 
 class TmidData {
  public:
-  typedef TaggedValue<Identity, detail::TmidTag> name_type;
-  typedef Signer<detail::TmidTag>::type signer_type;
-  typedef TaggedValue<NonEmptyString, detail::TmidTag> serialised_type;
+  typedef maidsafe::detail::Name<TmidData> Name;
+  typedef detail::TmidTag Tag;
+  typedef Signer<Tag>::type signer_type;
+  typedef TaggedValue<NonEmptyString, Tag> serialised_type;
 
   TmidData(const TmidData& other);
   TmidData& operator=(const TmidData& other);
@@ -81,17 +82,16 @@ class TmidData {
   TmidData& operator=(TmidData&& other);
 
   TmidData(const EncryptedSession& encrypted_session, const signer_type& signing_fob);
-  TmidData(const name_type& name, const serialised_type& serialised_tmid);
+  TmidData(const Name& name, const serialised_type& serialised_tmid);
   serialised_type Serialise() const;
 
-  name_type name() const { return name_; }
+  Name name() const { return name_; }
   EncryptedSession encrypted_session() const { return encrypted_session_; }
   asymm::Signature validation_token() const { return validation_token_; }
-  static DataTagValue type_enum_value() { return detail::TmidTag::kEnumValue; }
 
  private:
   TmidData();
-  name_type name_;
+  Name name_;
   EncryptedSession encrypted_session_;
   asymm::Signature validation_token_;
 };
@@ -110,11 +110,11 @@ NonEmptyString DecryptSession(const Keyword& keyword,
 // TMID name is now what used to be RID (Random ID)
 EncryptedTmidName EncryptTmidName(const Keyword& keyword,
                                   const Pin& pin,
-                                  const TmidData::name_type& tmid_name);
+                                  const TmidData::Name& tmid_name);
 
-TmidData::name_type DecryptTmidName(const Keyword& keyword,
-                                    const Pin& pin,
-                                    const EncryptedTmidName& encrypted_tmid_name);
+TmidData::Name DecryptTmidName(const Keyword& keyword,
+                               const Pin& pin,
+                               const EncryptedTmidName& encrypted_tmid_name);
 
 }  // namespace detail
 }  // namespace passport
