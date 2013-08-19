@@ -31,16 +31,16 @@ namespace passport {
 
 // The Fob class template provides the unique identity elements required for encrypted, self
 // authenticated storage/retrieval and communication on the the novinet network,
-// http://novinet.com/. Identities, with the exception of Mid, Tmid and their surrogate variants
-// are defined in terms of a Fob.
+// http://www.novinet.com/. Identities, with the exception of Mid, Tmid and their surrogate
+// variants are defined in terms of a Fob.
 
 // Maidsafe Anonymous Identification:
 // The Maid is used for authenticatable network transactions, it is signed by the Anmaid passed
 // during its construction.
 typedef detail::Fob<detail::MaidTag> Maid;
 // Proxy Maidsafe Identification:
-// The Pmid identifies a vault on the network, see http://maidsafe.github.io/MaidSafe-Vault/ for
-// more information about vaults. Requests are signed by the Maid passed during construction.
+// The Pmid identifies a vault on the network, see http://www.novinet.com/library-vault for more
+// information about vaults. Requests are signed by the Maid passed during construction.
 typedef detail::Fob<detail::PmidTag> Pmid;
 // Maidsafe Public Identification:
 // The Mpid is used for anomymous public communication independent of a users credentials.

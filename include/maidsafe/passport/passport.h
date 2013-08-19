@@ -34,7 +34,7 @@ namespace passport {
 
 // The Passport API is a realisation of a Public Key Infrastructure, PKI, free from central
 // authority and the notion of a web of trust. In fact, based on the precepts inherent in the DHT,
-// http://maidsafe.github.io/MaidSafe-Routing/, and vault http://maidsafe.github.io/MaidSafe-Vault/,
+// http://www.novinet.com/library-routing, and vault http://www.novinet.com/library-vault,
 // libraries, all nodes on the network are assumed to be operating in a hostile environment. In
 // contrast, cooperating/collaborating nodes are essential for network stability and health. To
 // resolve these conflicting notions, groups of nodes close to a given network addressable element,
@@ -46,7 +46,7 @@ namespace passport {
 // Password-Based Key Derivation Function 2, PBKDF2, methods for cryptographically hashing client
 // session data from input user details. The PBKDF2 implementation is based on the PKCS #5 v2.0
 // standard from RSA laboratories, http://www.rsa.com/rsalabs, see also the cryptographic component
-// of the http://maidsafe.github.io/MaidSafe-Common/ project. The following methods are used for
+// of the http://www.novinet.com/library-common project. The following methods are used for
 // self-authenticated network identity' storage/retrieval on the network.
 
 // Encrypts a users credentials prior to network storage.
