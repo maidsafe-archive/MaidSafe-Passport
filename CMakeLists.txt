@@ -64,9 +64,6 @@ include(standard_flags)
 if(MaidsafeTesting)
   add_style_test()
   add_gtests(TESTpassport)
-  label_as_critical_tests(IdentityPacketsTest.BEH_Full
-                          IdentityPacketsTest.BEH_ChangeDetails
-                          )
   add_project_experimental()
   test_summary_output()
 endif()
