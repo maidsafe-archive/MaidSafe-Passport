@@ -18,23 +18,9 @@
 
 #include "maidsafe/passport/detail/secure_string.h"
 
-#include "maidsafe/common/utils.h"
-
 namespace maidsafe {
 namespace passport {
 namespace detail {
-
-SafeString operator+(const SafeString& first, const SafeString& second) {
-  return SafeString(first.begin(), first.end()) + SafeString(second.begin(), second.end());
-}
-
-SafeString operator+(const SecureString::Hash& first, const SafeString& second) {
-  return SafeString(first.string().begin(), first.string().end()) + second;
-}
-
-SafeString operator+(const SafeString& first, const SecureString::Hash& second) {
-  return first + SafeString(second.string().begin(), second.string().end());
-}
 
 SecureString::SecureString()
   : phrase_(RandomSafeString<SafeString>(64)),
@@ -62,6 +48,18 @@ SafeString SecureString::string() const {
   decryptor.Put(reinterpret_cast<const byte*>(string_.data()), string_.length());
   decryptor.MessageEnd();
   return decrypted_string;
+}
+
+SafeString operator+(const SafeString& first, const SafeString& second) {
+  return SafeString(first.begin(), first.end()) + SafeString(second.begin(), second.end());
+}
+
+SafeString operator+(const SecureString::Hash& first, const SafeString& second) {
+  return SafeString(first.string().begin(), first.string().end()) + second;
+}
+
+SafeString operator+(const SafeString& first, const SecureString::Hash& second) {
+  return first + SafeString(second.string().begin(), second.string().end());
 }
 
 // see safe_allocators.h

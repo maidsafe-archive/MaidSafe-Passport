@@ -31,6 +31,7 @@
 #include "maidsafe/passport/detail/config.h"
 #include "maidsafe/passport/detail/secure_string.h"
 
+
 namespace maidsafe {
 namespace passport {
 
@@ -38,6 +39,22 @@ typedef TaggedValue<NonEmptyString, struct EncryptedTmidNameTag> EncryptedTmidNa
 typedef TaggedValue<NonEmptyString, struct EncryptedSessionTag> EncryptedSession;
 
 namespace detail {
+
+void MidFromProtobuf(const NonEmptyString& serialised_mid,
+                     DataTagValue enum_value,
+                     EncryptedTmidName& encrypted_tmid_name,
+                     asymm::Signature& validation_token);
+
+NonEmptyString MidToProtobuf(DataTagValue enum_value,
+                             const EncryptedTmidName& encrypted_tmid_name,
+                             const asymm::Signature& validation_token);
+
+template<typename MidType>
+SecureString::Hash GenerateMidName(const Keyword& keyword,
+                                   const Pin& pin);
+
+crypto::SHA512Hash HashOfPin(uint32_t pin);
+
 
 template<typename TagType>
 class MidData {
@@ -70,6 +87,63 @@ class MidData {
   EncryptedTmidName encrypted_tmid_name_;
   asymm::Signature validation_token_;
 };
+
+template<typename Tag>
+typename MidData<Tag>::Name MidData<Tag>::GenerateName(const Keyword& keyword, const Pin& pin) {
+  SafeString mid_name(GenerateMidName<MidData<Tag>>(keyword, pin).string());
+  return MidData<Tag>::Name(Identity(std::string(mid_name.begin(), mid_name.end())));
+}
+
+template<typename Tag>
+MidData<Tag>::MidData(const MidData& other)
+    : name_(other.name_),
+      encrypted_tmid_name_(other.encrypted_tmid_name_),
+      validation_token_(other.validation_token_) {}
+
+template<typename Tag>
+MidData<Tag>& MidData<Tag>::operator=(const MidData& other) {
+  name_ = other.name_;
+  encrypted_tmid_name_ = other.encrypted_tmid_name_;
+  validation_token_ = other.validation_token_;
+  return *this;
+}
+
+template<typename Tag>
+MidData<Tag>::MidData(MidData&& other)
+    : name_(std::move(other.name_)),
+      encrypted_tmid_name_(std::move(other.encrypted_tmid_name_)),
+      validation_token_(std::move(other.validation_token_)) {}
+
+template<typename Tag>
+MidData<Tag>& MidData<Tag>::operator=(MidData&& other) {
+  name_ = std::move(other.name_);
+  encrypted_tmid_name_ = std::move(other.encrypted_tmid_name_);
+  validation_token_ = std::move(other.validation_token_);
+  return *this;
+}
+
+template<typename Tag>
+MidData<Tag>::MidData(const Name& name,
+                      const EncryptedTmidName& encrypted_tmid_name,
+                      const signer_type& signing_fob)
+    : name_(name),
+      encrypted_tmid_name_(encrypted_tmid_name),
+      validation_token_(asymm::Sign(encrypted_tmid_name.data, signing_fob.private_key())) {}
+
+template<typename Tag>
+MidData<Tag>::MidData(const Name& name, const serialised_type& serialised_mid)
+    : name_(name),
+      encrypted_tmid_name_(),
+      validation_token_() {
+  if (!name_->IsInitialised())
+    ThrowError(PassportErrors::mid_parsing_error);
+  MidFromProtobuf(serialised_mid.data, Tag::kValue, encrypted_tmid_name_, validation_token_);
+}
+
+template<typename Tag>
+typename MidData<Tag>::serialised_type MidData<Tag>::Serialise() const {
+  return serialised_type(MidToProtobuf(Tag::kValue, encrypted_tmid_name_, validation_token_));
+}
 
 
 class TmidData {
@@ -122,7 +196,5 @@ TmidData::Name DecryptTmidName(const Keyword& keyword,
 }  // namespace detail
 }  // namespace passport
 }  // namespace maidsafe
-
-#include "maidsafe/passport/detail/identity_data-inl.h"
 
 #endif  // MAIDSAFE_PASSPORT_DETAIL_IDENTITY_DATA_H_

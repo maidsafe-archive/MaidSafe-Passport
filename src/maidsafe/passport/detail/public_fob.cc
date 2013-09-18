@@ -19,14 +19,11 @@
 #include "maidsafe/passport/detail/public_fob.h"
 
 #include "maidsafe/common/utils.h"
-
 #include "maidsafe/passport/detail/passport.pb.h"
 
 
 namespace maidsafe {
-
 namespace passport {
-
 namespace detail {
 
 void PublicFobFromProtobuf(const NonEmptyString& serialised_public_fob,
@@ -53,7 +50,5 @@ NonEmptyString PublicFobToProtobuf(DataTagValue enum_value,
 }
 
 }  // namespace detail
-
 }  // namespace passport
-
 }  // namespace maidsafe

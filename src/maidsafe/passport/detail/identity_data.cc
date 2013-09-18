@@ -124,7 +124,6 @@ crypto::SHA512Hash HashOfPin(uint32_t pin) {
 }
 
 
-
 TmidData::TmidData(const TmidData& other)
     : name_(other.name_),
       encrypted_session_(other.encrypted_session_),

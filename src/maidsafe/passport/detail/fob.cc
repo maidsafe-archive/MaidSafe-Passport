@@ -19,14 +19,11 @@
 #include "maidsafe/passport/detail/fob.h"
 
 #include "maidsafe/common/utils.h"
-
 #include "maidsafe/passport/detail/passport.pb.h"
 
 
 namespace maidsafe {
-
 namespace passport {
-
 namespace detail {
 
 Identity CreateFobName(const asymm::PublicKey& public_key,
@@ -36,6 +33,39 @@ Identity CreateFobName(const asymm::PublicKey& public_key,
 
 Identity CreateMpidName(const NonEmptyString& chosen_name) {
   return Identity(crypto::Hash<crypto::SHA512>(chosen_name));
+}
+
+void FobFromProtobuf(const protobuf::Fob& proto_fob,
+                     DataTagValue enum_value,
+                     asymm::Keys& keys,
+                     asymm::Signature& validation_token,
+                     Identity& name) {
+  if (!proto_fob.IsInitialized())
+    ThrowError(PassportErrors::fob_parsing_error);
+
+  validation_token = asymm::Signature(proto_fob.validation_token());
+  name = Identity(proto_fob.name());
+
+  asymm::PlainText plain(RandomString(64));
+  keys.private_key = asymm::DecodeKey(asymm::EncodedPrivateKey(proto_fob.encoded_private_key()));
+  keys.public_key = asymm::DecodeKey(asymm::EncodedPublicKey(proto_fob.encoded_public_key()));
+  if ((enum_value != MpidTag::kValue && CreateFobName(keys.public_key, validation_token) != name) ||
+      asymm::Decrypt(asymm::Encrypt(plain, keys.public_key), keys.private_key) != plain ||
+      enum_value != DataTagValue(proto_fob.type())) {
+    ThrowError(PassportErrors::fob_parsing_error);
+  }
+}
+
+void FobToProtobuf(DataTagValue enum_value,
+                   const asymm::Keys& keys,
+                   const asymm::Signature& validation_token,
+                   const std::string& name,
+                   protobuf::Fob* proto_fob) {
+  proto_fob->set_type(static_cast<uint32_t>(enum_value));
+  proto_fob->set_name(name);
+  proto_fob->set_encoded_private_key(asymm::EncodeKey(keys.private_key).string());
+  proto_fob->set_encoded_public_key(asymm::EncodeKey(keys.public_key).string());
+  proto_fob->set_validation_token(validation_token.string());
 }
 
 
@@ -79,39 +109,6 @@ void Fob<MpidTag>::ToProtobuf(protobuf::Fob* proto_fob) const {
   FobToProtobuf(MpidTag::kValue, keys_, validation_token_, name_->string(), proto_fob);
 }
 
-
-void FobFromProtobuf(const protobuf::Fob& proto_fob,
-                     DataTagValue enum_value,
-                     asymm::Keys& keys,
-                     asymm::Signature& validation_token,
-                     Identity& name) {
-  if (!proto_fob.IsInitialized())
-    ThrowError(PassportErrors::fob_parsing_error);
-
-  validation_token = asymm::Signature(proto_fob.validation_token());
-  name = Identity(proto_fob.name());
-
-  asymm::PlainText plain(RandomString(64));
-  keys.private_key = asymm::DecodeKey(asymm::EncodedPrivateKey(proto_fob.encoded_private_key()));
-  keys.public_key = asymm::DecodeKey(asymm::EncodedPublicKey(proto_fob.encoded_public_key()));
-  if ((enum_value != MpidTag::kValue && CreateFobName(keys.public_key, validation_token) != name) ||
-      asymm::Decrypt(asymm::Encrypt(plain, keys.public_key), keys.private_key) != plain ||
-      enum_value != DataTagValue(proto_fob.type())) {
-    ThrowError(PassportErrors::fob_parsing_error);
-  }
-}
-
-void FobToProtobuf(DataTagValue enum_value,
-                   const asymm::Keys& keys,
-                   const asymm::Signature& validation_token,
-                   const std::string& name,
-                   protobuf::Fob* proto_fob) {
-  proto_fob->set_type(static_cast<uint32_t>(enum_value));
-  proto_fob->set_name(name);
-  proto_fob->set_encoded_private_key(asymm::EncodeKey(keys.private_key).string());
-  proto_fob->set_encoded_public_key(asymm::EncodeKey(keys.public_key).string());
-  proto_fob->set_validation_token(validation_token.string());
-}
 
 NonEmptyString SerialisePmid(const Fob<PmidTag>& pmid) {
   protobuf::Fob proto_fob;
@@ -240,7 +237,5 @@ std::string DebugString<Fob<MpidTag>::Name>(const Fob<MpidTag>::Name& name) {
 #endif  // TESTING
 
 }  // namespace detail
-
 }  // namespace passport
-
 }  // namespace maidsafe

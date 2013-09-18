@@ -175,9 +175,49 @@ class Passport {
   std::mutex fobs_mutex_, selectable_mutex_;
 };
 
+template<>
+Anmid Passport::Get<Anmid>(bool confirmed);
+
+template<>
+Ansmid Passport::Get<Ansmid>(bool confirmed);
+
+template<>
+Antmid Passport::Get<Antmid>(bool confirmed);
+
+template<>
+Anmaid Passport::Get<Anmaid>(bool confirmed);
+
+template<>
+Maid Passport::Get<Maid>(bool confirmed);
+
+template<>
+Pmid Passport::Get<Pmid>(bool confirmed);
+
+template<>
+Anmpid Passport::GetFromSelectableFobPair(bool confirmed,
+                                          const SelectableFobPair& selectable_fob_pair);
+
+template<>
+Mpid Passport::GetFromSelectableFobPair(bool confirmed,
+                                        const SelectableFobPair& selectable_fob_pair);
+
+template<typename FobType>
+FobType Passport::GetSelectableFob(bool confirmed, const NonEmptyString &chosen_name) {
+  std::lock_guard<std::mutex> lock(selectable_mutex_);
+  if (confirmed) {
+    auto itr(confirmed_selectable_fobs_.find(chosen_name));
+    if (itr == confirmed_selectable_fobs_.end())
+      ThrowError(PassportErrors::no_pending_fob);
+    return GetFromSelectableFobPair<FobType>(confirmed, (*itr).second);
+  } else {
+    auto itr(pending_selectable_fobs_.find(chosen_name));
+    if (itr == pending_selectable_fobs_.end())
+      ThrowError(PassportErrors::no_pending_fob);
+    return GetFromSelectableFobPair<FobType>(confirmed, (*itr).second);
+  }
+}
+
 }  // namespace passport
 }  // namespace maidsafe
-
-#include "maidsafe/passport/detail/passport-inl.h"
 
 #endif  // MAIDSAFE_PASSPORT_PASSPORT_H_
