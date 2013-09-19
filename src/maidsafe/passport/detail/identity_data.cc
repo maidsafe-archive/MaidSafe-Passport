@@ -153,10 +153,8 @@ TmidData::TmidData(const EncryptedSession& encrypted_session, const signer_type&
       encrypted_session_(encrypted_session),
       validation_token_(asymm::Sign(encrypted_session.data, signing_fob.private_key())) {}
 
-TmidData::TmidData(const Name& name, const serialised_type& serialised_tmid)
-    : name_(name),
-      encrypted_session_(),
-      validation_token_() {
+TmidData::TmidData(Name name, const serialised_type& serialised_tmid)
+    : name_(std::move(name)), encrypted_session_(), validation_token_() {
   protobuf::Tmid proto_tmid;
   if (!proto_tmid.ParseFromString(serialised_tmid->string()))
     ThrowError(PassportErrors::tmid_parsing_error);

@@ -71,9 +71,9 @@ class MidData {
   MidData(MidData&& other);
   MidData& operator=(MidData&& other);
 
-  MidData(const Name& name,
-          const EncryptedTmidName& encrypted_tmid_name,
-          const signer_type& signing_fob);
+  MidData(Name name,
+          EncryptedTmidName encrypted_tmid_name,
+          signer_type signing_fob);
   MidData(const Name& name, const serialised_type& serialised_mid);
   serialised_type Serialise() const;
 
@@ -122,13 +122,13 @@ MidData<Tag>& MidData<Tag>::operator=(MidData&& other) {
   return *this;
 }
 
-template<typename Tag>
-MidData<Tag>::MidData(const Name& name,
-                      const EncryptedTmidName& encrypted_tmid_name,
-                      const signer_type& signing_fob)
-    : name_(name),
+template <typename Tag>
+MidData<Tag>::MidData(Name name, EncryptedTmidName encrypted_tmid_name,
+                      signer_type signing_fob)
+    : name_(std::move(name)),
       encrypted_tmid_name_(encrypted_tmid_name),
-      validation_token_(asymm::Sign(encrypted_tmid_name.data, signing_fob.private_key())) {}
+      validation_token_(asymm::Sign(encrypted_tmid_name.data,
+                                    signing_fob.private_key())) {}
 
 template<typename Tag>
 MidData<Tag>::MidData(const Name& name, const serialised_type& serialised_mid)
@@ -159,7 +159,7 @@ class TmidData {
   TmidData& operator=(TmidData&& other);
 
   TmidData(const EncryptedSession& encrypted_session, const signer_type& signing_fob);
-  TmidData(const Name& name, const serialised_type& serialised_tmid);
+  TmidData(Name name, const serialised_type& serialised_tmid);
   serialised_type Serialise() const;
 
   Name name() const { return name_; }

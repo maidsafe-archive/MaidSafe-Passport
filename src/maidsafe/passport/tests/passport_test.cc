@@ -73,13 +73,14 @@ bool NoFieldsMatch(const Fobtype& lhs, const Fobtype& rhs) {
 
 
 struct TestFobs {
-  TestFobs(Anmid anmid1, Ansmid ansmid1, Antmid antmid1, Anmaid anmaid1, Maid maid1, Pmid pmid1)
-    : anmid(anmid1),
-      ansmid(ansmid1),
-      antmid(antmid1),
-      anmaid(anmaid1),
-      maid(maid1),
-      pmid(pmid1) {}
+  TestFobs(Anmid anmid1, Ansmid ansmid1, Antmid antmid1, Anmaid anmaid1,
+           Maid maid1, Pmid pmid1)
+      : anmid(std::move(anmid1)),
+        ansmid(std::move(ansmid1)),
+        antmid(std::move(antmid1)),
+        anmaid(std::move(anmaid1)),
+        maid(std::move(maid1)),
+        pmid(std::move(pmid1)) {}
     TestFobs(const TestFobs& other)
       : anmid(other.anmid),
         ansmid(other.ansmid),
@@ -269,7 +270,7 @@ class PassportParallelTest : public PassportTest {
       chosen_name_4_(RandomAlphaNumericString(1 + RandomUint32() % 100)),
       chosen_name_5_(RandomAlphaNumericString(1 + RandomUint32() % 100)) {}
 
-  void TearDown() {
+  void TearDown() override {
     ConsistentFobStates(false);
     ConsistentFobStates(true);
     ConsistentSelectableFobStates(false, chosen_name_1_);
@@ -604,7 +605,7 @@ TEST_F(PassportParsePbTest, BEH_ParseReorderedFobs) {
 }
 
 class PassportParsePbSelectableTest : public PassportParsePbTest {
-  void SetUp() {
+  void SetUp() override {
     auto proto_fob(proto_passport_.add_fob());
     anmid_.ToProtobuf(proto_fob);
     proto_fob = proto_passport_.add_fob();
@@ -641,7 +642,7 @@ class PassportSerialiseTest : public testing::Test {
       pmid_(maid_),
       proto_passport_() {}
 
-  void SetUp() {
+  void SetUp() override {
     auto proto_fob(proto_passport_.add_fob());
     anmid_.ToProtobuf(proto_fob);
     proto_fob = proto_passport_.add_fob();

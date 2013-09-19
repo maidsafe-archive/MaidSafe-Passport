@@ -301,10 +301,10 @@ bool WritePmidList(const boost::filesystem::path& file_path,
                    const std::vector<Fob<PmidTag> >& pmid_list);  // NOLINT (Fraser)
 
 struct AnmaidToPmid {
-  AnmaidToPmid(const Fob<AnmaidTag>& anmaid, const Fob<MaidTag>& maid, const Fob<PmidTag>& pmid)
-      : anmaid(anmaid),
-        maid(maid),
-        pmid(pmid),
+  AnmaidToPmid(Fob<AnmaidTag> anmaid, Fob<MaidTag> maid, Fob<PmidTag> pmid)
+      : anmaid(std::move(anmaid)),
+        maid(std::move(maid)),
+        pmid(std::move(pmid)),
         chain_size(3) {}
   AnmaidToPmid()
       : anmaid(),
