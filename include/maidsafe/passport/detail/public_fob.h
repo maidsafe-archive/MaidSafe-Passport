@@ -56,7 +56,7 @@ class PublicFob {
   PublicFob& operator=(PublicFob&& other);
 
   explicit PublicFob(const Fob<Tag>& fob);
-  PublicFob(const Name& name, const serialised_type& serialised_public_fob);
+  PublicFob(Name name, const serialised_type& serialised_public_fob);
   serialised_type Serialise() const;
 
   Name name() const { return name_; }
@@ -107,8 +107,8 @@ PublicFob<Tag>::PublicFob(const Fob<Tag>& fob)
 // TODO(Fraser#5#): 2012-12-21 - Once MSVC eventually handles delegating constructors, we can make
 //                  this more efficient by using a lambda which returns the parsed protobuf
 //                  inside a private constructor taking a single arg of type protobuf.
-template<typename Tag>
-PublicFob<Tag>::PublicFob(const Name& name, const serialised_type& serialised_public_fob)
+template<typename TagType>
+PublicFob<TagType>::PublicFob(Name name, const serialised_type& serialised_public_fob)
     : name_(name),
       public_key_(),
       validation_token_() {
