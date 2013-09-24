@@ -78,7 +78,7 @@ class SecureString {
 
 template<typename StringType>
 SecureString::SecureString(const StringType& string)
-  : phrase_(RandomSafeString<SafeString>(64)),
+  : phrase_(GetRandomString<SafeString>(64)),
     string_(),
     encryptor_(new Encryptor(phrase_.data(), new Encoder(new Sink(string_)))) {
   encryptor_->Put(reinterpret_cast<const byte*>(string.data()), string.size());
@@ -138,14 +138,14 @@ class SecureInputString {
 template<typename Predicate, SecureString::size_type Size>
 SecureInputString<Predicate, Size>::SecureInputString()
   : encrypted_chars_(),
-    phrase_(RandomSafeString<SafeString>(64)),
+    phrase_(GetRandomString<SafeString>(64)),
     secure_string_(),
     finalised_(false) {}
 
 template<typename Predicate, SecureString::size_type Size> template<typename StringType>
 SecureInputString<Predicate, Size>::SecureInputString(const StringType& string)
   : encrypted_chars_(),
-    phrase_(RandomSafeString<SafeString>(64)),
+    phrase_(GetRandomString<SafeString>(64)),
     secure_string_(string),
     finalised_(true) {}
 

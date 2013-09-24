@@ -23,7 +23,7 @@ namespace passport {
 namespace detail {
 
 SecureString::SecureString()
-  : phrase_(RandomSafeString<SafeString>(64)),
+  : phrase_(GetRandomString<SafeString>(64)),
     string_(),
     encryptor_(new Encryptor(phrase_.data(), new Encoder(new Sink(string_)))) {}
 
