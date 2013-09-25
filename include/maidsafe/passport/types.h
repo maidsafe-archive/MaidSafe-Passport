@@ -27,7 +27,6 @@
 #include "maidsafe/passport/detail/public_fob.h"
 #include "maidsafe/passport/detail/identity_data.h"
 
-
 namespace maidsafe {
 
 namespace passport {
@@ -89,44 +88,44 @@ typedef detail::PublicFob<detail::AnmpidTag> PublicAnmpid;
 typedef detail::PublicFob<detail::MpidTag> PublicMpid;
 
 // Public key type traits.
-template<typename T>
+template <typename T>
 struct is_public_key_type : public std::false_type {};
 
-template<>
+template <>
 struct is_public_key_type<PublicAnmid> : public std::true_type {};
-template<>
+template <>
 struct is_public_key_type<PublicAnsmid> : public std::true_type {};
-template<>
+template <>
 struct is_public_key_type<PublicAntmid> : public std::true_type {};
-template<>
+template <>
 struct is_public_key_type<PublicAnmaid> : public std::true_type {};
-template<>
+template <>
 struct is_public_key_type<PublicMaid> : public std::true_type {};
-template<>
+template <>
 struct is_public_key_type<PublicPmid> : public std::true_type {};
-template<>
+template <>
 struct is_public_key_type<PublicAnmpid> : public std::true_type {};
-template<>
+template <>
 struct is_public_key_type<PublicMpid> : public std::true_type {};
 
 }  // namespace passport
 
 // Short term cacheability traits.
-template<>
+template <>
 struct is_short_term_cacheable<passport::PublicAnmid> : public std::true_type {};
-template<>
+template <>
 struct is_short_term_cacheable<passport::PublicAnsmid> : public std::true_type {};
-template<>
+template <>
 struct is_short_term_cacheable<passport::PublicAntmid> : public std::true_type {};
-template<>
+template <>
 struct is_short_term_cacheable<passport::PublicAnmaid> : public std::true_type {};
-template<>
+template <>
 struct is_short_term_cacheable<passport::PublicMaid> : public std::true_type {};
-template<>
+template <>
 struct is_short_term_cacheable<passport::PublicPmid> : public std::true_type {};
-template<>
+template <>
 struct is_short_term_cacheable<passport::PublicAnmpid> : public std::true_type {};
-template<>
+template <>
 struct is_short_term_cacheable<passport::PublicMpid> : public std::true_type {};
 
 }  // namespace maidsafe

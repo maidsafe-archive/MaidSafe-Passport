@@ -53,22 +53,18 @@ namespace passport {
 // self-authenticated network identity' storage/retrieval on the network.
 
 // Encrypts a users credentials prior to network storage.
-EncryptedSession EncryptSession(const detail::Keyword& keyword,
-                                const detail::Pin& pin,
+EncryptedSession EncryptSession(const detail::Keyword& keyword, const detail::Pin& pin,
                                 const detail::Password& password,
                                 const NonEmptyString& serialised_session);
 // Retrieves a users credentials previously stored on the network.
-NonEmptyString DecryptSession(const detail::Keyword& keyword,
-                              const detail::Pin& pin,
+NonEmptyString DecryptSession(const detail::Keyword& keyword, const detail::Pin& pin,
                               const detail::Password& password,
                               const EncryptedSession& encrypted_session);
 
 // PBKDF2 generated location to store Tmid data on network.
-EncryptedTmidName EncryptTmidName(const detail::Keyword& keyword,
-                                  const detail::Pin& pin,
+EncryptedTmidName EncryptTmidName(const detail::Keyword& keyword, const detail::Pin& pin,
                                   const Tmid::Name& tmid_name);
-Tmid::Name DecryptTmidName(const detail::Keyword& keyword,
-                           const detail::Pin& pin,
+Tmid::Name DecryptTmidName(const detail::Keyword& keyword, const detail::Pin& pin,
                            const EncryptedTmidName& encrypted_tmid_name);
 
 // PBKDF2 generated location to store Mid/Smid data on network.
@@ -79,7 +75,9 @@ Smid::Name SmidName(const detail::Keyword& keyword, const detail::Pin& pin);
 NonEmptyString SerialisePmid(const Pmid& pmid);
 Pmid ParsePmid(const NonEmptyString& serialised_pmid);
 
-namespace test { class PassportTest; }
+namespace test {
+class PassportTest;
+}
 
 // The Passport class contains identity types for the various network related tasks available, see
 // types.h for details about the identity types.
@@ -97,12 +95,12 @@ class Passport {
   void Parse(const NonEmptyString& serialised_passport);
 
   // Returns the Fob type requested in it's template argument.
-  template<typename FobType>
+  template <typename FobType>
   FobType Get(bool confirmed);
 
   // Selectable Fob, aka Anmpid & Mpid, manipulation methods. There's no restriction on the number
   // of selectable Fobs an application can create/use.
-  template<typename FobType>
+  template <typename FobType>
   FobType GetSelectableFob(bool confirmed, const NonEmptyString& chosen_name);
   void CreateSelectableFobPair(const NonEmptyString& chosen_name);
   void ConfirmSelectableFobPair(const NonEmptyString& chosen_name);
@@ -147,8 +145,7 @@ class Passport {
   struct SelectableFobPair {
     SelectableFobPair() : anmpid(), mpid() {}
     SelectableFobPair(SelectableFobPair&& other)
-        : anmpid(std::move(other.anmpid)),
-          mpid(std::move(other.mpid)) {}
+        : anmpid(std::move(other.anmpid)), mpid(std::move(other.mpid)) {}
     SelectableFobPair& operator=(SelectableFobPair&& other) {
       anmpid = std::move(other.anmpid);
       mpid = std::move(other.mpid);
@@ -167,7 +164,7 @@ class Passport {
   };
 
   bool NoFobsNull(bool confirmed);
-  template<typename FobType>
+  template <typename FobType>
   FobType GetFromSelectableFobPair(bool confirmed, const SelectableFobPair& selectable_fob_pair);
 
   Fobs pending_fobs_, confirmed_fobs_;
@@ -175,34 +172,34 @@ class Passport {
   std::mutex fobs_mutex_, selectable_mutex_;
 };
 
-template<>
+template <>
 Anmid Passport::Get<Anmid>(bool confirmed);
 
-template<>
+template <>
 Ansmid Passport::Get<Ansmid>(bool confirmed);
 
-template<>
+template <>
 Antmid Passport::Get<Antmid>(bool confirmed);
 
-template<>
+template <>
 Anmaid Passport::Get<Anmaid>(bool confirmed);
 
-template<>
+template <>
 Maid Passport::Get<Maid>(bool confirmed);
 
-template<>
+template <>
 Pmid Passport::Get<Pmid>(bool confirmed);
 
-template<>
+template <>
 Anmpid Passport::GetFromSelectableFobPair(bool confirmed,
                                           const SelectableFobPair& selectable_fob_pair);
 
-template<>
+template <>
 Mpid Passport::GetFromSelectableFobPair(bool confirmed,
                                         const SelectableFobPair& selectable_fob_pair);
 
-template<typename FobType>
-FobType Passport::GetSelectableFob(bool confirmed, const NonEmptyString &chosen_name) {
+template <typename FobType>
+FobType Passport::GetSelectableFob(bool confirmed, const NonEmptyString& chosen_name) {
   std::lock_guard<std::mutex> lock(selectable_mutex_);
   if (confirmed) {
     auto itr(confirmed_selectable_fobs_.find(chosen_name));

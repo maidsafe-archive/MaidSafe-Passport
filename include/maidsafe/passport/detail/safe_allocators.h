@@ -25,18 +25,17 @@
 #define MAIDSAFE_PASSPORT_DETAIL_SAFE_ALLOCATORS_H_
 
 #ifdef MAIDSAFE_WIN32
-# include <Windows.h>
+#include <Windows.h>
 #else
-# include <unistd.h>  // for sysconf
-# include <sys/mman.h>
-# include <climits>  // for PAGESIZE
+#include <unistd.h>  // for sysconf
+#include <sys/mman.h>
+#include <climits>  // for PAGESIZE
 #endif
 
 #include <string>
 #include <memory>
 #include <map>
 #include <mutex>
-
 
 namespace maidsafe {
 namespace passport {
@@ -50,7 +49,7 @@ namespace detail {
 // NOTE: By using a map from each page base address to lock count, this class is optimized for small
 // objects that span up to a few pages, mostly smaller than a page. To support large allocations,
 // something like an interval tree would be the preferred data structure.
-template<typename Locker>
+template <typename Locker>
 class LockedPageManagerBase {
  public:
   explicit LockedPageManagerBase(size_t page_size)
@@ -59,7 +58,7 @@ class LockedPageManagerBase {
         page_size_(page_size),
         page_mask_(~(page_size - 1)),  // bitmask for extracting page from address
         histogram_() {
-    assert(!(page_size & (page_size-1)));  // size must be power of two
+    assert(!(page_size & (page_size - 1)));  // size must be power of two
   }
 
   // For all pages in affected range, increase lock count
@@ -159,17 +158,18 @@ class MemoryPageLocker {
 class LockedPageManager : public LockedPageManagerBase<MemoryPageLocker> {
  public:
   static LockedPageManager instance;
+
  private:
   LockedPageManager() : LockedPageManagerBase<MemoryPageLocker>(GetSystemPageSize()) {}
 };
 
 // Allocator that locks its contents from being paged out of memory and clears its contents before
 // deletion.
-template<typename T>
+template <typename T>
 struct safe_allocator : public std::allocator<T> {
   typedef std::allocator<T> base;
   typedef typename base::size_type size_type;
-  typedef typename base::difference_type  difference_type;
+  typedef typename base::difference_type difference_type;
   typedef typename base::pointer pointer;
   typedef typename base::const_pointer const_pointer;
   typedef typename base::reference reference;
@@ -178,11 +178,12 @@ struct safe_allocator : public std::allocator<T> {
 
   safe_allocator() {}
   safe_allocator(const safe_allocator& a) : base(a) {}
-  template<typename U>
-  explicit safe_allocator(const safe_allocator<U>& a) : base(a) {}
+  template <typename U>
+  explicit safe_allocator(const safe_allocator<U>& a)
+      : base(a) {}
   ~safe_allocator() {}
 
-  template<typename Other>
+  template <typename Other>
   struct rebind {
     typedef safe_allocator<Other> other;
   };
@@ -211,11 +212,11 @@ struct safe_allocator : public std::allocator<T> {
 };
 
 // Allocator that clears its contents before deletion.
-template<typename T>
+template <typename T>
 struct zero_after_free_allocator : public std::allocator<T> {
   typedef std::allocator<T> base;
   typedef typename base::size_type size_type;
-  typedef typename base::difference_type  difference_type;
+  typedef typename base::difference_type difference_type;
   typedef typename base::pointer pointer;
   typedef typename base::const_pointer const_pointer;
   typedef typename base::reference reference;
@@ -224,11 +225,12 @@ struct zero_after_free_allocator : public std::allocator<T> {
 
   zero_after_free_allocator() {}
   zero_after_free_allocator(const zero_after_free_allocator& a) : base(a) {}
-  template<typename U>
-  explicit zero_after_free_allocator(const zero_after_free_allocator<U>& a) : base(a) {}
+  template <typename U>
+  explicit zero_after_free_allocator(const zero_after_free_allocator<U>& a)
+      : base(a) {}
   ~zero_after_free_allocator() {}
 
-  template<typename Other>
+  template <typename Other>
   struct rebind {
     typedef zero_after_free_allocator<Other> other;
   };

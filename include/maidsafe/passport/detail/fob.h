@@ -30,46 +30,41 @@
 
 #include "maidsafe/passport/detail/config.h"
 
-
 namespace maidsafe {
 namespace passport {
 namespace detail {
 
-namespace protobuf { class Fob; }
+namespace protobuf {
+class Fob;
+}
 
 Identity CreateFobName(const asymm::PublicKey& public_key,
                        const asymm::Signature& validation_token);
 
 Identity CreateMpidName(const NonEmptyString& chosen_name);
 
-void FobFromProtobuf(const protobuf::Fob& proto_fob,
-                     DataTagValue enum_value,
-                     asymm::Keys& keys,
-                     asymm::Signature& validation_token,
-                     Identity& name);
+void FobFromProtobuf(const protobuf::Fob& proto_fob, DataTagValue enum_value, asymm::Keys& keys,
+                     asymm::Signature& validation_token, Identity& name);
 
-void FobToProtobuf(DataTagValue enum_value,
-                   const asymm::Keys& keys,
-                   const asymm::Signature& validation_token,
-                   const std::string& name,
+void FobToProtobuf(DataTagValue enum_value, const asymm::Keys& keys,
+                   const asymm::Signature& validation_token, const std::string& name,
                    protobuf::Fob* proto_fob);
 
-template<typename FobType>
+template <typename FobType>
 struct is_self_signed : public std::false_type {};
 
-template<>
+template <>
 struct is_self_signed<AnmidTag> : public std::true_type {};
-template<>
+template <>
 struct is_self_signed<AnsmidTag> : public std::true_type {};
-template<>
+template <>
 struct is_self_signed<AntmidTag> : public std::true_type {};
-template<>
+template <>
 struct is_self_signed<AnmaidTag> : public std::true_type {};
-template<>
+template <>
 struct is_self_signed<AnmpidTag> : public std::true_type {};
 
-
-template<typename TagType, typename Enable>
+template <typename TagType, typename Enable>
 class Fob {
  public:
   typedef maidsafe::detail::Name<Fob> Name;
@@ -92,7 +87,7 @@ class Fob {
   Name name_;
 };
 
-template<typename TagType>
+template <typename TagType>
 class Fob<TagType, typename std::enable_if<is_self_signed<TagType>::value>::type> {
  public:
   typedef maidsafe::detail::Name<Fob> Name;
@@ -118,66 +113,64 @@ class Fob<TagType, typename std::enable_if<is_self_signed<TagType>::value>::type
 };
 
 // Default constructor (exclusive to self-signing fobs)
-template<typename Tag>
+template <typename Tag>
 Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>::Fob()
     : keys_(asymm::GenerateKeyPair()),
-      validation_token_(asymm::Sign(asymm::PlainText(asymm::EncodeKey(keys_.public_key)),
-                                    keys_.private_key)),
+      validation_token_(
+          asymm::Sign(asymm::PlainText(asymm::EncodeKey(keys_.public_key)), keys_.private_key)),
       name_(CreateFobName(keys_.public_key, validation_token_)) {
   static_assert(std::is_same<Fob<Tag>, signer_type>::value,
                 "This constructor is only applicable for self-signing fobs.");
 }
 
-template<typename Tag>
+template <typename Tag>
 Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>::Fob(
     const Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>& other)
-        : keys_(other.keys_),
-          validation_token_(other.validation_token_),
-          name_(other.name_) {}
+    : keys_(other.keys_), validation_token_(other.validation_token_), name_(other.name_) {}
 
-template<typename Tag>
+template <typename Tag>
 Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>&
-    Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>::operator=(
-        const Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>& other) {
+Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>::
+operator=(const Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>& other) {
   keys_ = other.keys_;
   validation_token_ = other.validation_token_;
   name_ = other.name_;
   return *this;
 }
 
-template<typename Tag>
+template <typename Tag>
 Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>::Fob(
     Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>&& other)
-        : keys_(std::move(other.keys_)),
-          validation_token_(std::move(other.validation_token_)),
-          name_(std::move(other.name_)) {}
+    : keys_(std::move(other.keys_)),
+      validation_token_(std::move(other.validation_token_)),
+      name_(std::move(other.name_)) {}
 
-template<typename Tag>
+template <typename Tag>
 Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>&
-    Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>::operator=(
-        Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>&& other) {
+Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>::
+operator=(Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>&& other) {
   keys_ = std::move(other.keys_);
   validation_token_ = std::move(other.validation_token_);
   name_ = std::move(other.name_);
   return *this;
 }
 
-template<typename Tag>
+template <typename Tag>
 Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>::Fob(
-    const protobuf::Fob& proto_fob) : keys_(), validation_token_(), name_() {
+    const protobuf::Fob& proto_fob)
+    : keys_(), validation_token_(), name_() {
   Identity name;
   FobFromProtobuf(proto_fob, Tag::kValue, keys_, validation_token_, name);
   name_ = Name(name);
 }
 
-template<typename Tag>
+template <typename Tag>
 void Fob<Tag, typename std::enable_if<is_self_signed<Tag>::value>::type>::ToProtobuf(
     protobuf::Fob* proto_fob) const {
   FobToProtobuf(Tag::kValue, keys_, validation_token_, name_->string(), proto_fob);
 }
 
-
-template<>
+template <>
 class Fob<MpidTag> {
  public:
   typedef maidsafe::detail::Name<Fob> Name;
@@ -203,8 +196,7 @@ class Fob<MpidTag> {
   Name name_;
 };
 
-
-template<typename TagType>
+template <typename TagType>
 class Fob<TagType, typename std::enable_if<!is_self_signed<TagType>::value>::type> {
  public:
   typedef maidsafe::detail::Name<Fob> Name;
@@ -231,86 +223,77 @@ class Fob<TagType, typename std::enable_if<!is_self_signed<TagType>::value>::typ
   Name name_;
 };
 
-template<typename Tag>
+template <typename Tag>
 Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>::Fob(
     const Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>& other)
-        : keys_(other.keys_),
-          validation_token_(other.validation_token_),
-          name_(other.name_) {}
+    : keys_(other.keys_), validation_token_(other.validation_token_), name_(other.name_) {}
 
 // Explicit constructor initialising with different signing fob (exclusive to non-self-signing fobs)
-template<typename Tag>
+template <typename Tag>
 Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>::Fob(
     const signer_type& signing_fob,
     typename std::enable_if<!std::is_same<Fob<Tag>, signer_type>::value>::type*)
-        : keys_(asymm::GenerateKeyPair()),
-          validation_token_(asymm::Sign(asymm::PlainText(asymm::EncodeKey(keys_.public_key)),
-                                        signing_fob.private_key())),
-          name_(CreateFobName(keys_.public_key, validation_token_)) {}
+    : keys_(asymm::GenerateKeyPair()),
+      validation_token_(asymm::Sign(asymm::PlainText(asymm::EncodeKey(keys_.public_key)),
+                                    signing_fob.private_key())),
+      name_(CreateFobName(keys_.public_key, validation_token_)) {}
 
-template<typename Tag>
+template <typename Tag>
 Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>&
-    Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>::operator=(
-        const Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>& other) {
+Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>::
+operator=(const Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>& other) {
   keys_ = other.keys_;
   validation_token_ = other.validation_token_;
   name_ = other.name_;
   return *this;
 }
 
-template<typename Tag>
+template <typename Tag>
 Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>::Fob(
     Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>&& other)
-        : keys_(std::move(other.keys_)),
-          validation_token_(std::move(other.validation_token_)),
-          name_(std::move(other.name_)) {}
+    : keys_(std::move(other.keys_)),
+      validation_token_(std::move(other.validation_token_)),
+      name_(std::move(other.name_)) {}
 
-template<typename Tag>
+template <typename Tag>
 Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>&
-    Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>::operator=(
-        Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>&& other) {
+Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>::
+operator=(Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>&& other) {
   keys_ = std::move(other.keys_);
   validation_token_ = std::move(other.validation_token_);
   name_ = std::move(other.name_);
   return *this;
 }
 
-template<typename Tag>
+template <typename Tag>
 Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>::Fob(
-    const protobuf::Fob& proto_fob) : keys_(), validation_token_(), name_() {
+    const protobuf::Fob& proto_fob)
+    : keys_(), validation_token_(), name_() {
   Identity name;
   FobFromProtobuf(proto_fob, Tag::kValue, keys_, validation_token_, name);
   name_ = Name(name);
 }
 
-template<typename Tag>
+template <typename Tag>
 void Fob<Tag, typename std::enable_if<!is_self_signed<Tag>::value>::type>::ToProtobuf(
     protobuf::Fob* proto_fob) const {
   FobToProtobuf(Tag::kValue, keys_, validation_token_, name_->string(), proto_fob);
 }
-
 
 NonEmptyString SerialisePmid(const Fob<PmidTag>& pmid);
 Fob<PmidTag> ParsePmid(const NonEmptyString& serialised_pmid);
 
 #ifdef TESTING
 
-std::vector<Fob<PmidTag> > ReadPmidList(const boost::filesystem::path& file_path);
+std::vector<Fob<PmidTag>> ReadPmidList(const boost::filesystem::path& file_path);
 
 bool WritePmidList(const boost::filesystem::path& file_path,
-                   const std::vector<Fob<PmidTag> >& pmid_list);  // NOLINT (Fraser)
+                   const std::vector<Fob<PmidTag>>& pmid_list);  // NOLINT (Fraser)
 
 struct AnmaidToPmid {
   AnmaidToPmid(Fob<AnmaidTag> anmaid, Fob<MaidTag> maid, Fob<PmidTag> pmid)
-      : anmaid(std::move(anmaid)),
-        maid(std::move(maid)),
-        pmid(std::move(pmid)),
-        chain_size(3) {}
-  AnmaidToPmid()
-      : anmaid(),
-        maid(anmaid),
-        pmid(maid),
-        chain_size(3) {}
+      : anmaid(std::move(anmaid)), maid(std::move(maid)), pmid(std::move(pmid)), chain_size(3) {}
+  AnmaidToPmid() : anmaid(), maid(anmaid), pmid(maid), chain_size(3) {}
   Fob<AnmaidTag> anmaid;
   Fob<MaidTag> maid;
   Fob<PmidTag> pmid;

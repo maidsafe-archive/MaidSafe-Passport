@@ -23,19 +23,15 @@ namespace passport {
 namespace detail {
 
 SecureString::SecureString()
-  : phrase_(GetRandomString<SafeString>(64)),
-    string_(),
-    encryptor_(new Encryptor(phrase_.data(), new Encoder(new Sink(string_)))) {}
+    : phrase_(GetRandomString<SafeString>(64)),
+      string_(),
+      encryptor_(new Encryptor(phrase_.data(), new Encoder(new Sink(string_)))) {}
 
 SecureString::~SecureString() {}
 
-void SecureString::Append(char decrypted_char) {
-  encryptor_->Put(decrypted_char);
-}
+void SecureString::Append(char decrypted_char) { encryptor_->Put(decrypted_char); }
 
-void SecureString::Finalise() {
-  encryptor_->MessageEnd();
-}
+void SecureString::Finalise() { encryptor_->MessageEnd(); }
 
 void SecureString::Clear() {
   string_.clear();

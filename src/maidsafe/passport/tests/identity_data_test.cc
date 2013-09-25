@@ -87,27 +87,27 @@ TEST(IdentityPacketsTest, BEH_Full) {
   ASSERT_EQ(mid1.encrypted_tmid_name(), mid2.encrypted_tmid_name());
   ASSERT_EQ(smid1.encrypted_tmid_name(), smid2.encrypted_tmid_name());
 
-  auto decrypted_master_data1(maidsafe::passport::DecryptSession(kKeyword, kPin, kPassword,
-                                                                 encrypted_master_data1));
-  auto decrypted_master_data2(maidsafe::passport::DecryptSession(kKeyword, kPin, kPassword,
-                                                                 encrypted_master_data2));
-  auto decrypted_surrogate_data1(maidsafe::passport::DecryptSession(kKeyword, kPin, kPassword,
-                                                                    encrypted_surrogate_data1));
-  auto decrypted_surrogate_data2(maidsafe::passport::DecryptSession(kKeyword, kPin, kPassword,
-                                                                    encrypted_surrogate_data2));
+  auto decrypted_master_data1(
+      maidsafe::passport::DecryptSession(kKeyword, kPin, kPassword, encrypted_master_data1));
+  auto decrypted_master_data2(
+      maidsafe::passport::DecryptSession(kKeyword, kPin, kPassword, encrypted_master_data2));
+  auto decrypted_surrogate_data1(
+      maidsafe::passport::DecryptSession(kKeyword, kPin, kPassword, encrypted_surrogate_data1));
+  auto decrypted_surrogate_data2(
+      maidsafe::passport::DecryptSession(kKeyword, kPin, kPassword, encrypted_surrogate_data2));
   ASSERT_EQ(decrypted_master_data1, decrypted_master_data2);
   ASSERT_EQ(kMasterData, decrypted_master_data2);
   ASSERT_EQ(decrypted_surrogate_data1, decrypted_surrogate_data2);
   ASSERT_EQ(kSurrogateData, decrypted_surrogate_data2);
 
-  TmidData::Name decrypted_mid_value1(maidsafe::passport::DecryptTmidName(kKeyword, kPin,
-                                                                          mid_value1));
-  TmidData::Name decrypted_mid_value2(maidsafe::passport::DecryptTmidName(kKeyword, kPin,
-                                                                          mid_value2));
-  TmidData::Name decrypted_smid_value1(maidsafe::passport::DecryptTmidName(kKeyword, kPin,
-                                                                           smid_value1));
-  TmidData::Name decrypted_smid_value2(maidsafe::passport::DecryptTmidName(kKeyword, kPin,
-                                                                           smid_value2));
+  TmidData::Name decrypted_mid_value1(
+      maidsafe::passport::DecryptTmidName(kKeyword, kPin, mid_value1));
+  TmidData::Name decrypted_mid_value2(
+      maidsafe::passport::DecryptTmidName(kKeyword, kPin, mid_value2));
+  TmidData::Name decrypted_smid_value1(
+      maidsafe::passport::DecryptTmidName(kKeyword, kPin, smid_value1));
+  TmidData::Name decrypted_smid_value2(
+      maidsafe::passport::DecryptTmidName(kKeyword, kPin, smid_value2));
 
   ASSERT_EQ(decrypted_mid_value1, decrypted_mid_value2);
   ASSERT_EQ(tmid_name1, decrypted_mid_value2);
@@ -123,19 +123,16 @@ TEST(IdentityPacketsTest, BEH_Full) {
 }
 
 TEST(IdentityPacketsTest, BEH_ChangeDetails) {
-  const Keyword kKeyword(RandomAlphaNumericString(20)),
-                kNewKeyword(RandomAlphaNumericString(20));
+  const Keyword kKeyword(RandomAlphaNumericString(20)), kNewKeyword(RandomAlphaNumericString(20));
   const Password kPassword(RandomAlphaNumericString(20));
-  const uint32_t kPinValue(RandomUint32() % 9999 + 1),
-                 kNewPinValue(RandomUint32() % 9999 + 1);
-  const Pin kPin(std::to_string(kPinValue)),
-            kNewPin(std::to_string(kNewPinValue));
+  const uint32_t kPinValue(RandomUint32() % 9999 + 1), kNewPinValue(RandomUint32() % 9999 + 1);
+  const Pin kPin(std::to_string(kPinValue)), kNewPin(std::to_string(kNewPinValue));
   NonEmptyString next_master2(RandomString(1000));
   auto nes2(EncryptSession(kKeyword, kPin, kPassword, next_master2));
   auto nes1(EncryptSession(kNewKeyword, kNewPin, kPassword, next_master2));
 
   NonEmptyString dec2(maidsafe::passport::DecryptSession(kKeyword, kPin, kPassword, nes2)),
-                 dec1(maidsafe::passport::DecryptSession(kNewKeyword, kNewPin, kPassword, nes1));
+      dec1(maidsafe::passport::DecryptSession(kNewKeyword, kNewPin, kPassword, nes1));
   ASSERT_TRUE(dec2 == next_master2);
   ASSERT_TRUE(dec1 == next_master2);
 }

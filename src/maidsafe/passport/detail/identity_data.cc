@@ -52,18 +52,15 @@ crypto::SecurePassword CreateSecureTmidPassword(const Password& password, const 
   return crypto::CreateSecurePassword<Password>(password, salt, static_cast<uint32_t>(pin.Value()));
 }
 
-NonEmptyString XorData(const Keyword& keyword,
-                       const Pin& pin,
-                       const Password& password,
+NonEmptyString XorData(const Keyword& keyword, const Pin& pin, const Password& password,
                        const NonEmptyString& data) {
   assert(pin.Value() <= std::numeric_limits<uint32_t>::max());
   uint32_t pin_value(static_cast<uint32_t>(pin.Value()));
   uint32_t rounds(pin_value / 2 == 0 ? (pin_value * 3) / 2 : pin_value / 2);
-  std::string obfuscation_str =
-      crypto::CreateSecurePassword<Keyword>(keyword,
-                                   crypto::Salt(crypto::Hash<crypto::SHA512>(
-                                                  password.string() + pin.Hash<crypto::SHA512>())),
-                                   rounds).string();
+  std::string obfuscation_str = crypto::CreateSecurePassword<Keyword>(
+      keyword,
+      crypto::Salt(crypto::Hash<crypto::SHA512>(password.string() + pin.Hash<crypto::SHA512>())),
+      rounds).string();
   // make the obfuscation_str of same size for XOR
   if (data.string().size() < obfuscation_str.size()) {
     obfuscation_str.resize(data.string().size());
@@ -78,11 +75,8 @@ NonEmptyString XorData(const Keyword& keyword,
 
 }  // unnamed namespace
 
-
-void MidFromProtobuf(const NonEmptyString& serialised_mid,
-                     DataTagValue enum_value,
-                     EncryptedTmidName& encrypted_tmid_name,
-                     asymm::Signature& validation_token) {
+void MidFromProtobuf(const NonEmptyString& serialised_mid, DataTagValue enum_value,
+                     EncryptedTmidName& encrypted_tmid_name, asymm::Signature& validation_token) {
   protobuf::Mid proto_mid;
   if (!proto_mid.ParseFromString(serialised_mid.string()))
     ThrowError(PassportErrors::mid_parsing_error);
@@ -92,8 +86,7 @@ void MidFromProtobuf(const NonEmptyString& serialised_mid,
     ThrowError(PassportErrors::mid_parsing_error);
 }
 
-NonEmptyString MidToProtobuf(DataTagValue enum_value,
-                             const EncryptedTmidName& encrypted_tmid_name,
+NonEmptyString MidToProtobuf(DataTagValue enum_value, const EncryptedTmidName& encrypted_tmid_name,
                              const asymm::Signature& validation_token) {
   protobuf::Mid proto_mid;
   proto_mid.set_type(static_cast<uint32_t>(enum_value));
@@ -102,27 +95,24 @@ NonEmptyString MidToProtobuf(DataTagValue enum_value,
   return NonEmptyString(proto_mid.SerializeAsString());
 }
 
-
-template<>
+template <>
 SecureString::Hash GenerateMidName<MidData<MidTag>>(const Keyword& keyword,  // NOLINT (Fraser)
                                                     const Pin& pin) {
   return crypto::Hash<crypto::SHA512>(keyword.Hash<crypto::SHA512>().string() +
                                       pin.Hash<crypto::SHA512>().string());
 }
 
-template<>
+template <>
 SecureString::Hash GenerateMidName<MidData<SmidTag>>(const Keyword& keyword,  // NOLINT (Fraser)
                                                      const Pin& pin) {
-  SecureString::Hash secure_string_hash(
-      crypto::Hash<crypto::SHA512>(keyword.Hash<crypto::SHA512>().string() +
-                                   pin.Hash<crypto::SHA512>().string()));
+  SecureString::Hash secure_string_hash(crypto::Hash<crypto::SHA512>(
+      keyword.Hash<crypto::SHA512>().string() + pin.Hash<crypto::SHA512>().string()));
   return crypto::Hash<crypto::SHA512>(secure_string_hash.string());
 }
 
 crypto::SHA512Hash HashOfPin(uint32_t pin) {
   return crypto::Hash<crypto::SHA512>(std::to_string(pin));
 }
-
 
 TmidData::TmidData(const TmidData& other)
     : name_(other.name_),
@@ -172,66 +162,54 @@ TmidData::serialised_type TmidData::Serialise() const {
   return serialised_type(NonEmptyString(proto_tmid.SerializeAsString()));
 }
 
-
-EncryptedSession EncryptSession(const Keyword& keyword,
-                                const Pin& pin,
-                                const Password& password,
+EncryptedSession EncryptSession(const Keyword& keyword, const Pin& pin, const Password& password,
                                 const NonEmptyString& serialised_session) {
   crypto::SecurePassword secure_password(CreateSecureTmidPassword(password, pin));
-  return EncryptedSession(
-      crypto::SymmEncrypt(XorData(keyword, pin, password, serialised_session),
-                          SecureKey(secure_password),
-                          SecureIv(secure_password)));
+  return EncryptedSession(crypto::SymmEncrypt(XorData(keyword, pin, password, serialised_session),
+                                              SecureKey(secure_password),
+                                              SecureIv(secure_password)));
 }
 
-NonEmptyString DecryptSession(const Keyword& keyword,
-                              const Pin& pin,
-                              const Password& password,
+NonEmptyString DecryptSession(const Keyword& keyword, const Pin& pin, const Password& password,
                               const EncryptedSession& encrypted_session) {
   crypto::SecurePassword secure_password(CreateSecureTmidPassword(password, pin));
   return XorData(keyword, pin, password,
-                 crypto::SymmDecrypt(encrypted_session.data,
-                                     SecureKey(secure_password),
+                 crypto::SymmDecrypt(encrypted_session.data, SecureKey(secure_password),
                                      SecureIv(secure_password)));
 }
 
-EncryptedTmidName EncryptTmidName(const Keyword& keyword,
-                                  const Pin& pin,
+EncryptedTmidName EncryptTmidName(const Keyword& keyword, const Pin& pin,
                                   const TmidData::Name& tmid_name) {
   crypto::SecurePassword secure_password(CreateSecureMidPassword(keyword, pin));
-  return EncryptedTmidName(crypto::SymmEncrypt(crypto::PlainText(tmid_name.value),
-                                               SecureKey(secure_password),
-                                               SecureIv(secure_password)));
+  return EncryptedTmidName(crypto::SymmEncrypt(
+      crypto::PlainText(tmid_name.value), SecureKey(secure_password), SecureIv(secure_password)));
 }
 
-TmidData::Name DecryptTmidName(const Keyword& keyword,
-                               const Pin& pin,
+TmidData::Name DecryptTmidName(const Keyword& keyword, const Pin& pin,
                                const EncryptedTmidName& encrypted_tmid_name) {
   crypto::SecurePassword secure_password(CreateSecureMidPassword(keyword, pin));
-  return TmidData::Name(Identity(crypto::SymmDecrypt(encrypted_tmid_name.data,
-                                                     SecureKey(secure_password),
-                                                     SecureIv(secure_password)).string()));
+  return TmidData::Name(Identity(crypto::SymmDecrypt(
+      encrypted_tmid_name.data, SecureKey(secure_password), SecureIv(secure_password)).string()));
 }
 
 #ifdef TESTING
 
-template<>
+template <>
 std::string DebugString<MidData<MidTag>::Name>(const MidData<MidTag>::Name& name) {
   return "Mid     " + HexSubstr(name.value);
 }
 
-template<>
+template <>
 std::string DebugString<MidData<SmidTag>::Name>(const MidData<SmidTag>::Name& name) {
   return "Smid    " + HexSubstr(name.value);
 }
 
-template<>
+template <>
 std::string DebugString<TmidData::Name>(const TmidData::Name& name) {
   return "Tmid    " + HexSubstr(name.value);
 }
 
 #endif  // TESTING
-
 
 }  // namespace detail
 }  // namespace passport

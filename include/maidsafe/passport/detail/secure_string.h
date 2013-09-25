@@ -26,14 +26,14 @@
 #include "boost/regex.hpp"
 
 #ifdef __MSVC__
-#  pragma warning(push, 1)
+#pragma warning(push, 1)
 #endif
 #include "cryptopp/filters.h"
 #include "cryptopp/default.h"
 #include "cryptopp/hex.h"
 #include "cryptopp/secblock.h"
 #ifdef __MSVC__
-#  pragma warning(pop)
+#pragma warning(pop)
 #endif
 
 #include "maidsafe/common/crypto.h"
@@ -60,10 +60,12 @@ class SecureString {
   typedef SafeString::size_type size_type;
 
   SecureString();
-  template<typename StringType> SecureString(const StringType& string);
+  template <typename StringType>
+  SecureString(const StringType& string);
   ~SecureString();
 
-  template<typename StringType> void Append(const StringType& decrypted_chars);
+  template <typename StringType>
+  void Append(const StringType& decrypted_chars);
   void Append(char decrypted_char);
   void Finalise();
   void Clear();
@@ -76,22 +78,21 @@ class SecureString {
   std::unique_ptr<Encryptor> encryptor_;
 };
 
-template<typename StringType>
+template <typename StringType>
 SecureString::SecureString(const StringType& string)
-  : phrase_(GetRandomString<SafeString>(64)),
-    string_(),
-    encryptor_(new Encryptor(phrase_.data(), new Encoder(new Sink(string_)))) {
+    : phrase_(GetRandomString<SafeString>(64)),
+      string_(),
+      encryptor_(new Encryptor(phrase_.data(), new Encoder(new Sink(string_)))) {
   encryptor_->Put(reinterpret_cast<const byte*>(string.data()), string.size());
   encryptor_->MessageEnd();
 }
 
-template<typename StringType>
+template <typename StringType>
 void SecureString::Append(const StringType& decrypted_chars) {
   encryptor_->Put(reinterpret_cast<const byte*>(decrypted_chars.data()), decrypted_chars.size());
 }
 
-
-template<typename Predicate, SecureString::size_type Size>
+template <typename Predicate, SecureString::size_type Size>
 class SecureInputString {
  public:
   typedef typename SecureString::Encryptor Encryptor;
@@ -102,10 +103,11 @@ class SecureInputString {
   typedef typename SecureString::size_type size_type;
 
   SecureInputString();
-  template<typename StringType> SecureInputString(const StringType& string);
+  template <typename StringType>
+  SecureInputString(const StringType& string);
   ~SecureInputString();
 
-  template<typename StringType>
+  template <typename StringType>
   void Insert(size_type position, const StringType& decrypted_chars);
   void Remove(size_type position, size_type length = 1);
   void Clear();
@@ -115,14 +117,15 @@ class SecureInputString {
   bool IsFinalised() const;
   bool IsValid(const boost::regex& regex) const;
 
-  template<typename HashType> SecureString::Hash Hash() const;
+  template <typename HashType>
+  SecureString::Hash Hash() const;
   size_type Value() const;
 
   SafeString string() const;
 
  private:
   void Reset();
-  template<typename StringType>
+  template <typename StringType>
   SafeString Encrypt(const StringType& decrypted_chars) const;
   SafeString Encrypt(const char& decrypted_char) const;
   SafeString Decrypt(const SafeString& encrypted_char) const;
@@ -135,24 +138,26 @@ class SecureInputString {
   bool finalised_;
 };
 
-template<typename Predicate, SecureString::size_type Size>
+template <typename Predicate, SecureString::size_type Size>
 SecureInputString<Predicate, Size>::SecureInputString()
-  : encrypted_chars_(),
-    phrase_(GetRandomString<SafeString>(64)),
-    secure_string_(),
-    finalised_(false) {}
+    : encrypted_chars_(),
+      phrase_(GetRandomString<SafeString>(64)),
+      secure_string_(),
+      finalised_(false) {}
 
-template<typename Predicate, SecureString::size_type Size> template<typename StringType>
+template <typename Predicate, SecureString::size_type Size>
+template <typename StringType>
 SecureInputString<Predicate, Size>::SecureInputString(const StringType& string)
-  : encrypted_chars_(),
-    phrase_(GetRandomString<SafeString>(64)),
-    secure_string_(string),
-    finalised_(true) {}
+    : encrypted_chars_(),
+      phrase_(GetRandomString<SafeString>(64)),
+      secure_string_(string),
+      finalised_(true) {}
 
-template<typename Predicate, SecureString::size_type Size>
+template <typename Predicate, SecureString::size_type Size>
 SecureInputString<Predicate, Size>::~SecureInputString() {}
 
-template<typename Predicate, SecureString::size_type Size> template<typename StringType>
+template <typename Predicate, SecureString::size_type Size>
+template <typename StringType>
 void SecureInputString<Predicate, Size>::Insert(size_type position,
                                                 const StringType& decrypted_chars) {
   if (IsFinalised())
@@ -174,7 +179,7 @@ void SecureInputString<Predicate, Size>::Insert(size_type position,
   return;
 }
 
-template<typename Predicate, SecureString::size_type Size>
+template <typename Predicate, SecureString::size_type Size>
 void SecureInputString<Predicate, Size>::Remove(size_type position, size_type length) {
   if (IsFinalised())
     Reset();
@@ -195,7 +200,7 @@ void SecureInputString<Predicate, Size>::Remove(size_type position, size_type le
   return;
 }
 
-template<typename Predicate, SecureString::size_type Size>
+template <typename Predicate, SecureString::size_type Size>
 void SecureInputString<Predicate, Size>::Clear() {
   encrypted_chars_.clear();
   secure_string_.Clear();
@@ -203,7 +208,7 @@ void SecureInputString<Predicate, Size>::Clear() {
   return;
 }
 
-template<typename Predicate, SecureString::size_type Size>
+template <typename Predicate, SecureString::size_type Size>
 void SecureInputString<Predicate, Size>::Finalise() {
   if (IsFinalised())
     return;
@@ -225,17 +230,17 @@ void SecureInputString<Predicate, Size>::Finalise() {
   return;
 }
 
-template<typename Predicate, SecureString::size_type Size>
+template <typename Predicate, SecureString::size_type Size>
 bool SecureInputString<Predicate, Size>::IsInitialised() const {
   return finalised_;
 }
 
-template<typename Predicate, SecureString::size_type Size>
+template <typename Predicate, SecureString::size_type Size>
 bool SecureInputString<Predicate, Size>::IsFinalised() const {
   return finalised_;
 }
 
-template<typename Predicate, SecureString::size_type Size>
+template <typename Predicate, SecureString::size_type Size>
 bool SecureInputString<Predicate, Size>::IsValid(const boost::regex& regex) const {
   if (IsFinalised())
     return ValidateSecureString(regex);
@@ -243,14 +248,15 @@ bool SecureInputString<Predicate, Size>::IsValid(const boost::regex& regex) cons
     return ValidateEncryptedChars(regex);
 }
 
-template<typename Predicate, SecureString::size_type Size> template<typename HashType>
+template <typename Predicate, SecureString::size_type Size>
+template <typename HashType>
 typename SecureString::Hash SecureInputString<Predicate, Size>::Hash() const {
   if (!IsFinalised())
     ThrowError(CommonErrors::symmetric_encryption_error);
   return crypto::Hash<HashType>(secure_string_.string());
 }
 
-template<typename Predicate, SecureString::size_type Size>
+template <typename Predicate, SecureString::size_type Size>
 typename SecureString::size_type SecureInputString<Predicate, Size>::Value() const {
   if (!IsFinalised())
     ThrowError(CommonErrors::symmetric_encryption_error);
@@ -258,14 +264,14 @@ typename SecureString::size_type SecureInputString<Predicate, Size>::Value() con
   return std::stoul(std::string(decrypted_string.begin(), decrypted_string.end()));
 }
 
-template<typename Predicate, SecureString::size_type Size>
+template <typename Predicate, SecureString::size_type Size>
 SafeString SecureInputString<Predicate, Size>::string() const {
   if (!IsFinalised())
     ThrowError(CommonErrors::symmetric_encryption_error);
   return secure_string_.string();
 }
 
-template<typename Predicate, SecureString::size_type Size>
+template <typename Predicate, SecureString::size_type Size>
 void SecureInputString<Predicate, Size>::Reset() {
   SafeString decrypted_string(string());
   encrypted_chars_.clear();
@@ -279,7 +285,7 @@ void SecureInputString<Predicate, Size>::Reset() {
   return;
 }
 
-template<typename Predicate, SecureString::size_type Size>
+template <typename Predicate, SecureString::size_type Size>
 SafeString SecureInputString<Predicate, Size>::Encrypt(const char& decrypted_char) const {
   SafeString encrypted_char;
   Encryptor encryptor(phrase_.data(), new Encoder(new Sink(encrypted_char)));
@@ -288,7 +294,8 @@ SafeString SecureInputString<Predicate, Size>::Encrypt(const char& decrypted_cha
   return encrypted_char;
 }
 
-template<typename Predicate, SecureString::size_type Size> template<typename StringType>
+template <typename Predicate, SecureString::size_type Size>
+template <typename StringType>
 SafeString SecureInputString<Predicate, Size>::Encrypt(const StringType& decrypted_chars) const {
   SafeString encrypted_chars;
   Encryptor encryptor(phrase_.data(), new Encoder(new Sink(encrypted_chars)));
@@ -297,7 +304,7 @@ SafeString SecureInputString<Predicate, Size>::Encrypt(const StringType& decrypt
   return encrypted_chars;
 }
 
-template<typename Predicate, SecureString::size_type Size>
+template <typename Predicate, SecureString::size_type Size>
 SafeString SecureInputString<Predicate, Size>::Decrypt(const SafeString& encrypted_char) const {
   SafeString decrypted_char;
   Decoder decryptor(new Decryptor(phrase_.data(), new Sink(decrypted_char)));
@@ -306,7 +313,7 @@ SafeString SecureInputString<Predicate, Size>::Decrypt(const SafeString& encrypt
   return decrypted_char;
 }
 
-template<typename Predicate, SecureString::size_type Size>
+template <typename Predicate, SecureString::size_type Size>
 bool SecureInputString<Predicate, Size>::ValidateEncryptedChars(const boost::regex& regex) const {
   if (!Predicate()(encrypted_chars_.size(), Size))
     return false;
@@ -322,7 +329,7 @@ bool SecureInputString<Predicate, Size>::ValidateEncryptedChars(const boost::reg
   return true;
 }
 
-template<typename Predicate, SecureString::size_type Size>
+template <typename Predicate, SecureString::size_type Size>
 bool SecureInputString<Predicate, Size>::ValidateSecureString(const boost::regex& regex) const {
   SafeString decrypted_string(string());
   size_type decrypted_string_size(decrypted_string.size());
@@ -334,7 +341,6 @@ bool SecureInputString<Predicate, Size>::ValidateSecureString(const boost::regex
   }
   return true;
 }
-
 
 SafeString operator+(const SafeString& first, const SafeString& second);
 SafeString operator+(const SecureString::Hash& first, const SafeString& second);

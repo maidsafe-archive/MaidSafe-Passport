@@ -29,20 +29,17 @@
 #include "maidsafe/passport/detail/identity_data.h"
 #include "maidsafe/passport/detail/passport.pb.h"
 
-
 namespace maidsafe {
 
 namespace passport {
 
-EncryptedSession EncryptSession(const detail::Keyword& keyword,
-                                const detail::Pin& pin,
+EncryptedSession EncryptSession(const detail::Keyword& keyword, const detail::Pin& pin,
                                 const detail::Password& password,
                                 const NonEmptyString& serialised_session) {
   return detail::EncryptSession(keyword, pin, password, serialised_session);
 }
 
-EncryptedTmidName EncryptTmidName(const detail::Keyword& keyword,
-                                  const detail::Pin& pin,
+EncryptedTmidName EncryptTmidName(const detail::Keyword& keyword, const detail::Pin& pin,
                                   const Tmid::Name& tmid_name) {
   return detail::EncryptTmidName(keyword, pin, tmid_name);
 }
@@ -55,27 +52,20 @@ Smid::Name SmidName(const detail::Keyword& keyword, const detail::Pin& pin) {
   return Smid::GenerateName(keyword, pin);
 }
 
-NonEmptyString DecryptSession(const detail::Keyword& keyword,
-                              const detail::Pin& pin,
+NonEmptyString DecryptSession(const detail::Keyword& keyword, const detail::Pin& pin,
                               const detail::Password& password,
                               const EncryptedSession& encrypted_session) {
   return detail::DecryptSession(keyword, pin, password, encrypted_session);
 }
 
-Tmid::Name DecryptTmidName(const detail::Keyword& keyword,
-                           const detail::Pin& pin,
+Tmid::Name DecryptTmidName(const detail::Keyword& keyword, const detail::Pin& pin,
                            const EncryptedTmidName& encrypted_tmid_name) {
   return detail::DecryptTmidName(keyword, pin, encrypted_tmid_name);
 }
 
-NonEmptyString SerialisePmid(const Pmid& pmid) {
-  return detail::SerialisePmid(pmid);
-}
+NonEmptyString SerialisePmid(const Pmid& pmid) { return detail::SerialisePmid(pmid); }
 
-Pmid ParsePmid(const NonEmptyString& serialised_pmid) {
-  return detail::ParsePmid(serialised_pmid);
-}
-
+Pmid ParsePmid(const NonEmptyString& serialised_pmid) { return detail::ParsePmid(serialised_pmid); }
 
 Passport::Passport()
     : pending_fobs_(),
@@ -97,8 +87,8 @@ void Passport::CreateFobs() {
 
 bool Passport::NoFobsNull(bool confirmed) {
   const Fobs& fobs(confirmed ? confirmed_fobs_ : pending_fobs_);
-  std::string error_message(confirmed ? "Not all fobs were found in confirmed container." :
-                                        "Not all fobs were found in pending container.");
+  std::string error_message(confirmed ? "Not all fobs were found in confirmed container."
+                                      : "Not all fobs were found in pending container.");
   if (!fobs.anmid) {
     LOG(kError) << error_message;
     return false;
@@ -206,8 +196,8 @@ void Passport::CreateSelectableFobPair(const NonEmptyString& chosen_name) {
   selectable_fob_pair.anmpid.reset(new Anmpid);
   selectable_fob_pair.mpid.reset(new Mpid(chosen_name, *selectable_fob_pair.anmpid));
   std::lock_guard<std::mutex> lock(selectable_mutex_);
-  auto result(pending_selectable_fobs_.insert(std::make_pair(chosen_name,
-                                                             std::move(selectable_fob_pair))));
+  auto result(
+      pending_selectable_fobs_.insert(std::make_pair(chosen_name, std::move(selectable_fob_pair))));
   if (!result.second)
     ThrowError(PassportErrors::public_id_already_exists);
 }
@@ -218,8 +208,8 @@ void Passport::ConfirmSelectableFobPair(const NonEmptyString& chosen_name) {
   if (itr == pending_selectable_fobs_.end())
     ThrowError(PassportErrors::no_such_public_id);
 
-  auto result(confirmed_selectable_fobs_.insert(std::make_pair(chosen_name,
-                                                               std::move((*itr).second))));
+  auto result(
+      confirmed_selectable_fobs_.insert(std::make_pair(chosen_name, std::move((*itr).second))));
   if (!result.second)
     ThrowError(PassportErrors::public_id_already_exists);
 
@@ -232,9 +222,7 @@ void Passport::DeleteSelectableFobPair(const NonEmptyString& chosen_name) {
   pending_selectable_fobs_.erase(chosen_name);
 }
 
-
-
-template<>
+template <>
 Anmid Passport::Get<Anmid>(bool confirmed) {
   std::lock_guard<std::mutex> lock(fobs_mutex_);
   if (confirmed) {
@@ -248,7 +236,7 @@ Anmid Passport::Get<Anmid>(bool confirmed) {
   }
 }
 
-template<>
+template <>
 Ansmid Passport::Get<Ansmid>(bool confirmed) {
   std::lock_guard<std::mutex> lock(fobs_mutex_);
   if (confirmed) {
@@ -262,7 +250,7 @@ Ansmid Passport::Get<Ansmid>(bool confirmed) {
   }
 }
 
-template<>
+template <>
 Antmid Passport::Get<Antmid>(bool confirmed) {
   std::lock_guard<std::mutex> lock(fobs_mutex_);
   if (confirmed) {
@@ -276,7 +264,7 @@ Antmid Passport::Get<Antmid>(bool confirmed) {
   }
 }
 
-template<>
+template <>
 Anmaid Passport::Get<Anmaid>(bool confirmed) {
   std::lock_guard<std::mutex> lock(fobs_mutex_);
   if (confirmed) {
@@ -290,7 +278,7 @@ Anmaid Passport::Get<Anmaid>(bool confirmed) {
   }
 }
 
-template<>
+template <>
 Maid Passport::Get<Maid>(bool confirmed) {
   std::lock_guard<std::mutex> lock(fobs_mutex_);
   if (confirmed) {
@@ -304,7 +292,7 @@ Maid Passport::Get<Maid>(bool confirmed) {
   }
 }
 
-template<>
+template <>
 Pmid Passport::Get<Pmid>(bool confirmed) {
   std::lock_guard<std::mutex> lock(fobs_mutex_);
   if (confirmed) {
@@ -318,7 +306,7 @@ Pmid Passport::Get<Pmid>(bool confirmed) {
   }
 }
 
-template<>
+template <>
 Anmpid Passport::GetFromSelectableFobPair(bool confirmed,
                                           const SelectableFobPair& selectable_fob_pair) {
   if (!selectable_fob_pair.anmpid)
@@ -326,14 +314,13 @@ Anmpid Passport::GetFromSelectableFobPair(bool confirmed,
   return *selectable_fob_pair.anmpid;
 }
 
-template<>
+template <>
 Mpid Passport::GetFromSelectableFobPair(bool confirmed,
                                         const SelectableFobPair& selectable_fob_pair) {
   if (!selectable_fob_pair.mpid)
     ThrowError(confirmed ? PassportErrors::no_confirmed_fob : PassportErrors::no_pending_fob);
   return *selectable_fob_pair.mpid;
 }
-
 
 }  // namespace passport
 

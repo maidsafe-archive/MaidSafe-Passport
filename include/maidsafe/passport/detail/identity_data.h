@@ -31,7 +31,6 @@
 #include "maidsafe/passport/detail/config.h"
 #include "maidsafe/passport/detail/secure_string.h"
 
-
 namespace maidsafe {
 namespace passport {
 
@@ -40,23 +39,18 @@ typedef TaggedValue<NonEmptyString, struct EncryptedSessionTag> EncryptedSession
 
 namespace detail {
 
-void MidFromProtobuf(const NonEmptyString& serialised_mid,
-                     DataTagValue enum_value,
-                     EncryptedTmidName& encrypted_tmid_name,
-                     asymm::Signature& validation_token);
+void MidFromProtobuf(const NonEmptyString& serialised_mid, DataTagValue enum_value,
+                     EncryptedTmidName& encrypted_tmid_name, asymm::Signature& validation_token);
 
-NonEmptyString MidToProtobuf(DataTagValue enum_value,
-                             const EncryptedTmidName& encrypted_tmid_name,
+NonEmptyString MidToProtobuf(DataTagValue enum_value, const EncryptedTmidName& encrypted_tmid_name,
                              const asymm::Signature& validation_token);
 
-template<typename MidType>
-SecureString::Hash GenerateMidName(const Keyword& keyword,
-                                   const Pin& pin);
+template <typename MidType>
+SecureString::Hash GenerateMidName(const Keyword& keyword, const Pin& pin);
 
 crypto::SHA512Hash HashOfPin(uint32_t pin);
 
-
-template<typename TagType>
+template <typename TagType>
 class MidData {
  public:
   typedef maidsafe::detail::Name<MidData> Name;
@@ -71,9 +65,7 @@ class MidData {
   MidData(MidData&& other);
   MidData& operator=(MidData&& other);
 
-  MidData(Name name,
-          EncryptedTmidName encrypted_tmid_name,
-          signer_type signing_fob);
+  MidData(Name name, EncryptedTmidName encrypted_tmid_name, signer_type signing_fob);
   MidData(const Name& name, const serialised_type& serialised_mid);
   serialised_type Serialise() const;
 
@@ -88,19 +80,19 @@ class MidData {
   asymm::Signature validation_token_;
 };
 
-template<typename Tag>
+template <typename Tag>
 typename MidData<Tag>::Name MidData<Tag>::GenerateName(const Keyword& keyword, const Pin& pin) {
   SafeString mid_name(GenerateMidName<MidData<Tag>>(keyword, pin).string());
   return MidData<Tag>::Name(Identity(std::string(mid_name.begin(), mid_name.end())));
 }
 
-template<typename Tag>
+template <typename Tag>
 MidData<Tag>::MidData(const MidData& other)
     : name_(other.name_),
       encrypted_tmid_name_(other.encrypted_tmid_name_),
       validation_token_(other.validation_token_) {}
 
-template<typename Tag>
+template <typename Tag>
 MidData<Tag>& MidData<Tag>::operator=(const MidData& other) {
   name_ = other.name_;
   encrypted_tmid_name_ = other.encrypted_tmid_name_;
@@ -108,13 +100,13 @@ MidData<Tag>& MidData<Tag>::operator=(const MidData& other) {
   return *this;
 }
 
-template<typename Tag>
+template <typename Tag>
 MidData<Tag>::MidData(MidData&& other)
     : name_(std::move(other.name_)),
       encrypted_tmid_name_(std::move(other.encrypted_tmid_name_)),
       validation_token_(std::move(other.validation_token_)) {}
 
-template<typename Tag>
+template <typename Tag>
 MidData<Tag>& MidData<Tag>::operator=(MidData&& other) {
   name_ = std::move(other.name_);
   encrypted_tmid_name_ = std::move(other.encrypted_tmid_name_);
@@ -123,28 +115,23 @@ MidData<Tag>& MidData<Tag>::operator=(MidData&& other) {
 }
 
 template <typename Tag>
-MidData<Tag>::MidData(Name name, EncryptedTmidName encrypted_tmid_name,
-                      signer_type signing_fob)
+MidData<Tag>::MidData(Name name, EncryptedTmidName encrypted_tmid_name, signer_type signing_fob)
     : name_(std::move(name)),
       encrypted_tmid_name_(encrypted_tmid_name),
-      validation_token_(asymm::Sign(encrypted_tmid_name.data,
-                                    signing_fob.private_key())) {}
+      validation_token_(asymm::Sign(encrypted_tmid_name.data, signing_fob.private_key())) {}
 
-template<typename Tag>
+template <typename Tag>
 MidData<Tag>::MidData(const Name& name, const serialised_type& serialised_mid)
-    : name_(name),
-      encrypted_tmid_name_(),
-      validation_token_() {
+    : name_(name), encrypted_tmid_name_(), validation_token_() {
   if (!name_->IsInitialised())
     ThrowError(PassportErrors::mid_parsing_error);
   MidFromProtobuf(serialised_mid.data, Tag::kValue, encrypted_tmid_name_, validation_token_);
 }
 
-template<typename Tag>
+template <typename Tag>
 typename MidData<Tag>::serialised_type MidData<Tag>::Serialise() const {
   return serialised_type(MidToProtobuf(Tag::kValue, encrypted_tmid_name_, validation_token_));
 }
-
 
 class TmidData {
  public:
@@ -173,24 +160,17 @@ class TmidData {
   asymm::Signature validation_token_;
 };
 
-
-EncryptedSession EncryptSession(const Keyword& keyword,
-                                const Pin& pin,
-                                const Password& password,
+EncryptedSession EncryptSession(const Keyword& keyword, const Pin& pin, const Password& password,
                                 const NonEmptyString& serialised_session);
 
-NonEmptyString DecryptSession(const Keyword& keyword,
-                              const Pin& pin,
-                              const Password& password,
+NonEmptyString DecryptSession(const Keyword& keyword, const Pin& pin, const Password& password,
                               const EncryptedSession& encrypted_session);
 
 // TMID name is now what used to be RID (Random ID)
-EncryptedTmidName EncryptTmidName(const Keyword& keyword,
-                                  const Pin& pin,
+EncryptedTmidName EncryptTmidName(const Keyword& keyword, const Pin& pin,
                                   const TmidData::Name& tmid_name);
 
-TmidData::Name DecryptTmidName(const Keyword& keyword,
-                               const Pin& pin,
+TmidData::Name DecryptTmidName(const Keyword& keyword, const Pin& pin,
                                const EncryptedTmidName& encrypted_tmid_name);
 
 }  // namespace detail

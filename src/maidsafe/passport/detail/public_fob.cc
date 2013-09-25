@@ -21,15 +21,12 @@
 #include "maidsafe/common/utils.h"
 #include "maidsafe/passport/detail/passport.pb.h"
 
-
 namespace maidsafe {
 namespace passport {
 namespace detail {
 
-void PublicFobFromProtobuf(const NonEmptyString& serialised_public_fob,
-                           DataTagValue enum_value,
-                           asymm::PublicKey& public_key,
-                           asymm::Signature& validation_token) {
+void PublicFobFromProtobuf(const NonEmptyString& serialised_public_fob, DataTagValue enum_value,
+                           asymm::PublicKey& public_key, asymm::Signature& validation_token) {
   protobuf::PublicFob proto_public_fob;
   if (!proto_public_fob.ParseFromString(serialised_public_fob.string()))
     ThrowError(PassportErrors::fob_parsing_error);
@@ -39,8 +36,7 @@ void PublicFobFromProtobuf(const NonEmptyString& serialised_public_fob,
     ThrowError(PassportErrors::fob_parsing_error);
 }
 
-NonEmptyString PublicFobToProtobuf(DataTagValue enum_value,
-                                   const asymm::PublicKey& public_key,
+NonEmptyString PublicFobToProtobuf(DataTagValue enum_value, const asymm::PublicKey& public_key,
                                    const asymm::Signature& validation_token) {
   protobuf::PublicFob proto_public_fob;
   proto_public_fob.set_type(static_cast<uint32_t>(enum_value));

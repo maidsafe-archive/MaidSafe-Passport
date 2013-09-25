@@ -23,7 +23,6 @@
 
 #include "maidsafe/data_types/data_type_values.h"
 
-
 namespace maidsafe {
 
 namespace passport {
@@ -42,53 +41,52 @@ typedef maidsafe::detail::Tag<DataTagValue::kTmidValue> TmidTag;
 typedef maidsafe::detail::Tag<DataTagValue::kAnmpidValue> AnmpidTag;
 typedef maidsafe::detail::Tag<DataTagValue::kMpidValue> MpidTag;
 
-template<typename Tag, class Enable = void>
+template <typename Tag, class Enable = void>
 class Fob;
 
-template<typename Tag>
+template <typename Tag>
 class MidData;
 
 class TmidData;
 
-template<typename Tag>
+template <typename Tag>
 struct Signer {
   typedef Fob<Tag> type;
 };
 
-template<>
+template <>
 struct Signer<MaidTag> {
   typedef Fob<AnmaidTag> type;
 };
 
-template<>
+template <>
 struct Signer<PmidTag> {
   typedef Fob<MaidTag> type;
 };
 
-template<>
+template <>
 struct Signer<MidTag> {
   typedef Fob<AnmidTag> type;
 };
 
-template<>
+template <>
 struct Signer<SmidTag> {
   typedef Fob<AnsmidTag> type;
 };
 
-template<>
+template <>
 struct Signer<TmidTag> {
   typedef Fob<AntmidTag> type;
 };
 
-template<>
+template <>
 struct Signer<MpidTag> {
   typedef Fob<AnmpidTag> type;
 };
 
-
 #ifdef TESTING
 
-template<typename NameType>
+template <typename NameType>
 std::string DebugString(const NameType& name);
 
 #endif

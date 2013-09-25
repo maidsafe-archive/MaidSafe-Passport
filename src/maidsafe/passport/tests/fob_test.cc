@@ -28,7 +28,6 @@
 #include "maidsafe/passport/detail/passport.pb.h"
 #include "maidsafe/passport/types.h"
 
-
 namespace maidsafe {
 
 namespace passport {
@@ -99,7 +98,7 @@ TEST(FobTest, BEH_FobGenerationAndValidation) {
   static_assert(!is_long_term_cacheable<Mpid>::value, "");
 }
 
-template<typename Fobtype>
+template <typename Fobtype>
 bool CheckSerialisationAndParsing(Fobtype fob) {
   maidsafe::passport::detail::protobuf::Fob proto_fob;
   fob.ToProtobuf(&proto_fob);
@@ -143,16 +142,11 @@ TEST(FobTest, BEH_FobSerialisationAndParsing) {
   CheckSerialisationAndParsing(mpid);
 }
 
-
-
-bool CheckTokenAndName(const asymm::PublicKey& public_key,
-                       const asymm::Signature& signature,
-                       const asymm::PublicKey& signer_key,
-                       const Identity& name,
+bool CheckTokenAndName(const asymm::PublicKey& public_key, const asymm::Signature& signature,
+                       const asymm::PublicKey& signer_key, const Identity& name,
                        NonEmptyString chosen_name = NonEmptyString()) {
-  bool validation_result(asymm::CheckSignature(asymm::PlainText(asymm::EncodeKey(public_key)),
-                                               signature,
-                                               signer_key));
+  bool validation_result(
+      asymm::CheckSignature(asymm::PlainText(asymm::EncodeKey(public_key)), signature, signer_key));
   if (!validation_result) {
     LOG(kError) << "Bad validation token.";
     return false;
@@ -170,23 +164,17 @@ bool CheckTokenAndName(const asymm::PublicKey& public_key,
   return true;
 }
 
-template<typename Fobtype>
+template <typename Fobtype>
 bool CheckNamingAndValidation(Fobtype fob) {
-  return CheckTokenAndName(fob.public_key(),
-                           fob.validation_token(),
-                           fob.private_key(),
+  return CheckTokenAndName(fob.public_key(), fob.validation_token(), fob.private_key(),
                            Identity(fob.name()));
 }
 
-template<typename Fobtype>
-bool CheckNamingAndValidation(Fobtype fob,
-                              asymm::PublicKey signer_public_key,
+template <typename Fobtype>
+bool CheckNamingAndValidation(Fobtype fob, asymm::PublicKey signer_public_key,
                               NonEmptyString chosen_name = NonEmptyString()) {
-  return CheckTokenAndName(fob.public_key(),
-                           fob.validation_token(),
-                           signer_public_key,
-                           Identity(fob.name()),
-                           chosen_name);
+  return CheckTokenAndName(fob.public_key(), fob.validation_token(), signer_public_key,
+                           Identity(fob.name()), chosen_name);
 }
 
 TEST(FobTest, BEH_NamingAndValidation) {
