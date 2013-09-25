@@ -61,7 +61,7 @@ class SecureString {
 
   SecureString();
   template <typename StringType>
-  SecureString(const StringType& string);
+  explicit SecureString(const StringType& string);
   ~SecureString();
 
   template <typename StringType>
@@ -104,7 +104,7 @@ class SecureInputString {
 
   SecureInputString();
   template <typename StringType>
-  SecureInputString(const StringType& string);
+  explicit SecureInputString(const StringType& string);
   ~SecureInputString();
 
   template <typename StringType>
