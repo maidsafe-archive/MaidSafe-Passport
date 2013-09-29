@@ -75,6 +75,46 @@ Passport::Passport()
       fobs_mutex_(),
       selectable_mutex_() {}
 
+Passport::Passport(const NonEmptyString& serialised_passport)
+    : pending_fobs_(),
+      confirmed_fobs_(),
+      pending_selectable_fobs_(),
+      confirmed_selectable_fobs_(),
+      fobs_mutex_(),
+      selectable_mutex_(){
+  detail::protobuf::Passport proto_passport;
+  if (!proto_passport.ParseFromString(serialised_passport.string()) ||
+      !proto_passport.IsInitialized()) {
+    LOG(kError) << "Failed to parse passport.";
+    ThrowError(PassportErrors::passport_parsing_error);
+  }
+
+  if (proto_passport.fob_size() != 6) {
+    LOG(kError) << "Parsed passport should have 6 fobs, actually has " << proto_passport.fob_size();
+    ThrowError(PassportErrors::passport_parsing_error);
+  }
+
+  std::lock(fobs_mutex_, selectable_mutex_);
+  std::lock_guard<std::mutex> fobs_lock(fobs_mutex_, std::adopt_lock);
+  std::lock_guard<std::mutex> selectable_lock(selectable_mutex_, std::adopt_lock);
+
+  confirmed_fobs_.anmid.reset(new Anmid(proto_passport.fob(0)));
+  confirmed_fobs_.ansmid.reset(new Ansmid(proto_passport.fob(1)));
+  confirmed_fobs_.antmid.reset(new Antmid(proto_passport.fob(2)));
+  confirmed_fobs_.anmaid.reset(new Anmaid(proto_passport.fob(3)));
+  confirmed_fobs_.maid.reset(new Maid(proto_passport.fob(4)));
+  confirmed_fobs_.pmid.reset(new Pmid(proto_passport.fob(5)));
+
+  for (int i(0); i != proto_passport.public_identity_size(); ++i) {
+    NonEmptyString public_id(proto_passport.public_identity(i).public_id());
+    SelectableFobPair fob;
+    fob.anmpid.reset(new Anmpid(proto_passport.public_identity(i).anmpid()));
+    fob.mpid.reset(new Mpid(proto_passport.public_identity(i).mpid()));
+    confirmed_selectable_fobs_[public_id] = std::move(fob);
+  }
+}
+
+
 void Passport::CreateFobs() {
   std::lock_guard<std::mutex> lock(fobs_mutex_);
   pending_fobs_.anmid.reset(new Anmid);
@@ -158,38 +198,6 @@ NonEmptyString Passport::Serialise() {
   return NonEmptyString(proto_passport.SerializeAsString());
 }
 
-void Passport::Parse(const NonEmptyString& serialised_passport) {
-  detail::protobuf::Passport proto_passport;
-  if (!proto_passport.ParseFromString(serialised_passport.string()) ||
-      !proto_passport.IsInitialized()) {
-    LOG(kError) << "Failed to parse passport.";
-    ThrowError(PassportErrors::passport_parsing_error);
-  }
-
-  if (proto_passport.fob_size() != 6) {
-    LOG(kError) << "Parsed passport should have 6 fobs, actually has " << proto_passport.fob_size();
-    ThrowError(PassportErrors::passport_parsing_error);
-  }
-
-  std::lock(fobs_mutex_, selectable_mutex_);
-  std::lock_guard<std::mutex> fobs_lock(fobs_mutex_, std::adopt_lock);
-  std::lock_guard<std::mutex> selectable_lock(selectable_mutex_, std::adopt_lock);
-
-  confirmed_fobs_.anmid.reset(new Anmid(proto_passport.fob(0)));
-  confirmed_fobs_.ansmid.reset(new Ansmid(proto_passport.fob(1)));
-  confirmed_fobs_.antmid.reset(new Antmid(proto_passport.fob(2)));
-  confirmed_fobs_.anmaid.reset(new Anmaid(proto_passport.fob(3)));
-  confirmed_fobs_.maid.reset(new Maid(proto_passport.fob(4)));
-  confirmed_fobs_.pmid.reset(new Pmid(proto_passport.fob(5)));
-
-  for (int i(0); i != proto_passport.public_identity_size(); ++i) {
-    NonEmptyString public_id(proto_passport.public_identity(i).public_id());
-    SelectableFobPair fob;
-    fob.anmpid.reset(new Anmpid(proto_passport.public_identity(i).anmpid()));
-    fob.mpid.reset(new Mpid(proto_passport.public_identity(i).mpid()));
-    confirmed_selectable_fobs_[public_id] = std::move(fob);
-  }
-}
 
 void Passport::CreateSelectableFobPair(const NonEmptyString& chosen_name) {
   SelectableFobPair selectable_fob_pair;

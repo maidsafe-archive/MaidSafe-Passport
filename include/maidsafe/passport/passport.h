@@ -85,14 +85,21 @@ class Passport {
  public:
   Passport();
   // Method for the initial creation of Fobs.
+    // Parses previously serialised Fobs and intialises data members accordingly.
+  Passport(const NonEmptyString& serialised_passport);
+  Passport(const NonEmptyString&& serialised_passport);
+  Passport(const Passport&);
+  Passport(const Passport&&);
+
+  Passport& operator=(const Passport&&);
+
   void CreateFobs();
   // Copies pending fobs to confirmed fobs and clears pending fobs struct.
   void ConfirmFobs();
 
   // Serialises Fobs for network storage.
   NonEmptyString Serialise();
-  // Parses previously serialised Fobs and intialises data members accordingly.
-  void Parse(const NonEmptyString& serialised_passport);
+
 
   // Returns the Fob type requested in it's template argument.
   template <typename FobType>
@@ -109,8 +116,7 @@ class Passport {
   friend class test::PassportTest;
 
  private:
-  Passport(const Passport&);
-  Passport& operator=(const Passport&);
+
 
   struct Fobs {
     Fobs() : anmid(), ansmid(), antmid(), anmaid(), maid(), pmid() {}

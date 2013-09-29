@@ -41,11 +41,10 @@ namespace test {
 
 template <typename Fobtype>
 bool AllFieldsMatch(const Fobtype& lhs, const Fobtype& rhs) {
-  if (lhs.validation_token() != rhs.validation_token() ||
-      !rsa::MatchingKeys(lhs.private_key(), rhs.private_key()) ||
-      !rsa::MatchingKeys(lhs.public_key(), rhs.public_key()) || lhs.name() != rhs.name())
-    return false;
-  return true;
+  return (lhs.validation_token() == rhs.validation_token() &&
+      rsa::MatchingKeys(lhs.private_key(), rhs.private_key()) &&
+      rsa::MatchingKeys(lhs.public_key(), rhs.public_key()) &&
+      lhs.name() == rhs.name());
 }
 
 template <typename Fobtype>
@@ -366,8 +365,7 @@ TEST_F(PassportParallelTest, FUNC_ParallelCreateConfirmGetDelete) {
     a1.get();
   }
 
-  NonEmptyString string(passport_.Serialise());
-  passport_.Parse(string);
+  EXPECT_NO_THROW(Passport test(Passport(passport_.Serialise())));
 }
 
 TEST_F(PassportParallelTest, FUNC_ParallelSerialiseParse) {
@@ -390,22 +388,22 @@ TEST_F(PassportParallelTest, FUNC_ParallelSerialiseParse) {
     a1.get();
   }
 
-  passport_.Parse(serialised);
-  passport_.CreateSelectableFobPair(chosen_name_1_);
-  passport_.CreateSelectableFobPair(chosen_name_5_);
-  passport_.ConfirmSelectableFobPair(chosen_name_5_);
+  Passport passport = Passport(serialised);
+
+  passport.CreateSelectableFobPair(chosen_name_1_);
+  passport.CreateSelectableFobPair(chosen_name_5_);
+  passport.ConfirmSelectableFobPair(chosen_name_5_);
 
   {
-    auto a1 = std::async([&] { return passport_.Parse(serialised); });
-    auto a2 = std::async([&] { return passport_.ConfirmFobs(); });
-    auto a3 = std::async([&] { return passport_.CreateSelectableFobPair(chosen_name_4_); });
-    auto a4 = std::async([&] { return passport_.GetSelectableFob<Anmpid>(false, chosen_name_1_); });
+    auto a2 = std::async([&] { return passport.ConfirmFobs(); });
+    auto a3 = std::async([&] { return passport.CreateSelectableFobPair(chosen_name_4_); });
+    auto a4 = std::async([&] { return passport.GetSelectableFob<Anmpid>(false, chosen_name_1_); });
     auto a5 = std::async([&] {
-      return std::make_shared<Mpid>(passport_.GetSelectableFob<Mpid>(false, chosen_name_1_));
+      return std::make_shared<Mpid>(passport.GetSelectableFob<Mpid>(false, chosen_name_1_));
     });
-    auto a6 = std::async([&] { return passport_.GetSelectableFob<Anmpid>(true, chosen_name_5_); });
+    auto a6 = std::async([&] { return passport.GetSelectableFob<Anmpid>(true, chosen_name_5_); });
     auto a7 = std::async([&] {
-      return std::make_shared<Mpid>(passport_.GetSelectableFob<Mpid>(true, chosen_name_5_));
+      return std::make_shared<Mpid>(passport.GetSelectableFob<Mpid>(true, chosen_name_5_));
     });
     a7.get();
     a6.get();
@@ -413,11 +411,9 @@ TEST_F(PassportParallelTest, FUNC_ParallelSerialiseParse) {
     a4.get();
     a3.get();
     a2.get();
-    a1.get();
   }
 
-  NonEmptyString string(passport_.Serialise());
-  passport_.Parse(string);
+  EXPECT_NO_THROW(Passport test(Passport(passport_.Serialise())));
 }
 
 TEST_F(PassportTest, BEH_SerialiseParseNoSelectables) {
@@ -426,16 +422,14 @@ TEST_F(PassportTest, BEH_SerialiseParseNoSelectables) {
 
   TestFobs fobs1(GetFobs(true));
 
-  NonEmptyString serialised(passport_.Serialise());
-  passport_.Parse(serialised);
+  EXPECT_NO_THROW(Passport test(Passport(passport_.Serialise())));
 
   TestFobs fobs2(GetFobs(true));
 
   EXPECT_TRUE(AllFobFieldsMatch(fobs1, fobs2));
 
   NonEmptyString serialised_2(passport_.Serialise());
-  EXPECT_EQ(serialised, serialised_2);
-  passport_.Parse(serialised);
+  EXPECT_EQ(passport_.Serialise(), serialised_2);
 
   TestFobs fobs3(GetFobs(true));
 
@@ -463,8 +457,7 @@ TEST_F(PassportTest, FUNC_SerialiseParseWithSelectables) {
     mpids1.push_back(passport_.GetSelectableFob<Mpid>(true, chosen_name));
   }
 
-  NonEmptyString serialised(passport_.Serialise());
-  passport_.Parse(serialised);
+  EXPECT_NO_THROW(Passport test(Passport(passport_.Serialise())));
 
   TestFobs fobs2(GetFobs(true));
 
@@ -481,14 +474,11 @@ TEST_F(PassportTest, FUNC_SerialiseParseWithSelectables) {
     EXPECT_TRUE(AllFieldsMatch(anmpids1.at(i), anmpids2.at(i)));
     EXPECT_TRUE(AllFieldsMatch(mpids1.at(i), mpids2.at(i)));
   }
-
-  NonEmptyString serialised_2(passport_.Serialise());
-  EXPECT_EQ(serialised, serialised_2);
 }
 
 TEST_F(PassportTest, BEH_ParseBadString) {
   NonEmptyString bad_string(RandomAlphaNumericString(1 + RandomUint32() % 1000));
-  EXPECT_THROW(passport_.Parse(bad_string), std::exception);
+  EXPECT_THROW(Passport test((Passport(bad_string))), std::exception);
 }
 
 class PassportParsePbTest : public PassportTest {
@@ -559,8 +549,7 @@ TEST_F(PassportParsePbTest, BEH_GoodProtobuf) {
   auto proto_mpid(proto_public_identity->mutable_mpid());
   mpid.ToProtobuf(proto_mpid);
 
-  NonEmptyString string(proto_passport_.SerializeAsString());
-  EXPECT_NO_THROW(passport_.Parse(string));
+  EXPECT_NO_THROW(Passport test(Passport(NonEmptyString(proto_passport_.SerializeAsString()))));;
 }
 
 TEST_F(PassportParsePbTest, BEH_FiveFobs) {
@@ -575,8 +564,8 @@ TEST_F(PassportParsePbTest, BEH_FiveFobs) {
   proto_fob = proto_passport_.add_fob();
   maid_.ToProtobuf(proto_fob);
 
-  NonEmptyString string(proto_passport_.SerializeAsString());
-  EXPECT_THROW(passport_.Parse(string), std::exception);
+  EXPECT_THROW(Passport test((Passport(NonEmptyString(proto_passport_.SerializeAsString())))),
+                             std::exception);
 }
 
 TEST_F(PassportParsePbTest, BEH_SevenFobs) {
@@ -584,15 +573,15 @@ TEST_F(PassportParsePbTest, BEH_SevenFobs) {
   auto proto_fob(proto_passport_.add_fob());
   pmid_.ToProtobuf(proto_fob);
 
-  NonEmptyString string(proto_passport_.SerializeAsString());
-  EXPECT_THROW(passport_.Parse(string), std::exception);
+  EXPECT_THROW(Passport test((Passport(NonEmptyString(proto_passport_.SerializeAsString())))),
+                             std::exception);
 }
 
 TEST_F(PassportParsePbTest, BEH_ParseReorderedFobs) {
   GenerateSixFobs(RandomUint32() % 6);
 
-  NonEmptyString string(proto_passport_.SerializeAsString());
-  EXPECT_THROW(passport_.Parse(string), std::exception);
+  EXPECT_THROW(Passport test((Passport(NonEmptyString(proto_passport_.SerializeAsString())))),
+                             std::exception);
 }
 
 class PassportParsePbSelectableTest : public PassportParsePbTest {
@@ -613,8 +602,8 @@ class PassportParsePbSelectableTest : public PassportParsePbTest {
 };
 
 TEST_F(PassportParsePbSelectableTest, BEH_GoodProtobuf) {
-  NonEmptyString string(proto_passport_.SerializeAsString());
-  EXPECT_NO_THROW(passport_.Parse(string));
+  EXPECT_THROW(Passport test((Passport(NonEmptyString(proto_passport_.SerializeAsString())))),
+                             std::exception);
 }
 
 TEST(PassportIndependentSerialiseTest, BEH_Uninitialised) {
