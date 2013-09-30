@@ -83,43 +83,45 @@ class PassportTest;
 // types.h for details about the identity types.
 class Passport {
  public:
+  // Creates Fobs during construction.
   Passport();
-  // Method for the initial creation of Fobs.
-    // Parses previously serialised Fobs and intialises data members accordingly.
+  Passport(Passport&& passport);
+
+  Passport& operator=(Passport&& passport);
+
+  // Parses previously serialised Fobs and intialises data members accordingly.
   Passport(const NonEmptyString& serialised_passport);
-  Passport(const NonEmptyString&& serialised_passport);
-  Passport(const Passport&);
-  Passport(const Passport&&);
-
-  Passport& operator=(const Passport&&);
-
-  void CreateFobs();
-  // Copies pending fobs to confirmed fobs and clears pending fobs struct.
-  void ConfirmFobs();
 
   // Serialises Fobs for network storage.
   NonEmptyString Serialise();
 
-
   // Returns the Fob type requested in it's template argument.
   template <typename FobType>
-  FobType Get(bool confirmed);
+  FobType Get();
 
-  // Selectable Fob, aka Anmpid & Mpid, manipulation methods. There's no restriction on the number
-  // of selectable Fobs an application can create/use.
+  // Selectable Fobs, Anmpid and Mpid.
+  // There's no restriction on the number of selectable Fobs an application can create/use.
+  void CreateSelectableFobPair(const NonEmptyString& name);
+  void DeleteSelectableFobPair(const NonEmptyString& name);
+
   template <typename FobType>
-  FobType GetSelectableFob(bool confirmed, const NonEmptyString& chosen_name);
-  void CreateSelectableFobPair(const NonEmptyString& chosen_name);
-  void ConfirmSelectableFobPair(const NonEmptyString& chosen_name);
-  void DeleteSelectableFobPair(const NonEmptyString& chosen_name);
+  FobType GetSelectableFob(const NonEmptyString& name);
 
   friend class test::PassportTest;
 
  private:
-
+  Passport(const Passport&);
+  Passport& operator=(const Passport&);
 
   struct Fobs {
-    Fobs() : anmid(), ansmid(), antmid(), anmaid(), maid(), pmid() {}
+    Fobs()
+      : anmid(new Anmid),
+        ansmid(new Ansmid),
+        antmid(new Antmid),
+        anmaid(new Anmaid),
+        maid(new Maid(*anmaid)),
+        pmid(new Pmid(*maid)) {}
+
     Fobs(Fobs&& other)
         : anmid(std::move(other.anmid)),
           ansmid(std::move(other.ansmid)),
@@ -127,6 +129,7 @@ class Passport {
           anmaid(std::move(other.anmaid)),
           maid(std::move(other.maid)),
           pmid(std::move(other.pmid)) {}
+
     Fobs& operator=(Fobs&& other) {
       anmid = std::move(other.anmid);
       ansmid = std::move(other.ansmid);
@@ -136,6 +139,7 @@ class Passport {
       pmid = std::move(other.pmid);
       return *this;
     }
+
     std::unique_ptr<Anmid> anmid;
     std::unique_ptr<Ansmid> ansmid;
     std::unique_ptr<Antmid> antmid;
@@ -150,13 +154,16 @@ class Passport {
 
   struct SelectableFobPair {
     SelectableFobPair() : anmpid(), mpid() {}
+
     SelectableFobPair(SelectableFobPair&& other)
         : anmpid(std::move(other.anmpid)), mpid(std::move(other.mpid)) {}
+
     SelectableFobPair& operator=(SelectableFobPair&& other) {
       anmpid = std::move(other.anmpid);
       mpid = std::move(other.mpid);
       return *this;
     }
+
     std::unique_ptr<Anmpid> anmpid;
     std::unique_ptr<Mpid> mpid;
 
@@ -169,56 +176,48 @@ class Passport {
     SelectableFobPair& operator=(const SelectableFobPair&);
   };
 
-  bool NoFobsNull(bool confirmed);
-  template <typename FobType>
-  FobType GetFromSelectableFobPair(bool confirmed, const SelectableFobPair& selectable_fob_pair);
+  bool NoFobsNull() const;
 
-  Fobs pending_fobs_, confirmed_fobs_;
-  std::map<NonEmptyString, SelectableFobPair> pending_selectable_fobs_, confirmed_selectable_fobs_;
-  std::mutex fobs_mutex_, selectable_mutex_;
+  template <typename FobType>
+  FobType GetFromSelectableFobPair(const SelectableFobPair& selectable_fob_pair);
+
+  Fobs fobs_;
+  std::map<NonEmptyString, SelectableFobPair> selectable_fobs_;
+  std::mutex fobs_mutex_, selectable_fobs_mutex_;
 };
 
 template <>
-Anmid Passport::Get<Anmid>(bool confirmed);
+Anmid Passport::Get<Anmid>();
 
 template <>
-Ansmid Passport::Get<Ansmid>(bool confirmed);
+Ansmid Passport::Get<Ansmid>();
 
 template <>
-Antmid Passport::Get<Antmid>(bool confirmed);
+Antmid Passport::Get<Antmid>();
 
 template <>
-Anmaid Passport::Get<Anmaid>(bool confirmed);
+Anmaid Passport::Get<Anmaid>();
 
 template <>
-Maid Passport::Get<Maid>(bool confirmed);
+Maid Passport::Get<Maid>();
 
 template <>
-Pmid Passport::Get<Pmid>(bool confirmed);
-
-template <>
-Anmpid Passport::GetFromSelectableFobPair(bool confirmed,
-                                          const SelectableFobPair& selectable_fob_pair);
-
-template <>
-Mpid Passport::GetFromSelectableFobPair(bool confirmed,
-                                        const SelectableFobPair& selectable_fob_pair);
+Pmid Passport::Get<Pmid>();
 
 template <typename FobType>
-FobType Passport::GetSelectableFob(bool confirmed, const NonEmptyString& chosen_name) {
-  std::lock_guard<std::mutex> lock(selectable_mutex_);
-  if (confirmed) {
-    auto itr(confirmed_selectable_fobs_.find(chosen_name));
-    if (itr == confirmed_selectable_fobs_.end())
-      ThrowError(PassportErrors::no_pending_fob);
-    return GetFromSelectableFobPair<FobType>(confirmed, (*itr).second);
-  } else {
-    auto itr(pending_selectable_fobs_.find(chosen_name));
-    if (itr == pending_selectable_fobs_.end())
-      ThrowError(PassportErrors::no_pending_fob);
-    return GetFromSelectableFobPair<FobType>(confirmed, (*itr).second);
-  }
+FobType Passport::GetSelectableFob(const NonEmptyString& name) {
+  std::lock_guard<std::mutex> lock(selectable_fobs_mutex_);
+  auto itr(selectable_fobs_.find(name));
+  if (itr == selectable_fobs_.end())
+    ThrowError(PassportErrors::uninitialised_fob);
+  return GetFromSelectableFobPair<FobType>(itr->second);
 }
+
+template <>
+Anmpid Passport::GetFromSelectableFobPair(const SelectableFobPair& selectable_fob_pair);
+
+template <>
+Mpid Passport::GetFromSelectableFobPair(const SelectableFobPair& selectable_fob_pair);
 
 }  // namespace passport
 }  // namespace maidsafe
