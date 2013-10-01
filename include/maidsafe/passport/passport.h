@@ -90,7 +90,7 @@ class Passport {
   Passport& operator=(Passport&& passport);
 
   // Parses previously serialised Fobs and intialises data members accordingly.
-  Passport(const NonEmptyString& serialised_passport);
+  explicit Passport(const NonEmptyString& serialised_passport);
 
   // Serialises Fobs for network storage.
   NonEmptyString Serialise();
@@ -114,13 +114,7 @@ class Passport {
   Passport& operator=(const Passport&);
 
   struct Fobs {
-    Fobs()
-      : anmid(new Anmid),
-        ansmid(new Ansmid),
-        antmid(new Antmid),
-        anmaid(new Anmaid),
-        maid(new Maid(*anmaid)),
-        pmid(new Pmid(*maid)) {}
+    Fobs() {}
 
     Fobs(Fobs&& other)
         : anmid(std::move(other.anmid)),
@@ -183,7 +177,7 @@ class Passport {
 
   Fobs fobs_;
   std::map<NonEmptyString, SelectableFobPair> selectable_fobs_;
-  std::mutex fobs_mutex_, selectable_fobs_mutex_;
+  mutable std::mutex fobs_mutex_, selectable_fobs_mutex_;
 };
 
 template <>

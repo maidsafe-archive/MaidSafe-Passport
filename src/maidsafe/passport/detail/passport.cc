@@ -70,7 +70,15 @@ Passport::Passport()
     : fobs_(),
       selectable_fobs_(),
       fobs_mutex_(),
-      selectable_fobs_mutex_() {}
+      selectable_fobs_mutex_() {
+  std::lock_guard<std::mutex> lock(fobs_mutex_);
+  fobs_.anmid.reset(new Anmid);
+  fobs_.ansmid.reset(new Ansmid);
+  fobs_.antmid.reset(new Antmid);
+  fobs_.anmaid.reset(new Anmaid);
+  fobs_.maid.reset(new Maid(*fobs_.anmaid));
+  fobs_.pmid.reset(new Pmid(*fobs_.maid));
+}
 
 Passport::Passport(Passport&& passport)
     : fobs_(std::move(passport.fobs_)),
@@ -88,7 +96,7 @@ Passport::Passport(const NonEmptyString& serialised_passport)
     : fobs_(),
       selectable_fobs_(),
       fobs_mutex_(),
-      selectable_fobs_mutex_(){
+      selectable_fobs_mutex_() {
   detail::protobuf::Passport proto_passport;
   if (!proto_passport.ParseFromString(serialised_passport.string()) ||
       !proto_passport.IsInitialized()) {

@@ -556,8 +556,7 @@ class PassportParsePbSelectableTest : public PassportParsePbTest {
 };
 
 TEST_F(PassportParsePbSelectableTest, BEH_GoodProtobuf) {
-  EXPECT_THROW(Passport test((Passport(NonEmptyString(proto_passport_.SerializeAsString())))),
-                             std::exception);
+  EXPECT_NO_THROW(Passport test((Passport(NonEmptyString(proto_passport_.SerializeAsString())))));
 }
 
 TEST(PassportIndependentSerialiseTest, BEH_Uninitialised) {
