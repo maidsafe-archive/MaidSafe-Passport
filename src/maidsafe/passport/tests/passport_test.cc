@@ -600,11 +600,6 @@ TEST_CASE_METHOD(PassportParsePbTest, "Parse re-ordered Fobs", "[Passport][Behav
   CHECK_THROWS_AS(passport_.Parse(string), std::exception);
 }
 
-class PassportParsePbSelectableTest : public PassportParsePbTest {
-  PassportParsePbSelectableTest() {
-  }
-};
-
 TEST_CASE_METHOD(PassportParsePbTest, "Serialise and parse a Passport with a SelectableFob",
                  "[Passport][Behavioural]") {
   auto proto_fob(proto_passport_.add_fob());
