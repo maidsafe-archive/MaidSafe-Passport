@@ -32,7 +32,7 @@ namespace passport {
 
 namespace test {
 
-TEST(PublicFobTest, BEH_FobGenerationAndValidation) {
+TEST_CASE("Generate and validate PublicFobs", "[Public Fob][Behavioural]") {
   Anmid anmid;
   Ansmid ansmid;
   Antmid antmid;
@@ -103,6 +103,7 @@ TEST(PublicFobTest, BEH_FobGenerationAndValidation) {
   static_assert(!is_long_term_cacheable<PublicPmid>::value, "");
   static_assert(!is_long_term_cacheable<PublicAnmpid>::value, "");
   static_assert(!is_long_term_cacheable<PublicMpid>::value, "");
+  CHECK(true);  // To avoid Catch '--warn NoAssertions' triggering a CTest failure.
 }
 
 template <typename PublicFobType>
@@ -125,7 +126,7 @@ bool CheckSerialisationAndParsing(PublicFobType public_fob) {
   return true;
 }
 
-TEST(PublicFobTest, BEH_FobSerialisationAndParsing) {
+TEST_CASE("PublicFob serialisation and parsing", "[Public Fob][Behavioural]") {
   Anmid anmid;
   Ansmid ansmid;
   Antmid antmid;
@@ -144,96 +145,96 @@ TEST(PublicFobTest, BEH_FobSerialisationAndParsing) {
   PublicAnmpid public_anmpid(anmpid);
   PublicMpid public_mpid(mpid);
 
-  CheckSerialisationAndParsing(public_anmid);
-  CheckSerialisationAndParsing(public_ansmid);
-  CheckSerialisationAndParsing(public_antmid);
-  CheckSerialisationAndParsing(public_anmaid);
-  CheckSerialisationAndParsing(public_maid);
-  CheckSerialisationAndParsing(public_pmid);
-  CheckSerialisationAndParsing(public_anmpid);
-  CheckSerialisationAndParsing(public_mpid);
+  CHECK(CheckSerialisationAndParsing(public_anmid));
+  CHECK(CheckSerialisationAndParsing(public_ansmid));
+  CHECK(CheckSerialisationAndParsing(public_antmid));
+  CHECK(CheckSerialisationAndParsing(public_anmaid));
+  CHECK(CheckSerialisationAndParsing(public_maid));
+  CHECK(CheckSerialisationAndParsing(public_pmid));
+  CHECK(CheckSerialisationAndParsing(public_anmpid));
+  CHECK(CheckSerialisationAndParsing(public_mpid));
 }
 
-TEST(PublicFobTest, BEH_ConstructFromBadStrings) {
+TEST_CASE("Construct PublicFobs from invalid strings", "[Public Fob][Behavioural]") {
   Identity name(RandomString(64));
   NonEmptyString string(RandomAlphaNumericString(1 + RandomUint32() % 100));
-  EXPECT_THROW(PublicAnmid(PublicAnmid::Name(name), PublicAnmid::serialised_type(string)),
+  CHECK_THROWS_AS(PublicAnmid(PublicAnmid::Name(name), PublicAnmid::serialised_type(string)),
                std::exception);
-  EXPECT_THROW(PublicAnsmid(PublicAnsmid::Name(name), PublicAnsmid::serialised_type(string)),
+  CHECK_THROWS_AS(PublicAnsmid(PublicAnsmid::Name(name), PublicAnsmid::serialised_type(string)),
                std::exception);
-  EXPECT_THROW(PublicAntmid(PublicAntmid::Name(name), PublicAntmid::serialised_type(string)),
+  CHECK_THROWS_AS(PublicAntmid(PublicAntmid::Name(name), PublicAntmid::serialised_type(string)),
                std::exception);
-  EXPECT_THROW(PublicAnmaid(PublicAnmaid::Name(name), PublicAnmaid::serialised_type(string)),
+  CHECK_THROWS_AS(PublicAnmaid(PublicAnmaid::Name(name), PublicAnmaid::serialised_type(string)),
                std::exception);
-  EXPECT_THROW(PublicMaid(PublicMaid::Name(name), PublicMaid::serialised_type(string)),
+  CHECK_THROWS_AS(PublicMaid(PublicMaid::Name(name), PublicMaid::serialised_type(string)),
                std::exception);
-  EXPECT_THROW(PublicPmid(PublicPmid::Name(name), PublicPmid::serialised_type(string)),
+  CHECK_THROWS_AS(PublicPmid(PublicPmid::Name(name), PublicPmid::serialised_type(string)),
                std::exception);
-  EXPECT_THROW(PublicAnmpid(PublicAnmpid::Name(name), PublicAnmpid::serialised_type(string)),
+  CHECK_THROWS_AS(PublicAnmpid(PublicAnmpid::Name(name), PublicAnmpid::serialised_type(string)),
                std::exception);
-  EXPECT_THROW(PublicMpid(PublicMpid::Name(name), PublicMpid::serialised_type(string)),
+  CHECK_THROWS_AS(PublicMpid(PublicMpid::Name(name), PublicMpid::serialised_type(string)),
                std::exception);
 }
 
-TEST(PublicFobTest, BEH_ConstructFromUninitialisedStrings) {
+TEST_CASE("Construct PublicFobs from uninitialised strings", "[Public Fob][Behavioural]") {
   Identity uninitialised_name;
   Identity name(RandomString(64));
   NonEmptyString uninitialised_string;
   NonEmptyString string(RandomAlphaNumericString(1 + RandomUint32() % 100));
-  EXPECT_THROW(
+  CHECK_THROWS_AS(
       PublicAnmid(PublicAnmid::Name(name), (PublicAnmid::serialised_type(uninitialised_string))),
       std::exception);
-  EXPECT_THROW(
+  CHECK_THROWS_AS(
       PublicAnsmid(PublicAnsmid::Name(name), (PublicAnsmid::serialised_type(uninitialised_string))),
       std::exception);
-  EXPECT_THROW(
+  CHECK_THROWS_AS(
       PublicAntmid(PublicAntmid::Name(name), (PublicAntmid::serialised_type(uninitialised_string))),
       std::exception);
-  EXPECT_THROW(
+  CHECK_THROWS_AS(
       PublicAnmaid(PublicAnmaid::Name(name), (PublicAnmaid::serialised_type(uninitialised_string))),
       std::exception);
-  EXPECT_THROW(
+  CHECK_THROWS_AS(
       PublicMaid(PublicMaid::Name(name), (PublicMaid::serialised_type(uninitialised_string))),
       std::exception);
-  EXPECT_THROW(
+  CHECK_THROWS_AS(
       PublicPmid(PublicPmid::Name(name), (PublicPmid::serialised_type(uninitialised_string))),
       std::exception);
-  EXPECT_THROW(
+  CHECK_THROWS_AS(
       PublicAnmpid(PublicAnmpid::Name(name), (PublicAnmpid::serialised_type(uninitialised_string))),
       std::exception);
-  EXPECT_THROW(
+  CHECK_THROWS_AS(
       PublicMpid(PublicMpid::Name(name), (PublicMpid::serialised_type(uninitialised_string))),
       std::exception);
 
-  EXPECT_THROW(
+  CHECK_THROWS_AS(
       PublicAnmid(PublicAnmid::Name(uninitialised_name), (PublicAnmid::serialised_type(string))),
       std::exception);
-  EXPECT_THROW(
+  CHECK_THROWS_AS(
       PublicAnsmid(PublicAnsmid::Name(uninitialised_name), (PublicAnsmid::serialised_type(string))),
       std::exception);
-  EXPECT_THROW(
+  CHECK_THROWS_AS(
       PublicAntmid(PublicAntmid::Name(uninitialised_name), (PublicAntmid::serialised_type(string))),
       std::exception);
-  EXPECT_THROW(
+  CHECK_THROWS_AS(
       PublicAnmaid(PublicAnmaid::Name(uninitialised_name), (PublicAnmaid::serialised_type(string))),
       std::exception);
-  EXPECT_THROW(
+  CHECK_THROWS_AS(
       PublicMaid(PublicMaid::Name(uninitialised_name), (PublicMaid::serialised_type(string))),
       std::exception);
-  EXPECT_THROW(
+  CHECK_THROWS_AS(
       PublicPmid(PublicPmid::Name(uninitialised_name), (PublicPmid::serialised_type(string))),
       std::exception);
-  EXPECT_THROW(
+  CHECK_THROWS_AS(
       PublicAnmpid(PublicAnmpid::Name(uninitialised_name), (PublicAnmpid::serialised_type(string))),
       std::exception);
-  EXPECT_THROW(
+  CHECK_THROWS_AS(
       PublicMpid(PublicMpid::Name(uninitialised_name), (PublicMpid::serialised_type(string))),
       std::exception);
 }
 
-TEST(PublicFobTest, BEH_SerialiseUninitialisedMessage) {
+TEST_CASE("Serialise uninitialised PublicFob", "[Public Fob][Behavioural]") {
   pb::PublicFob proto_public_fob;
-  EXPECT_THROW(NonEmptyString(proto_public_fob.SerializeAsString()), std::exception);
+  CHECK_THROWS_AS(NonEmptyString(proto_public_fob.SerializeAsString()), std::exception);
 }
 
 }  // namespace test

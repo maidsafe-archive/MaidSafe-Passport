@@ -99,7 +99,7 @@ bool AllFobFieldsMatch(const TestFobs& lhs, const TestFobs& rhs) {
           AllFieldsMatch(lhs.maid, rhs.maid) && AllFieldsMatch(lhs.pmid, rhs.pmid));
 }
 
-class PassportTest : public testing::Test {
+class PassportTest {
  public:
   PassportTest() : passport_() {}
 
@@ -113,115 +113,113 @@ class PassportTest : public testing::Test {
   Passport passport_;
 };
 
-TEST_F(PassportTest, BEH_CreateFobs) {
+TEST_CASE_METHOD(PassportTest, "Create Fobs", "[Passport][Behavioural]") {
   passport_.CreateFobs();
 
   TestFobs old_p_fobs(GetFobs(false));
-  EXPECT_THROW(passport_.Get<Anmid>(true), std::exception);
-  EXPECT_THROW(passport_.Get<Ansmid>(true), std::exception);
-  EXPECT_THROW(passport_.Get<Antmid>(true), std::exception);
-  EXPECT_THROW(passport_.Get<Anmaid>(true), std::exception);
-  EXPECT_THROW(passport_.Get<Maid>(true), std::exception);
-  EXPECT_THROW(passport_.Get<Pmid>(true), std::exception);
+  CHECK_THROWS_AS(passport_.Get<Anmid>(true), std::exception);
+  CHECK_THROWS_AS(passport_.Get<Ansmid>(true), std::exception);
+  CHECK_THROWS_AS(passport_.Get<Antmid>(true), std::exception);
+  CHECK_THROWS_AS(passport_.Get<Anmaid>(true), std::exception);
+  CHECK_THROWS_AS(passport_.Get<Maid>(true), std::exception);
+  CHECK_THROWS_AS(passport_.Get<Pmid>(true), std::exception);
 
   passport_.CreateFobs();
 
   TestFobs new_p_fobs(GetFobs(false));
-  EXPECT_THROW(passport_.Get<Anmid>(true), std::exception);
-  EXPECT_THROW(passport_.Get<Ansmid>(true), std::exception);
-  EXPECT_THROW(passport_.Get<Antmid>(true), std::exception);
-  EXPECT_THROW(passport_.Get<Anmaid>(true), std::exception);
-  EXPECT_THROW(passport_.Get<Maid>(true), std::exception);
-  EXPECT_THROW(passport_.Get<Pmid>(true), std::exception);
+  CHECK_THROWS_AS(passport_.Get<Anmid>(true), std::exception);
+  CHECK_THROWS_AS(passport_.Get<Ansmid>(true), std::exception);
+  CHECK_THROWS_AS(passport_.Get<Antmid>(true), std::exception);
+  CHECK_THROWS_AS(passport_.Get<Anmaid>(true), std::exception);
+  CHECK_THROWS_AS(passport_.Get<Maid>(true), std::exception);
+  CHECK_THROWS_AS(passport_.Get<Pmid>(true), std::exception);
 
-  EXPECT_TRUE(NoFieldsMatch(old_p_fobs.anmid, new_p_fobs.anmid));
-  EXPECT_TRUE(NoFieldsMatch(old_p_fobs.ansmid, new_p_fobs.ansmid));
-  EXPECT_TRUE(NoFieldsMatch(old_p_fobs.antmid, new_p_fobs.antmid));
-  EXPECT_TRUE(NoFieldsMatch(old_p_fobs.anmaid, new_p_fobs.anmaid));
-  EXPECT_TRUE(NoFieldsMatch(old_p_fobs.maid, new_p_fobs.maid));
-  EXPECT_TRUE(NoFieldsMatch(old_p_fobs.pmid, new_p_fobs.pmid));
+  CHECK(NoFieldsMatch(old_p_fobs.anmid, new_p_fobs.anmid));
+  CHECK(NoFieldsMatch(old_p_fobs.ansmid, new_p_fobs.ansmid));
+  CHECK(NoFieldsMatch(old_p_fobs.antmid, new_p_fobs.antmid));
+  CHECK(NoFieldsMatch(old_p_fobs.anmaid, new_p_fobs.anmaid));
+  CHECK(NoFieldsMatch(old_p_fobs.maid, new_p_fobs.maid));
+  CHECK(NoFieldsMatch(old_p_fobs.pmid, new_p_fobs.pmid));
 }
 
-TEST_F(PassportTest, BEH_ConfirmFobs) {
+TEST_CASE_METHOD(PassportTest, "Confirm Fobs", "[Passport][Behavioural]") {
   passport_.CreateFobs();
-
   TestFobs old_p_fobs(GetFobs(false));
-
   passport_.ConfirmFobs();
-
   TestFobs new_c_fobs(GetFobs(true));
-
-  EXPECT_TRUE(AllFobFieldsMatch(old_p_fobs, new_c_fobs));
+  CHECK(AllFobFieldsMatch(old_p_fobs, new_c_fobs));
 }
 
-TEST_F(PassportTest, BEH_CreateConfirmGetSelectableFobs) {
+TEST_CASE_METHOD(PassportTest, "Create, confirm and get SelectableFobs",
+                 "[Passport][Behavioural]") {
   NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 100));
 
-  EXPECT_THROW(passport_.GetSelectableFob<Mpid>(false, chosen_name), std::exception);
-  EXPECT_THROW(passport_.GetSelectableFob<Anmpid>(false, chosen_name), std::exception);
-  EXPECT_THROW(passport_.GetSelectableFob<Mpid>(true, chosen_name), std::exception);
-  EXPECT_THROW(passport_.GetSelectableFob<Anmpid>(true, chosen_name), std::exception);
+  CHECK_THROWS_AS(passport_.GetSelectableFob<Mpid>(false, chosen_name), std::exception);
+  CHECK_THROWS_AS(passport_.GetSelectableFob<Anmpid>(false, chosen_name), std::exception);
+  CHECK_THROWS_AS(passport_.GetSelectableFob<Mpid>(true, chosen_name), std::exception);
+  CHECK_THROWS_AS(passport_.GetSelectableFob<Anmpid>(true, chosen_name), std::exception);
 
   passport_.CreateSelectableFobPair(chosen_name);
 
   Mpid p_mpid(passport_.GetSelectableFob<Mpid>(false, chosen_name));
   Anmpid p_anmpid(passport_.GetSelectableFob<Anmpid>(false, chosen_name));
-  EXPECT_THROW(passport_.GetSelectableFob<Mpid>(true, chosen_name), std::exception);
-  EXPECT_THROW(passport_.GetSelectableFob<Anmpid>(true, chosen_name), std::exception);
+  CHECK_THROWS_AS(passport_.GetSelectableFob<Mpid>(true, chosen_name), std::exception);
+  CHECK_THROWS_AS(passport_.GetSelectableFob<Anmpid>(true, chosen_name), std::exception);
 
-  EXPECT_THROW(passport_.CreateSelectableFobPair(chosen_name), std::exception);
+  CHECK_THROWS_AS(passport_.CreateSelectableFobPair(chosen_name), std::exception);
 
   passport_.ConfirmSelectableFobPair(chosen_name);
 
-  EXPECT_THROW(passport_.GetSelectableFob<Mpid>(false, chosen_name), std::exception);
-  EXPECT_THROW(passport_.GetSelectableFob<Anmpid>(false, chosen_name), std::exception);
+  CHECK_THROWS_AS(passport_.GetSelectableFob<Mpid>(false, chosen_name), std::exception);
+  CHECK_THROWS_AS(passport_.GetSelectableFob<Anmpid>(false, chosen_name), std::exception);
   Mpid c_mpid(passport_.GetSelectableFob<Mpid>(true, chosen_name));
   Anmpid c_anmpid(passport_.GetSelectableFob<Anmpid>(true, chosen_name));
 
-  EXPECT_TRUE(AllFieldsMatch(p_mpid, c_mpid));
-  EXPECT_TRUE(AllFieldsMatch(p_anmpid, c_anmpid));
+  CHECK(AllFieldsMatch(p_mpid, c_mpid));
+  CHECK(AllFieldsMatch(p_anmpid, c_anmpid));
 
   passport_.CreateSelectableFobPair(chosen_name);
-  EXPECT_THROW(passport_.ConfirmSelectableFobPair(chosen_name), std::exception);
+  CHECK_THROWS_AS(passport_.ConfirmSelectableFobPair(chosen_name), std::exception);
 }
 
-TEST_F(PassportTest, BEH_DeleteSelectableFobs) {
+TEST_CASE_METHOD(PassportTest, "Delete SelectableFobs", "[Passport][Behavioural]") {
   NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 100));
 
   passport_.DeleteSelectableFobPair(chosen_name);
 
-  EXPECT_NO_THROW(passport_.CreateSelectableFobPair(chosen_name));
+  CHECK_NOTHROW(passport_.CreateSelectableFobPair(chosen_name));
 
   passport_.DeleteSelectableFobPair(chosen_name);
 
-  EXPECT_THROW(passport_.GetSelectableFob<Mpid>(false, chosen_name), std::exception);
-  EXPECT_THROW(passport_.GetSelectableFob<Anmpid>(false, chosen_name), std::exception);
+  CHECK_THROWS_AS(passport_.GetSelectableFob<Mpid>(false, chosen_name), std::exception);
+  CHECK_THROWS_AS(passport_.GetSelectableFob<Anmpid>(false, chosen_name), std::exception);
 
-  EXPECT_NO_THROW(passport_.CreateSelectableFobPair(chosen_name));
-  EXPECT_NO_THROW(passport_.ConfirmSelectableFobPair(chosen_name));
-
-  passport_.DeleteSelectableFobPair(chosen_name);
-
-  EXPECT_THROW(passport_.GetSelectableFob<Mpid>(true, chosen_name), std::exception);
-  EXPECT_THROW(passport_.GetSelectableFob<Anmpid>(true, chosen_name), std::exception);
-
-  EXPECT_NO_THROW(passport_.CreateSelectableFobPair(chosen_name));
-  EXPECT_NO_THROW(passport_.ConfirmSelectableFobPair(chosen_name));
-  EXPECT_NO_THROW(passport_.CreateSelectableFobPair(chosen_name));
+  CHECK_NOTHROW(passport_.CreateSelectableFobPair(chosen_name));
+  CHECK_NOTHROW(passport_.ConfirmSelectableFobPair(chosen_name));
 
   passport_.DeleteSelectableFobPair(chosen_name);
 
-  EXPECT_THROW(passport_.GetSelectableFob<Mpid>(false, chosen_name), std::exception);
-  EXPECT_THROW(passport_.GetSelectableFob<Anmpid>(false, chosen_name), std::exception);
-  EXPECT_THROW(passport_.GetSelectableFob<Mpid>(true, chosen_name), std::exception);
-  EXPECT_THROW(passport_.GetSelectableFob<Anmpid>(true, chosen_name), std::exception);
+  CHECK_THROWS_AS(passport_.GetSelectableFob<Mpid>(true, chosen_name), std::exception);
+  CHECK_THROWS_AS(passport_.GetSelectableFob<Anmpid>(true, chosen_name), std::exception);
+
+  CHECK_NOTHROW(passport_.CreateSelectableFobPair(chosen_name));
+  CHECK_NOTHROW(passport_.ConfirmSelectableFobPair(chosen_name));
+  CHECK_NOTHROW(passport_.CreateSelectableFobPair(chosen_name));
+
+  passport_.DeleteSelectableFobPair(chosen_name);
+
+  CHECK_THROWS_AS(passport_.GetSelectableFob<Mpid>(false, chosen_name), std::exception);
+  CHECK_THROWS_AS(passport_.GetSelectableFob<Anmpid>(false, chosen_name), std::exception);
+  CHECK_THROWS_AS(passport_.GetSelectableFob<Mpid>(true, chosen_name), std::exception);
+  CHECK_THROWS_AS(passport_.GetSelectableFob<Anmpid>(true, chosen_name), std::exception);
 }
 
-TEST_F(PassportTest, FUNC_MultipleSelectableFobs) {
+TEST_CASE_METHOD(PassportTest, "Multiple SelectableFobs",
+                 "[Passport][Behavioural]") {  // Timeout 120
   std::vector<NonEmptyString> chosen_names;
   uint16_t max_value(40);  // choice of this?
   uint16_t cutoff(20);     // choice of this?
-  ASSERT_LE(cutoff, max_value);
+  REQUIRE(cutoff <= max_value);
 
   for (uint16_t i(0); i < max_value; ++i) {
     NonEmptyString chosen_name(RandomAlphaNumericString(static_cast<size_t>(i + 1)));
@@ -232,8 +230,8 @@ TEST_F(PassportTest, FUNC_MultipleSelectableFobs) {
     passport_.CreateSelectableFobPair(chosen_names.at(i));
   }
   for (uint16_t i(0); i < cutoff; ++i) {
-    EXPECT_NO_THROW(passport_.GetSelectableFob<Mpid>(false, chosen_names.at(i)));
-    EXPECT_NO_THROW(passport_.GetSelectableFob<Anmpid>(false, chosen_names.at(i)));
+    CHECK_NOTHROW(passport_.GetSelectableFob<Mpid>(false, chosen_names.at(i)));
+    CHECK_NOTHROW(passport_.GetSelectableFob<Anmpid>(false, chosen_names.at(i)));
   }
   for (uint16_t i(0); i < cutoff; ++i) {
     passport_.ConfirmSelectableFobPair(chosen_names.at(i));
@@ -245,8 +243,8 @@ TEST_F(PassportTest, FUNC_MultipleSelectableFobs) {
   }
 
   for (uint16_t i(0); i < max_value; ++i) {
-    EXPECT_NO_THROW(passport_.GetSelectableFob<Mpid>(true, chosen_names.at(i)));
-    EXPECT_NO_THROW(passport_.GetSelectableFob<Anmpid>(true, chosen_names.at(i)));
+    CHECK_NOTHROW(passport_.GetSelectableFob<Mpid>(true, chosen_names.at(i)));
+    CHECK_NOTHROW(passport_.GetSelectableFob<Anmpid>(true, chosen_names.at(i)));
   }
 }
 
@@ -259,38 +257,43 @@ class PassportParallelTest : public PassportTest {
         chosen_name_4_(RandomAlphaNumericString(1 + RandomUint32() % 100)),
         chosen_name_5_(RandomAlphaNumericString(1 + RandomUint32() % 100)) {}
 
-  void TearDown() override {
-    ConsistentFobStates(false);
-    ConsistentFobStates(true);
-    ConsistentSelectableFobStates(false, chosen_name_1_);
-    ConsistentSelectableFobStates(false, chosen_name_2_);
-    ConsistentSelectableFobStates(false, chosen_name_3_);
-    ConsistentSelectableFobStates(false, chosen_name_4_);
-    ConsistentSelectableFobStates(false, chosen_name_5_);
-    ConsistentSelectableFobStates(true, chosen_name_1_);
-    ConsistentSelectableFobStates(true, chosen_name_2_);
-    ConsistentSelectableFobStates(true, chosen_name_3_);
-    ConsistentSelectableFobStates(true, chosen_name_4_);
-    ConsistentSelectableFobStates(true, chosen_name_5_);
+  ~PassportParallelTest() {
+    try {
+      ConsistentFobStates(false);
+      ConsistentFobStates(true);
+      ConsistentSelectableFobStates(false, chosen_name_1_);
+      ConsistentSelectableFobStates(false, chosen_name_2_);
+      ConsistentSelectableFobStates(false, chosen_name_3_);
+      ConsistentSelectableFobStates(false, chosen_name_4_);
+      ConsistentSelectableFobStates(false, chosen_name_5_);
+      ConsistentSelectableFobStates(true, chosen_name_1_);
+      ConsistentSelectableFobStates(true, chosen_name_2_);
+      ConsistentSelectableFobStates(true, chosen_name_3_);
+      ConsistentSelectableFobStates(true, chosen_name_4_);
+      ConsistentSelectableFobStates(true, chosen_name_5_);
+    }
+    catch (const std::exception& e) {
+      LOG(kError) << e.what();
+    }
   }
 
   void ConsistentFobStates(bool confirmed) {
     try {
       LOG(kInfo) << "Trying ConsistentFobStates...";
       passport_.Get<Anmid>(confirmed);
-      EXPECT_NO_THROW(passport_.Get<Ansmid>(confirmed));
-      EXPECT_NO_THROW(passport_.Get<Antmid>(confirmed));
-      EXPECT_NO_THROW(passport_.Get<Anmaid>(confirmed));
-      EXPECT_NO_THROW(passport_.Get<Maid>(confirmed));
-      EXPECT_NO_THROW(passport_.Get<Pmid>(confirmed));
+      CHECK_NOTHROW(passport_.Get<Ansmid>(confirmed));
+      CHECK_NOTHROW(passport_.Get<Antmid>(confirmed));
+      CHECK_NOTHROW(passport_.Get<Anmaid>(confirmed));
+      CHECK_NOTHROW(passport_.Get<Maid>(confirmed));
+      CHECK_NOTHROW(passport_.Get<Pmid>(confirmed));
       LOG(kInfo) << "...ConsistentFobStates successful (no throw)";
     }
     catch (const std::exception&) {
-      EXPECT_THROW(passport_.Get<Ansmid>(confirmed), std::exception);
-      EXPECT_THROW(passport_.Get<Antmid>(confirmed), std::exception);
-      EXPECT_THROW(passport_.Get<Anmaid>(confirmed), std::exception);
-      EXPECT_THROW(passport_.Get<Maid>(confirmed), std::exception);
-      EXPECT_THROW(passport_.Get<Pmid>(confirmed), std::exception);
+      CHECK_THROWS_AS(passport_.Get<Ansmid>(confirmed), std::exception);
+      CHECK_THROWS_AS(passport_.Get<Antmid>(confirmed), std::exception);
+      CHECK_THROWS_AS(passport_.Get<Anmaid>(confirmed), std::exception);
+      CHECK_THROWS_AS(passport_.Get<Maid>(confirmed), std::exception);
+      CHECK_THROWS_AS(passport_.Get<Pmid>(confirmed), std::exception);
       LOG(kInfo) << "...ConsistentFobStates successful (throw)";
     }
   }
@@ -299,11 +302,11 @@ class PassportParallelTest : public PassportTest {
     try {
       LOG(kInfo) << "Trying ConsistentSelectableFobStates...";
       passport_.GetSelectableFob<Mpid>(confirmed, chosen_name);
-      EXPECT_NO_THROW(passport_.GetSelectableFob<Anmpid>(confirmed, chosen_name));
+      CHECK_NOTHROW(passport_.GetSelectableFob<Anmpid>(confirmed, chosen_name));
       LOG(kInfo) << "...ConsistentSelectableFobStates successful (no throw)";
     }
     catch (const std::exception&) {
-      EXPECT_THROW(passport_.GetSelectableFob<Anmpid>(confirmed, chosen_name), std::exception);
+      CHECK_THROWS_AS(passport_.GetSelectableFob<Anmpid>(confirmed, chosen_name), std::exception);
       LOG(kInfo) << "...ConsistentSelectableFobStates successful (throw)";
     }
   }
@@ -315,7 +318,8 @@ class PassportParallelTest : public PassportTest {
   NonEmptyString chosen_name_5_;
 };
 
-TEST_F(PassportParallelTest, FUNC_ParallelCreateConfirmGetDelete) {
+TEST_CASE_METHOD(PassportParallelTest, "Parallel create, confirm, get and delete",
+                 "[Passport][Functional]") {
   {
     auto a1 = std::async([&] { return passport_.CreateFobs(); });
     auto a2 = std::async([&] { return passport_.CreateSelectableFobPair(chosen_name_1_); });
@@ -352,7 +356,7 @@ TEST_F(PassportParallelTest, FUNC_ParallelCreateConfirmGetDelete) {
   }
 
   TestFobs confirmed_fobs(GetFobs(true));
-  EXPECT_TRUE(AllFobFieldsMatch(pending_fobs, confirmed_fobs));
+  CHECK(AllFobFieldsMatch(pending_fobs, confirmed_fobs));
   passport_.CreateSelectableFobPair(chosen_name_3_);
 
   {
@@ -370,7 +374,7 @@ TEST_F(PassportParallelTest, FUNC_ParallelCreateConfirmGetDelete) {
   passport_.Parse(string);
 }
 
-TEST_F(PassportParallelTest, FUNC_ParallelSerialiseParse) {
+TEST_CASE_METHOD(PassportParallelTest, "Parallel serialise and parse", "[Passport][Functional]") {
   passport_.CreateFobs();
   passport_.ConfirmFobs();
   passport_.CreateSelectableFobPair(chosen_name_1_);
@@ -420,7 +424,8 @@ TEST_F(PassportParallelTest, FUNC_ParallelSerialiseParse) {
   passport_.Parse(string);
 }
 
-TEST_F(PassportTest, BEH_SerialiseParseNoSelectables) {
+TEST_CASE_METHOD(PassportTest, "Serialise and parse with no Selectables",
+                 "[Passport][Functional]") {
   passport_.CreateFobs();
   passport_.ConfirmFobs();
 
@@ -431,18 +436,18 @@ TEST_F(PassportTest, BEH_SerialiseParseNoSelectables) {
 
   TestFobs fobs2(GetFobs(true));
 
-  EXPECT_TRUE(AllFobFieldsMatch(fobs1, fobs2));
+  CHECK(AllFobFieldsMatch(fobs1, fobs2));
 
   NonEmptyString serialised_2(passport_.Serialise());
-  EXPECT_EQ(serialised, serialised_2);
+  CHECK(serialised == serialised_2);
   passport_.Parse(serialised);
 
   TestFobs fobs3(GetFobs(true));
 
-  EXPECT_TRUE(AllFobFieldsMatch(fobs2, fobs3));
+  CHECK(AllFobFieldsMatch(fobs2, fobs3));
 }
 
-TEST_F(PassportTest, FUNC_SerialiseParseWithSelectables) {
+TEST_CASE_METHOD(PassportTest, "Serialise and parse with Selectables", "[Passport][Functional]") {
   passport_.CreateFobs();
   passport_.ConfirmFobs();
 
@@ -475,20 +480,20 @@ TEST_F(PassportTest, FUNC_SerialiseParseWithSelectables) {
     mpids2.push_back(passport_.GetSelectableFob<Mpid>(true, chosen_name));
   }
 
-  EXPECT_TRUE(AllFobFieldsMatch(fobs1, fobs2));
+  CHECK(AllFobFieldsMatch(fobs1, fobs2));
 
   for (uint16_t i(0); i < chosen_names.size(); ++i) {
-    EXPECT_TRUE(AllFieldsMatch(anmpids1.at(i), anmpids2.at(i)));
-    EXPECT_TRUE(AllFieldsMatch(mpids1.at(i), mpids2.at(i)));
+    CHECK(AllFieldsMatch(anmpids1.at(i), anmpids2.at(i)));
+    CHECK(AllFieldsMatch(mpids1.at(i), mpids2.at(i)));
   }
 
   NonEmptyString serialised_2(passport_.Serialise());
-  EXPECT_EQ(serialised, serialised_2);
+  CHECK(serialised == serialised_2);
 }
 
-TEST_F(PassportTest, BEH_ParseBadString) {
+TEST_CASE_METHOD(PassportTest, "Parse an invalid string", "[Passport][Behavioural]") {
   NonEmptyString bad_string(RandomAlphaNumericString(1 + RandomUint32() % 1000));
-  EXPECT_THROW(passport_.Parse(bad_string), std::exception);
+  CHECK_THROWS_AS(passport_.Parse(bad_string), std::exception);
 }
 
 class PassportParsePbTest : public PassportTest {
@@ -545,7 +550,7 @@ class PassportParsePbTest : public PassportTest {
   pb::Passport proto_passport_;
 };
 
-TEST_F(PassportParsePbTest, BEH_GoodProtobuf) {
+TEST_CASE_METHOD(PassportParsePbTest, "Serialise and parse Passport", "[Passport][Behavioural]") {
   GenerateSixFobs();
 
   NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 20));
@@ -560,10 +565,10 @@ TEST_F(PassportParsePbTest, BEH_GoodProtobuf) {
   mpid.ToProtobuf(proto_mpid);
 
   NonEmptyString string(proto_passport_.SerializeAsString());
-  EXPECT_NO_THROW(passport_.Parse(string));
+  CHECK_NOTHROW(passport_.Parse(string));
 }
 
-TEST_F(PassportParsePbTest, BEH_FiveFobs) {
+TEST_CASE_METHOD(PassportParsePbTest, "Serialise and parse five Fobs", "[Passport][Behavioural]") {
   auto proto_fob(proto_passport_.add_fob());
   anmid_.ToProtobuf(proto_fob);
   proto_fob = proto_passport_.add_fob();
@@ -576,53 +581,54 @@ TEST_F(PassportParsePbTest, BEH_FiveFobs) {
   maid_.ToProtobuf(proto_fob);
 
   NonEmptyString string(proto_passport_.SerializeAsString());
-  EXPECT_THROW(passport_.Parse(string), std::exception);
+  CHECK_THROWS_AS(passport_.Parse(string), std::exception);
 }
 
-TEST_F(PassportParsePbTest, BEH_SevenFobs) {
+TEST_CASE_METHOD(PassportParsePbTest, "Serialise and parse seven Fobs", "[Passport][Behavioural]") {
   GenerateSixFobs();
   auto proto_fob(proto_passport_.add_fob());
   pmid_.ToProtobuf(proto_fob);
 
   NonEmptyString string(proto_passport_.SerializeAsString());
-  EXPECT_THROW(passport_.Parse(string), std::exception);
+  CHECK_THROWS_AS(passport_.Parse(string), std::exception);
 }
 
-TEST_F(PassportParsePbTest, BEH_ParseReorderedFobs) {
+TEST_CASE_METHOD(PassportParsePbTest, "Parse re-ordered Fobs", "[Passport][Behavioural]") {
   GenerateSixFobs(RandomUint32() % 6);
 
   NonEmptyString string(proto_passport_.SerializeAsString());
-  EXPECT_THROW(passport_.Parse(string), std::exception);
+  CHECK_THROWS_AS(passport_.Parse(string), std::exception);
 }
 
 class PassportParsePbSelectableTest : public PassportParsePbTest {
-  void SetUp() override {
-    auto proto_fob(proto_passport_.add_fob());
-    anmid_.ToProtobuf(proto_fob);
-    proto_fob = proto_passport_.add_fob();
-    ansmid_.ToProtobuf(proto_fob);
-    proto_fob = proto_passport_.add_fob();
-    antmid_.ToProtobuf(proto_fob);
-    proto_fob = proto_passport_.add_fob();
-    anmaid_.ToProtobuf(proto_fob);
-    proto_fob = proto_passport_.add_fob();
-    maid_.ToProtobuf(proto_fob);
-    proto_fob = proto_passport_.add_fob();
-    pmid_.ToProtobuf(proto_fob);
+  PassportParsePbSelectableTest() {
   }
 };
 
-TEST_F(PassportParsePbSelectableTest, BEH_GoodProtobuf) {
+TEST_CASE_METHOD(PassportParsePbTest, "Serialise and parse a Passport with a SelectableFob",
+                 "[Passport][Behavioural]") {
+  auto proto_fob(proto_passport_.add_fob());
+  anmid_.ToProtobuf(proto_fob);
+  proto_fob = proto_passport_.add_fob();
+  ansmid_.ToProtobuf(proto_fob);
+  proto_fob = proto_passport_.add_fob();
+  antmid_.ToProtobuf(proto_fob);
+  proto_fob = proto_passport_.add_fob();
+  anmaid_.ToProtobuf(proto_fob);
+  proto_fob = proto_passport_.add_fob();
+  maid_.ToProtobuf(proto_fob);
+  proto_fob = proto_passport_.add_fob();
+  pmid_.ToProtobuf(proto_fob);
   NonEmptyString string(proto_passport_.SerializeAsString());
-  EXPECT_NO_THROW(passport_.Parse(string));
+  CHECK_NOTHROW(passport_.Parse(string));
 }
 
-TEST(PassportIndependentSerialiseTest, BEH_Uninitialised) {
+TEST_CASE("Serialise an uninitialised Passport", "[Passport][Behavioural]") {
   pb::Passport proto_passport;
-  EXPECT_THROW(NonEmptyString(proto_passport.SerializeAsString()), std::exception);
+  CHECK_THROWS_AS(NonEmptyString(proto_passport.SerializeAsString()), std::exception);
 }
 
-class PassportSerialiseTest : public testing::Test {
+class PassportSerialiseTest {
  public:
   PassportSerialiseTest()
       : anmid_(),
@@ -631,9 +637,7 @@ class PassportSerialiseTest : public testing::Test {
         anmaid_(),
         maid_(anmaid_),
         pmid_(maid_),
-        proto_passport_() {}
-
-  void SetUp() override {
+        proto_passport_() {
     auto proto_fob(proto_passport_.add_fob());
     anmid_.ToProtobuf(proto_fob);
     proto_fob = proto_passport_.add_fob();
@@ -657,13 +661,14 @@ class PassportSerialiseTest : public testing::Test {
   pb::Passport proto_passport_;
 };
 
-TEST_F(PassportSerialiseTest, BEH_GoodProtobuf) {
-  EXPECT_NO_THROW(NonEmptyString(proto_passport_.SerializeAsString()));
+TEST_CASE_METHOD(PassportSerialiseTest, "Serialise Passport", "[Passport][Behavioural]") {
+  CHECK_NOTHROW(NonEmptyString(proto_passport_.SerializeAsString()));
 }
 
-TEST_F(PassportSerialiseTest, BEH_NoChosenName) {
+TEST_CASE_METHOD(PassportSerialiseTest, "Serialise Passport with no chosen name",
+                 "[Passport][Behavioural]") {
   Anmpid anmpid;
-  EXPECT_THROW(Mpid mpid_bad(NonEmptyString(), anmpid), std::exception);
+  CHECK_THROWS_AS(Mpid mpid_bad(NonEmptyString(), anmpid), std::exception);
   Mpid mpid(NonEmptyString(RandomAlphaNumericString(1 + RandomUint32() % 100)), anmpid);
 
   auto proto_public_identity(proto_passport_.add_public_identity());
@@ -672,10 +677,11 @@ TEST_F(PassportSerialiseTest, BEH_NoChosenName) {
   auto proto_mpid(proto_public_identity->mutable_mpid());
   mpid.ToProtobuf(proto_mpid);
 
-  EXPECT_THROW(NonEmptyString(proto_passport_.SerializeAsString()), std::exception);
+  CHECK_THROWS_AS(NonEmptyString(proto_passport_.SerializeAsString()), std::exception);
 }
 
-TEST_F(PassportSerialiseTest, BEH_NoAnmpid) {
+TEST_CASE_METHOD(PassportSerialiseTest, "Serialise Passport with no Anmpid",
+                 "[Passport][Behavioural]") {
   NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 20));
   Anmpid anmpid;
   Mpid mpid(chosen_name, anmpid);
@@ -685,10 +691,11 @@ TEST_F(PassportSerialiseTest, BEH_NoAnmpid) {
   auto proto_mpid(proto_public_identity->mutable_mpid());
   mpid.ToProtobuf(proto_mpid);
 
-  EXPECT_THROW(NonEmptyString(proto_passport_.SerializeAsString()), std::exception);
+  CHECK_THROWS_AS(NonEmptyString(proto_passport_.SerializeAsString()), std::exception);
 }
 
-TEST_F(PassportSerialiseTest, BEH_NoMpid) {
+TEST_CASE_METHOD(PassportSerialiseTest, "Serialise Passport with no Mpid",
+                 "[Passport][Behavioural]") {
   NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 20));
   Anmpid anmpid;
 
@@ -697,7 +704,7 @@ TEST_F(PassportSerialiseTest, BEH_NoMpid) {
   auto proto_anmpid(proto_public_identity->mutable_anmpid());
   anmpid.ToProtobuf(proto_anmpid);
 
-  EXPECT_THROW(NonEmptyString(proto_passport_.SerializeAsString()), std::exception);
+  CHECK_THROWS_AS(NonEmptyString(proto_passport_.SerializeAsString()), std::exception);
 }
 
 }  // namespace test

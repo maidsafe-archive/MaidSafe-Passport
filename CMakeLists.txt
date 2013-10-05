@@ -35,9 +35,10 @@ include_directories(${private_SOURCE_DIR}/include)
 #==================================================================================================#
 # Set up all files as GLOBs                                                                        #
 #==================================================================================================#
-glob_dir(Passport ${PROJECT_SOURCE_DIR}/src/maidsafe/passport Passport)
-glob_dir(PassportDetail ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/detail "Passport Detail")
-glob_dir(PassportTests ${PROJECT_SOURCE_DIR}/src/maidsafe/passport/tests Tests)
+set(PassportSourcesDir ${PROJECT_SOURCE_DIR}/src/maidsafe/passport)
+glob_dir(Passport ${PassportSourcesDir} Passport)
+glob_dir(PassportDetail ${PassportSourcesDir}/detail "Passport Detail")
+glob_dir(PassportTests ${PassportSourcesDir}/tests Tests)
 
 
 #==================================================================================================#
@@ -47,8 +48,8 @@ ms_add_static_library(passport ${PassportAllFiles} ${PassportDetailAllFiles})
 target_link_libraries(maidsafe_passport maidsafe_common)
 
 if(MaidsafeTesting)
-  ms_add_executable(TESTpassport "Tests/Passport" ${PassportTestsAllFiles})
-  target_link_libraries(TESTpassport maidsafe_passport ${BoostRegexLibs})
+  ms_add_executable(passport_test "Tests/Passport" ${PassportTestsAllFiles})
+  target_link_libraries(passport_test maidsafe_passport ${BoostRegexLibs})
 endif()
 
 rename_outdated_built_exes()
@@ -65,7 +66,7 @@ include(standard_flags)
 #==================================================================================================#
 if(MaidsafeTesting)
   add_style_test()
-  add_gtests(TESTpassport)
+  add_catch_tests(passport_test)
   add_project_experimental()
   test_summary_output()
 endif()

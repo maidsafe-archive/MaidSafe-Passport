@@ -36,313 +36,311 @@ typedef passport::detail::SafeString SafeString;
 typedef passport::detail::Password Password;
 typedef passport::detail::Pin Pin;
 
-TEST(SecureStringTest, BEH_CreateSecureString) {
+TEST_CASE("Create SecureString", "[SecureString][Unit]") {
   SecureString secure_string;
 
-  EXPECT_NO_THROW(secure_string.Append('p'));
-  EXPECT_NO_THROW(secure_string.Append('a'));
-  EXPECT_NO_THROW(secure_string.Append('s'));
-  EXPECT_NO_THROW(secure_string.Append('s'));
-  EXPECT_NO_THROW(secure_string.Append('w'));
-  EXPECT_NO_THROW(secure_string.Append('o'));
-  EXPECT_NO_THROW(secure_string.Append('r'));
-  EXPECT_NO_THROW(secure_string.Append('d'));
-  EXPECT_NO_THROW(secure_string.Finalise());
+  CHECK_NOTHROW(secure_string.Append('p'));
+  CHECK_NOTHROW(secure_string.Append('a'));
+  CHECK_NOTHROW(secure_string.Append('s'));
+  CHECK_NOTHROW(secure_string.Append('s'));
+  CHECK_NOTHROW(secure_string.Append('w'));
+  CHECK_NOTHROW(secure_string.Append('o'));
+  CHECK_NOTHROW(secure_string.Append('r'));
+  CHECK_NOTHROW(secure_string.Append('d'));
+  CHECK_NOTHROW(secure_string.Finalise());
 
-  ASSERT_EQ(SafeString("password"), secure_string.string());
+  REQUIRE(SafeString("password") == secure_string.string());
 }
 
-TEST(SecureStringTest, BEH_HashSecureStringString) {
+TEST_CASE("Hash SecureString string", "[SecureString][Unit]") {
   typedef maidsafe::detail::BoundedString<crypto::SHA512::DIGESTSIZE, crypto::SHA512::DIGESTSIZE>
       BoundedString;
   SafeString string("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
-  BoundedString hash(crypto::Hash<crypto::SHA512>(string));
+  CHECK_NOTHROW(crypto::Hash<crypto::SHA512>(string));
 }
 
-TEST(SecureStringTest, BEH_CreatePassword) {
+TEST_CASE("Create Password", "[SecureString][Unit]") {
   Password password;
 
-  EXPECT_NO_THROW(password.Insert(3, 's'));
-  EXPECT_NO_THROW(password.Insert(7, 'd'));
-  EXPECT_NO_THROW(password.Insert(4, 'w'));
-  EXPECT_NO_THROW(password.Insert(6, 'r'));
-  EXPECT_NO_THROW(password.Insert(1, 'a'));
-  EXPECT_NO_THROW(password.Insert(0, 'p'));
-  EXPECT_NO_THROW(password.Insert(2, 's'));
-  EXPECT_NO_THROW(password.Insert(5, 'o'));
+  CHECK_NOTHROW(password.Insert(3, 's'));
+  CHECK_NOTHROW(password.Insert(7, 'd'));
+  CHECK_NOTHROW(password.Insert(4, 'w'));
+  CHECK_NOTHROW(password.Insert(6, 'r'));
+  CHECK_NOTHROW(password.Insert(1, 'a'));
+  CHECK_NOTHROW(password.Insert(0, 'p'));
+  CHECK_NOTHROW(password.Insert(2, 's'));
+  CHECK_NOTHROW(password.Insert(5, 'o'));
 
-  EXPECT_NO_THROW(password.Remove(2, 3));
-  EXPECT_NO_THROW(password.Insert(2, 'l'));
-  EXPECT_NO_THROW(password.Insert(2, 'y'));
-  EXPECT_NO_THROW(password.Remove(5, 1));
-  EXPECT_NO_THROW(password.Insert(5, 'a'));
+  CHECK_NOTHROW(password.Remove(2, 3));
+  CHECK_NOTHROW(password.Insert(2, 'l'));
+  CHECK_NOTHROW(password.Insert(2, 'y'));
+  CHECK_NOTHROW(password.Remove(5, 1));
+  CHECK_NOTHROW(password.Insert(5, 'a'));
 
-  EXPECT_NO_THROW(password.Finalise());
+  CHECK_NOTHROW(password.Finalise());
 
-  ASSERT_EQ(SafeString("payload"), password.string());
+  REQUIRE(SafeString("payload") == password.string());
 }
 
-TEST(SecureStringTest, BEH_CreatePasswordString) {
+TEST_CASE("Create Password string", "[SecureString][Unit]") {
   SafeString safe_password("password");
-  EXPECT_NO_THROW(Password password(safe_password));
+  CHECK_NOTHROW(Password password(safe_password));
   std::string std_password("drowssap");
-  EXPECT_NO_THROW(Password password(std_password));
+  CHECK_NOTHROW(Password password(std_password));
 
   {
     Password password(safe_password);
-    ASSERT_EQ(SafeString("password"), password.string());
+    REQUIRE(SafeString("password") == password.string());
 
-    EXPECT_NO_THROW(password.Insert(safe_password.size(), std_password));
+    CHECK_NOTHROW(password.Insert(safe_password.size(), std_password));
 
-    EXPECT_NO_THROW(password.Finalise());
+    CHECK_NOTHROW(password.Finalise());
 
-    ASSERT_EQ(SafeString("passworddrowssap"), password.string());
+    REQUIRE(SafeString("passworddrowssap") == password.string());
   }
 
   {
     Password password;
-    EXPECT_NO_THROW(password.Insert(0, safe_password));
-    EXPECT_NO_THROW(password.Insert(1, std_password));
+    CHECK_NOTHROW(password.Insert(0, safe_password));
+    CHECK_NOTHROW(password.Insert(1, std_password));
 
-    EXPECT_NO_THROW(password.Finalise());
+    CHECK_NOTHROW(password.Finalise());
 
-    ASSERT_EQ(SafeString("passworddrowssap"), password.string());
+    REQUIRE(SafeString("passworddrowssap") == password.string());
   }
 }
 
-TEST(SecureStringTest, BEH_RemoveFirstPasswordCharacter) {
+TEST_CASE("Remove first Password character", "[SecureString][Unit]") {
   Password password;
 
-  EXPECT_NO_THROW(password.Insert(3, 's'));
-  EXPECT_NO_THROW(password.Insert(7, 'd'));
-  EXPECT_NO_THROW(password.Insert(4, 'w'));
-  EXPECT_NO_THROW(password.Insert(6, 'r'));
-  EXPECT_NO_THROW(password.Insert(1, 'a'));
-  EXPECT_NO_THROW(password.Insert(0, 'p'));
-  EXPECT_NO_THROW(password.Insert(2, 's'));
-  EXPECT_NO_THROW(password.Insert(5, 'o'));
+  CHECK_NOTHROW(password.Insert(3, 's'));
+  CHECK_NOTHROW(password.Insert(7, 'd'));
+  CHECK_NOTHROW(password.Insert(4, 'w'));
+  CHECK_NOTHROW(password.Insert(6, 'r'));
+  CHECK_NOTHROW(password.Insert(1, 'a'));
+  CHECK_NOTHROW(password.Insert(0, 'p'));
+  CHECK_NOTHROW(password.Insert(2, 's'));
+  CHECK_NOTHROW(password.Insert(5, 'o'));
 
-  EXPECT_NO_THROW(password.Remove(0, 1));
+  CHECK_NOTHROW(password.Remove(0, 1));
 
-  EXPECT_NO_THROW(password.Finalise());
+  CHECK_NOTHROW(password.Finalise());
 
-  ASSERT_EQ(SafeString("assword"), password.string());
+  REQUIRE(SafeString("assword") == password.string());
 }
 
-TEST(SecureStringTest, BEH_RemoveLastPasswordCharacter) {
+TEST_CASE("Remove last Password character", "[SecureString][Unit]") {
   Password password;
 
-  EXPECT_NO_THROW(password.Insert(3, 's'));
-  EXPECT_NO_THROW(password.Insert(7, 'd'));
-  EXPECT_NO_THROW(password.Insert(4, 'w'));
-  EXPECT_NO_THROW(password.Insert(6, 'r'));
-  EXPECT_NO_THROW(password.Insert(1, 'a'));
-  EXPECT_NO_THROW(password.Insert(0, 'p'));
-  EXPECT_NO_THROW(password.Insert(2, 's'));
-  EXPECT_NO_THROW(password.Insert(5, 'o'));
+  CHECK_NOTHROW(password.Insert(3, 's'));
+  CHECK_NOTHROW(password.Insert(7, 'd'));
+  CHECK_NOTHROW(password.Insert(4, 'w'));
+  CHECK_NOTHROW(password.Insert(6, 'r'));
+  CHECK_NOTHROW(password.Insert(1, 'a'));
+  CHECK_NOTHROW(password.Insert(0, 'p'));
+  CHECK_NOTHROW(password.Insert(2, 's'));
+  CHECK_NOTHROW(password.Insert(5, 'o'));
 
-  EXPECT_NO_THROW(password.Remove(7, 1));
+  CHECK_NOTHROW(password.Remove(7, 1));
 
-  EXPECT_NO_THROW(password.Finalise());
+  CHECK_NOTHROW(password.Finalise());
 
-  ASSERT_EQ(SafeString("passwor"), password.string());
+  REQUIRE(SafeString("passwor") == password.string());
 }
 
-TEST(SecureStringTest, BEH_InsertRemoveAfterPasswordFinalise) {
+TEST_CASE("Insert and remove after Password is finalised", "[SecureString][Unit]") {
   Password password;
 
-  EXPECT_NO_THROW(password.Insert(3, 's'));
-  EXPECT_NO_THROW(password.Insert(7, 'd'));
-  EXPECT_NO_THROW(password.Insert(4, 'w'));
-  EXPECT_NO_THROW(password.Insert(6, 'r'));
-  EXPECT_NO_THROW(password.Insert(1, 'a'));
-  EXPECT_NO_THROW(password.Insert(0, 'p'));
-  EXPECT_NO_THROW(password.Insert(2, 's'));
-  EXPECT_NO_THROW(password.Insert(5, 'o'));
+  CHECK_NOTHROW(password.Insert(3, 's'));
+  CHECK_NOTHROW(password.Insert(7, 'd'));
+  CHECK_NOTHROW(password.Insert(4, 'w'));
+  CHECK_NOTHROW(password.Insert(6, 'r'));
+  CHECK_NOTHROW(password.Insert(1, 'a'));
+  CHECK_NOTHROW(password.Insert(0, 'p'));
+  CHECK_NOTHROW(password.Insert(2, 's'));
+  CHECK_NOTHROW(password.Insert(5, 'o'));
 
-  EXPECT_NO_THROW(password.Finalise());
+  CHECK_NOTHROW(password.Finalise());
 
-  EXPECT_NO_THROW(password.Insert(0, 'p'));
-  EXPECT_NO_THROW(password.Remove(0, 1));
+  CHECK_NOTHROW(password.Insert(0, 'p'));
+  CHECK_NOTHROW(password.Remove(0, 1));
 
-  EXPECT_NO_THROW(password.Finalise());
+  CHECK_NOTHROW(password.Finalise());
 
-  ASSERT_EQ(SafeString("password"), password.string());
+  REQUIRE(SafeString("password") == password.string());
 }
 
-TEST(SecureStringTest, BEH_CreatePasswordWithMissingIndex) {
+TEST_CASE("Create Password with missing index", "[SecureString][Unit]") {
   Password password;
 
-  EXPECT_NO_THROW(password.Insert(3, 's'));
-  EXPECT_NO_THROW(password.Insert(8, 'd'));
-  EXPECT_NO_THROW(password.Insert(5, 'w'));
-  EXPECT_NO_THROW(password.Insert(7, 'r'));
-  EXPECT_NO_THROW(password.Insert(1, 'a'));
-  EXPECT_NO_THROW(password.Insert(0, 'p'));
-  EXPECT_NO_THROW(password.Insert(2, 's'));
-  EXPECT_NO_THROW(password.Insert(6, 'o'));
+  CHECK_NOTHROW(password.Insert(3, 's'));
+  CHECK_NOTHROW(password.Insert(8, 'd'));
+  CHECK_NOTHROW(password.Insert(5, 'w'));
+  CHECK_NOTHROW(password.Insert(7, 'r'));
+  CHECK_NOTHROW(password.Insert(1, 'a'));
+  CHECK_NOTHROW(password.Insert(0, 'p'));
+  CHECK_NOTHROW(password.Insert(2, 's'));
+  CHECK_NOTHROW(password.Insert(6, 'o'));
 
-  EXPECT_THROW(password.Finalise(), std::exception);
+  CHECK_THROWS_AS(password.Finalise(), std::exception);
 
-  EXPECT_NO_THROW(password.Insert(4, 'D'));
+  CHECK_NOTHROW(password.Insert(4, 'D'));
 
-  EXPECT_NO_THROW(password.Finalise());
+  CHECK_NOTHROW(password.Finalise());
 
-  ASSERT_EQ(SafeString("passDword"), password.string());
+  REQUIRE(SafeString("passDword") == password.string());
 }
 
-TEST(SecureStringTest, BEH_CreateInvalidLengthPassword) {
+TEST_CASE("Create invalid length Password", "[SecureString][Unit]") {
   Password password;
 
-  EXPECT_THROW(password.Finalise(), std::exception);
+  CHECK_THROWS_AS(password.Finalise(), std::exception);
 }
 
-TEST(SecureStringTest, BEH_ClearPasswordThenRedo) {
+TEST_CASE("Clear Password then redo", "[SecureString][Unit]") {
   Password password;
 
-  EXPECT_NO_THROW(password.Insert(3, 's'));
-  EXPECT_NO_THROW(password.Insert(7, 'd'));
-  EXPECT_NO_THROW(password.Insert(4, 'w'));
-  EXPECT_NO_THROW(password.Insert(6, 'r'));
-  EXPECT_NO_THROW(password.Insert(1, 'a'));
-  EXPECT_NO_THROW(password.Insert(0, 'p'));
-  EXPECT_NO_THROW(password.Insert(2, 's'));
-  EXPECT_NO_THROW(password.Insert(5, 'o'));
+  CHECK_NOTHROW(password.Insert(3, 's'));
+  CHECK_NOTHROW(password.Insert(7, 'd'));
+  CHECK_NOTHROW(password.Insert(4, 'w'));
+  CHECK_NOTHROW(password.Insert(6, 'r'));
+  CHECK_NOTHROW(password.Insert(1, 'a'));
+  CHECK_NOTHROW(password.Insert(0, 'p'));
+  CHECK_NOTHROW(password.Insert(2, 's'));
+  CHECK_NOTHROW(password.Insert(5, 'o'));
 
-  EXPECT_NO_THROW(password.Clear());
+  CHECK_NOTHROW(password.Clear());
 
-  EXPECT_NO_THROW(password.Insert(7, 'd'));
-  EXPECT_NO_THROW(password.Insert(2, 's'));
-  EXPECT_NO_THROW(password.Insert(1, 'a'));
-  EXPECT_NO_THROW(password.Insert(0, 'p'));
-  EXPECT_NO_THROW(password.Insert(6, 'r'));
-  EXPECT_NO_THROW(password.Insert(3, 's'));
-  EXPECT_NO_THROW(password.Insert(5, 'o'));
-  EXPECT_NO_THROW(password.Insert(4, 'w'));
+  CHECK_NOTHROW(password.Insert(7, 'd'));
+  CHECK_NOTHROW(password.Insert(2, 's'));
+  CHECK_NOTHROW(password.Insert(1, 'a'));
+  CHECK_NOTHROW(password.Insert(0, 'p'));
+  CHECK_NOTHROW(password.Insert(6, 'r'));
+  CHECK_NOTHROW(password.Insert(3, 's'));
+  CHECK_NOTHROW(password.Insert(5, 'o'));
+  CHECK_NOTHROW(password.Insert(4, 'w'));
 
-  EXPECT_NO_THROW(password.Finalise());
+  CHECK_NOTHROW(password.Finalise());
 
-  EXPECT_NO_THROW(password.Remove(7, 1));
-  EXPECT_NO_THROW(password.Remove(2, 1));
-  EXPECT_NO_THROW(password.Remove(4, 1));
-  EXPECT_NO_THROW(password.Remove(4, 1));
-  EXPECT_NO_THROW(password.Remove(1, 1));
-  EXPECT_NO_THROW(password.Remove(2, 1));
-  EXPECT_NO_THROW(password.Remove(1, 1));
-  EXPECT_NO_THROW(password.Remove(0, 1));
+  CHECK_NOTHROW(password.Remove(7, 1));
+  CHECK_NOTHROW(password.Remove(2, 1));
+  CHECK_NOTHROW(password.Remove(4, 1));
+  CHECK_NOTHROW(password.Remove(4, 1));
+  CHECK_NOTHROW(password.Remove(1, 1));
+  CHECK_NOTHROW(password.Remove(2, 1));
+  CHECK_NOTHROW(password.Remove(1, 1));
+  CHECK_NOTHROW(password.Remove(0, 1));
 
-  EXPECT_NO_THROW(password.Insert(7, 'd'));
-  EXPECT_NO_THROW(password.Insert(2, 's'));
-  EXPECT_NO_THROW(password.Insert(1, 'a'));
-  EXPECT_NO_THROW(password.Insert(0, 'p'));
-  EXPECT_NO_THROW(password.Insert(6, 'r'));
-  EXPECT_NO_THROW(password.Insert(3, 's'));
-  EXPECT_NO_THROW(password.Insert(5, 'o'));
-  EXPECT_NO_THROW(password.Insert(4, 'w'));
+  CHECK_NOTHROW(password.Insert(7, 'd'));
+  CHECK_NOTHROW(password.Insert(2, 's'));
+  CHECK_NOTHROW(password.Insert(1, 'a'));
+  CHECK_NOTHROW(password.Insert(0, 'p'));
+  CHECK_NOTHROW(password.Insert(6, 'r'));
+  CHECK_NOTHROW(password.Insert(3, 's'));
+  CHECK_NOTHROW(password.Insert(5, 'o'));
+  CHECK_NOTHROW(password.Insert(4, 'w'));
 
-  EXPECT_NO_THROW(password.Finalise());
+  CHECK_NOTHROW(password.Finalise());
 
-  ASSERT_EQ(SafeString("password"), password.string());
+  REQUIRE(SafeString("password") == password.string());
 }
 
-TEST(SecureStringTest, BEH_ClearPasswordAfterFinalise) {
+TEST_CASE("Clear Password after it's finalised", "[SecureString][Unit]") {
   Password password;
 
-  EXPECT_NO_THROW(password.Insert(3, 's'));
-  EXPECT_NO_THROW(password.Insert(7, 'd'));
-  EXPECT_NO_THROW(password.Insert(4, 'w'));
-  EXPECT_NO_THROW(password.Insert(6, 'r'));
-  EXPECT_NO_THROW(password.Insert(1, 'a'));
-  EXPECT_NO_THROW(password.Insert(0, 'p'));
-  EXPECT_NO_THROW(password.Insert(2, 's'));
-  EXPECT_NO_THROW(password.Insert(5, 'o'));
+  CHECK_NOTHROW(password.Insert(3, 's'));
+  CHECK_NOTHROW(password.Insert(7, 'd'));
+  CHECK_NOTHROW(password.Insert(4, 'w'));
+  CHECK_NOTHROW(password.Insert(6, 'r'));
+  CHECK_NOTHROW(password.Insert(1, 'a'));
+  CHECK_NOTHROW(password.Insert(0, 'p'));
+  CHECK_NOTHROW(password.Insert(2, 's'));
+  CHECK_NOTHROW(password.Insert(5, 'o'));
 
-  EXPECT_NO_THROW(password.Finalise());
+  CHECK_NOTHROW(password.Finalise());
 
-  EXPECT_NO_THROW(password.Clear());
+  CHECK_NOTHROW(password.Clear());
 
-  EXPECT_THROW(password.Finalise(), std::exception);
-  EXPECT_THROW(password.string(), std::exception);
+  CHECK_THROWS_AS(password.Finalise(), std::exception);
+  CHECK_THROWS_AS(password.string(), std::exception);
 }
 
-TEST(SecureStringTest, BEH_GetPasswordTextBeforeFinalise) {
+TEST_CASE("Get Password text before it's finalised", "[SecureString][Unit]") {
   Password password;
 
-  EXPECT_NO_THROW(password.Insert(3, 's'));
-  EXPECT_NO_THROW(password.Insert(7, 'd'));
-  EXPECT_NO_THROW(password.Insert(4, 'w'));
-  EXPECT_NO_THROW(password.Insert(6, 'r'));
-  EXPECT_NO_THROW(password.Insert(1, 'a'));
-  EXPECT_NO_THROW(password.Insert(0, 'p'));
-  EXPECT_NO_THROW(password.Insert(2, 's'));
-  EXPECT_NO_THROW(password.Insert(5, 'o'));
+  CHECK_NOTHROW(password.Insert(3, 's'));
+  CHECK_NOTHROW(password.Insert(7, 'd'));
+  CHECK_NOTHROW(password.Insert(4, 'w'));
+  CHECK_NOTHROW(password.Insert(6, 'r'));
+  CHECK_NOTHROW(password.Insert(1, 'a'));
+  CHECK_NOTHROW(password.Insert(0, 'p'));
+  CHECK_NOTHROW(password.Insert(2, 's'));
+  CHECK_NOTHROW(password.Insert(5, 'o'));
 
-  EXPECT_THROW(password.string(), std::exception);
+  CHECK_THROWS_AS(password.string(), std::exception);
 
-  EXPECT_NO_THROW(password.Finalise());
+  CHECK_NOTHROW(password.Finalise());
 
-  ASSERT_EQ(SafeString("password"), password.string());
+  REQUIRE(SafeString("password") == password.string());
 }
 
-TEST(SecureStringTest, BEH_CheckPasswordValidForAllChars) {
+TEST_CASE("Check Password is valid for all chars", "[SecureString][Unit]") {
   Password password;
   for (size_t i(0); i != 23; ++i)
-    EXPECT_NO_THROW(password.Insert(i, static_cast<char>(RandomInt32())));
+    CHECK_NOTHROW(password.Insert(i, static_cast<char>(RandomInt32())));
 
-  ASSERT_TRUE(password.IsValid(boost::regex(".")));
+  REQUIRE(password.IsValid(boost::regex(".")));
 
-  EXPECT_NO_THROW(password.Finalise());
+  CHECK_NOTHROW(password.Finalise());
 }
 
-TEST(SecureStringTest, BEH_CreatePin) {
+TEST_CASE("Create PIN", "[SecureString][Unit]") {
   Pin pin;
 
-  EXPECT_NO_THROW(pin.Insert(1, '1'));
-  EXPECT_NO_THROW(pin.Insert(3, '3'));
-  EXPECT_NO_THROW(pin.Insert(0, '0'));
-  EXPECT_NO_THROW(pin.Insert(2, '2'));
+  CHECK_NOTHROW(pin.Insert(1, '1'));
+  CHECK_NOTHROW(pin.Insert(3, '3'));
+  CHECK_NOTHROW(pin.Insert(0, '0'));
+  CHECK_NOTHROW(pin.Insert(2, '2'));
 
-  EXPECT_NO_THROW(pin.Finalise());
+  CHECK_NOTHROW(pin.Finalise());
 
-  ASSERT_EQ(SafeString("0123"), pin.string());
-  ASSERT_EQ(123, pin.Value());
+  REQUIRE(SafeString("0123") == pin.string());
+  REQUIRE(123 == pin.Value());
 }
 
-TEST(SecureStringTest, BEH_CreateInvalidLengthPin) {
-  {
-    Pin pin;
-
-    EXPECT_THROW(pin.Finalise(), std::exception);
-
-    EXPECT_NO_THROW(pin.Insert(0, '0'));
-
-    EXPECT_NO_THROW(pin.Finalise());
-
-    ASSERT_EQ(SafeString("0"), pin.string());
-  }
-}
-
-TEST(SecureStringTest, BEH_InsertInvalidPinValue) {
+TEST_CASE("Create invalid length PIN", "[SecureString][Unit]") {
   Pin pin;
 
-  EXPECT_NO_THROW(pin.Insert(1, '1'));
-  EXPECT_NO_THROW(pin.Insert(3, '3'));
-  EXPECT_NO_THROW(pin.Insert(0, 'a'));
-  EXPECT_NO_THROW(pin.Insert(2, '2'));
+  CHECK_THROWS_AS(pin.Finalise(), std::exception);
 
-  EXPECT_NO_THROW(pin.Finalise());
+  CHECK_NOTHROW(pin.Insert(0, '0'));
 
-  ASSERT_EQ(SafeString("a123"), pin.string());
-  EXPECT_TRUE(pin.IsValid(boost::regex(".")));
-  EXPECT_THROW(pin.Value(), std::exception);
+  CHECK_NOTHROW(pin.Finalise());
 
-  EXPECT_NO_THROW(pin.Remove(0, 1));
-  EXPECT_NO_THROW(pin.Insert(0, '0'));
-  EXPECT_NO_THROW(pin.Finalise());
-  EXPECT_TRUE(pin.IsValid(boost::regex(".")));
+  REQUIRE(SafeString("0") == pin.string());
+}
 
-  EXPECT_NO_THROW(pin.Finalise());
-  ASSERT_EQ(123, pin.Value());
+TEST_CASE("Insert invalid PIN value", "[SecureString][Unit]") {
+  Pin pin;
+
+  CHECK_NOTHROW(pin.Insert(1, '1'));
+  CHECK_NOTHROW(pin.Insert(3, '3'));
+  CHECK_NOTHROW(pin.Insert(0, 'a'));
+  CHECK_NOTHROW(pin.Insert(2, '2'));
+
+  CHECK_NOTHROW(pin.Finalise());
+
+  REQUIRE(SafeString("a123") == pin.string());
+  CHECK(pin.IsValid(boost::regex(".")));
+  CHECK_THROWS_AS(pin.Value(), std::exception);
+
+  CHECK_NOTHROW(pin.Remove(0, 1));
+  CHECK_NOTHROW(pin.Insert(0, '0'));
+  CHECK_NOTHROW(pin.Finalise());
+  CHECK(pin.IsValid(boost::regex(".")));
+
+  CHECK_NOTHROW(pin.Finalise());
+  REQUIRE(123 == pin.Value());
 }
 
 }  // namespace test
