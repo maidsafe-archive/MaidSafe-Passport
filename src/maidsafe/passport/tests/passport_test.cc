@@ -350,25 +350,18 @@ TEST_F(PassportParallelTest, FUNC_ParallelSerialiseParse) {
     a1.get();
   }
 
-  Passport passport = Passport(serialised);
-
   EXPECT_NO_THROW(TestFobs fobs(GetFobs()));
 
-  passport.CreateSelectableFobPair(name_1_);
+  Passport passport(serialised);
+
   passport.CreateSelectableFobPair(name_5_);
 
   {
     auto a1 = std::async([&] { return passport.CreateSelectableFobPair(name_4_); });
-    auto a2 = std::async([&] { return passport.GetSelectableFob<Anmpid>(name_1_); });
+    auto a2 = std::async([&] { return passport.GetSelectableFob<Anmpid>(name_5_); });
     auto a3 = std::async([&] {
-      return std::make_shared<Mpid>(passport.GetSelectableFob<Mpid>(name_1_));
-    });
-    auto a4 = std::async([&] { return passport.GetSelectableFob<Anmpid>(name_5_); });
-    auto a5 = std::async([&] {
       return std::make_shared<Mpid>(passport.GetSelectableFob<Mpid>(name_5_));
     });
-    a5.get();
-    a4.get();
     a3.get();
     a2.get();
     a1.get();
