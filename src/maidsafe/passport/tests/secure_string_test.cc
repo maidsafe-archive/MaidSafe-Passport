@@ -53,8 +53,8 @@ TEST_CASE("Create SecureString", "[SecureString][Unit]") {
 }
 
 TEST_CASE("Hash SecureString string", "[SecureString][Unit]") {
-  typedef maidsafe::detail::BoundedString<crypto::SHA512::DIGESTSIZE, crypto::SHA512::DIGESTSIZE>
-      BoundedString;
+//  typedef maidsafe::detail::BoundedString<crypto::SHA512::DIGESTSIZE, crypto::SHA512::DIGESTSIZE>
+//      BoundedString;
   SafeString string("ABCDEFGHIJKLMNOPQRSTUVWXYZ");
   CHECK_NOTHROW(crypto::Hash<crypto::SHA512>(string));
 }
