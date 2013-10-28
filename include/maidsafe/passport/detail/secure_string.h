@@ -176,7 +176,6 @@ void SecureInputString<Predicate, Size>::Insert(size_type position,
     position += 1;
   }
   encrypted_chars_.insert(std::make_pair(position, encrypted_chars));
-  return;
 }
 
 template <typename Predicate, SecureString::size_type Size>
@@ -197,7 +196,6 @@ void SecureInputString<Predicate, Size>::Remove(size_type position, size_type le
     encrypted_chars_.insert(it, std::make_pair(position, encrypted_char));
     position += 1;
   }
-  return;
 }
 
 template <typename Predicate, SecureString::size_type Size>
@@ -205,7 +203,6 @@ void SecureInputString<Predicate, Size>::Clear() {
   encrypted_chars_.clear();
   secure_string_.Clear();
   finalised_ = false;
-  return;
 }
 
 template <typename Predicate, SecureString::size_type Size>
@@ -227,7 +224,6 @@ void SecureInputString<Predicate, Size>::Finalise() {
   secure_string_.Finalise();
   encrypted_chars_.clear();
   finalised_ = true;
-  return;
 }
 
 template <typename Predicate, SecureString::size_type Size>
@@ -282,7 +278,6 @@ void SecureInputString<Predicate, Size>::Reset() {
   }
   secure_string_.Clear();
   finalised_ = false;
-  return;
 }
 
 template <typename Predicate, SecureString::size_type Size>
