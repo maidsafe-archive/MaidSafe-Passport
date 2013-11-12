@@ -28,9 +28,6 @@ project(passport)
 
 include(../../cmake_modules/standard_setup.cmake)
 
-include_directories(${common_SOURCE_DIR}/include)
-include_directories(${private_SOURCE_DIR}/include)
-
 
 #==================================================================================================#
 # Set up all files as GLOBs                                                                        #
@@ -45,7 +42,8 @@ glob_dir(PassportTests ${PassportSourcesDir}/tests Tests)
 # Define MaidSafe libraries and executables                                                        #
 #==================================================================================================#
 ms_add_static_library(passport ${PassportAllFiles} ${PassportDetailAllFiles})
-target_link_libraries(maidsafe_passport maidsafe_common)
+target_include_directories(maidsafe_passport PUBLIC ${PROJECT_SOURCE_DIR}/include PRIVATE ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(maidsafe_passport maidsafe_private maidsafe_common)
 
 if(MaidsafeTesting)
   ms_add_executable(test_passport "Tests/Passport" ${PassportTestsAllFiles})

@@ -25,18 +25,14 @@
 
 #include "boost/regex.hpp"
 
-#ifdef __MSVC__
-#pragma warning(push, 1)
-#endif
+// Include this first to avoid having to wrap the cryptopp includes in a pragma to disable warnings
+#include "maidsafe/common/crypto.h"  // NOLINT
+
 #include "cryptopp/filters.h"
 #include "cryptopp/default.h"
 #include "cryptopp/hex.h"
 #include "cryptopp/secblock.h"
-#ifdef __MSVC__
-#pragma warning(pop)
-#endif
 
-#include "maidsafe/common/crypto.h"
 #include "maidsafe/common/tagged_value.h"
 #include "maidsafe/common/utils.h"
 #include "maidsafe/passport/detail/safe_allocators.h"
