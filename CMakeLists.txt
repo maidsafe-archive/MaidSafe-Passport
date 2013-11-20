@@ -43,11 +43,11 @@ glob_dir(PassportTests ${PassportSourcesDir}/tests Tests)
 #==================================================================================================#
 ms_add_static_library(passport ${PassportAllFiles} ${PassportDetailAllFiles})
 target_include_directories(maidsafe_passport PUBLIC ${PROJECT_SOURCE_DIR}/include PRIVATE ${PROJECT_SOURCE_DIR}/src)
-target_link_libraries(maidsafe_passport maidsafe_private maidsafe_common)
+target_link_libraries(maidsafe_passport maidsafe_private maidsafe_common ${BoostRegexLibs})
 
 if(MaidsafeTesting)
   ms_add_executable(test_passport "Tests/Passport" ${PassportTestsAllFiles})
-  target_link_libraries(test_passport maidsafe_passport ${BoostRegexLibs})
+  target_link_libraries(test_passport maidsafe_passport)
 endif()
 
 rename_outdated_built_exes()
