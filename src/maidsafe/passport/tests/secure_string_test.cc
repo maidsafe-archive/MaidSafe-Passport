@@ -16,7 +16,7 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#include <regex>
+#include "boost/regex.hpp"
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
@@ -289,7 +289,7 @@ TEST_CASE("Check Password is valid for all chars", "[SecureString][Unit]") {
   for (size_t i(0); i != 23; ++i)
     CHECK_NOTHROW(password.Insert(i, static_cast<char>(RandomInt32())));
 
-  REQUIRE(password.IsValid(std::regex(".")));
+  REQUIRE(password.IsValid(boost::regex(".")));
 
   CHECK_NOTHROW(password.Finalise());
 }
@@ -331,13 +331,13 @@ TEST_CASE("Insert invalid PIN value", "[SecureString][Unit]") {
   CHECK_NOTHROW(pin.Finalise());
 
   REQUIRE(SafeString("a123") == pin.string());
-  CHECK(pin.IsValid(std::regex(".")));
+  CHECK(pin.IsValid(boost::regex(".")));
   CHECK_THROWS_AS(pin.Value(), std::exception);
 
   CHECK_NOTHROW(pin.Remove(0, 1));
   CHECK_NOTHROW(pin.Insert(0, '0'));
   CHECK_NOTHROW(pin.Finalise());
-  CHECK(pin.IsValid(std::regex(".")));
+  CHECK(pin.IsValid(boost::regex(".")));
 
   CHECK_NOTHROW(pin.Finalise());
   REQUIRE(123 == pin.Value());

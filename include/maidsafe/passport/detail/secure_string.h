@@ -22,7 +22,8 @@
 #include <string>
 #include <map>
 #include <functional>
-#include <regex>
+
+#include "boost/regex.hpp"
 
 // Include this first to avoid having to wrap the cryptopp includes in a pragma to disable warnings
 #include "maidsafe/common/crypto.h"  // NOLINT
@@ -110,7 +111,7 @@ class SecureInputString {
 
   bool IsInitialised() const;
   bool IsFinalised() const;
-  bool IsValid(const std::regex& regex) const;
+  bool IsValid(const boost::regex& regex) const;
 
   template <typename HashType>
   SecureString::Hash Hash() const;
@@ -124,8 +125,8 @@ class SecureInputString {
   SafeString Encrypt(const StringType& decrypted_chars) const;
   SafeString Encrypt(const char& decrypted_char) const;
   SafeString Decrypt(const SafeString& encrypted_char) const;
-  bool ValidateEncryptedChars(const std::regex& regex) const;
-  bool ValidateSecureString(const std::regex& regex) const;
+  bool ValidateEncryptedChars(const boost::regex& regex) const;
+  bool ValidateSecureString(const boost::regex& regex) const;
 
   std::map<size_type, SafeString> encrypted_chars_;
   SafeString phrase_;
@@ -232,7 +233,7 @@ bool SecureInputString<Predicate, Size>::IsFinalised() const {
 }
 
 template <typename Predicate, SecureString::size_type Size>
-bool SecureInputString<Predicate, Size>::IsValid(const std::regex& regex) const {
+bool SecureInputString<Predicate, Size>::IsValid(const boost::regex& regex) const {
   if (IsFinalised())
     return ValidateSecureString(regex);
   else
@@ -304,7 +305,7 @@ SafeString SecureInputString<Predicate, Size>::Decrypt(const SafeString& encrypt
 }
 
 template <typename Predicate, SecureString::size_type Size>
-bool SecureInputString<Predicate, Size>::ValidateEncryptedChars(const std::regex& regex) const {
+bool SecureInputString<Predicate, Size>::ValidateEncryptedChars(const boost::regex& regex) const {
   if (!Predicate()(encrypted_chars_.size(), Size))
     return false;
   uint32_t counter(0);
@@ -312,7 +313,7 @@ bool SecureInputString<Predicate, Size>::ValidateEncryptedChars(const std::regex
     if (encrypted_char.first != counter)
       return false;
     SafeString decrypted_char(Decrypt(encrypted_char.second));
-    if (!std::regex_search(decrypted_char, regex))
+    if (!boost::regex_search(decrypted_char, regex))
       return false;
     ++counter;
   }
@@ -320,13 +321,13 @@ bool SecureInputString<Predicate, Size>::ValidateEncryptedChars(const std::regex
 }
 
 template <typename Predicate, SecureString::size_type Size>
-bool SecureInputString<Predicate, Size>::ValidateSecureString(const std::regex& regex) const {
+bool SecureInputString<Predicate, Size>::ValidateSecureString(const boost::regex& regex) const {
   SafeString decrypted_string(string());
   size_type decrypted_string_size(decrypted_string.size());
   if (!Predicate()(decrypted_string_size, Size))
     return false;
   for (size_type i = 0; i != decrypted_string_size; ++i) {
-    if (!std::regex_search(SafeString(1, decrypted_string[i]), regex))
+    if (!boost::regex_search(SafeString(1, decrypted_string[i]), regex))
       return false;
   }
   return true;
