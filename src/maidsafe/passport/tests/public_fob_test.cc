@@ -92,7 +92,7 @@ TEST_CASE("Generate and validate PublicFobs", "[Public Fob][Behavioural]") {
   static_assert(is_short_term_cacheable<PublicAntmid>::value, "");
   static_assert(is_short_term_cacheable<PublicAnmaid>::value, "");
   static_assert(is_short_term_cacheable<PublicMaid>::value, "");
-  static_assert(is_short_term_cacheable<PublicPmid>::value, "");
+  static_assert(!is_short_term_cacheable<PublicPmid>::value, "");
   static_assert(is_short_term_cacheable<PublicAnmpid>::value, "");
   static_assert(is_short_term_cacheable<PublicMpid>::value, "");
   static_assert(!is_long_term_cacheable<PublicAnmid>::value, "");

@@ -121,8 +121,11 @@ template <>
 struct is_short_term_cacheable<passport::PublicAnmaid> : public std::true_type {};
 template <>
 struct is_short_term_cacheable<passport::PublicMaid> : public std::true_type {};
+// PMID is deliberately non-cacheable so that a client storing a PMID can repeatedly call Get to
+// discover when the Store has actually succeeded.  Only once this has happened, does the client
+// then start the corresponding vault.
 template <>
-struct is_short_term_cacheable<passport::PublicPmid> : public std::true_type {};
+struct is_short_term_cacheable<passport::PublicPmid> : public std::false_type {};
 template <>
 struct is_short_term_cacheable<passport::PublicAnmpid> : public std::true_type {};
 template <>
