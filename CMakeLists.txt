@@ -33,15 +33,15 @@ include(../../cmake_modules/standard_setup.cmake)
 # Set up all files as GLOBs                                                                        #
 #==================================================================================================#
 set(PassportSourcesDir ${PROJECT_SOURCE_DIR}/src/maidsafe/passport)
-glob_dir(Passport ${PassportSourcesDir} Passport)
-glob_dir(PassportDetail ${PassportSourcesDir}/detail "Passport Detail")
-glob_dir(PassportTests ${PassportSourcesDir}/tests Tests)
+ms_glob_dir(Passport ${PassportSourcesDir} Passport)
+ms_glob_dir(PassportDetail ${PassportSourcesDir}/detail "Passport Detail")
+ms_glob_dir(PassportTests ${PassportSourcesDir}/tests Tests)
 
 
 #==================================================================================================#
 # Define MaidSafe libraries and executables                                                        #
 #==================================================================================================#
-ms_add_static_library(passport ${PassportAllFiles} ${PassportDetailAllFiles})
+ms_add_static_library(maidsafe_passport ${PassportAllFiles} ${PassportDetailAllFiles})
 target_include_directories(maidsafe_passport PUBLIC ${PROJECT_SOURCE_DIR}/include PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(maidsafe_passport maidsafe_private maidsafe_common ${BoostRegexLibs})
 
@@ -50,7 +50,7 @@ if(MaidsafeTesting)
   target_link_libraries(test_passport maidsafe_passport)
 endif()
 
-rename_outdated_built_exes()
+ms_rename_outdated_built_exes()
 
 
 #==================================================================================================#
@@ -63,8 +63,8 @@ include(standard_flags)
 # Tests                                                                                            #
 #==================================================================================================#
 if(MaidsafeTesting)
-  add_style_test()
-  add_catch_tests(test_passport)
-  add_project_experimental()
-  test_summary_output()
+  ms_add_style_test()
+  ms_add_catch_tests(test_passport)
+  ms_add_project_experimental()
+  ms_test_summary_output()
 endif()
