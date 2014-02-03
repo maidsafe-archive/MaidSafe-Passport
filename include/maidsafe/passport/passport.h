@@ -203,7 +203,7 @@ FobType Passport::GetSelectableFob(const NonEmptyString& name) {
   std::lock_guard<std::mutex> lock(selectable_fobs_mutex_);
   auto itr(selectable_fobs_.find(name));
   if (itr == selectable_fobs_.end())
-    ThrowError(PassportErrors::uninitialised_fob);
+    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::uninitialised_fob));
   return GetFromSelectableFobPair<FobType>(itr->second);
 }
 

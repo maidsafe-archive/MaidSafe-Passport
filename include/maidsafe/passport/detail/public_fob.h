@@ -104,7 +104,7 @@ template <typename TagType>
 PublicFob<TagType>::PublicFob(Name name, const serialised_type& serialised_public_fob)
     : name_(std::move(name)), public_key_(), validation_token_() {
   if (!name_->IsInitialised())
-    ThrowError(PassportErrors::fob_parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::fob_parsing_error));
   PublicFobFromProtobuf(serialised_public_fob.data, Tag::kValue, public_key_, validation_token_);
 }
 

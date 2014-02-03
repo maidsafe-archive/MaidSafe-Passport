@@ -124,7 +124,7 @@ template <typename Tag>
 MidData<Tag>::MidData(const Name& name, const serialised_type& serialised_mid)
     : name_(name), encrypted_tmid_name_(), validation_token_() {
   if (!name_->IsInitialised())
-    ThrowError(PassportErrors::mid_parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::mid_parsing_error));
   MidFromProtobuf(serialised_mid.data, Tag::kValue, encrypted_tmid_name_, validation_token_);
 }
 

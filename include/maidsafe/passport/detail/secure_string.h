@@ -180,11 +180,11 @@ void SecureInputString<Predicate, Size>::Remove(size_type position, size_type le
     Reset();
   auto it(encrypted_chars_.find(position));
   if (it == encrypted_chars_.end() || length == 0)
-    ThrowError(CommonErrors::invalid_parameter);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   while (length != 0) {
     it = encrypted_chars_.erase(it);
     if ((length -= 1 != 0) && it == encrypted_chars_.end())
-      ThrowError(CommonErrors::invalid_parameter);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   }
   while (it != encrypted_chars_.end()) {
     auto encrypted_char = it->second;
@@ -206,12 +206,12 @@ void SecureInputString<Predicate, Size>::Finalise() {
   if (IsFinalised())
     return;
   if (!Predicate()(encrypted_chars_.size(), Size))
-    ThrowError(CommonErrors::invalid_parameter);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
   uint32_t index(0);
   for (auto& encrypted_char : encrypted_chars_) {
     if (encrypted_char.first != index) {
       secure_string_.Clear();
-      ThrowError(CommonErrors::invalid_parameter);
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::invalid_parameter));
     }
     SafeString decrypted_char(Decrypt(encrypted_char.second));
     secure_string_.Append(decrypted_char);
@@ -244,14 +244,14 @@ template <typename Predicate, SecureString::size_type Size>
 template <typename HashType>
 typename SecureString::Hash SecureInputString<Predicate, Size>::Hash() const {
   if (!IsFinalised())
-    ThrowError(CommonErrors::symmetric_encryption_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::symmetric_encryption_error));
   return crypto::Hash<HashType>(secure_string_.string());
 }
 
 template <typename Predicate, SecureString::size_type Size>
 typename SecureString::size_type SecureInputString<Predicate, Size>::Value() const {
   if (!IsFinalised())
-    ThrowError(CommonErrors::symmetric_encryption_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::symmetric_encryption_error));
   SafeString decrypted_string(secure_string_.string());
   return std::stoul(std::string(decrypted_string.begin(), decrypted_string.end()));
 }
@@ -259,7 +259,7 @@ typename SecureString::size_type SecureInputString<Predicate, Size>::Value() con
 template <typename Predicate, SecureString::size_type Size>
 SafeString SecureInputString<Predicate, Size>::string() const {
   if (!IsFinalised())
-    ThrowError(CommonErrors::symmetric_encryption_error);
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::symmetric_encryption_error));
   return secure_string_.string();
 }
 

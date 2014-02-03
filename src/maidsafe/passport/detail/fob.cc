@@ -37,7 +37,7 @@ Identity CreateMpidName(const NonEmptyString& chosen_name) {
 void FobFromProtobuf(const protobuf::Fob& proto_fob, DataTagValue enum_value, asymm::Keys& keys,
                      asymm::Signature& validation_token, Identity& name) {
   if (!proto_fob.IsInitialized())
-    ThrowError(PassportErrors::fob_parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::fob_parsing_error));
 
   validation_token = asymm::Signature(proto_fob.validation_token());
   name = Identity(proto_fob.name());
@@ -48,7 +48,7 @@ void FobFromProtobuf(const protobuf::Fob& proto_fob, DataTagValue enum_value, as
   if ((enum_value != MpidTag::kValue && CreateFobName(keys.public_key, validation_token) != name) ||
       asymm::Decrypt(asymm::Encrypt(plain, keys.public_key), keys.private_key) != plain ||
       enum_value != DataTagValue(proto_fob.type())) {
-    ThrowError(PassportErrors::fob_parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::fob_parsing_error));
   }
 }
 

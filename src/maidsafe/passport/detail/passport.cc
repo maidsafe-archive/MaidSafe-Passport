@@ -101,12 +101,12 @@ Passport::Passport(const NonEmptyString& serialised_passport)
   if (!proto_passport.ParseFromString(serialised_passport.string()) ||
       !proto_passport.IsInitialized()) {
     LOG(kError) << "Failed to parse passport.";
-    ThrowError(PassportErrors::passport_parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::passport_parsing_error));
   }
 
   if (proto_passport.fob_size() != 6) {
     LOG(kError) << "Parsed passport should have 6 fobs, actually has " << proto_passport.fob_size();
-    ThrowError(PassportErrors::passport_parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::passport_parsing_error));
   }
 
   std::lock(fobs_mutex_, selectable_fobs_mutex_);
@@ -185,7 +185,7 @@ void Passport::CreateSelectableFobPair(const NonEmptyString& name) {
   std::lock_guard<std::mutex> lock(selectable_fobs_mutex_);
   auto result(selectable_fobs_.insert(std::make_pair(name, std::move(selectable_fob_pair))));
   if (!result.second)
-    ThrowError(PassportErrors::public_id_already_exists);
+    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::public_id_already_exists));
 }
 
 void Passport::DeleteSelectableFobPair(const NonEmptyString& name) {
@@ -197,7 +197,7 @@ template <>
 Anmid Passport::Get<Anmid>() {
   std::lock_guard<std::mutex> lock(fobs_mutex_);
   if (!fobs_.anmid)
-    ThrowError(PassportErrors::uninitialised_fob);
+    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::uninitialised_fob));
   return *fobs_.anmid;
 }
 
@@ -205,7 +205,7 @@ template <>
 Ansmid Passport::Get<Ansmid>() {
   std::lock_guard<std::mutex> lock(fobs_mutex_);
   if (!fobs_.ansmid)
-    ThrowError(PassportErrors::uninitialised_fob);
+    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::uninitialised_fob));
   return *fobs_.ansmid;
 }
 
@@ -213,7 +213,7 @@ template <>
 Antmid Passport::Get<Antmid>() {
   std::lock_guard<std::mutex> lock(fobs_mutex_);
   if (!fobs_.antmid)
-    ThrowError(PassportErrors::uninitialised_fob);
+    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::uninitialised_fob));
   return *fobs_.antmid;
 }
 
@@ -221,7 +221,7 @@ template <>
 Anmaid Passport::Get<Anmaid>() {
   std::lock_guard<std::mutex> lock(fobs_mutex_);
   if (!fobs_.anmaid)
-    ThrowError(PassportErrors::uninitialised_fob);
+    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::uninitialised_fob));
   return *fobs_.anmaid;
 }
 
@@ -229,7 +229,7 @@ template <>
 Maid Passport::Get<Maid>() {
   std::lock_guard<std::mutex> lock(fobs_mutex_);
   if (!fobs_.maid)
-    ThrowError(PassportErrors::uninitialised_fob);
+    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::uninitialised_fob));
   return *fobs_.maid;
 }
 
@@ -237,21 +237,21 @@ template <>
 Pmid Passport::Get<Pmid>() {
   std::lock_guard<std::mutex> lock(fobs_mutex_);
   if (!fobs_.pmid)
-    ThrowError(PassportErrors::uninitialised_fob);
+    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::uninitialised_fob));
   return *fobs_.pmid;
 }
 
 template <>
 Anmpid Passport::GetFromSelectableFobPair(const SelectableFobPair& selectable_fob_pair) {
   if (!selectable_fob_pair.anmpid)
-    ThrowError(PassportErrors::uninitialised_fob);
+    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::uninitialised_fob));
   return *selectable_fob_pair.anmpid;
 }
 
 template <>
 Mpid Passport::GetFromSelectableFobPair(const SelectableFobPair& selectable_fob_pair) {
   if (!selectable_fob_pair.mpid)
-    ThrowError(PassportErrors::uninitialised_fob);
+    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::uninitialised_fob));
   return *selectable_fob_pair.mpid;
 }
 

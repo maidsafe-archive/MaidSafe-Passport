@@ -79,11 +79,11 @@ void MidFromProtobuf(const NonEmptyString& serialised_mid, DataTagValue enum_val
                      EncryptedTmidName& encrypted_tmid_name, asymm::Signature& validation_token) {
   protobuf::Mid proto_mid;
   if (!proto_mid.ParseFromString(serialised_mid.string()))
-    ThrowError(PassportErrors::mid_parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::mid_parsing_error));
   validation_token = asymm::Signature(proto_mid.validation_token());
   encrypted_tmid_name = EncryptedTmidName(NonEmptyString(proto_mid.encrypted_tmid_name()));
   if (static_cast<uint32_t>(enum_value) != proto_mid.type())
-    ThrowError(PassportErrors::mid_parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::mid_parsing_error));
 }
 
 NonEmptyString MidToProtobuf(DataTagValue enum_value, const EncryptedTmidName& encrypted_tmid_name,
@@ -147,11 +147,11 @@ TmidData::TmidData(Name name, const serialised_type& serialised_tmid)
     : name_(std::move(name)), encrypted_session_(), validation_token_() {
   protobuf::Tmid proto_tmid;
   if (!proto_tmid.ParseFromString(serialised_tmid->string()))
-    ThrowError(PassportErrors::tmid_parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::tmid_parsing_error));
   validation_token_ = asymm::Signature(proto_tmid.validation_token());
   encrypted_session_ = EncryptedSession(NonEmptyString(proto_tmid.encrypted_session()));
   if (static_cast<uint32_t>(detail::TmidTag::kValue) != proto_tmid.type())
-    ThrowError(PassportErrors::tmid_parsing_error);
+    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::tmid_parsing_error));
 }
 
 TmidData::serialised_type TmidData::Serialise() const {
