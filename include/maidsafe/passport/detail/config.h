@@ -21,7 +21,7 @@
 
 #include <string>
 
-#include "maidsafe/data_types/data_type_values.h"
+#include "maidsafe/common/data_types/data_type_values.h"
 
 namespace maidsafe {
 
