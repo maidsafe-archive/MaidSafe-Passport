@@ -19,7 +19,9 @@
 #include "maidsafe/passport/detail/secure_string.h"
 
 namespace maidsafe {
+
 namespace passport {
+
 namespace detail {
 
 SecureString::SecureString()
@@ -62,5 +64,7 @@ SafeString operator+(const SafeString& first, const SecureString::Hash& second) 
 LockedPageManager LockedPageManager::instance;
 
 }  // namespace detail
+
 }  // namespace passport
+
 }  // namespace maidsafe

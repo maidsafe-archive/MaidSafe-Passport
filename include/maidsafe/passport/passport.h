@@ -24,60 +24,38 @@
 #include <memory>
 #include <mutex>
 
+#include "maidsafe/common/config.h"
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/common/types.h"
 
 #include "maidsafe/passport/types.h"
 #include "maidsafe/passport/detail/fob.h"
-#include "maidsafe/passport/detail/identity_data.h"
 #include "maidsafe/passport/detail/secure_string.h"
 
 namespace maidsafe {
+
 namespace passport {
 
 // The Passport API is a realisation of a Public Key Infrastructure, PKI, free from central
 // authority and the notion of a web of trust. In fact, based on the precepts inherent in the DHT,
-// http://www.novinet.com/library-routing, and vault http://www.novinet.com/library-vault,
-// libraries, all nodes on the network are assumed to be operating in a hostile environment. In
-// contrast, cooperating/collaborating nodes are essential for network stability and health. To
-// resolve these conflicting notions, groups of nodes close to a given network addressable element,
-// NAE, determine the validity of requests to/from any other node with respect to that NAE. The
-// Passport library provides the necessary types and methods required for this, including secure
-// communications/transactions, private/public resource sharing and self-authentication on the
-// network.
+// https://github.com/maidsafe/MaidSafe-Routing/wiki, and vault
+// https://github.com/maidsafe/MaidSafe-Vault/wiki libraries, all nodes on the network are assumed
+// to be operating in a hostile environment. In contrast, cooperating/collaborating nodes are
+// essential for network stability and health. To resolve these conflicting notions, groups of nodes
+// close to a given network addressable element, NAE, determine the validity of requests to/from any
+// other node with respect to that NAE. The Passport library provides the necessary types and
+// methods required for this, including secure communications/transactions, and private/public
+// resource sharing and self-authentication on the network.
 
 // Password-Based Key Derivation Function 2, PBKDF2, methods for cryptographically hashing client
 // session data from input user details. The PBKDF2 implementation is based on the PKCS #5 v2.0
 // standard from RSA laboratories, http://www.rsa.com/rsalabs, see also the cryptographic component
-// of the http://www.novinet.com/library-common project. The following methods are used for
-// self-authenticated network identity' storage/retrieval on the network.
-
-// Encrypts a users credentials prior to network storage.
-EncryptedSession EncryptSession(const detail::Keyword& keyword, const detail::Pin& pin,
-                                const detail::Password& password,
-                                const NonEmptyString& serialised_session);
-// Retrieves a users credentials previously stored on the network.
-NonEmptyString DecryptSession(const detail::Keyword& keyword, const detail::Pin& pin,
-                              const detail::Password& password,
-                              const EncryptedSession& encrypted_session);
-
-// PBKDF2 generated location to store Tmid data on network.
-EncryptedTmidName EncryptTmidName(const detail::Keyword& keyword, const detail::Pin& pin,
-                                  const Tmid::Name& tmid_name);
-Tmid::Name DecryptTmidName(const detail::Keyword& keyword, const detail::Pin& pin,
-                           const EncryptedTmidName& encrypted_tmid_name);
-
-// PBKDF2 generated location to store Mid/Smid data on network.
-Mid::Name MidName(const detail::Keyword& keyword, const detail::Pin& pin);
-Smid::Name SmidName(const detail::Keyword& keyword, const detail::Pin& pin);
+// of the https://github.com/maidsafe/MaidSafe-Common/wiki project. The following methods are used
+// for self-authenticated network identity' storage/retrieval on the network.
 
 // Methods for serialising/parsing the identity required for data storage.
 NonEmptyString SerialisePmid(const Pmid& pmid);
 Pmid ParsePmid(const NonEmptyString& serialised_pmid);
-
-namespace test {
-class PassportTest;
-}
 
 // The Passport class contains identity types for the various network related tasks available, see
 // types.h for details about the identity types.
@@ -85,66 +63,25 @@ class Passport {
  public:
   // Creates Fobs during construction.
   Passport();
-  Passport(Passport&& passport);
 
-  Passport& operator=(Passport&& passport);
-
-  // Parses previously serialised Fobs and intialises data members accordingly.
   explicit Passport(const NonEmptyString& serialised_passport);
 
-  // Serialises Fobs for network storage.
-  NonEmptyString Serialise();
-
-  // Returns the Fob type requested in it's template argument.
-  template <typename FobType>
-  FobType Get();
-
-  // Selectable Fobs, Anmpid and Mpid.
-  // There's no restriction on the number of selectable Fobs an application can create/use.
-  void CreateSelectableFobPair(const NonEmptyString& name);
-  void DeleteSelectableFobPair(const NonEmptyString& name);
+  NonEmptyString Serialise() const;
 
   template <typename FobType>
-  FobType GetSelectableFob(const NonEmptyString& name);
+  FobType Get() const;
 
-  friend class test::PassportTest;
+  // There's no restriction on the number of Mpids an application can create/use.
+  void CreateMpid(const NonEmptyString& name);
+  void DeleteMpid(const NonEmptyString& name);
+
+  Anmpid GetAnmpid(const NonEmptyString& name) const;
+  Mpid GetMpid(const NonEmptyString& name) const;
 
  private:
-  Passport(const Passport&);
-  Passport& operator=(const Passport&);
-
-  struct Fobs {
-    Fobs() {}
-
-    Fobs(Fobs&& other)
-        : anmid(std::move(other.anmid)),
-          ansmid(std::move(other.ansmid)),
-          antmid(std::move(other.antmid)),
-          anmaid(std::move(other.anmaid)),
-          maid(std::move(other.maid)),
-          pmid(std::move(other.pmid)) {}
-
-    Fobs& operator=(Fobs&& other) {
-      anmid = std::move(other.anmid);
-      ansmid = std::move(other.ansmid);
-      antmid = std::move(other.antmid);
-      anmaid = std::move(other.anmaid);
-      maid = std::move(other.maid);
-      pmid = std::move(other.pmid);
-      return *this;
-    }
-
-    std::unique_ptr<Anmid> anmid;
-    std::unique_ptr<Ansmid> ansmid;
-    std::unique_ptr<Antmid> antmid;
-    std::unique_ptr<Anmaid> anmaid;
-    std::unique_ptr<Maid> maid;
-    std::unique_ptr<Pmid> pmid;
-
-   private:
-    Fobs(const Fobs&);
-    Fobs& operator=(const Fobs&);
-  };
+  Passport(const Passport&) MAIDSAFE_DELETE;
+  Passport(Passport&&) MAIDSAFE_DELETE;
+  Passport& operator=(Passport) MAIDSAFE_DELETE;
 
   struct SelectableFobPair {
     SelectableFobPair() : anmpid(), mpid() {}
@@ -162,44 +99,41 @@ class Passport {
     std::unique_ptr<Mpid> mpid;
 
    private:
-#ifdef MAIDSAFE_WIN32
-    SelectableFobPair(const SelectableFobPair&);
-#else
-    SelectableFobPair(const SelectableFobPair&) = delete;
-#endif
-    SelectableFobPair& operator=(const SelectableFobPair&);
+    SelectableFobPair(const SelectableFobPair&) MAIDSAFE_DELETE;
+    SelectableFobPair& operator=(const SelectableFobPair&) MAIDSAFE_DELETE;
   };
 
   bool NoFobsNull() const;
 
   template <typename FobType>
-  FobType GetFromSelectableFobPair(const SelectableFobPair& selectable_fob_pair);
+  FobType GetSelectableFob(const NonEmptyString& name) const;
 
-  Fobs fobs_;
+  template <typename FobType>
+  FobType GetFromSelectableFobPair(const SelectableFobPair& selectable_fob_pair) const;
+
+  std::unique_ptr<Anmaid> anmaid_;
+  std::unique_ptr<Maid> maid_;
+  std::unique_ptr<Anpmid> anpmid_;
+  std::unique_ptr<Pmid> pmid_;
+
   std::map<NonEmptyString, SelectableFobPair> selectable_fobs_;
   mutable std::mutex fobs_mutex_, selectable_fobs_mutex_;
 };
 
 template <>
-Anmid Passport::Get<Anmid>();
+Anmaid Passport::Get<Anmaid>() const;
 
 template <>
-Ansmid Passport::Get<Ansmid>();
+Maid Passport::Get<Maid>() const;
 
 template <>
-Antmid Passport::Get<Antmid>();
+Anpmid Passport::Get<Anpmid>() const;
 
 template <>
-Anmaid Passport::Get<Anmaid>();
-
-template <>
-Maid Passport::Get<Maid>();
-
-template <>
-Pmid Passport::Get<Pmid>();
+Pmid Passport::Get<Pmid>() const;
 
 template <typename FobType>
-FobType Passport::GetSelectableFob(const NonEmptyString& name) {
+FobType Passport::GetSelectableFob(const NonEmptyString& name) const {
   std::lock_guard<std::mutex> lock(selectable_fobs_mutex_);
   auto itr(selectable_fobs_.find(name));
   if (itr == selectable_fobs_.end())
@@ -208,12 +142,13 @@ FobType Passport::GetSelectableFob(const NonEmptyString& name) {
 }
 
 template <>
-Anmpid Passport::GetFromSelectableFobPair(const SelectableFobPair& selectable_fob_pair);
+Anmpid Passport::GetFromSelectableFobPair(const SelectableFobPair& selectable_fob_pair) const;
 
 template <>
-Mpid Passport::GetFromSelectableFobPair(const SelectableFobPair& selectable_fob_pair);
+Mpid Passport::GetFromSelectableFobPair(const SelectableFobPair& selectable_fob_pair) const;
 
 }  // namespace passport
+
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_PASSPORT_PASSPORT_H_

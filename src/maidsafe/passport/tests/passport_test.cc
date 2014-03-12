@@ -28,7 +28,6 @@
 #include "maidsafe/common/utils.h"
 
 #include "maidsafe/passport/detail/fob.h"
-#include "maidsafe/passport/detail/identity_data.h"
 #include "maidsafe/passport/detail/passport.pb.h"
 
 namespace pb = maidsafe::passport::detail::protobuf;
@@ -69,33 +68,26 @@ bool NoFieldsMatch(const Fobtype& lhs, const Fobtype& rhs) {
 }
 
 struct TestFobs {
-  TestFobs(Anmid anmid1, Ansmid ansmid1, Antmid antmid1, Anmaid anmaid1, Maid maid1, Pmid pmid1)
-      : anmid(std::move(anmid1)),
-        ansmid(std::move(ansmid1)),
-        antmid(std::move(antmid1)),
-        anmaid(std::move(anmaid1)),
-        maid(std::move(maid1)),
-        pmid(std::move(pmid1)) {}
+  TestFobs(Anmaid anmaid_in, Maid maid_in, Anpmid anpmid_in, Pmid pmid_in)
+      : anmaid(std::move(anmaid_in)),
+        maid(std::move(maid_in)),
+        anpmid(std::move(anpmid_in)),
+        pmid(std::move(pmid_in)) {}
   TestFobs(const TestFobs& other)
-      : anmid(other.anmid),
-        ansmid(other.ansmid),
-        antmid(other.antmid),
-        anmaid(other.anmaid),
+      : anmaid(other.anmaid),
         maid(other.maid),
+        anpmid(std::move(other.anpmid)),
         pmid(other.pmid) {}
 
-  Anmid anmid;
-  Ansmid ansmid;
-  Antmid antmid;
   Anmaid anmaid;
   Maid maid;
+  Anpmid anpmid;
   Pmid pmid;
 };
 
 bool AllFobFieldsMatch(const TestFobs& lhs, const TestFobs& rhs) {
-  return (AllFieldsMatch(lhs.anmid, rhs.anmid) && AllFieldsMatch(lhs.ansmid, rhs.ansmid) &&
-          AllFieldsMatch(lhs.antmid, rhs.antmid) && AllFieldsMatch(lhs.anmaid, rhs.anmaid) &&
-          AllFieldsMatch(lhs.maid, rhs.maid) && AllFieldsMatch(lhs.pmid, rhs.pmid));
+  return (AllFieldsMatch(lhs.anmaid, rhs.anmaid) && AllFieldsMatch(lhs.maid, rhs.maid) &&
+          AllFieldsMatch(lhs.anpmid, rhs.anpmid) && AllFieldsMatch(lhs.pmid, rhs.pmid));
 }
 
 class PassportTest {
@@ -103,13 +95,13 @@ class PassportTest {
   PassportTest() : passport_() {}
 
   TestFobs GetFobs() {
-    return TestFobs(passport_.Get<Anmid>(), passport_.Get<Ansmid>(), passport_.Get<Antmid>(),
-                    passport_.Get<Anmaid>(), passport_.Get<Maid>(), passport_.Get<Pmid>());
+    return TestFobs(passport_.Get<Anmaid>(), passport_.Get<Maid>(), passport_.Get<Anpmid>(),
+                    passport_.Get<Pmid>());
   }
 
   TestFobs GetFobs(Passport& passport) {
-    return TestFobs(passport.Get<Anmid>(), passport.Get<Ansmid>(), passport.Get<Antmid>(),
-                    passport.Get<Anmaid>(), passport.Get<Maid>(), passport.Get<Pmid>());
+    return TestFobs(passport.Get<Anmaid>(), passport.Get<Maid>(), passport.Get<Anpmid>(),
+                    passport.Get<Pmid>());
   }
 
  protected:
@@ -119,95 +111,67 @@ class PassportTest {
 TEST_CASE_METHOD(PassportTest, "Construct Fobs", "[Passport][Behavioural]") {
   Passport constucted_passport;
 
-  CHECK_NOTHROW(passport_.Get<Anmid>());
-  CHECK_NOTHROW(passport_.Get<Ansmid>());
-  CHECK_NOTHROW(passport_.Get<Antmid>());
   CHECK_NOTHROW(passport_.Get<Anmaid>());
   CHECK_NOTHROW(passport_.Get<Maid>());
+  CHECK_NOTHROW(passport_.Get<Anpmid>());
   CHECK_NOTHROW(passport_.Get<Pmid>());
   TestFobs fobs(GetFobs());
 
-  CHECK_NOTHROW(constucted_passport.Get<Anmid>());
-  CHECK_NOTHROW(constucted_passport.Get<Ansmid>());
-  CHECK_NOTHROW(constucted_passport.Get<Antmid>());
   CHECK_NOTHROW(constucted_passport.Get<Anmaid>());
   CHECK_NOTHROW(constucted_passport.Get<Maid>());
+  CHECK_NOTHROW(constucted_passport.Get<Anpmid>());
   CHECK_NOTHROW(constucted_passport.Get<Pmid>());
   TestFobs constructed_fobs(GetFobs(constucted_passport));
 
-  CHECK(NoFieldsMatch(fobs.anmid, constructed_fobs.anmid));
-  CHECK(NoFieldsMatch(fobs.ansmid, constructed_fobs.ansmid));
-  CHECK(NoFieldsMatch(fobs.antmid, constructed_fobs.antmid));
   CHECK(NoFieldsMatch(fobs.anmaid, constructed_fobs.anmaid));
   CHECK(NoFieldsMatch(fobs.maid, constructed_fobs.maid));
+  CHECK(NoFieldsMatch(fobs.anpmid, constructed_fobs.anpmid));
   CHECK(NoFieldsMatch(fobs.pmid, constructed_fobs.pmid));
-
-  Passport moved_passport(std::move(passport_));
-
-  CHECK_THROWS_AS(passport_.Get<Anmid>(), std::exception);
-  CHECK_THROWS_AS(passport_.Get<Ansmid>(), std::exception);
-  CHECK_THROWS_AS(passport_.Get<Antmid>(), std::exception);
-  CHECK_THROWS_AS(passport_.Get<Anmaid>(), std::exception);
-  CHECK_THROWS_AS(passport_.Get<Maid>(), std::exception);
-  CHECK_THROWS_AS(passport_.Get<Pmid>(), std::exception);
-  CHECK_NOTHROW(moved_passport.Get<Anmid>());
-  CHECK_NOTHROW(moved_passport.Get<Ansmid>());
-  CHECK_NOTHROW(moved_passport.Get<Antmid>());
-  CHECK_NOTHROW(moved_passport.Get<Anmaid>());
-  CHECK_NOTHROW(moved_passport.Get<Maid>());
-  CHECK_NOTHROW(moved_passport.Get<Pmid>());
-  TestFobs moved_fobs(GetFobs(moved_passport));
-  CHECK(AllFieldsMatch(fobs.anmid, moved_fobs.anmid));
-  CHECK(AllFieldsMatch(fobs.ansmid, moved_fobs.ansmid));
-  CHECK(AllFieldsMatch(fobs.antmid, moved_fobs.antmid));
-  CHECK(AllFieldsMatch(fobs.anmaid, moved_fobs.anmaid));
-  CHECK(AllFieldsMatch(fobs.maid, moved_fobs.maid));
-  CHECK(AllFieldsMatch(fobs.pmid, moved_fobs.pmid));
 }
 
 TEST_CASE_METHOD(PassportTest, "Create and get SelectableFobs", "[Passport][Behavioural]") {
   NonEmptyString name(RandomAlphaNumericString(1 + RandomUint32() % 100));
 
-  CHECK_THROWS_AS(passport_.GetSelectableFob<Mpid>(name), std::exception);
-  CHECK_THROWS_AS(passport_.GetSelectableFob<Anmpid>(name), std::exception);
+  CHECK_THROWS_AS(passport_.GetMpid(name), std::exception);
+  CHECK_THROWS_AS(passport_.GetAnmpid(name), std::exception);
 
-  passport_.CreateSelectableFobPair(name);
+  passport_.CreateMpid(name);
 
-  CHECK_NOTHROW(passport_.GetSelectableFob<Mpid>(name));
-  CHECK_NOTHROW(passport_.GetSelectableFob<Anmpid>(name));
+  CHECK_NOTHROW(passport_.GetMpid(name));
+  CHECK_NOTHROW(passport_.GetAnmpid(name));
 
-  CHECK_THROWS_AS(passport_.CreateSelectableFobPair(name), std::exception);
+  CHECK_THROWS_AS(passport_.CreateMpid(name), std::exception);
 }
 
 TEST_CASE_METHOD(PassportTest, "Delete SelectableFobs", "[Passport][Behavioural]") {
   NonEmptyString name(RandomAlphaNumericString(1 + RandomUint32() % 100));
 
-  passport_.DeleteSelectableFobPair(name);
+  passport_.DeleteMpid(name);
 
-  CHECK_NOTHROW(passport_.CreateSelectableFobPair(name));
+  CHECK_NOTHROW(passport_.CreateMpid(name));
 
-  passport_.DeleteSelectableFobPair(name);
+  passport_.DeleteMpid(name);
 
-  CHECK_THROWS_AS(passport_.GetSelectableFob<Mpid>(name), std::exception);
-  CHECK_THROWS_AS(passport_.GetSelectableFob<Anmpid>(name), std::exception);
+  CHECK_THROWS_AS(passport_.GetAnmpid(name), std::exception);
+  CHECK_THROWS_AS(passport_.GetMpid(name), std::exception);
 
-  CHECK_NOTHROW(passport_.CreateSelectableFobPair(name));
+  CHECK_NOTHROW(passport_.CreateMpid(name));
 
-  passport_.DeleteSelectableFobPair(name);
+  passport_.DeleteMpid(name);
 
-  CHECK_THROWS_AS(passport_.GetSelectableFob<Mpid>(name), std::exception);
-  CHECK_THROWS_AS(passport_.GetSelectableFob<Anmpid>(name), std::exception);
+  CHECK_THROWS_AS(passport_.GetMpid(name), std::exception);
+  CHECK_THROWS_AS(passport_.GetAnmpid(name), std::exception);
 
-  CHECK_NOTHROW(passport_.CreateSelectableFobPair(name));
-  CHECK_THROWS_AS(passport_.CreateSelectableFobPair(name), std::exception);
+  CHECK_NOTHROW(passport_.CreateMpid(name));
+  CHECK_THROWS_AS(passport_.CreateMpid(name), std::exception);
 
-  CHECK_NOTHROW(passport_.GetSelectableFob<Mpid>(name));
-  CHECK_NOTHROW(passport_.GetSelectableFob<Anmpid>(name));
+  CHECK_NOTHROW(passport_.GetMpid(name));
+  CHECK_NOTHROW(passport_.GetAnmpid(name));
 
-  passport_.DeleteSelectableFobPair(name);
+  passport_.DeleteMpid(name);
 
-  CHECK_THROWS_AS(passport_.GetSelectableFob<Mpid>(name), std::exception);
-  CHECK_THROWS_AS(passport_.GetSelectableFob<Anmpid>(name), std::exception);
+  CHECK_THROWS_AS(passport_.GetMpid(name), std::exception);
+  CHECK_THROWS_AS(passport_.GetAnmpid(name), std::exception);
 }
 
 TEST_CASE_METHOD(PassportTest, "Multiple SelectableFobs",
@@ -223,20 +187,20 @@ TEST_CASE_METHOD(PassportTest, "Multiple SelectableFobs",
   }
 
   for (uint16_t i(0); i < cutoff; ++i) {
-    passport_.CreateSelectableFobPair(names.at(i));
+    passport_.CreateMpid(names.at(i));
   }
   for (uint16_t i(0); i < cutoff; ++i) {
-    CHECK_NOTHROW(passport_.GetSelectableFob<Mpid>(names.at(i)));
-    CHECK_NOTHROW(passport_.GetSelectableFob<Anmpid>(names.at(i)));
+    CHECK_NOTHROW(passport_.GetMpid(names.at(i)));
+    CHECK_NOTHROW(passport_.GetAnmpid(names.at(i)));
   }
 
   for (uint16_t i(cutoff); i < max_value; ++i) {
-    passport_.CreateSelectableFobPair(names.at(i));
+    passport_.CreateMpid(names.at(i));
   }
 
   for (uint16_t i(0); i < max_value; ++i) {
-    CHECK_NOTHROW(passport_.GetSelectableFob<Mpid>(names.at(i)));
-    CHECK_NOTHROW(passport_.GetSelectableFob<Anmpid>(names.at(i)));
+    CHECK_NOTHROW(passport_.GetMpid(names.at(i)));
+    CHECK_NOTHROW(passport_.GetAnmpid(names.at(i)));
   }
 }
 
@@ -261,11 +225,9 @@ class PassportParallelTest : public PassportTest {
   void ConsistentFobStates() {
     try {
       LOG(kInfo) << "Trying ConsistentFobStates...";
-      passport_.Get<Anmid>();
-      passport_.Get<Ansmid>();
-      passport_.Get<Antmid>();
       passport_.Get<Anmaid>();
       passport_.Get<Maid>();
+      passport_.Get<Anpmid>();
       passport_.Get<Pmid>();
       LOG(kInfo) << "...ConsistentFobStates successful";
     }
@@ -277,8 +239,8 @@ class PassportParallelTest : public PassportTest {
   void ConsistentSelectableFobStates(const NonEmptyString& name) {
     try {
       LOG(kInfo) << "Trying ConsistentSelectableFobStates...";
-      passport_.GetSelectableFob<Mpid>(name);
-      passport_.GetSelectableFob<Anmpid>(name);
+      passport_.GetMpid(name);
+      passport_.GetAnmpid(name);
       LOG(kInfo) << "...ConsistentSelectableFobStates successful";
     }
     catch (const std::exception&) {
@@ -295,9 +257,9 @@ class PassportParallelTest : public PassportTest {
 
 TEST_CASE_METHOD(PassportParallelTest, "Parallel get and delete", "[Passport][Functional]") {
   {
-    auto a1 = std::async([&] { return passport_.CreateSelectableFobPair(name_1_); });
-    auto a2 = std::async([&] { return passport_.CreateSelectableFobPair(name_2_); });
-    auto a3 = std::async([&] { return passport_.CreateSelectableFobPair(name_5_); });
+    auto a1 = std::async([&] { return passport_.CreateMpid(name_1_); });
+    auto a2 = std::async([&] { return passport_.CreateMpid(name_2_); });
+    auto a3 = std::async([&] { return passport_.CreateMpid(name_5_); });
     a3.get();
     a2.get();
     a1.get();
@@ -306,13 +268,13 @@ TEST_CASE_METHOD(PassportParallelTest, "Parallel get and delete", "[Passport][Fu
   TestFobs fobs(GetFobs());
 
   {
-    auto a1 = std::async([&] { return passport_.GetSelectableFob<Anmpid>(name_1_); });
+    auto a1 = std::async([&] { return passport_.GetAnmpid(name_1_); });
     auto a2 = std::async([&] {
-      return std::make_shared<Mpid>(passport_.GetSelectableFob<Mpid>(name_1_));
+      return std::make_shared<Mpid>(passport_.GetMpid(name_1_));
     });
-    auto a3 = std::async([&] { return passport_.GetSelectableFob<Anmpid>(name_5_); });
+    auto a3 = std::async([&] { return passport_.GetAnmpid(name_5_); });
     auto a4 = std::async([&] {
-      return std::make_shared<Mpid>(passport_.GetSelectableFob<Mpid>(name_5_));
+      return std::make_shared<Mpid>(passport_.GetMpid(name_5_));
     });
     a4.get();
     a3.get();
@@ -322,28 +284,28 @@ TEST_CASE_METHOD(PassportParallelTest, "Parallel get and delete", "[Passport][Fu
 
   TestFobs identical_fobs(GetFobs());
   CHECK(AllFobFieldsMatch(fobs, identical_fobs));
-  passport_.CreateSelectableFobPair(name_3_);
+  passport_.CreateMpid(name_3_);
 
   {
-    auto a1 = std::async([&] { return passport_.CreateSelectableFobPair(name_4_); });
-    auto a2 = std::async([&] { return passport_.DeleteSelectableFobPair(name_1_); });
-    auto a3 = std::async([&] { return passport_.DeleteSelectableFobPair(name_2_); });
+    auto a1 = std::async([&] { return passport_.CreateMpid(name_4_); });
+    auto a2 = std::async([&] { return passport_.DeleteMpid(name_1_); });
+    auto a3 = std::async([&] { return passport_.DeleteMpid(name_2_); });
     a3.get();
     a2.get();
     a1.get();
   }
 
-  CHECK_NOTHROW(Passport test(Passport(passport_.Serialise())));
+  CHECK_NOTHROW(Passport(passport_.Serialise()));
 }
 
 TEST_CASE_METHOD(PassportParallelTest, "Parallel serialise and parse", "[Passport][Functional]") {
-  passport_.CreateSelectableFobPair(name_1_);
-  passport_.CreateSelectableFobPair(name_2_);
+  passport_.CreateMpid(name_1_);
+  passport_.CreateMpid(name_2_);
   NonEmptyString serialised;
   {
-    auto a1 = std::async([&] { return passport_.CreateSelectableFobPair(name_3_); });
+    auto a1 = std::async([&] { return passport_.CreateMpid(name_3_); });
     auto a2 = std::async([&] { return passport_.Serialise(); });
-    auto a3 = std::async([&] { return passport_.DeleteSelectableFobPair(name_1_); });
+    auto a3 = std::async([&] { return passport_.DeleteMpid(name_1_); });
     a3.get();
     serialised = a2.get();
     a1.get();
@@ -353,27 +315,27 @@ TEST_CASE_METHOD(PassportParallelTest, "Parallel serialise and parse", "[Passpor
 
   Passport passport(serialised);
 
-  passport.CreateSelectableFobPair(name_5_);
+  passport.CreateMpid(name_5_);
 
   {
-    auto a1 = std::async([&] { return passport.CreateSelectableFobPair(name_4_); });
-    auto a2 = std::async([&] { return passport.GetSelectableFob<Anmpid>(name_5_); });
+    auto a1 = std::async([&] { return passport.CreateMpid(name_4_); });
+    auto a2 = std::async([&] { return passport.GetAnmpid(name_5_); });
     auto a3 = std::async([&] {
-      return std::make_shared<Mpid>(passport.GetSelectableFob<Mpid>(name_5_));
+      return std::make_shared<Mpid>(passport.GetMpid(name_5_));
     });
     a3.get();
     a2.get();
     a1.get();
   }
 
-  CHECK_NOTHROW(Passport test(passport_.Serialise()));
+  CHECK_NOTHROW(Passport(passport_.Serialise()));
 }
 
 TEST_CASE_METHOD(PassportTest, "Serialise and parse with no Selectables",
                  "[Passport][Functional]") {
   TestFobs fobs1(GetFobs());
 
-  CHECK_NOTHROW(Passport test(Passport(passport_.Serialise())));
+  CHECK_NOTHROW(Passport(passport_.Serialise()));
 
   TestFobs fobs2(GetFobs());
 
@@ -391,7 +353,7 @@ TEST_CASE_METHOD(PassportTest, "Serialise and parse with Selectables", "[Passpor
   std::vector<NonEmptyString> names;
   for (uint16_t i(0); i < 20; ++i) {  // choice of max value?
     NonEmptyString name(RandomAlphaNumericString(static_cast<size_t>(i + 1)));
-    passport_.CreateSelectableFobPair(name);
+    passport_.CreateMpid(name);
     names.push_back(name);
   }
 
@@ -400,19 +362,19 @@ TEST_CASE_METHOD(PassportTest, "Serialise and parse with Selectables", "[Passpor
   std::vector<Anmpid> anmpids1;
   std::vector<Mpid> mpids1;
   for (auto name : names) {
-    anmpids1.push_back(passport_.GetSelectableFob<Anmpid>(name));
-    mpids1.push_back(passport_.GetSelectableFob<Mpid>(name));
+    anmpids1.push_back(passport_.GetAnmpid(name));
+    mpids1.push_back(passport_.GetMpid(name));
   }
 
-  CHECK_NOTHROW(Passport test(Passport(passport_.Serialise())));
+  CHECK_NOTHROW(Passport(passport_.Serialise()));
 
   TestFobs fobs2(GetFobs());
 
   std::vector<Anmpid> anmpids2;
   std::vector<Mpid> mpids2;
   for (auto name : names) {
-    anmpids2.push_back(passport_.GetSelectableFob<Anmpid>(name));
-    mpids2.push_back(passport_.GetSelectableFob<Mpid>(name));
+    anmpids2.push_back(passport_.GetAnmpid(name));
+    mpids2.push_back(passport_.GetMpid(name));
   }
 
   CHECK(AllFobFieldsMatch(fobs1, fobs2));
@@ -425,46 +387,38 @@ TEST_CASE_METHOD(PassportTest, "Serialise and parse with Selectables", "[Passpor
 
 TEST_CASE_METHOD(PassportTest, "Parse an invalid string", "[Passport][Behavioural]") {
   NonEmptyString bad_string(RandomAlphaNumericString(1 + RandomUint32() % 1000));
-  CHECK_THROWS_AS(Passport test((Passport(bad_string))), std::exception);
+  CHECK_THROWS_AS(Passport(bad_string), std::exception);
 }
 
 class PassportParsePbTest : public PassportTest {
  public:
   PassportParsePbTest()
-      : anmid_(),
-        ansmid_(),
-        antmid_(),
-        anmaid_(),
+      : anmaid_(),
         maid_(anmaid_),
-        pmid_(maid_),
+        anpmid_(),
+        pmid_(anpmid_),
         proto_passport_() {}
 
-  void GenerateSixFobs(uint16_t bad_index = 7) {  // generate all good fobs by default
-    for (uint16_t i(0); i < 6; ++i) {
+  void GenerateFourFobs(uint16_t bad_index = 5) {  // generate all good fobs by default
+    for (uint16_t i(0); i < 4; ++i) {
       auto proto_fob(proto_passport_.add_fob());
       uint16_t type(i);
       if (i == bad_index) {
         while (type == i)
-          type = RandomUint32() % 6;
+          type = RandomUint32() % 4;
         LOG(kInfo) << "Entry in position " << bad_index << " will be of type " << type;
       }
       switch (type) {
         case 0:
-          anmid_.ToProtobuf(proto_fob);
-          break;
-        case 1:
-          ansmid_.ToProtobuf(proto_fob);
-          break;
-        case 2:
-          antmid_.ToProtobuf(proto_fob);
-          break;
-        case 3:
           anmaid_.ToProtobuf(proto_fob);
           break;
-        case 4:
+        case 1:
           maid_.ToProtobuf(proto_fob);
           break;
-        case 5:
+        case 2:
+          anpmid_.ToProtobuf(proto_fob);
+          break;
+        case 3:
           pmid_.ToProtobuf(proto_fob);
           break;
         default:
@@ -473,17 +427,15 @@ class PassportParsePbTest : public PassportTest {
     }
   }
 
-  Anmid anmid_;
-  Ansmid ansmid_;
-  Antmid antmid_;
   Anmaid anmaid_;
   Maid maid_;
+  Anpmid anpmid_;
   Pmid pmid_;
   pb::Passport proto_passport_;
 };
 
 TEST_CASE_METHOD(PassportParsePbTest, "Serialise and parse Passport", "[Passport][Behavioural]") {
-  GenerateSixFobs();
+  GenerateFourFobs();
 
   NonEmptyString name(RandomAlphaNumericString(1 + RandomUint32() % 20));
   Anmpid anmpid;
@@ -496,56 +448,30 @@ TEST_CASE_METHOD(PassportParsePbTest, "Serialise and parse Passport", "[Passport
   auto proto_mpid(proto_public_identity->mutable_mpid());
   mpid.ToProtobuf(proto_mpid);
 
-  CHECK_NOTHROW(Passport test(Passport(NonEmptyString(proto_passport_.SerializeAsString()))));;
+  CHECK_NOTHROW(Passport(NonEmptyString(proto_passport_.SerializeAsString())));
+}
+
+TEST_CASE_METHOD(PassportParsePbTest, "Serialise and parse two Fobs", "[Passport][Behavioural]") {
+  auto proto_fob(proto_passport_.add_fob());
+  anmaid_.ToProtobuf(proto_fob);
+  proto_fob = proto_passport_.add_fob();
+  maid_.ToProtobuf(proto_fob);
+
+  CHECK_THROWS_AS(Passport(NonEmptyString(proto_passport_.SerializeAsString())), std::exception);
 }
 
 TEST_CASE_METHOD(PassportParsePbTest, "Serialise and parse five Fobs", "[Passport][Behavioural]") {
-  auto proto_fob(proto_passport_.add_fob());
-  anmid_.ToProtobuf(proto_fob);
-  proto_fob = proto_passport_.add_fob();
-  ansmid_.ToProtobuf(proto_fob);
-  proto_fob = proto_passport_.add_fob();
-  antmid_.ToProtobuf(proto_fob);
-  proto_fob = proto_passport_.add_fob();
-  anmaid_.ToProtobuf(proto_fob);
-  proto_fob = proto_passport_.add_fob();
-  maid_.ToProtobuf(proto_fob);
-
-  CHECK_THROWS_AS(Passport test((Passport(NonEmptyString(proto_passport_.SerializeAsString())))),
-                             std::exception);
-}
-
-TEST_CASE_METHOD(PassportParsePbTest, "Serialise and parse seven Fobs", "[Passport][Behavioural]") {
-  GenerateSixFobs();
+  GenerateFourFobs();
   auto proto_fob(proto_passport_.add_fob());
   pmid_.ToProtobuf(proto_fob);
 
-  CHECK_THROWS_AS(Passport test((Passport(NonEmptyString(proto_passport_.SerializeAsString())))),
-                             std::exception);
+  CHECK_THROWS_AS(Passport(NonEmptyString(proto_passport_.SerializeAsString())), std::exception);
 }
 
 TEST_CASE_METHOD(PassportParsePbTest, "Parse re-ordered Fobs", "[Passport][Behavioural]") {
-  GenerateSixFobs(RandomUint32() % 6);
+  GenerateFourFobs(RandomUint32() % 4);
 
-  CHECK_THROWS_AS(Passport test((Passport(NonEmptyString(proto_passport_.SerializeAsString())))),
-                             std::exception);
-}
-
-TEST_CASE_METHOD(PassportParsePbTest, "Serialise and parse a Passport with a SelectableFob",
-                 "[Passport][Behavioural]") {
-  auto proto_fob(proto_passport_.add_fob());
-  anmid_.ToProtobuf(proto_fob);
-  proto_fob = proto_passport_.add_fob();
-  ansmid_.ToProtobuf(proto_fob);
-  proto_fob = proto_passport_.add_fob();
-  antmid_.ToProtobuf(proto_fob);
-  proto_fob = proto_passport_.add_fob();
-  anmaid_.ToProtobuf(proto_fob);
-  proto_fob = proto_passport_.add_fob();
-  maid_.ToProtobuf(proto_fob);
-  proto_fob = proto_passport_.add_fob();
-  pmid_.ToProtobuf(proto_fob);
-  CHECK_NOTHROW(Passport test((Passport(NonEmptyString(proto_passport_.SerializeAsString())))));
+  CHECK_THROWS_AS(Passport(NonEmptyString(proto_passport_.SerializeAsString())), std::exception);
 }
 
 TEST_CASE("Serialise an uninitialised Passport", "[Passport][Behavioural]") {
@@ -556,32 +482,24 @@ TEST_CASE("Serialise an uninitialised Passport", "[Passport][Behavioural]") {
 class PassportSerialiseTest {
  public:
   PassportSerialiseTest()
-      : anmid_(),
-        ansmid_(),
-        antmid_(),
-        anmaid_(),
+      : anmaid_(),
         maid_(anmaid_),
-        pmid_(maid_),
+        anpmid_(),
+        pmid_(anpmid_),
         proto_passport_() {
     auto proto_fob(proto_passport_.add_fob());
-    anmid_.ToProtobuf(proto_fob);
-    proto_fob = proto_passport_.add_fob();
-    ansmid_.ToProtobuf(proto_fob);
-    proto_fob = proto_passport_.add_fob();
-    antmid_.ToProtobuf(proto_fob);
-    proto_fob = proto_passport_.add_fob();
     anmaid_.ToProtobuf(proto_fob);
     proto_fob = proto_passport_.add_fob();
     maid_.ToProtobuf(proto_fob);
     proto_fob = proto_passport_.add_fob();
+    anpmid_.ToProtobuf(proto_fob);
+    proto_fob = proto_passport_.add_fob();
     pmid_.ToProtobuf(proto_fob);
   }
 
-  Anmid anmid_;
-  Ansmid ansmid_;
-  Antmid antmid_;
   Anmaid anmaid_;
   Maid maid_;
+  Anpmid anpmid_;
   Pmid pmid_;
   pb::Passport proto_passport_;
 };

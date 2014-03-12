@@ -22,7 +22,9 @@
 #include "maidsafe/passport/detail/passport.pb.h"
 
 namespace maidsafe {
+
 namespace passport {
+
 namespace detail {
 
 void PublicFobFromProtobuf(const NonEmptyString& serialised_public_fob, DataTagValue enum_value,
@@ -46,5 +48,7 @@ NonEmptyString PublicFobToProtobuf(DataTagValue enum_value, const asymm::PublicK
 }
 
 }  // namespace detail
+
 }  // namespace passport
+
 }  // namespace maidsafe

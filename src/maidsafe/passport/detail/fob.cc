@@ -22,7 +22,9 @@
 #include "maidsafe/passport/detail/passport.pb.h"
 
 namespace maidsafe {
+
 namespace passport {
+
 namespace detail {
 
 Identity CreateFobName(const asymm::PublicKey& public_key,
@@ -62,31 +64,24 @@ void FobToProtobuf(DataTagValue enum_value, const asymm::Keys& keys,
   proto_fob->set_validation_token(validation_token.string());
 }
 
-Fob<MpidTag>::Fob(const Fob<MpidTag>& other)
-    : keys_(other.keys_), validation_token_(other.validation_token_), name_(other.name_) {}
 
-Fob<MpidTag>::Fob(const NonEmptyString& chosen_name, const signer_type& signing_fob)
+
+Fob<MpidTag>::Fob(const NonEmptyString& chosen_name, const Signer& signing_fob)
     : keys_(asymm::GenerateKeyPair()),
       validation_token_(asymm::Sign(asymm::PlainText(asymm::EncodeKey(keys_.public_key)),
                                     signing_fob.private_key())),
       name_(CreateMpidName(chosen_name)) {}
 
-Fob<MpidTag>& Fob<MpidTag>::operator=(const Fob<MpidTag>& other) {
-  keys_ = other.keys_;
-  validation_token_ = other.validation_token_;
-  name_ = other.name_;
-  return *this;
-}
+Fob<MpidTag>::Fob(const Fob<MpidTag>& other)
+    : keys_(other.keys_), validation_token_(other.validation_token_), name_(other.name_) {}
 
 Fob<MpidTag>::Fob(Fob<MpidTag>&& other)
     : keys_(std::move(other.keys_)),
       validation_token_(std::move(other.validation_token_)),
       name_(std::move(other.name_)) {}
 
-Fob<MpidTag>& Fob<MpidTag>::operator=(Fob<MpidTag>&& other) {
-  keys_ = std::move(other.keys_);
-  validation_token_ = std::move(other.validation_token_);
-  name_ = std::move(other.name_);
+Fob<MpidTag>& Fob<MpidTag>::operator=(Fob<MpidTag> other) {
+  swap(*this, other);
   return *this;
 }
 
@@ -99,6 +94,8 @@ Fob<MpidTag>::Fob(const protobuf::Fob& proto_fob) : keys_(), validation_token_()
 void Fob<MpidTag>::ToProtobuf(protobuf::Fob* proto_fob) const {
   FobToProtobuf(MpidTag::kValue, keys_, validation_token_, name_->string(), proto_fob);
 }
+
+
 
 NonEmptyString SerialisePmid(const Fob<PmidTag>& pmid) {
   protobuf::Fob proto_fob;
@@ -138,6 +135,18 @@ Fob<MaidTag> ParseMaid(const NonEmptyString& serialised_maid) {
   return Fob<MaidTag>(proto_fob);
 }
 
+NonEmptyString SerialiseAnpmid(const Fob<AnpmidTag>& anpmid) {
+  protobuf::Fob proto_fob;
+  anpmid.ToProtobuf(&proto_fob);
+  return NonEmptyString(proto_fob.SerializeAsString());
+}
+
+Fob<AnpmidTag> ParseAnpmid(const NonEmptyString& serialised_anpmid) {
+  protobuf::Fob proto_fob;
+  proto_fob.ParseFromString(serialised_anpmid.string());
+  return Fob<AnpmidTag>(proto_fob);
+}
+
 std::vector<Fob<PmidTag>> ReadPmidList(const boost::filesystem::path& file_path) {
   std::vector<Fob<PmidTag>> pmid_list;
   protobuf::PmidList pmid_list_msg;
@@ -160,6 +169,7 @@ bool WritePmidList(const boost::filesystem::path& file_path,
 AnmaidToPmid ParseKeys(const protobuf::KeyChainList::KeyChain& key_chain) {
   return std::move(AnmaidToPmid(ParseAnmaid(NonEmptyString(key_chain.anmaid())),
                                 ParseMaid(NonEmptyString(key_chain.maid())),
+                                ParseAnpmid(NonEmptyString(key_chain.anpmid())),
                                 ParsePmid(NonEmptyString(key_chain.pmid()))));
 }
 
@@ -179,24 +189,10 @@ bool WriteKeyChainList(const boost::filesystem::path& file_path,
     auto entry = keychain_list_msg.add_keychains();
     entry->set_anmaid(SerialiseAnmaid(keychain.anmaid).string());
     entry->set_maid(SerialiseMaid(keychain.maid).string());
+    entry->set_anpmid(SerialiseAnpmid(keychain.anpmid).string());
     entry->set_pmid(SerialisePmid(keychain.pmid).string());
   }
   return WriteFile(file_path, keychain_list_msg.SerializeAsString());
-}
-
-template <>
-std::string DebugString<Fob<AnmidTag>::Name>(const Fob<AnmidTag>::Name& name) {
-  return "[" + HexSubstr(name.value) + " Anmid] ";
-}
-
-template <>
-std::string DebugString<Fob<AnsmidTag>::Name>(const Fob<AnsmidTag>::Name& name) {
-  return "[" + HexSubstr(name.value) + " Ansmid]";
-}
-
-template <>
-std::string DebugString<Fob<AntmidTag>::Name>(const Fob<AntmidTag>::Name& name) {
-  return "[" + HexSubstr(name.value) + " Antmid]";
 }
 
 template <>
@@ -207,6 +203,11 @@ std::string DebugString<Fob<AnmaidTag>::Name>(const Fob<AnmaidTag>::Name& name) 
 template <>
 std::string DebugString<Fob<MaidTag>::Name>(const Fob<MaidTag>::Name& name) {
   return "[" + HexSubstr(name.value) + " Maid]  ";
+}
+
+template <>
+std::string DebugString<Fob<AnpmidTag>::Name>(const Fob<AnpmidTag>::Name& name) {
+  return "[" + HexSubstr(name.value) + " Anpmid]";
 }
 
 template <>
@@ -227,5 +228,7 @@ std::string DebugString<Fob<MpidTag>::Name>(const Fob<MpidTag>::Name& name) {
 #endif  // TESTING
 
 }  // namespace detail
+
 }  // namespace passport
+
 }  // namespace maidsafe

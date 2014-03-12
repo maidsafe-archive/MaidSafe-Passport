@@ -35,64 +35,50 @@ namespace passport {
 namespace test {
 
 TEST_CASE("Fob generation and validation", "[Fob][Behavioural]") {
-  Anmid anmid;
-  Ansmid ansmid;
-  Antmid antmid;
   Anmaid anmaid;
   Maid maid(anmaid);
-  Pmid pmid(maid);
+  Anpmid anpmid;
+  Pmid pmid(anpmid);
   Anmpid anmpid;
   Mpid mpid(NonEmptyString(RandomAlphaNumericString(1 + RandomUint32() % 100)), anmpid);
 
-  Anmid anmid1(anmid);
-  Ansmid ansmid1(ansmid);
-  Antmid antmid1(antmid);
   Anmaid anmaid1(anmaid);
   Maid maid1(maid);
-  Pmid pmid1(pmid);
+  Anpmid anpmid1;
+  Pmid pmid1(anpmid1);
   Anmpid anmpid1(anmpid);
   Mpid mpid1(mpid);
 
-  Anmid anmid2(std::move(anmid1));
-  Ansmid ansmid2(std::move(ansmid1));
-  Antmid antmid2(std::move(antmid1));
   Anmaid anmaid2(std::move(anmaid1));
   Maid maid2(std::move(maid1));
+  Anpmid anpmid2(std::move(anpmid1));
   Pmid pmid2(std::move(pmid1));
   Anmpid anmpid2(std::move(anmpid1));
   Mpid mpid2(std::move(mpid1));
 
-  anmid1 = anmid;
-  ansmid1 = ansmid;
-  antmid1 = antmid;
   anmaid1 = anmaid;
   maid1 = maid;
+  anpmid1 = anpmid;
   pmid1 = pmid;
   anmpid1 = anmpid;
   mpid1 = mpid;
 
-  anmid2 = std::move(anmid1);
-  ansmid2 = std::move(ansmid1);
-  antmid2 = std::move(antmid1);
   anmaid2 = std::move(anmaid1);
   maid2 = std::move(maid1);
+  anpmid2 = std::move(anpmid1);
   pmid2 = std::move(pmid1);
   anmpid2 = std::move(anmpid1);
   mpid2 = std::move(mpid1);
 
-  static_assert(!is_short_term_cacheable<Anmid>::value, "");
-  static_assert(!is_short_term_cacheable<Ansmid>::value, "");
-  static_assert(!is_short_term_cacheable<Antmid>::value, "");
   static_assert(!is_short_term_cacheable<Anmaid>::value, "");
   static_assert(!is_short_term_cacheable<Maid>::value, "");
+  static_assert(!is_short_term_cacheable<Anpmid>::value, "");
   static_assert(!is_short_term_cacheable<Pmid>::value, "");
   static_assert(!is_short_term_cacheable<Anmpid>::value, "");
   static_assert(!is_short_term_cacheable<Mpid>::value, "");
-  static_assert(!is_long_term_cacheable<Anmid>::value, "");
-  static_assert(!is_long_term_cacheable<Ansmid>::value, "");
-  static_assert(!is_long_term_cacheable<Antmid>::value, "");
   static_assert(!is_long_term_cacheable<Anmaid>::value, "");
   static_assert(!is_long_term_cacheable<Maid>::value, "");
+  static_assert(!is_long_term_cacheable<Anpmid>::value, "");
   static_assert(!is_long_term_cacheable<Pmid>::value, "");
   static_assert(!is_long_term_cacheable<Anmpid>::value, "");
   static_assert(!is_long_term_cacheable<Mpid>::value, "");
@@ -124,20 +110,16 @@ bool CheckSerialisationAndParsing(Fobtype fob) {
 }
 
 TEST_CASE("Fob serialisation and parsing", "[Fob][Behavioural]") {
-  Anmid anmid;
-  Ansmid ansmid;
-  Antmid antmid;
   Anmaid anmaid;
   Maid maid(anmaid);
-  Pmid pmid(maid);
+  Anpmid anpmid;
+  Pmid pmid(anpmid);
   Anmpid anmpid;
   Mpid mpid(NonEmptyString(RandomAlphaNumericString(1 + RandomUint32() % 100)), anmpid);
 
-  CHECK(CheckSerialisationAndParsing(anmid));
-  CHECK(CheckSerialisationAndParsing(ansmid));
-  CHECK(CheckSerialisationAndParsing(antmid));
   CHECK(CheckSerialisationAndParsing(anmaid));
   CHECK(CheckSerialisationAndParsing(maid));
+  CHECK(CheckSerialisationAndParsing(anpmid));
   CHECK(CheckSerialisationAndParsing(pmid));
   CHECK(CheckSerialisationAndParsing(anmpid));
   CHECK(CheckSerialisationAndParsing(mpid));
@@ -179,22 +161,18 @@ bool CheckNamingAndValidation(Fobtype fob, asymm::PublicKey signer_public_key,
 }
 
 TEST_CASE("Fob naming and validation", "[Fob][Behavioural]") {
-  Anmid anmid;
-  Ansmid ansmid;
-  Antmid antmid;
   Anmaid anmaid;
   Maid maid(anmaid);
-  Pmid pmid(maid);
+  Anpmid anpmid;
+  Pmid pmid(anpmid);
   Anmpid anmpid;
   NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 100));
   Mpid mpid(chosen_name, anmpid);
 
-  CHECK(CheckNamingAndValidation(anmid));
-  CHECK(CheckNamingAndValidation(ansmid));
-  CHECK(CheckNamingAndValidation(antmid));
   CHECK(CheckNamingAndValidation(anmaid));
   CHECK(CheckNamingAndValidation(maid, anmaid.public_key()));
-  CHECK(CheckNamingAndValidation(pmid, maid.public_key()));
+  CHECK(CheckNamingAndValidation(anpmid));
+  CHECK(CheckNamingAndValidation(pmid, anpmid.public_key()));
   CHECK(CheckNamingAndValidation(anmpid));
   CHECK(CheckNamingAndValidation(mpid, anmpid.public_key(), chosen_name));
 }

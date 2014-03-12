@@ -38,7 +38,9 @@
 #include "maidsafe/passport/detail/safe_allocators.h"
 
 namespace maidsafe {
+
 namespace passport {
+
 namespace detail {
 
 typedef std::basic_string<char, std::char_traits<char>, safe_allocator<char>> SafeString;
@@ -342,7 +344,9 @@ typedef SecureInputString<std::greater_equal<SecureString::size_type>, 1> Keywor
 typedef SecureInputString<std::greater_equal<SecureString::size_type>, 1> Pin;
 
 }  // namespace detail
+
 }  // namespace passport
+
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_PASSPORT_DETAIL_SECURE_STRING_H_

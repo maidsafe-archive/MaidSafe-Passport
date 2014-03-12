@@ -33,73 +33,57 @@ namespace passport {
 namespace test {
 
 TEST_CASE("Generate and validate PublicFobs", "[Public Fob][Behavioural]") {
-  Anmid anmid;
-  Ansmid ansmid;
-  Antmid antmid;
   Anmaid anmaid;
   Maid maid(anmaid);
-  Pmid pmid(maid);
+  Anpmid anpmid;
+  Pmid pmid(anpmid);
   Anmpid anmpid;
   Mpid mpid(NonEmptyString(RandomAlphaNumericString(1 + RandomUint32() % 100)), anmpid);
 
-  PublicAnmid public_anmid(anmid);
-  PublicAnsmid public_ansmid(ansmid);
-  PublicAntmid public_antmid(antmid);
   PublicAnmaid public_anmaid(anmaid);
   PublicMaid public_maid(maid);
+  PublicAnpmid public_anpmid(anpmid);
   PublicPmid public_pmid(pmid);
   PublicAnmpid public_anmpid(anmpid);
   PublicMpid public_mpid(mpid);
 
-  PublicAnmid public_anmid1(public_anmid);
-  PublicAnsmid public_ansmid1(public_ansmid);
-  PublicAntmid public_antmid1(public_antmid);
   PublicAnmaid public_anmaid1(public_anmaid);
   PublicMaid public_maid1(public_maid);
+  PublicAnpmid public_anpmid1(public_anpmid);
   PublicPmid public_pmid1(public_pmid);
   PublicAnmpid public_anmpid1(public_anmpid);
   PublicMpid public_mpid1(public_mpid);
 
-  PublicAnmid public_anmid2(std::move(public_anmid1));
-  PublicAnsmid public_ansmid2(std::move(public_ansmid1));
-  PublicAntmid public_antmid2(std::move(public_antmid1));
   PublicAnmaid public_anmaid2(std::move(public_anmaid1));
   PublicMaid public_maid2(std::move(public_maid1));
+  PublicAnpmid public_anpmid2(std::move(public_anpmid1));
   PublicPmid public_pmid2(std::move(public_pmid1));
   PublicAnmpid public_anmpid2(std::move(public_anmpid1));
   PublicMpid public_mpid2(std::move(public_mpid1));
 
-  public_anmid1 = public_anmid;
-  public_ansmid1 = public_ansmid;
-  public_antmid1 = public_antmid;
   public_anmaid1 = public_anmaid;
   public_maid1 = public_maid;
+  public_anpmid1 = public_anpmid;
   public_pmid1 = public_pmid;
   public_anmpid1 = public_anmpid;
   public_mpid1 = public_mpid;
 
-  public_anmid2 = std::move(public_anmid1);
-  public_ansmid2 = std::move(public_ansmid1);
-  public_antmid2 = std::move(public_antmid1);
   public_anmaid2 = std::move(public_anmaid1);
   public_maid2 = std::move(public_maid1);
+  public_anpmid2 = std::move(public_anpmid1);
   public_pmid2 = std::move(public_pmid1);
   public_anmpid2 = std::move(public_anmpid1);
   public_mpid2 = std::move(public_mpid1);
 
-  static_assert(is_short_term_cacheable<PublicAnmid>::value, "");
-  static_assert(is_short_term_cacheable<PublicAnsmid>::value, "");
-  static_assert(is_short_term_cacheable<PublicAntmid>::value, "");
-  static_assert(is_short_term_cacheable<PublicAnmaid>::value, "");
+  static_assert(!is_short_term_cacheable<PublicAnmaid>::value, "");
   static_assert(is_short_term_cacheable<PublicMaid>::value, "");
-  static_assert(!is_short_term_cacheable<PublicPmid>::value, "");
-  static_assert(is_short_term_cacheable<PublicAnmpid>::value, "");
+  static_assert(!is_short_term_cacheable<PublicAnpmid>::value, "");
+  static_assert(is_short_term_cacheable<PublicPmid>::value, "");
+  static_assert(!is_short_term_cacheable<PublicAnmpid>::value, "");
   static_assert(is_short_term_cacheable<PublicMpid>::value, "");
-  static_assert(!is_long_term_cacheable<PublicAnmid>::value, "");
-  static_assert(!is_long_term_cacheable<PublicAnsmid>::value, "");
-  static_assert(!is_long_term_cacheable<PublicAntmid>::value, "");
   static_assert(!is_long_term_cacheable<PublicAnmaid>::value, "");
   static_assert(!is_long_term_cacheable<PublicMaid>::value, "");
+  static_assert(!is_long_term_cacheable<PublicAnpmid>::value, "");
   static_assert(!is_long_term_cacheable<PublicPmid>::value, "");
   static_assert(!is_long_term_cacheable<PublicAnmpid>::value, "");
   static_assert(!is_long_term_cacheable<PublicMpid>::value, "");
@@ -127,29 +111,23 @@ bool CheckSerialisationAndParsing(PublicFobType public_fob) {
 }
 
 TEST_CASE("PublicFob serialisation and parsing", "[Public Fob][Behavioural]") {
-  Anmid anmid;
-  Ansmid ansmid;
-  Antmid antmid;
   Anmaid anmaid;
   Maid maid(anmaid);
-  Pmid pmid(maid);
+  Anpmid anpmid;
+  Pmid pmid(anpmid);
   Anmpid anmpid;
   Mpid mpid(NonEmptyString(RandomAlphaNumericString(1 + RandomUint32() % 100)), anmpid);
 
-  PublicAnmid public_anmid(anmid);
-  PublicAnsmid public_ansmid(ansmid);
-  PublicAntmid public_antmid(antmid);
   PublicAnmaid public_anmaid(anmaid);
   PublicMaid public_maid(maid);
+  PublicAnpmid public_anpmid(anpmid);
   PublicPmid public_pmid(pmid);
   PublicAnmpid public_anmpid(anmpid);
   PublicMpid public_mpid(mpid);
 
-  CHECK(CheckSerialisationAndParsing(public_anmid));
-  CHECK(CheckSerialisationAndParsing(public_ansmid));
-  CHECK(CheckSerialisationAndParsing(public_antmid));
   CHECK(CheckSerialisationAndParsing(public_anmaid));
   CHECK(CheckSerialisationAndParsing(public_maid));
+  CHECK(CheckSerialisationAndParsing(public_anpmid));
   CHECK(CheckSerialisationAndParsing(public_pmid));
   CHECK(CheckSerialisationAndParsing(public_anmpid));
   CHECK(CheckSerialisationAndParsing(public_mpid));
@@ -158,22 +136,18 @@ TEST_CASE("PublicFob serialisation and parsing", "[Public Fob][Behavioural]") {
 TEST_CASE("Construct PublicFobs from invalid strings", "[Public Fob][Behavioural]") {
   Identity name(RandomString(64));
   NonEmptyString string(RandomAlphaNumericString(1 + RandomUint32() % 100));
-  CHECK_THROWS_AS(PublicAnmid(PublicAnmid::Name(name), PublicAnmid::serialised_type(string)),
-               std::exception);
-  CHECK_THROWS_AS(PublicAnsmid(PublicAnsmid::Name(name), PublicAnsmid::serialised_type(string)),
-               std::exception);
-  CHECK_THROWS_AS(PublicAntmid(PublicAntmid::Name(name), PublicAntmid::serialised_type(string)),
-               std::exception);
   CHECK_THROWS_AS(PublicAnmaid(PublicAnmaid::Name(name), PublicAnmaid::serialised_type(string)),
-               std::exception);
+                  std::exception);
   CHECK_THROWS_AS(PublicMaid(PublicMaid::Name(name), PublicMaid::serialised_type(string)),
-               std::exception);
+                  std::exception);
+  CHECK_THROWS_AS(PublicAnpmid(PublicAnpmid::Name(name), PublicAnpmid::serialised_type(string)),
+                  std::exception);
   CHECK_THROWS_AS(PublicPmid(PublicPmid::Name(name), PublicPmid::serialised_type(string)),
-               std::exception);
+                  std::exception);
   CHECK_THROWS_AS(PublicAnmpid(PublicAnmpid::Name(name), PublicAnmpid::serialised_type(string)),
-               std::exception);
+                  std::exception);
   CHECK_THROWS_AS(PublicMpid(PublicMpid::Name(name), PublicMpid::serialised_type(string)),
-               std::exception);
+                  std::exception);
 }
 
 TEST_CASE("Construct PublicFobs from uninitialised strings", "[Public Fob][Behavioural]") {
@@ -182,19 +156,13 @@ TEST_CASE("Construct PublicFobs from uninitialised strings", "[Public Fob][Behav
   NonEmptyString uninitialised_string;
   NonEmptyString string(RandomAlphaNumericString(1 + RandomUint32() % 100));
   CHECK_THROWS_AS(
-      PublicAnmid(PublicAnmid::Name(name), (PublicAnmid::serialised_type(uninitialised_string))),
-      std::exception);
-  CHECK_THROWS_AS(
-      PublicAnsmid(PublicAnsmid::Name(name), (PublicAnsmid::serialised_type(uninitialised_string))),
-      std::exception);
-  CHECK_THROWS_AS(
-      PublicAntmid(PublicAntmid::Name(name), (PublicAntmid::serialised_type(uninitialised_string))),
-      std::exception);
-  CHECK_THROWS_AS(
       PublicAnmaid(PublicAnmaid::Name(name), (PublicAnmaid::serialised_type(uninitialised_string))),
       std::exception);
   CHECK_THROWS_AS(
       PublicMaid(PublicMaid::Name(name), (PublicMaid::serialised_type(uninitialised_string))),
+      std::exception);
+  CHECK_THROWS_AS(
+      PublicAnpmid(PublicAnpmid::Name(name), (PublicAnpmid::serialised_type(uninitialised_string))),
       std::exception);
   CHECK_THROWS_AS(
       PublicPmid(PublicPmid::Name(name), (PublicPmid::serialised_type(uninitialised_string))),
@@ -207,19 +175,13 @@ TEST_CASE("Construct PublicFobs from uninitialised strings", "[Public Fob][Behav
       std::exception);
 
   CHECK_THROWS_AS(
-      PublicAnmid(PublicAnmid::Name(uninitialised_name), (PublicAnmid::serialised_type(string))),
-      std::exception);
-  CHECK_THROWS_AS(
-      PublicAnsmid(PublicAnsmid::Name(uninitialised_name), (PublicAnsmid::serialised_type(string))),
-      std::exception);
-  CHECK_THROWS_AS(
-      PublicAntmid(PublicAntmid::Name(uninitialised_name), (PublicAntmid::serialised_type(string))),
-      std::exception);
-  CHECK_THROWS_AS(
       PublicAnmaid(PublicAnmaid::Name(uninitialised_name), (PublicAnmaid::serialised_type(string))),
       std::exception);
   CHECK_THROWS_AS(
       PublicMaid(PublicMaid::Name(uninitialised_name), (PublicMaid::serialised_type(string))),
+      std::exception);
+  CHECK_THROWS_AS(
+      PublicAnpmid(PublicAnpmid::Name(uninitialised_name), (PublicAnpmid::serialised_type(string))),
       std::exception);
   CHECK_THROWS_AS(
       PublicPmid(PublicPmid::Name(uninitialised_name), (PublicPmid::serialised_type(string))),

@@ -28,7 +28,9 @@
 #include "maidsafe/passport/detail/secure_string.h"
 
 namespace maidsafe {
+
 namespace passport {
+
 namespace test {
 
 typedef passport::detail::SecureString SecureString;
@@ -344,5 +346,7 @@ TEST_CASE("Insert invalid PIN value", "[SecureString][Unit]") {
 }
 
 }  // namespace test
+
 }  // namespace passport
+
 }  // namespace maidsafe

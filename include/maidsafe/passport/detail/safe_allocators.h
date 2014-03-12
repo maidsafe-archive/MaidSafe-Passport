@@ -38,7 +38,9 @@
 #include <mutex>
 
 namespace maidsafe {
+
 namespace passport {
+
 namespace detail {
 
 // Thread-safe class to keep track of locked (ie, non-swappable) memory pages.
@@ -252,7 +254,9 @@ struct zero_after_free_allocator : public std::allocator<T> {
 // typedef std::basic_string<char, std::char_traits<char>, safe_allocator<char> > SecureString;
 
 }  // namespace detail
+
 }  // namespace passport
+
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_PASSPORT_DETAIL_SAFE_ALLOCATORS_H_

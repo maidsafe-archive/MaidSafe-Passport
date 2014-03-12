@@ -28,7 +28,9 @@
 #include "maidsafe/passport/detail/fob.h"
 
 namespace maidsafe {
+
 namespace passport {
+
 namespace detail {
 
 void PublicFobFromProtobuf(const NonEmptyString& serialised_public_fob, DataTagValue enum_value,
@@ -42,17 +44,49 @@ class PublicFob {
  public:
   typedef maidsafe::detail::Name<PublicFob> Name;
   typedef TagType Tag;
-  typedef typename Signer<Tag>::type signer_type;
+  typedef Fob<typename SignerFob<TagType>::Tag> Signer;
   typedef TaggedValue<NonEmptyString, Tag> serialised_type;
 
-  PublicFob(const PublicFob& other);
-  PublicFob& operator=(const PublicFob& other);
-  PublicFob(PublicFob&& other);
-  PublicFob& operator=(PublicFob&& other);
+  PublicFob(const PublicFob& other)
+      : name_(other.name_),
+        public_key_(other.public_key_),
+        validation_token_(other.validation_token_) {}
 
-  explicit PublicFob(const Fob<Tag>& fob);
-  PublicFob(Name name, const serialised_type& serialised_public_fob);
-  serialised_type Serialise() const;
+  PublicFob(PublicFob&& other)
+      : name_(std::move(other.name_)),
+        public_key_(std::move(other.public_key_)),
+        validation_token_(std::move(other.validation_token_)) {}
+
+  friend void swap(PublicFob& lhs, PublicFob& rhs) {
+    using std::swap;
+    swap(lhs.name_, rhs.name_);
+    swap(lhs.public_key_, rhs.public_key_);
+    swap(lhs.validation_token_, rhs.validation_token_);
+  }
+
+  PublicFob& operator=(PublicFob other) {
+    swap(*this, other);
+    return *this;
+  }
+
+  explicit PublicFob(const Fob<Tag>& fob)
+      : name_(fob.name()),
+        public_key_(fob.public_key()),
+        validation_token_(fob.validation_token()) {}
+
+  // TODO(Fraser#5#): 2012-12-21 - Once MSVC eventually handles delegating constructors, we can make
+  //                  this more efficient by using a lambda which returns the parsed protobuf
+  //                  inside a private constructor taking a single arg of type protobuf.
+  PublicFob(Name name, const serialised_type& serialised_public_fob)
+      : name_(std::move(name)), public_key_(), validation_token_() {
+    if (!name_->IsInitialised())
+      BOOST_THROW_EXCEPTION(MakeError(PassportErrors::fob_parsing_error));
+    PublicFobFromProtobuf(serialised_public_fob.data, Tag::kValue, public_key_, validation_token_);
+  }
+
+  serialised_type Serialise() const {
+    return serialised_type(PublicFobToProtobuf(Tag::kValue, public_key_, validation_token_));
+  }
 
   Name name() const { return name_; }
   asymm::PublicKey public_key() const { return public_key_; }
@@ -65,56 +99,10 @@ class PublicFob {
   asymm::Signature validation_token_;
 };
 
-template <typename Tag>
-PublicFob<Tag>::PublicFob(const PublicFob<Tag>& other)
-    : name_(other.name_),
-      public_key_(other.public_key_),
-      validation_token_(other.validation_token_) {}
-
-template <typename Tag>
-PublicFob<Tag>& PublicFob<Tag>::operator=(const PublicFob<Tag>& other) {
-  name_ = other.name_;
-  public_key_ = other.public_key_;
-  validation_token_ = other.validation_token_;
-  return *this;
-}
-
-template <typename Tag>
-PublicFob<Tag>::PublicFob(PublicFob<Tag>&& other)
-    : name_(std::move(other.name_)),
-      public_key_(std::move(other.public_key_)),
-      validation_token_(std::move(other.validation_token_)) {}
-
-template <typename Tag>
-PublicFob<Tag>& PublicFob<Tag>::operator=(PublicFob<Tag>&& other) {
-  name_ = std::move(other.name_);
-  public_key_ = std::move(other.public_key_);
-  validation_token_ = std::move(other.validation_token_);
-  return *this;
-}
-
-template <typename Tag>
-PublicFob<Tag>::PublicFob(const Fob<Tag>& fob)
-    : name_(fob.name()), public_key_(fob.public_key()), validation_token_(fob.validation_token()) {}
-
-// TODO(Fraser#5#): 2012-12-21 - Once MSVC eventually handles delegating constructors, we can make
-//                  this more efficient by using a lambda which returns the parsed protobuf
-//                  inside a private constructor taking a single arg of type protobuf.
-template <typename TagType>
-PublicFob<TagType>::PublicFob(Name name, const serialised_type& serialised_public_fob)
-    : name_(std::move(name)), public_key_(), validation_token_() {
-  if (!name_->IsInitialised())
-    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::fob_parsing_error));
-  PublicFobFromProtobuf(serialised_public_fob.data, Tag::kValue, public_key_, validation_token_);
-}
-
-template <typename Tag>
-typename PublicFob<Tag>::serialised_type PublicFob<Tag>::Serialise() const {
-  return serialised_type(PublicFobToProtobuf(Tag::kValue, public_key_, validation_token_));
-}
-
 }  // namespace detail
+
 }  // namespace passport
+
 }  // namespace maidsafe
 
 #endif  // MAIDSAFE_PASSPORT_DETAIL_PUBLIC_FOB_H_
