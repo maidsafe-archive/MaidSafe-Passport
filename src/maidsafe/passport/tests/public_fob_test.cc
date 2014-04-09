@@ -103,27 +103,38 @@ bool CheckSerialisationAndParsing(PublicFobType public_fob) {
     LOG(kError) << "Validation tokens don't match.";
     return false;
   }
-  if (!rsa::MatchingKeys(public_fob.public_key(), public_fob2.public_key())) {
+  if (!asymm::MatchingKeys(public_fob.public_key(), public_fob2.public_key())) {
     LOG(kError) << "Public keys don't match.";
     return false;
   }
   return true;
 }
 
+template <typename PublicFobType, typename SerialisedType>
+void CheckParsingFromWrongType(PublicFobType& public_fob, SerialisedType serialised_public_fob) {
+  static_assert(!std::is_same<typename PublicFobType::Tag,
+    typename SerialisedType::tag_type>::value,
+    "The test is designed to be passed different types.");
+  Identity name{ public_fob.name().value };
+  NonEmptyString serialised_string(serialised_public_fob.data);
+  public_fob = PublicFobType{ typename PublicFobType::Name{ name },
+    typename PublicFobType::serialised_type{ serialised_string } };
+}
+
 TEST_CASE("PublicFob serialisation and parsing", "[Public Fob][Behavioural]") {
   Anmaid anmaid;
-  Maid maid(anmaid);
+  Maid maid{ anmaid };
   Anpmid anpmid;
-  Pmid pmid(anpmid);
+  Pmid pmid{ anpmid };
   Anmpid anmpid;
-  Mpid mpid(NonEmptyString(RandomAlphaNumericString(1 + RandomUint32() % 100)), anmpid);
+  Mpid mpid{ NonEmptyString{ RandomAlphaNumericString(1 + RandomUint32() % 100) }, anmpid };
 
-  PublicAnmaid public_anmaid(anmaid);
-  PublicMaid public_maid(maid);
-  PublicAnpmid public_anpmid(anpmid);
-  PublicPmid public_pmid(pmid);
-  PublicAnmpid public_anmpid(anmpid);
-  PublicMpid public_mpid(mpid);
+  PublicAnmaid public_anmaid{ anmaid };
+  PublicMaid public_maid{ maid };
+  PublicAnpmid public_anpmid{ anpmid };
+  PublicPmid public_pmid{ pmid };
+  PublicAnmpid public_anmpid{ anmpid };
+  PublicMpid public_mpid{ mpid };
 
   CHECK(CheckSerialisationAndParsing(public_anmaid));
   CHECK(CheckSerialisationAndParsing(public_maid));
@@ -131,6 +142,49 @@ TEST_CASE("PublicFob serialisation and parsing", "[Public Fob][Behavioural]") {
   CHECK(CheckSerialisationAndParsing(public_pmid));
   CHECK(CheckSerialisationAndParsing(public_anmpid));
   CHECK(CheckSerialisationAndParsing(public_mpid));
+
+  PublicAnmaid::serialised_type serialised_anmaid{ public_anmaid.Serialise() };
+  PublicMaid::serialised_type serialised_maid{ public_maid.Serialise() };
+  PublicAnpmid::serialised_type serialised_anpmid{ public_anpmid.Serialise() };
+  PublicPmid::serialised_type serialised_pmid{ public_pmid.Serialise() };
+  PublicAnmpid::serialised_type serialised_anmpid{ public_anmpid.Serialise() };
+  PublicMpid::serialised_type serialised_mpid{ public_mpid.Serialise() };
+
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anmaid, serialised_maid), passport_error);
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anmaid, serialised_anpmid), passport_error);
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anmaid, serialised_pmid), passport_error);
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anmaid, serialised_anmpid), passport_error);
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anmaid, serialised_mpid), passport_error);
+
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_maid, serialised_anmaid), passport_error);
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_maid, serialised_anpmid), passport_error);
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_maid, serialised_pmid), passport_error);
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_maid, serialised_anmpid), passport_error);
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_maid, serialised_mpid), passport_error);
+
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anpmid, serialised_anmaid), passport_error);
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anpmid, serialised_maid), passport_error);
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anpmid, serialised_pmid), passport_error);
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anpmid, serialised_anmpid), passport_error);
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anpmid, serialised_mpid), passport_error);
+
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_pmid, serialised_anmaid), passport_error);
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_pmid, serialised_maid), passport_error);
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_pmid, serialised_anpmid), passport_error);
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_pmid, serialised_anmpid), passport_error);
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_pmid, serialised_mpid), passport_error);
+
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anmpid, serialised_anmaid), passport_error);
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anmpid, serialised_maid), passport_error);
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anmpid, serialised_anpmid), passport_error);
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anmpid, serialised_pmid), passport_error);
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anmpid, serialised_mpid), passport_error);
+
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_mpid, serialised_anmaid), passport_error);
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_mpid, serialised_maid), passport_error);
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_mpid, serialised_anpmid), passport_error);
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_mpid, serialised_pmid), passport_error);
+  CHECK_THROWS_AS(CheckParsingFromWrongType(public_mpid, serialised_anmpid), passport_error);
 }
 
 TEST_CASE("Construct PublicFobs from invalid strings", "[Public Fob][Behavioural]") {

@@ -94,11 +94,11 @@ bool CheckSerialisationAndParsing(Fobtype fob) {
     LOG(kError) << "Validation tokens don't match.";
     return false;
   }
-  if (!rsa::MatchingKeys(fob.private_key(), fob2.private_key())) {
+  if (!asymm::MatchingKeys(fob.private_key(), fob2.private_key())) {
     LOG(kError) << "Private keys don't match.";
     return false;
   }
-  if (!rsa::MatchingKeys(fob.public_key(), fob2.public_key())) {
+  if (!asymm::MatchingKeys(fob.public_key(), fob2.public_key())) {
     LOG(kError) << "Public keys don't match.";
     return false;
   }

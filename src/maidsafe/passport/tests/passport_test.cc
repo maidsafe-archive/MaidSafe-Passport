@@ -41,8 +41,8 @@ namespace test {
 template <typename Fobtype>
 bool AllFieldsMatch(const Fobtype& lhs, const Fobtype& rhs) {
   return (lhs.validation_token() == rhs.validation_token() &&
-      rsa::MatchingKeys(lhs.private_key(), rhs.private_key()) &&
-      rsa::MatchingKeys(lhs.public_key(), rhs.public_key()) &&
+      asymm::MatchingKeys(lhs.private_key(), rhs.private_key()) &&
+      asymm::MatchingKeys(lhs.public_key(), rhs.public_key()) &&
       lhs.name() == rhs.name());
 }
 
@@ -52,11 +52,11 @@ bool NoFieldsMatch(const Fobtype& lhs, const Fobtype& rhs) {
     LOG(kError) << "Validation tokens match.";
     return false;
   }
-  if (rsa::MatchingKeys(lhs.private_key(), rhs.private_key())) {
+  if (asymm::MatchingKeys(lhs.private_key(), rhs.private_key())) {
     LOG(kError) << "Private keys match.";
     return false;
   }
-  if (rsa::MatchingKeys(lhs.public_key(), rhs.public_key())) {
+  if (asymm::MatchingKeys(lhs.public_key(), rhs.public_key())) {
     LOG(kError) << "Public keys match.";
     return false;
   }

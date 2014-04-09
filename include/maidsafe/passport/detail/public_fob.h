@@ -74,9 +74,6 @@ class PublicFob {
         public_key_(fob.public_key()),
         validation_token_(fob.validation_token()) {}
 
-  // TODO(Fraser#5#): 2012-12-21 - Once MSVC eventually handles delegating constructors, we can make
-  //                  this more efficient by using a lambda which returns the parsed protobuf
-  //                  inside a private constructor taking a single arg of type protobuf.
   PublicFob(Name name, const serialised_type& serialised_public_fob)
       : name_(std::move(name)), public_key_(), validation_token_() {
     if (!name_->IsInitialised())

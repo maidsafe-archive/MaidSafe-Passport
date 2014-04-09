@@ -39,21 +39,25 @@ typedef maidsafe::detail::Tag<DataTagValue::kMpidValue> MpidTag;
 template <typename TagType, class Enable = void>
 class Fob {};
 
+// Keys are by default self-signed.
 template <typename TagType>
 struct SignerFob {
   typedef TagType Tag;
 };
 
+// Maid is signed by Anmaid
 template <>
 struct SignerFob<MaidTag> {
   typedef AnmaidTag Tag;
 };
 
+// Pmid is signed by Anpmid
 template <>
 struct SignerFob<PmidTag> {
   typedef AnpmidTag Tag;
 };
 
+// Mpid is signed by Anmpid
 template <>
 struct SignerFob<MpidTag> {
   typedef AnmpidTag Tag;
