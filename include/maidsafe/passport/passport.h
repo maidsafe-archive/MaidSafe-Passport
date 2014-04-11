@@ -30,7 +30,6 @@
 
 #include "maidsafe/passport/types.h"
 #include "maidsafe/passport/detail/fob.h"
-#include "maidsafe/passport/detail/secure_string.h"
 
 namespace maidsafe {
 

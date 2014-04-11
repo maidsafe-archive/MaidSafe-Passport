@@ -152,17 +152,15 @@ std::vector<Fob<PmidTag>> ReadPmidList(const boost::filesystem::path& file_path)
   protobuf::PmidList pmid_list_msg;
   pmid_list_msg.ParseFromString(ReadFile(file_path).string());
   for (int i = 0; i < pmid_list_msg.pmids_size(); ++i)
-    pmid_list.push_back(std::move(ParsePmid(NonEmptyString(pmid_list_msg.pmids(i).pmid()))));
+    pmid_list.push_back(std::move(ParsePmid(NonEmptyString(pmid_list_msg.pmids(i)))));
   return pmid_list;
 }
 
 bool WritePmidList(const boost::filesystem::path& file_path,
                    const std::vector<Fob<PmidTag>>& pmid_list) {
   protobuf::PmidList pmid_list_msg;
-  for (auto& pmid : pmid_list) {
-    auto entry = pmid_list_msg.add_pmids();
-    entry->set_pmid(SerialisePmid(pmid).string());
-  }
+  for (auto& pmid : pmid_list)
+    pmid_list_msg.add_pmids()->assign(SerialisePmid(pmid).string());
   return WriteFile(file_path, pmid_list_msg.SerializeAsString());
 }
 

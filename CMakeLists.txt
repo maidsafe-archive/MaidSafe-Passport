@@ -50,7 +50,7 @@ ms_glob_dir(PassportTests ${PassportSourcesDir}/tests Tests)
 #==================================================================================================#
 ms_add_static_library(maidsafe_passport ${PassportAllFiles} ${PassportDetailAllFiles})
 target_include_directories(maidsafe_passport PUBLIC ${PROJECT_SOURCE_DIR}/include PRIVATE ${PROJECT_SOURCE_DIR}/src)
-target_link_libraries(maidsafe_passport maidsafe_common ${BoostRegexLibs})
+target_link_libraries(maidsafe_passport maidsafe_common)
 
 if(MaidsafeTesting)
   ms_add_executable(test_passport "Tests/Passport" ${PassportTestsAllFiles})

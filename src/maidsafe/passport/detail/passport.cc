@@ -24,6 +24,7 @@
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
+#include "maidsafe/common/make_unique.h"
 #include "maidsafe/common/utils.h"
 
 #include "maidsafe/passport/detail/passport.pb.h"
@@ -37,10 +38,10 @@ NonEmptyString SerialisePmid(const Pmid& pmid) { return detail::SerialisePmid(pm
 Pmid ParsePmid(const NonEmptyString& serialised_pmid) { return detail::ParsePmid(serialised_pmid); }
 
 Passport::Passport()
-    : anmaid_(new Anmaid),
-      maid_(new Maid(*anmaid_)),
-      anpmid_(new Anpmid),
-      pmid_(new Pmid(*anpmid_)),
+    : anmaid_(maidsafe::make_unique<Anmaid>()),
+      maid_(maidsafe::make_unique<Maid>(*anmaid_)),
+      anpmid_(maidsafe::make_unique<Anpmid>()),
+      pmid_(maidsafe::make_unique<Pmid>(*anpmid_)),
       selectable_fobs_(),
       fobs_mutex_(),
       selectable_fobs_mutex_() {}
@@ -66,21 +67,21 @@ Passport::Passport(const NonEmptyString& serialised_passport)
   }
 
   std::lock(fobs_mutex_, selectable_fobs_mutex_);
-  std::lock_guard<std::mutex> fobs_lock(fobs_mutex_, std::adopt_lock);
-  std::lock_guard<std::mutex> selectable_fobs_lock(selectable_fobs_mutex_, std::adopt_lock);
+  std::lock_guard<std::mutex> fobs_lock{ fobs_mutex_, std::adopt_lock };
+  std::lock_guard<std::mutex> selectable_fobs_lock{ selectable_fobs_mutex_, std::adopt_lock };
 
-  anmaid_.reset(new Anmaid(proto_passport.fob(0)));
-  maid_.reset(new Maid(proto_passport.fob(1)));
-  anpmid_.reset(new Anpmid(proto_passport.fob(2)));
-  pmid_.reset(new Pmid(proto_passport.fob(3)));
+  anmaid_ = maidsafe::make_unique<Anmaid>(proto_passport.fob(0));
+  maid_ = maidsafe::make_unique<Maid>(proto_passport.fob(1));
+  anpmid_ = maidsafe::make_unique<Anpmid>(proto_passport.fob(2));
+  pmid_ = maidsafe::make_unique<Pmid>(proto_passport.fob(3));
 
   assert(NoFobsNull());
 
   for (int i(0); i != proto_passport.public_identity_size(); ++i) {
-    NonEmptyString public_id(proto_passport.public_identity(i).public_id());
+    NonEmptyString public_id{ proto_passport.public_identity(i).public_id() };
     SelectableFobPair fob;
-    fob.anmpid.reset(new Anmpid(proto_passport.public_identity(i).anmpid()));
-    fob.mpid.reset(new Mpid(proto_passport.public_identity(i).mpid()));
+    fob.anmpid = maidsafe::make_unique<Anmpid>(proto_passport.public_identity(i).anmpid());
+    fob.mpid = maidsafe::make_unique<Mpid>(proto_passport.public_identity(i).mpid());
     selectable_fobs_[public_id] = std::move(fob);
   }
 }
@@ -110,10 +111,10 @@ NonEmptyString Passport::Serialise() const {
   assert(NoFobsNull());
 
   std::lock(fobs_mutex_, selectable_fobs_mutex_);
-  std::lock_guard<std::mutex> fobs_lock(fobs_mutex_, std::adopt_lock);
-  std::lock_guard<std::mutex> selectable_fobs_lock(selectable_fobs_mutex_, std::adopt_lock);
+  std::lock_guard<std::mutex> fobs_lock{ fobs_mutex_, std::adopt_lock };
+  std::lock_guard<std::mutex> selectable_fobs_lock{ selectable_fobs_mutex_, std::adopt_lock };
 
-  auto proto_fob(proto_passport.add_fob());
+  detail::protobuf::Fob* proto_fob{ proto_passport.add_fob() };
   anmaid_->ToProtobuf(proto_fob);
   proto_fob = proto_passport.add_fob();
   maid_->ToProtobuf(proto_fob);
@@ -122,23 +123,21 @@ NonEmptyString Passport::Serialise() const {
   proto_fob = proto_passport.add_fob();
   pmid_->ToProtobuf(proto_fob);
 
-  for (auto& selectable_fob : selectable_fobs_) {
+  for (const auto& selectable_fob : selectable_fobs_) {
     assert(selectable_fob.second.anmpid);
     assert(selectable_fob.second.mpid);
-    auto proto_public_identity(proto_passport.add_public_identity());
+    detail::protobuf::PublicIdentity* proto_public_identity{ proto_passport.add_public_identity() };
     proto_public_identity->set_public_id(selectable_fob.first.string());
-    auto proto_anmpid(proto_public_identity->mutable_anmpid());
-    selectable_fob.second.anmpid->ToProtobuf(proto_anmpid);
-    auto proto_mpid(proto_public_identity->mutable_mpid());
-    selectable_fob.second.mpid->ToProtobuf(proto_mpid);
+    selectable_fob.second.anmpid->ToProtobuf(proto_public_identity->mutable_anmpid());
+    selectable_fob.second.mpid->ToProtobuf(proto_public_identity->mutable_mpid());
   }
 
-  return NonEmptyString(proto_passport.SerializeAsString());
+  return NonEmptyString{ proto_passport.SerializeAsString() };
 }
 
 template <>
 Anmaid Passport::Get<Anmaid>() const {
-  std::lock_guard<std::mutex> lock(fobs_mutex_);
+  std::lock_guard<std::mutex> lock{ fobs_mutex_ };
   if (!anmaid_)
     BOOST_THROW_EXCEPTION(MakeError(PassportErrors::uninitialised_fob));
   return *anmaid_;
@@ -146,7 +145,7 @@ Anmaid Passport::Get<Anmaid>() const {
 
 template <>
 Maid Passport::Get<Maid>() const {
-  std::lock_guard<std::mutex> lock(fobs_mutex_);
+  std::lock_guard<std::mutex> lock{ fobs_mutex_ };
   if (!maid_)
     BOOST_THROW_EXCEPTION(MakeError(PassportErrors::uninitialised_fob));
   return *maid_;
@@ -154,7 +153,7 @@ Maid Passport::Get<Maid>() const {
 
 template <>
 Anpmid Passport::Get<Anpmid>() const {
-  std::lock_guard<std::mutex> lock(fobs_mutex_);
+  std::lock_guard<std::mutex> lock{ fobs_mutex_ };
   if (!anpmid_)
     BOOST_THROW_EXCEPTION(MakeError(PassportErrors::uninitialised_fob));
   return *anpmid_;
@@ -162,7 +161,7 @@ Anpmid Passport::Get<Anpmid>() const {
 
 template <>
 Pmid Passport::Get<Pmid>() const {
-  std::lock_guard<std::mutex> lock(fobs_mutex_);
+  std::lock_guard<std::mutex> lock{ fobs_mutex_ };
   if (!pmid_)
     BOOST_THROW_EXCEPTION(MakeError(PassportErrors::uninitialised_fob));
   return *pmid_;

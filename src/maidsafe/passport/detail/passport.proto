@@ -43,25 +43,12 @@ message PublicFob {
   required bytes validation_token = 3;
 }
 
-message Mid {
-  required uint32 type = 1;
-  required bytes encrypted_tmid_name = 2;
-  required bytes validation_token = 3;
-}
-
-message Tmid {
-  required uint32 type = 1;
-  required bytes encrypted_session = 2;
-  required bytes validation_token = 3;
-}
-
+// Only used for testing
 message PmidList {
-  message Pmid {
-    required bytes pmid = 1;
-  }
-  repeated Pmid pmids = 1;
+  repeated bytes pmids = 1;
 }
 
+// Only used for testing
 message KeyChainList {
   message KeyChain {
     required bytes anmaid = 1;
