@@ -310,8 +310,94 @@ TEST_CASE("Encrypt", "[Passport][Behavioural]") {
     CHECK(AllFieldsMatch(*mpids_itr++, (*mpids_and_signers_itr++).first));
 }
 
-TEST_CASE("Parallel", "[Passport][Behavioural]") {
-  FAIL();
+TEST_CASE("Parallel adds, encrypts and removes", "[Passport][Behavioural]") {
+  MaidAndSigner maid_and_signer{ CreateMaidAndSigner() };
+  Passport passport{ maid_and_signer };
+  std::vector<std::future<void>> add_futures;
+  std::vector<std::future<std::unique_ptr<Maid>>> get_maid_futures;
+  std::vector<std::future<std::vector<Pmid>>> get_pmids_futures;
+  std::vector<std::future<std::vector<Mpid>>> get_mpids_futures;
+
+  // Add Pmids, Mpids and replace Maid while getting all
+  std::vector<PmidAndSigner> pmids_and_signers;
+  std::vector<MpidAndSigner> mpids_and_signers;
+  for (size_t i(0); i < 3; ++i) {
+    pmids_and_signers.emplace_back(CreatePmidAndSigner());
+    mpids_and_signers.emplace_back(CreateMpidAndSigner(NonEmptyString{ std::to_string(i) }));
+  }
+
+  for (size_t i(0); i < 3; ++i) {
+    add_futures.emplace_back(std::async(std::launch::async,
+        [&, i] { passport.AddKeyAndSigner(pmids_and_signers[i]); }));
+    add_futures.emplace_back(std::async(std::launch::async,
+        [&, i] { passport.AddKeyAndSigner(mpids_and_signers[i]); }));
+    get_maid_futures.emplace_back(std::async(std::launch::async,
+        [&] { return maidsafe::make_unique<Maid>(passport.GetMaid()); }));
+    get_pmids_futures.emplace_back(std::async(std::launch::async,
+        [&] { return passport.GetPmids(); }));
+    get_mpids_futures.emplace_back(std::async(std::launch::async,
+        [&] { return passport.GetMpids(); }));
+  }
+  MaidAndSigner new_maid_and_signer{ CreateMaidAndSigner() };
+  std::future<Anmaid> replace_maid_future{ std::async(std::launch::async,
+      [&] { return passport.ReplaceMaidAndSigner(maid_and_signer.first, new_maid_and_signer); }) };
+
+  for (auto& add_future : add_futures) {
+    CHECK_NOTHROW(add_future.get());
+  }
+  for (auto& get_maid_future : get_maid_futures) {
+    CHECK_NOTHROW(get_maid_future.get());
+  }
+  for (auto& get_pmids_future : get_pmids_futures) {
+    CHECK_NOTHROW(get_pmids_future.get());
+  }
+  for (auto& get_mpids_future : get_mpids_futures) {
+    CHECK_NOTHROW(get_mpids_future.get());
+  }
+  CHECK_NOTHROW(replace_maid_future.get());
+
+  // Remove Pmids, Mpids while encrypting and getting all
+  get_maid_futures.clear();
+  get_pmids_futures.clear();
+  get_mpids_futures.clear();
+  std::vector<std::future<Anpmid>> remove_pmids_futures;
+  std::vector<std::future<Anmpid>> remove_mpids_futures;
+  std::vector<std::future<crypto::CipherText>> encrypt_futures;
+  authentication::UserCredentials user_credentials{ CreateUserCredentials() };
+
+  for (size_t i(0); i < 3; ++i) {
+    remove_pmids_futures.emplace_back(std::async(std::launch::async,
+        [&, i] { return passport.RemoveKeyAndSigner(pmids_and_signers[i].first); }));
+    remove_mpids_futures.emplace_back(std::async(std::launch::async,
+        [&, i] { return passport.RemoveKeyAndSigner(mpids_and_signers[i].first); }));
+    encrypt_futures.emplace_back(std::async(std::launch::async,
+        [&] { return passport.Encrypt(user_credentials); }));
+    get_maid_futures.emplace_back(std::async(std::launch::async,
+        [&] { return maidsafe::make_unique<Maid>(passport.GetMaid()); }));
+    get_pmids_futures.emplace_back(std::async(std::launch::async,
+        [&] { return passport.GetPmids(); }));
+    get_mpids_futures.emplace_back(std::async(std::launch::async,
+        [&] { return passport.GetMpids(); }));
+  }
+
+  for (auto& remove_pmids_future : remove_pmids_futures) {
+    CHECK_NOTHROW(remove_pmids_future.get());
+  }
+  for (auto& remove_mpids_future : remove_mpids_futures) {
+    CHECK_NOTHROW(remove_mpids_future.get());
+  }
+  for (auto& encrypt_future : encrypt_futures) {
+    CHECK_NOTHROW(encrypt_future.get());
+  }
+  for (auto& get_maid_future : get_maid_futures) {
+    CHECK_NOTHROW(get_maid_future.get());
+  }
+  for (auto& get_pmids_future : get_pmids_futures) {
+    CHECK_NOTHROW(get_pmids_future.get());
+  }
+  for (auto& get_mpids_future : get_mpids_futures) {
+    CHECK_NOTHROW(get_mpids_future.get());
+  }
 }
 
 }  // namespace test
