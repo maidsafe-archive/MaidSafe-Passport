@@ -61,7 +61,6 @@ struct SignerFob<PmidTag> {
 template <>
 struct SignerFob<MpidTag> {
   typedef AnmpidTag Tag;
-  typedef Fob<Tag> type;
 };
 
 #ifdef TESTING

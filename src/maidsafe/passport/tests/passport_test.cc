@@ -24,8 +24,10 @@
 
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
+#include "maidsafe/common/make_unique.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
+#include "maidsafe/common/authentication/user_credentials.h"
 
 #include "maidsafe/passport/detail/fob.h"
 #include "maidsafe/passport/detail/passport.pb.h"
@@ -40,10 +42,97 @@ namespace test {
 
 template <typename Fobtype>
 bool AllFieldsMatch(const Fobtype& lhs, const Fobtype& rhs) {
-  return (lhs.validation_token() == rhs.validation_token() &&
-      asymm::MatchingKeys(lhs.private_key(), rhs.private_key()) &&
-      asymm::MatchingKeys(lhs.public_key(), rhs.public_key()) &&
-      lhs.name() == rhs.name());
+  return lhs.validation_token() == rhs.validation_token() &&
+         asymm::MatchingKeys(lhs.private_key(), rhs.private_key()) &&
+         asymm::MatchingKeys(lhs.public_key(), rhs.public_key()) &&
+         lhs.name() == rhs.name();
+}
+
+TEST_CASE("Free functions", "[Passport][Behavioural]") {
+  CreateMaidAndSigner();
+  CreateMpidAndSigner(NonEmptyString{ RandomString((RandomUint32() % 100) + 1) });
+  PmidAndSigner pmid_and_signer{ CreatePmidAndSigner() };
+  NonEmptyString serialised_pmid{ maidsafe::passport::SerialisePmid(pmid_and_signer.first) };
+  Pmid pmid{ maidsafe::passport::ParsePmid(serialised_pmid) };
+  CHECK(AllFieldsMatch(pmid_and_signer.first, pmid));
+}
+
+authentication::UserCredentials CreateUserCredentials() {
+  authentication::UserCredentials user_credentials;
+  user_credentials.keyword = maidsafe::make_unique<authentication::UserCredentials::Keyword>(
+      RandomAlphaNumericString((RandomUint32() % 100) + 1));
+  user_credentials.pin = maidsafe::make_unique<authentication::UserCredentials::Pin>(
+      std::to_string(RandomUint32()));
+  user_credentials.password = maidsafe::make_unique<authentication::UserCredentials::Password>(
+      RandomAlphaNumericString((RandomUint32() % 100) + 1));
+  return user_credentials;
+}
+
+TEST_CASE("Constructors, basic encrypt, setters and getters", "[Passport][Behavioural]") {
+  MaidAndSigner maid_and_signer{ CreateMaidAndSigner() };
+  Passport passport{ maid_and_signer };
+  CHECK(AllFieldsMatch(passport.GetMaid(), maid_and_signer.first));
+  CHECK(passport.GetPmids().empty());
+  CHECK(passport.GetMpids().empty());
+
+  // Encrypt/decrypt with just a Maid and Anmaid
+  authentication::UserCredentials user_credentials{ CreateUserCredentials() };
+  crypto::CipherText encrypted_passport{ passport.Encrypt(user_credentials) };
+  CHECK(encrypted_passport->IsInitialised());
+  Passport decrypted_passport{ encrypted_passport, user_credentials };
+  CHECK(AllFieldsMatch(decrypted_passport.GetMaid(), maid_and_signer.first));
+  CHECK(decrypted_passport.GetPmids().empty());
+  CHECK(decrypted_passport.GetMpids().empty());
+
+  // Add Pmids, check getters and encrypt/decrypt
+  std::vector<PmidAndSigner> pmids_and_signers;
+  for (size_t i(0); i < 3; ++i) {
+    pmids_and_signers.emplace_back(CreatePmidAndSigner());
+    if (i != 0) {
+      PmidAndSigner duplicate_anpmid{ std::make_pair(pmids_and_signers.back().first,
+                                                     pmids_and_signers.front().second) };
+      CHECK_THROWS_AS(passport.AddKeyAndSigner(duplicate_anpmid), maidsafe_error);
+      PmidAndSigner duplicate_pmid{ std::make_pair(pmids_and_signers.front().first,
+                                                   pmids_and_signers.back().second) };
+      CHECK_THROWS_AS(passport.AddKeyAndSigner(duplicate_pmid), maidsafe_error);
+    }
+    CHECK_NOTHROW(passport.AddKeyAndSigner(pmids_and_signers.back()));
+    REQUIRE(passport.GetPmids().size() == pmids_and_signers.size());
+    CHECK(AllFieldsMatch(passport.GetPmids().back(), pmids_and_signers.back().first));
+    CHECK_THROWS_AS(passport.AddKeyAndSigner(pmids_and_signers.back()), maidsafe_error);
+    encrypted_passport = passport.Encrypt(user_credentials);
+    CHECK(encrypted_passport->IsInitialised());
+    Passport decrypted{ encrypted_passport, user_credentials };
+    CHECK(AllFieldsMatch(decrypted.GetMaid(), maid_and_signer.first));
+    REQUIRE(decrypted.GetPmids().size() == pmids_and_signers.size());
+    CHECK(AllFieldsMatch(decrypted.GetPmids().back(), pmids_and_signers.back().first));
+    CHECK(decrypted.GetMpids().empty());
+  }
+
+  // Add Mpids, check getters and encrypt/decrypt
+  std::vector<MpidAndSigner> mpids_and_signers;
+  for (size_t i(0); i < 3; ++i) {
+    mpids_and_signers.emplace_back(CreateMpidAndSigner(NonEmptyString{ std::to_string(i) }));
+    if (i != 0) {
+      MpidAndSigner duplicate_anmpid{ std::make_pair(mpids_and_signers.back().first,
+                                                     mpids_and_signers.front().second) };
+      CHECK_THROWS_AS(passport.AddKeyAndSigner(duplicate_anmpid), maidsafe_error);
+      MpidAndSigner duplicate_mpid{ std::make_pair(mpids_and_signers.front().first,
+                                                   mpids_and_signers.back().second) };
+      CHECK_THROWS_AS(passport.AddKeyAndSigner(duplicate_mpid), maidsafe_error);
+    }
+    CHECK_NOTHROW(passport.AddKeyAndSigner(mpids_and_signers.back()));
+    REQUIRE(passport.GetMpids().size() == mpids_and_signers.size());
+    CHECK(AllFieldsMatch(passport.GetMpids().back(), mpids_and_signers.back().first));
+    CHECK_THROWS_AS(passport.AddKeyAndSigner(mpids_and_signers.back()), maidsafe_error);
+    encrypted_passport = passport.Encrypt(user_credentials);
+    CHECK(encrypted_passport->IsInitialised());
+    Passport decrypted{ encrypted_passport, user_credentials };
+    CHECK(AllFieldsMatch(decrypted.GetMaid(), maid_and_signer.first));
+    CHECK(decrypted.GetPmids().size() == pmids_and_signers.size());
+    REQUIRE(decrypted.GetMpids().size() == mpids_and_signers.size());
+    CHECK(AllFieldsMatch(decrypted.GetMpids().back(), mpids_and_signers.back().first));
+  }
 }
 
 template <typename Fobtype>
@@ -67,487 +156,162 @@ bool NoFieldsMatch(const Fobtype& lhs, const Fobtype& rhs) {
   return true;
 }
 
-struct TestFobs {
-  TestFobs(Anmaid anmaid_in, Maid maid_in, Anpmid anpmid_in, Pmid pmid_in)
-      : anmaid(std::move(anmaid_in)),
-        maid(std::move(maid_in)),
-        anpmid(std::move(anpmid_in)),
-        pmid(std::move(pmid_in)) {}
-  TestFobs(const TestFobs& other)
-      : anmaid(other.anmaid),
-        maid(other.maid),
-        anpmid(std::move(other.anpmid)),
-        pmid(other.pmid) {}
+TEST_CASE("Remove and replace keys", "[Passport][Behavioural]") {
+  MaidAndSigner maid_and_signer{ CreateMaidAndSigner() };
+  Passport passport{ maid_and_signer };
+  std::vector<PmidAndSigner> pmids_and_signers;
+  for (size_t i(0); i < 3; ++i) {
+    pmids_and_signers.emplace_back(CreatePmidAndSigner());
+    passport.AddKeyAndSigner(pmids_and_signers.back());
+  }
+  std::vector<MpidAndSigner> mpids_and_signers;
+  for (size_t i(0); i < 3; ++i) {
+    mpids_and_signers.emplace_back(CreateMpidAndSigner(NonEmptyString{ std::to_string(i) }));
+    passport.AddKeyAndSigner(mpids_and_signers.back());
+  }
 
-  Anmaid anmaid;
-  Maid maid;
-  Anpmid anpmid;
-  Pmid pmid;
-};
+  // Replace Maid
+  MaidAndSigner new_maid_and_signer{ CreateMaidAndSigner() };
+  MaidAndSigner duplicate_new_maid{ std::make_pair(maid_and_signer.first,
+                                                   new_maid_and_signer.second) };
+  CHECK_THROWS_AS(passport.ReplaceMaidAndSigner(maid_and_signer.first, duplicate_new_maid),
+                  maidsafe_error);
+  CHECK(AllFieldsMatch(passport.GetMaid(), maid_and_signer.first));
 
-bool AllFobFieldsMatch(const TestFobs& lhs, const TestFobs& rhs) {
-  return (AllFieldsMatch(lhs.anmaid, rhs.anmaid) && AllFieldsMatch(lhs.maid, rhs.maid) &&
-          AllFieldsMatch(lhs.anpmid, rhs.anpmid) && AllFieldsMatch(lhs.pmid, rhs.pmid));
+  MaidAndSigner duplicate_new_signer{ std::make_pair(new_maid_and_signer.first,
+                                                     maid_and_signer.second) };
+  CHECK_THROWS_AS(passport.ReplaceMaidAndSigner(maid_and_signer.first, duplicate_new_signer),
+                  maidsafe_error);
+  CHECK(AllFieldsMatch(passport.GetMaid(), maid_and_signer.first));
+
+  Anmaid anmaid{ passport.ReplaceMaidAndSigner(maid_and_signer.first, new_maid_and_signer) };
+  CHECK(AllFieldsMatch(anmaid, maid_and_signer.second));
+  CHECK_THROWS_AS(passport.ReplaceMaidAndSigner(maid_and_signer.first, new_maid_and_signer),
+                  maidsafe_error);
+  CHECK(AllFieldsMatch(passport.GetMaid(), new_maid_and_signer.first));
+  CHECK(NoFieldsMatch(passport.GetMaid(), maid_and_signer.first));
+
+  // Remove Maid
+  CHECK_THROWS_AS(passport.RemoveKeyAndSigner(maid_and_signer.first), maidsafe_error);
+  CHECK(AllFieldsMatch(passport.GetMaid(), new_maid_and_signer.first));
+  anmaid = passport.RemoveKeyAndSigner(new_maid_and_signer.first);
+  CHECK(AllFieldsMatch(anmaid, new_maid_and_signer.second));
+  CHECK_THROWS_AS(passport.GetMaid(), maidsafe_error);
+  CHECK_THROWS_AS(passport.RemoveKeyAndSigner(new_maid_and_signer.first), maidsafe_error);
+  CHECK_THROWS_AS(passport.ReplaceMaidAndSigner(maid_and_signer.first, new_maid_and_signer),
+                  maidsafe_error);
+  CHECK_THROWS_AS(passport.Encrypt(CreateUserCredentials()), maidsafe_error);
+
+  // Remove Pmids
+  Anpmid anpmid{ passport.RemoveKeyAndSigner(pmids_and_signers[1].first) };
+  CHECK(AllFieldsMatch(anpmid, pmids_and_signers[1].second));
+  std::vector<Pmid> pmids{ passport.GetPmids() };
+  REQUIRE(pmids.size() == 2U);
+  CHECK(pmids[0].name() == pmids_and_signers[0].first.name());
+  CHECK(pmids[1].name() == pmids_and_signers[2].first.name());
+  CHECK_THROWS_AS(passport.RemoveKeyAndSigner(pmids_and_signers[1].first), maidsafe_error);
+
+  anpmid = passport.RemoveKeyAndSigner(pmids_and_signers[2].first);
+  CHECK(AllFieldsMatch(anpmid, pmids_and_signers[2].second));
+  CHECK(passport.GetPmids().size() == 1U);
+
+  anpmid = passport.RemoveKeyAndSigner(pmids_and_signers[0].first);
+  CHECK(AllFieldsMatch(anpmid, pmids_and_signers[0].second));
+  CHECK(passport.GetPmids().empty());
+
+  // Remove Mpids
+  Anmpid anmpid{ passport.RemoveKeyAndSigner(mpids_and_signers[0].first) };
+  CHECK(AllFieldsMatch(anmpid, mpids_and_signers[0].second));
+  std::vector<Mpid> mpids{ passport.GetMpids() };
+  REQUIRE(mpids.size() == 2U);
+  CHECK(mpids[0].name() == mpids_and_signers[1].first.name());
+  CHECK(mpids[1].name() == mpids_and_signers[2].first.name());
+  CHECK_THROWS_AS(passport.RemoveKeyAndSigner(mpids_and_signers[0].first), maidsafe_error);
+
+  anmpid = passport.RemoveKeyAndSigner(mpids_and_signers[2].first);
+  CHECK(AllFieldsMatch(anmpid, mpids_and_signers[2].second));
+  CHECK(passport.GetMpids().size() == 1U);
+
+  anmpid = passport.RemoveKeyAndSigner(mpids_and_signers[1].first);
+  CHECK(AllFieldsMatch(anmpid, mpids_and_signers[1].second));
+  CHECK(passport.GetMpids().empty());
 }
 
-class PassportTest {
- public:
-  PassportTest() : passport_() {}
-
-  TestFobs GetFobs() {
-    return TestFobs(passport_.Get<Anmaid>(), passport_.Get<Maid>(), passport_.Get<Anpmid>(),
-                    passport_.Get<Pmid>());
+TEST_CASE("Encrypt", "[Passport][Behavioural]") {
+  MaidAndSigner maid_and_signer{ CreateMaidAndSigner() };
+  Passport passport{ maid_and_signer };
+  std::vector<PmidAndSigner> pmids_and_signers;
+  for (size_t i(0); i < 3; ++i) {
+    pmids_and_signers.emplace_back(CreatePmidAndSigner());
+    passport.AddKeyAndSigner(pmids_and_signers.back());
+  }
+  std::vector<MpidAndSigner> mpids_and_signers;
+  for (size_t i(0); i < 3; ++i) {
+    mpids_and_signers.emplace_back(CreateMpidAndSigner(NonEmptyString{ std::to_string(i) }));
+    passport.AddKeyAndSigner(mpids_and_signers.back());
   }
 
-  TestFobs GetFobs(Passport& passport) {
-    return TestFobs(passport.Get<Anmaid>(), passport.Get<Maid>(), passport.Get<Anpmid>(),
-                    passport.Get<Pmid>());
-  }
+  const std::string kKeywordStr{ RandomAlphaNumericString((RandomUint32() % 100) + 1) };
+  const uint32_t kPinValue{ RandomUint32() };
+  const std::string kPasswordStr{ RandomAlphaNumericString((RandomUint32() % 100) + 1) };
+  authentication::UserCredentials user_credentials;
+  typedef authentication::UserCredentials::Keyword Keyword;
+  typedef authentication::UserCredentials::Pin Pin;
+  typedef authentication::UserCredentials::Password Password;
+  user_credentials.pin = maidsafe::make_unique<Pin>(std::to_string(kPinValue));
+  user_credentials.password = maidsafe::make_unique<Password>(kPasswordStr);
 
- protected:
-  Passport passport_;
-};
+  // Check encrypting with null credential fields
+  CHECK_THROWS_AS(passport.Encrypt(user_credentials), maidsafe_error);
+  user_credentials.keyword = maidsafe::make_unique<Keyword>(kKeywordStr);
 
-TEST_CASE_METHOD(PassportTest, "Construct Fobs", "[Passport][Behavioural]") {
-  Passport constucted_passport;
+  user_credentials.pin.reset();
+  CHECK_THROWS_AS(passport.Encrypt(user_credentials), maidsafe_error);
+  user_credentials.pin = maidsafe::make_unique<Pin>(std::to_string(kPinValue));
 
-  CHECK_NOTHROW(passport_.Get<Anmaid>());
-  CHECK_NOTHROW(passport_.Get<Maid>());
-  CHECK_NOTHROW(passport_.Get<Anpmid>());
-  CHECK_NOTHROW(passport_.Get<Pmid>());
-  TestFobs fobs(GetFobs());
+  user_credentials.password.reset();
+  CHECK_THROWS_AS(passport.Encrypt(user_credentials), maidsafe_error);
+  user_credentials.password = maidsafe::make_unique<Password>(kPasswordStr);
 
-  CHECK_NOTHROW(constucted_passport.Get<Anmaid>());
-  CHECK_NOTHROW(constucted_passport.Get<Maid>());
-  CHECK_NOTHROW(constucted_passport.Get<Anpmid>());
-  CHECK_NOTHROW(constucted_passport.Get<Pmid>());
-  TestFobs constructed_fobs(GetFobs(constucted_passport));
+  // Check parsing with invalid encrypted_passport
+  CHECK_THROWS_AS(Passport(crypto::CipherText{ NonEmptyString{ RandomString(100) } },
+                           user_credentials), maidsafe_error);
 
-  CHECK(NoFieldsMatch(fobs.anmaid, constructed_fobs.anmaid));
-  CHECK(NoFieldsMatch(fobs.maid, constructed_fobs.maid));
-  CHECK(NoFieldsMatch(fobs.anpmid, constructed_fobs.anpmid));
-  CHECK(NoFieldsMatch(fobs.pmid, constructed_fobs.pmid));
+  // Check parsing with modified credential fields
+  crypto::CipherText encrypted_passport{ passport.Encrypt(user_credentials) };
+  user_credentials.keyword = maidsafe::make_unique<Keyword>(kKeywordStr + 'z');
+  CHECK_THROWS_AS(Passport(encrypted_passport, user_credentials), maidsafe_error);
+  user_credentials.keyword = maidsafe::make_unique<Keyword>(kKeywordStr);
+
+  user_credentials.pin = maidsafe::make_unique<Pin>(std::to_string(kPinValue + 9));
+  CHECK_THROWS_AS(Passport(encrypted_passport, user_credentials), maidsafe_error);
+  user_credentials.pin = maidsafe::make_unique<Pin>(std::to_string(kPinValue));
+
+  user_credentials.password = maidsafe::make_unique<Password>(kPasswordStr + 'z');
+  CHECK_THROWS_AS(Passport(encrypted_passport, user_credentials), maidsafe_error);
+  user_credentials.password = maidsafe::make_unique<Password>(kPasswordStr);
+
+  // Check parsing correctly
+  Passport decrypted{ encrypted_passport, user_credentials };
+  CHECK(AllFieldsMatch(decrypted.GetMaid(), maid_and_signer.first));
+
+  std::vector<Pmid> pmids{ decrypted.GetPmids() };
+  REQUIRE(pmids.size() == pmids_and_signers.size());
+  std::vector<Pmid>::iterator pmids_itr{ std::begin(pmids) };
+  std::vector<PmidAndSigner>::iterator pmids_and_signers_itr{ std::begin(pmids_and_signers) };
+  while (pmids_itr != std::end(pmids))
+    CHECK(AllFieldsMatch(*pmids_itr++, (*pmids_and_signers_itr++).first));
+
+  std::vector<Mpid> mpids{ decrypted.GetMpids() };
+  REQUIRE(mpids.size() == mpids_and_signers.size());
+  std::vector<Mpid>::iterator mpids_itr{ std::begin(mpids) };
+  std::vector<MpidAndSigner>::iterator mpids_and_signers_itr{ std::begin(mpids_and_signers) };
+  while (mpids_itr != std::end(mpids))
+    CHECK(AllFieldsMatch(*mpids_itr++, (*mpids_and_signers_itr++).first));
 }
 
-TEST_CASE_METHOD(PassportTest, "Create and get SelectableFobs", "[Passport][Behavioural]") {
-  NonEmptyString name(RandomAlphaNumericString(1 + RandomUint32() % 100));
-
-  CHECK_THROWS_AS(passport_.GetMpid(name), std::exception);
-  CHECK_THROWS_AS(passport_.GetAnmpid(name), std::exception);
-
-  passport_.CreateMpid(name);
-
-  CHECK_NOTHROW(passport_.GetMpid(name));
-  CHECK_NOTHROW(passport_.GetAnmpid(name));
-
-  CHECK_THROWS_AS(passport_.CreateMpid(name), std::exception);
-}
-
-TEST_CASE_METHOD(PassportTest, "Delete SelectableFobs", "[Passport][Behavioural]") {
-  NonEmptyString name(RandomAlphaNumericString(1 + RandomUint32() % 100));
-
-  passport_.DeleteMpid(name);
-
-  CHECK_NOTHROW(passport_.CreateMpid(name));
-
-  passport_.DeleteMpid(name);
-
-  CHECK_THROWS_AS(passport_.GetAnmpid(name), std::exception);
-  CHECK_THROWS_AS(passport_.GetMpid(name), std::exception);
-
-  CHECK_NOTHROW(passport_.CreateMpid(name));
-
-  passport_.DeleteMpid(name);
-
-  CHECK_THROWS_AS(passport_.GetMpid(name), std::exception);
-  CHECK_THROWS_AS(passport_.GetAnmpid(name), std::exception);
-
-  CHECK_NOTHROW(passport_.CreateMpid(name));
-  CHECK_THROWS_AS(passport_.CreateMpid(name), std::exception);
-
-  CHECK_NOTHROW(passport_.GetMpid(name));
-  CHECK_NOTHROW(passport_.GetAnmpid(name));
-
-  passport_.DeleteMpid(name);
-
-  CHECK_THROWS_AS(passport_.GetMpid(name), std::exception);
-  CHECK_THROWS_AS(passport_.GetAnmpid(name), std::exception);
-}
-
-TEST_CASE_METHOD(PassportTest, "Multiple SelectableFobs",
-                 "[Passport][Behavioural]") {  // Timeout 120
-  std::vector<NonEmptyString> names;
-  uint16_t max_value(40);  // choice of this?
-  uint16_t cutoff(20);     // choice of this?
-  REQUIRE(cutoff <= max_value);
-
-  for (uint16_t i(0); i < max_value; ++i) {
-    NonEmptyString name(RandomAlphaNumericString(static_cast<size_t>(i + 1)));
-    names.push_back(name);
-  }
-
-  for (uint16_t i(0); i < cutoff; ++i) {
-    passport_.CreateMpid(names.at(i));
-  }
-  for (uint16_t i(0); i < cutoff; ++i) {
-    CHECK_NOTHROW(passport_.GetMpid(names.at(i)));
-    CHECK_NOTHROW(passport_.GetAnmpid(names.at(i)));
-  }
-
-  for (uint16_t i(cutoff); i < max_value; ++i) {
-    passport_.CreateMpid(names.at(i));
-  }
-
-  for (uint16_t i(0); i < max_value; ++i) {
-    CHECK_NOTHROW(passport_.GetMpid(names.at(i)));
-    CHECK_NOTHROW(passport_.GetAnmpid(names.at(i)));
-  }
-}
-
-class PassportParallelTest : public PassportTest {
- public:
-  PassportParallelTest()
-      : name_1_(RandomAlphaNumericString(1 + RandomUint32() % 100)),
-        name_2_(RandomAlphaNumericString(1 + RandomUint32() % 100)),
-        name_3_(RandomAlphaNumericString(1 + RandomUint32() % 100)),
-        name_4_(RandomAlphaNumericString(1 + RandomUint32() % 100)),
-        name_5_(RandomAlphaNumericString(1 + RandomUint32() % 100)) {}
-
-  ~PassportParallelTest() {
-    ConsistentFobStates();
-    ConsistentSelectableFobStates(name_1_);
-    ConsistentSelectableFobStates(name_2_);
-    ConsistentSelectableFobStates(name_3_);
-    ConsistentSelectableFobStates(name_4_);
-    ConsistentSelectableFobStates(name_5_);
-  }
-
-  void ConsistentFobStates() {
-    try {
-      LOG(kInfo) << "Trying ConsistentFobStates...";
-      passport_.Get<Anmaid>();
-      passport_.Get<Maid>();
-      passport_.Get<Anpmid>();
-      passport_.Get<Pmid>();
-      LOG(kInfo) << "...ConsistentFobStates successful";
-    }
-    catch (const std::exception&) {
-      LOG(kInfo) << "...ConsistentFobStates unsuccessful";
-    }
-  }
-
-  void ConsistentSelectableFobStates(const NonEmptyString& name) {
-    try {
-      LOG(kInfo) << "Trying ConsistentSelectableFobStates...";
-      passport_.GetMpid(name);
-      passport_.GetAnmpid(name);
-      LOG(kInfo) << "...ConsistentSelectableFobStates successful";
-    }
-    catch (const std::exception&) {
-      LOG(kInfo) << "...ConsistentSelectableFobStates successful";
-    }
-  }
-
-  NonEmptyString name_1_;
-  NonEmptyString name_2_;
-  NonEmptyString name_3_;
-  NonEmptyString name_4_;
-  NonEmptyString name_5_;
-};
-
-TEST_CASE_METHOD(PassportParallelTest, "Parallel get and delete", "[Passport][Functional]") {
-  {
-    auto a1 = std::async([&] { return passport_.CreateMpid(name_1_); });
-    auto a2 = std::async([&] { return passport_.CreateMpid(name_2_); });
-    auto a3 = std::async([&] { return passport_.CreateMpid(name_5_); });
-    a3.get();
-    a2.get();
-    a1.get();
-  }
-
-  TestFobs fobs(GetFobs());
-
-  {
-    auto a1 = std::async([&] { return passport_.GetAnmpid(name_1_); });
-    auto a2 = std::async([&] {
-      return std::make_shared<Mpid>(passport_.GetMpid(name_1_));
-    });
-    auto a3 = std::async([&] { return passport_.GetAnmpid(name_5_); });
-    auto a4 = std::async([&] {
-      return std::make_shared<Mpid>(passport_.GetMpid(name_5_));
-    });
-    a4.get();
-    a3.get();
-    a2.get();
-    a1.get();
-  }
-
-  TestFobs identical_fobs(GetFobs());
-  CHECK(AllFobFieldsMatch(fobs, identical_fobs));
-  passport_.CreateMpid(name_3_);
-
-  {
-    auto a1 = std::async([&] { return passport_.CreateMpid(name_4_); });
-    auto a2 = std::async([&] { return passport_.DeleteMpid(name_1_); });
-    auto a3 = std::async([&] { return passport_.DeleteMpid(name_2_); });
-    a3.get();
-    a2.get();
-    a1.get();
-  }
-
-  CHECK_NOTHROW(Passport(passport_.Serialise()));
-}
-
-TEST_CASE_METHOD(PassportParallelTest, "Parallel serialise and parse", "[Passport][Functional]") {
-  passport_.CreateMpid(name_1_);
-  passport_.CreateMpid(name_2_);
-  NonEmptyString serialised;
-  {
-    auto a1 = std::async([&] { return passport_.CreateMpid(name_3_); });
-    auto a2 = std::async([&] { return passport_.Serialise(); });
-    auto a3 = std::async([&] { return passport_.DeleteMpid(name_1_); });
-    a3.get();
-    serialised = a2.get();
-    a1.get();
-  }
-
-  CHECK_NOTHROW(TestFobs fobs(GetFobs()));
-
-  Passport passport(serialised);
-
-  passport.CreateMpid(name_5_);
-
-  {
-    auto a1 = std::async([&] { return passport.CreateMpid(name_4_); });
-    auto a2 = std::async([&] { return passport.GetAnmpid(name_5_); });
-    auto a3 = std::async([&] {
-      return std::make_shared<Mpid>(passport.GetMpid(name_5_));
-    });
-    a3.get();
-    a2.get();
-    a1.get();
-  }
-
-  CHECK_NOTHROW(Passport(passport_.Serialise()));
-}
-
-TEST_CASE_METHOD(PassportTest, "Serialise and parse with no Selectables",
-                 "[Passport][Functional]") {
-  TestFobs fobs1(GetFobs());
-
-  CHECK_NOTHROW(Passport(passport_.Serialise()));
-
-  TestFobs fobs2(GetFobs());
-
-  CHECK(AllFobFieldsMatch(fobs1, fobs2));
-
-  NonEmptyString serialised_2(passport_.Serialise());
-  CHECK(passport_.Serialise() == serialised_2);
-
-  TestFobs fobs3(GetFobs());
-
-  CHECK(AllFobFieldsMatch(fobs2, fobs3));
-}
-
-TEST_CASE_METHOD(PassportTest, "Serialise and parse with Selectables", "[Passport][Functional]") {
-  std::vector<NonEmptyString> names;
-  for (uint16_t i(0); i < 20; ++i) {  // choice of max value?
-    NonEmptyString name(RandomAlphaNumericString(static_cast<size_t>(i + 1)));
-    passport_.CreateMpid(name);
-    names.push_back(name);
-  }
-
-  TestFobs fobs1(GetFobs());
-
-  std::vector<Anmpid> anmpids1;
-  std::vector<Mpid> mpids1;
-  for (auto name : names) {
-    anmpids1.push_back(passport_.GetAnmpid(name));
-    mpids1.push_back(passport_.GetMpid(name));
-  }
-
-  CHECK_NOTHROW(Passport(passport_.Serialise()));
-
-  TestFobs fobs2(GetFobs());
-
-  std::vector<Anmpid> anmpids2;
-  std::vector<Mpid> mpids2;
-  for (auto name : names) {
-    anmpids2.push_back(passport_.GetAnmpid(name));
-    mpids2.push_back(passport_.GetMpid(name));
-  }
-
-  CHECK(AllFobFieldsMatch(fobs1, fobs2));
-
-  for (uint16_t i(0); i < names.size(); ++i) {
-    CHECK(AllFieldsMatch(anmpids1.at(i), anmpids2.at(i)));
-    CHECK(AllFieldsMatch(mpids1.at(i), mpids2.at(i)));
-  }
-}
-
-TEST_CASE_METHOD(PassportTest, "Parse an invalid string", "[Passport][Behavioural]") {
-  NonEmptyString bad_string(RandomAlphaNumericString(1 + RandomUint32() % 1000));
-  CHECK_THROWS_AS(Passport(bad_string), std::exception);
-}
-
-class PassportParsePbTest : public PassportTest {
- public:
-  PassportParsePbTest()
-      : anmaid_(),
-        maid_(anmaid_),
-        anpmid_(),
-        pmid_(anpmid_),
-        proto_passport_() {}
-
-  void GenerateFourFobs(uint16_t bad_index = 5) {  // generate all good fobs by default
-    for (uint16_t i(0); i < 4; ++i) {
-      auto proto_fob(proto_passport_.add_fob());
-      uint16_t type(i);
-      if (i == bad_index) {
-        while (type == i)
-          type = RandomUint32() % 4;
-        LOG(kInfo) << "Entry in position " << bad_index << " will be of type " << type;
-      }
-      switch (type) {
-        case 0:
-          anmaid_.ToProtobuf(proto_fob);
-          break;
-        case 1:
-          maid_.ToProtobuf(proto_fob);
-          break;
-        case 2:
-          anpmid_.ToProtobuf(proto_fob);
-          break;
-        case 3:
-          pmid_.ToProtobuf(proto_fob);
-          break;
-        default:
-          LOG(kError) << "Type " << type << " is not permitted here.";
-      }
-    }
-  }
-
-  Anmaid anmaid_;
-  Maid maid_;
-  Anpmid anpmid_;
-  Pmid pmid_;
-  pb::Passport proto_passport_;
-};
-
-TEST_CASE_METHOD(PassportParsePbTest, "Serialise and parse Passport", "[Passport][Behavioural]") {
-  GenerateFourFobs();
-
-  NonEmptyString name(RandomAlphaNumericString(1 + RandomUint32() % 20));
-  Anmpid anmpid;
-  Mpid mpid(name, anmpid);
-
-  auto proto_public_identity(proto_passport_.add_public_identity());
-  proto_public_identity->set_public_id(name.string());
-  auto proto_anmpid(proto_public_identity->mutable_anmpid());
-  anmpid.ToProtobuf(proto_anmpid);
-  auto proto_mpid(proto_public_identity->mutable_mpid());
-  mpid.ToProtobuf(proto_mpid);
-
-  CHECK_NOTHROW(Passport(NonEmptyString(proto_passport_.SerializeAsString())));
-}
-
-TEST_CASE_METHOD(PassportParsePbTest, "Serialise and parse two Fobs", "[Passport][Behavioural]") {
-  auto proto_fob(proto_passport_.add_fob());
-  anmaid_.ToProtobuf(proto_fob);
-  proto_fob = proto_passport_.add_fob();
-  maid_.ToProtobuf(proto_fob);
-
-  CHECK_THROWS_AS(Passport(NonEmptyString(proto_passport_.SerializeAsString())), std::exception);
-}
-
-TEST_CASE_METHOD(PassportParsePbTest, "Serialise and parse five Fobs", "[Passport][Behavioural]") {
-  GenerateFourFobs();
-  auto proto_fob(proto_passport_.add_fob());
-  pmid_.ToProtobuf(proto_fob);
-
-  CHECK_THROWS_AS(Passport(NonEmptyString(proto_passport_.SerializeAsString())), std::exception);
-}
-
-TEST_CASE_METHOD(PassportParsePbTest, "Parse re-ordered Fobs", "[Passport][Behavioural]") {
-  GenerateFourFobs(RandomUint32() % 4);
-
-  CHECK_THROWS_AS(Passport(NonEmptyString(proto_passport_.SerializeAsString())), std::exception);
-}
-
-TEST_CASE("Serialise an uninitialised Passport", "[Passport][Behavioural]") {
-  pb::Passport proto_passport;
-  CHECK_THROWS_AS(NonEmptyString(proto_passport.SerializeAsString()), std::exception);
-}
-
-class PassportSerialiseTest {
- public:
-  PassportSerialiseTest()
-      : anmaid_(),
-        maid_(anmaid_),
-        anpmid_(),
-        pmid_(anpmid_),
-        proto_passport_() {
-    auto proto_fob(proto_passport_.add_fob());
-    anmaid_.ToProtobuf(proto_fob);
-    proto_fob = proto_passport_.add_fob();
-    maid_.ToProtobuf(proto_fob);
-    proto_fob = proto_passport_.add_fob();
-    anpmid_.ToProtobuf(proto_fob);
-    proto_fob = proto_passport_.add_fob();
-    pmid_.ToProtobuf(proto_fob);
-  }
-
-  Anmaid anmaid_;
-  Maid maid_;
-  Anpmid anpmid_;
-  Pmid pmid_;
-  pb::Passport proto_passport_;
-};
-
-TEST_CASE_METHOD(PassportSerialiseTest, "Serialise Passport", "[Passport][Behavioural]") {
-  CHECK_NOTHROW(NonEmptyString(proto_passport_.SerializeAsString()));
-}
-
-TEST_CASE_METHOD(PassportSerialiseTest, "Serialise Passport with no chosen name",
-                 "[Passport][Behavioural]") {
-  Anmpid anmpid;
-  CHECK_THROWS_AS(Mpid mpid_bad(NonEmptyString(), anmpid), std::exception);
-  Mpid mpid(NonEmptyString(RandomAlphaNumericString(1 + RandomUint32() % 100)), anmpid);
-
-  auto proto_public_identity(proto_passport_.add_public_identity());
-  auto proto_anmpid(proto_public_identity->mutable_anmpid());
-  anmpid.ToProtobuf(proto_anmpid);
-  auto proto_mpid(proto_public_identity->mutable_mpid());
-  mpid.ToProtobuf(proto_mpid);
-
-  CHECK_THROWS_AS(NonEmptyString(proto_passport_.SerializeAsString()), std::exception);
-}
-
-TEST_CASE_METHOD(PassportSerialiseTest, "Serialise Passport with no Anmpid",
-                 "[Passport][Behavioural]") {
-  NonEmptyString name(RandomAlphaNumericString(1 + RandomUint32() % 20));
-  Anmpid anmpid;
-  Mpid mpid(name, anmpid);
-
-  auto proto_public_identity(proto_passport_.add_public_identity());
-  proto_public_identity->set_public_id(name.string());
-  auto proto_mpid(proto_public_identity->mutable_mpid());
-  mpid.ToProtobuf(proto_mpid);
-
-  CHECK_THROWS_AS(NonEmptyString(proto_passport_.SerializeAsString()), std::exception);
-}
-
-TEST_CASE_METHOD(PassportSerialiseTest, "Serialise Passport with no Mpid",
-                 "[Passport][Behavioural]") {
-  NonEmptyString name(RandomAlphaNumericString(1 + RandomUint32() % 20));
-  Anmpid anmpid;
-
-  auto proto_public_identity(proto_passport_.add_public_identity());
-  proto_public_identity->set_public_id(name.string());
-  auto proto_anmpid(proto_public_identity->mutable_anmpid());
-  anmpid.ToProtobuf(proto_anmpid);
-
-  CHECK_THROWS_AS(NonEmptyString(proto_passport_.SerializeAsString()), std::exception);
+TEST_CASE("Parallel", "[Passport][Behavioural]") {
+  FAIL();
 }
 
 }  // namespace test

@@ -68,7 +68,7 @@ class Fob<TagType, typename std::enable_if<is_self_signed<TagType>::type::value>
 
   // This constructor is only available to this specialisation (i.e. self-signed fob).
   Fob() : keys_(asymm::GenerateKeyPair()),
-      validation_token_(asymm::Sign(asymm::PlainText(asymm::EncodeKey(keys_.public_key)),
+      validation_token_(asymm::Sign(asymm::PlainText{ asymm::EncodeKey(keys_.public_key) },
                                     keys_.private_key)),
       name_(CreateFobName(keys_.public_key, validation_token_)) {
     static_assert(std::is_same<Fob<Tag>, Signer>::value,
@@ -96,7 +96,7 @@ class Fob<TagType, typename std::enable_if<is_self_signed<TagType>::type::value>
   explicit Fob(const protobuf::Fob& proto_fob) : keys_(), validation_token_(), name_() {
     Identity name;
     FobFromProtobuf(proto_fob, Tag::kValue, keys_, validation_token_, name);
-    name_ = Name(name);
+    name_ = Name{ name };
   }
 
   void ToProtobuf(protobuf::Fob* proto_fob) const {
@@ -128,7 +128,7 @@ class Fob<TagType, typename std::enable_if<!is_self_signed<TagType>::type::value
   explicit Fob(const Signer& signing_fob,
                typename std::enable_if<!std::is_same<Fob<Tag>, Signer>::value>::type* = 0)
       : keys_(asymm::GenerateKeyPair()),
-        validation_token_(asymm::Sign(asymm::PlainText(asymm::EncodeKey(keys_.public_key)),
+        validation_token_(asymm::Sign(asymm::PlainText{ asymm::EncodeKey(keys_.public_key) },
                                       signing_fob.private_key())),
         name_(CreateFobName(keys_.public_key, validation_token_)) {}
 
@@ -153,7 +153,7 @@ class Fob<TagType, typename std::enable_if<!is_self_signed<TagType>::type::value
   explicit Fob(const protobuf::Fob& proto_fob) : keys_(), validation_token_(), name_() {
     Identity name;
     FobFromProtobuf(proto_fob, Tag::kValue, keys_, validation_token_, name);
-    name_ = Name(name);
+    name_ = Name{ name };
   }
 
   void ToProtobuf(protobuf::Fob* proto_fob) const {

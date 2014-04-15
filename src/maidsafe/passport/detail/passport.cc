@@ -18,14 +18,10 @@
 
 #include "maidsafe/passport/passport.h"
 
-#include <map>
-#include <vector>
-
-#include "maidsafe/common/crypto.h"
-#include "maidsafe/common/error.h"
-#include "maidsafe/common/log.h"
 #include "maidsafe/common/make_unique.h"
 #include "maidsafe/common/utils.h"
+#include "maidsafe/common/authentication/user_credentials.h"
+#include "maidsafe/common/authentication/user_credential_utils.h"
 
 #include "maidsafe/passport/detail/passport.pb.h"
 
@@ -33,175 +29,208 @@ namespace maidsafe {
 
 namespace passport {
 
+namespace {
+
+template <typename Key>
+void CheckThenAddKeyAndSigner(std::vector<std::pair<Key, typename Key::Signer>>& keys_and_signers,
+                              std::mutex& mutex,
+                              std::pair<Key, typename Key::Signer> key_and_signer) {
+  std::lock_guard<std::mutex> lock{ mutex };
+  if (std::any_of(std::begin(keys_and_signers), std::end(keys_and_signers),
+                  [&](const std::pair<Key, typename Key::Signer>& existing_pair) {
+                    return key_and_signer.first.name() == existing_pair.first.name() ||
+                           key_and_signer.second.name() == existing_pair.second.name();
+                  })) {
+    LOG(kError) << "Key or signer already exists in passport - use unique keys and signers.";
+    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::id_already_exists));
+  }
+  keys_and_signers.emplace_back(std::move(key_and_signer));
+}
+
+template <typename Key>
+std::vector<Key> GetKeys(const std::vector<std::pair<Key, typename Key::Signer>>& keys_and_signers,
+                         std::mutex& mutex) {
+  std::vector<Key> keys;
+  std::lock_guard<std::mutex> lock{ mutex };
+  for (const auto& key_and_signer : keys_and_signers)
+    keys.push_back(key_and_signer.first);
+  return keys;
+}
+
+template <typename Key>
+typename Key::Signer RemovePassportKeyAndSigner(
+    std::vector<std::pair<Key, typename Key::Signer>>& keys_and_signers,
+    std::mutex& mutex,
+    const Key& key_to_be_removed) {
+  std::lock_guard<std::mutex> lock{ mutex };
+  auto itr(std::find_if(std::begin(keys_and_signers), std::end(keys_and_signers),
+                        [&](const std::pair<Key, typename Key::Signer>& existing_pair) {
+                          return key_to_be_removed.name() == existing_pair.first.name();
+                        }));
+  if (itr == std::end(keys_and_signers))
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
+  typename Key::Signer signer{ std::move(itr->second) };
+  keys_and_signers.erase(itr);
+  return signer;
+}
+
+}  // unnamed namespace
+
 NonEmptyString SerialisePmid(const Pmid& pmid) { return detail::SerialisePmid(pmid); }
 
 Pmid ParsePmid(const NonEmptyString& serialised_pmid) { return detail::ParsePmid(serialised_pmid); }
 
-Passport::Passport()
-    : anmaid_(maidsafe::make_unique<Anmaid>()),
-      maid_(maidsafe::make_unique<Maid>(*anmaid_)),
-      anpmid_(maidsafe::make_unique<Anpmid>()),
-      pmid_(maidsafe::make_unique<Pmid>(*anpmid_)),
-      selectable_fobs_(),
-      fobs_mutex_(),
-      selectable_fobs_mutex_() {}
-
-Passport::Passport(const NonEmptyString& serialised_passport)
-    : anmaid_(),
-      maid_(),
-      anpmid_(),
-      pmid_(),
-      selectable_fobs_(),
-      fobs_mutex_(),
-      selectable_fobs_mutex_() {
-  detail::protobuf::Passport proto_passport;
-  if (!proto_passport.ParseFromString(serialised_passport.string()) ||
-      !proto_passport.IsInitialized()) {
-    LOG(kError) << "Failed to parse passport.";
-    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::passport_parsing_error));
-  }
-
-  if (proto_passport.fob_size() != 6) {
-    LOG(kError) << "Parsed passport should have 6 fobs, actually has " << proto_passport.fob_size();
-    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::passport_parsing_error));
-  }
-
-  std::lock(fobs_mutex_, selectable_fobs_mutex_);
-  std::lock_guard<std::mutex> fobs_lock{ fobs_mutex_, std::adopt_lock };
-  std::lock_guard<std::mutex> selectable_fobs_lock{ selectable_fobs_mutex_, std::adopt_lock };
-
-  anmaid_ = maidsafe::make_unique<Anmaid>(proto_passport.fob(0));
-  maid_ = maidsafe::make_unique<Maid>(proto_passport.fob(1));
-  anpmid_ = maidsafe::make_unique<Anpmid>(proto_passport.fob(2));
-  pmid_ = maidsafe::make_unique<Pmid>(proto_passport.fob(3));
-
-  assert(NoFobsNull());
-
-  for (int i(0); i != proto_passport.public_identity_size(); ++i) {
-    NonEmptyString public_id{ proto_passport.public_identity(i).public_id() };
-    SelectableFobPair fob;
-    fob.anmpid = maidsafe::make_unique<Anmpid>(proto_passport.public_identity(i).anmpid());
-    fob.mpid = maidsafe::make_unique<Mpid>(proto_passport.public_identity(i).mpid());
-    selectable_fobs_[public_id] = std::move(fob);
-  }
+MaidAndSigner CreateMaidAndSigner() {
+  Maid::Signer signer;
+  return std::make_pair(Maid{ signer }, signer);
 }
 
-bool Passport::NoFobsNull() const {
-  if (!anmaid_) {
-    LOG(kError) << "No Anmaid.";
-    return false;
+PmidAndSigner CreatePmidAndSigner() {
+  Pmid::Signer signer;
+  return std::make_pair(Pmid{ signer }, signer);
+}
+
+MpidAndSigner CreateMpidAndSigner(const NonEmptyString& chosen_name) {
+  Mpid::Signer signer;
+  return std::make_pair(Mpid{ chosen_name, signer }, signer);
+}
+
+Passport::Passport(MaidAndSigner maid_and_signer)
+    : maid_and_signer_(maidsafe::make_unique<MaidAndSigner>(std::move(maid_and_signer))),
+      pmids_and_signers_(),
+      mpids_and_signers_(),
+      mutex_() {}
+
+Passport::Passport(const crypto::CipherText& encrypted_passport,
+                   const authentication::UserCredentials& user_credentials)
+    : maid_and_signer_(),
+      pmids_and_signers_(),
+      mpids_and_signers_(),
+      mutex_() {
+  crypto::SecurePassword secure_password{ authentication::CreateSecurePassword(user_credentials) };
+  Parse(authentication::Obfuscate(
+            user_credentials,
+            crypto::SymmDecrypt(encrypted_passport,
+                                authentication::DeriveSymmEncryptKey(secure_password),
+                                authentication::DeriveSymmEncryptIv(secure_password))));
+}
+
+void Passport::Parse(const NonEmptyString& serialised_passport) {
+  detail::protobuf::Passport proto_passport;
+  if (!proto_passport.ParseFromString(serialised_passport.string())) {
+    LOG(kError) << "Failed to parse passport.";
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   }
-  if (!maid_) {
-    LOG(kError) << "No Maid.";
-    return false;
+  std::lock_guard<std::mutex> lock{ mutex_ };
+
+  maid_and_signer_ = maidsafe::make_unique<MaidAndSigner>(std::make_pair(
+    Maid{ proto_passport.maid_and_signer().key() },
+    Anmaid{ proto_passport.maid_and_signer().signer() }));
+
+  for (int i(0); i != proto_passport.pmids_and_signers_size(); ++i) {
+    pmids_and_signers_.emplace_back(std::make_pair(
+      Pmid{ proto_passport.pmids_and_signers(i).key() },
+      Anpmid{ proto_passport.pmids_and_signers(i).signer() }));
   }
-  if (!anpmid_) {
-    LOG(kError) << "No Anpmid.";
-    return false;
+
+  for (int j(0); j != proto_passport.mpids_and_signers_size(); ++j) {
+    mpids_and_signers_.emplace_back(std::make_pair(
+      Mpid{ proto_passport.mpids_and_signers(j).key() },
+      Anmpid{ proto_passport.mpids_and_signers(j).signer() }));
   }
-  if (!pmid_) {
-    LOG(kError) << "No Pmid.";
-    return false;
-  }
-  return true;
 }
 
 NonEmptyString Passport::Serialise() const {
   detail::protobuf::Passport proto_passport;
-  assert(NoFobsNull());
+  std::lock_guard<std::mutex> lock{ mutex_ };
+  if (!maid_and_signer_) {
+    LOG(kError) << "Passport must contain a Maid in order to be serialised.";
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::serialisation_error));
+  }
 
-  std::lock(fobs_mutex_, selectable_fobs_mutex_);
-  std::lock_guard<std::mutex> fobs_lock{ fobs_mutex_, std::adopt_lock };
-  std::lock_guard<std::mutex> selectable_fobs_lock{ selectable_fobs_mutex_, std::adopt_lock };
+  detail::protobuf::KeyAndSigner* proto_key_and_signer{ proto_passport.mutable_maid_and_signer() };
+  maid_and_signer_->first.ToProtobuf(proto_key_and_signer->mutable_key());
+  maid_and_signer_->second.ToProtobuf(proto_key_and_signer->mutable_signer());
 
-  detail::protobuf::Fob* proto_fob{ proto_passport.add_fob() };
-  anmaid_->ToProtobuf(proto_fob);
-  proto_fob = proto_passport.add_fob();
-  maid_->ToProtobuf(proto_fob);
-  proto_fob = proto_passport.add_fob();
-  anpmid_->ToProtobuf(proto_fob);
-  proto_fob = proto_passport.add_fob();
-  pmid_->ToProtobuf(proto_fob);
+  for (const auto& pmid_and_signer : pmids_and_signers_) {
+    proto_key_and_signer = proto_passport.add_pmids_and_signers();
+    pmid_and_signer.first.ToProtobuf(proto_key_and_signer->mutable_key());
+    pmid_and_signer.second.ToProtobuf(proto_key_and_signer->mutable_signer());
+  }
 
-  for (const auto& selectable_fob : selectable_fobs_) {
-    assert(selectable_fob.second.anmpid);
-    assert(selectable_fob.second.mpid);
-    detail::protobuf::PublicIdentity* proto_public_identity{ proto_passport.add_public_identity() };
-    proto_public_identity->set_public_id(selectable_fob.first.string());
-    selectable_fob.second.anmpid->ToProtobuf(proto_public_identity->mutable_anmpid());
-    selectable_fob.second.mpid->ToProtobuf(proto_public_identity->mutable_mpid());
+  for (const auto& mpid_and_signer : mpids_and_signers_) {
+    proto_key_and_signer = proto_passport.add_mpids_and_signers();
+    mpid_and_signer.first.ToProtobuf(proto_key_and_signer->mutable_key());
+    mpid_and_signer.second.ToProtobuf(proto_key_and_signer->mutable_signer());
   }
 
   return NonEmptyString{ proto_passport.SerializeAsString() };
 }
 
-template <>
-Anmaid Passport::Get<Anmaid>() const {
-  std::lock_guard<std::mutex> lock{ fobs_mutex_ };
-  if (!anmaid_)
-    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::uninitialised_fob));
-  return *anmaid_;
+crypto::CipherText Passport::Encrypt(
+    const authentication::UserCredentials& user_credentials) const {
+  crypto::SecurePassword secure_password{ authentication::CreateSecurePassword(user_credentials) };
+  return crypto::SymmEncrypt(
+      authentication::Obfuscate(user_credentials, Serialise()),
+      authentication::DeriveSymmEncryptKey(secure_password),
+      authentication::DeriveSymmEncryptIv(secure_password));
+}
+
+Maid Passport::GetMaid() const {
+  std::lock_guard<std::mutex> lock{ mutex_ };
+  if (!maid_and_signer_)
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
+  return maid_and_signer_->first;
+}
+
+void Passport::AddKeyAndSigner(PmidAndSigner pmid_and_signer) {
+  CheckThenAddKeyAndSigner(pmids_and_signers_, mutex_, pmid_and_signer);
+}
+
+void Passport::AddKeyAndSigner(MpidAndSigner mpid_and_signer) {
+  CheckThenAddKeyAndSigner(mpids_and_signers_, mutex_, mpid_and_signer);
+}
+
+std::vector<Pmid> Passport::GetPmids() const {
+  return GetKeys(pmids_and_signers_, mutex_);
+}
+
+std::vector<Mpid> Passport::GetMpids() const {
+  return GetKeys(mpids_and_signers_, mutex_);
 }
 
 template <>
-Maid Passport::Get<Maid>() const {
-  std::lock_guard<std::mutex> lock{ fobs_mutex_ };
-  if (!maid_)
-    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::uninitialised_fob));
-  return *maid_;
+Maid::Signer Passport::RemoveKeyAndSigner<Maid>(const Maid& key_to_be_removed) {
+  std::lock_guard<std::mutex> lock{ mutex_ };
+  if (!maid_and_signer_ || maid_and_signer_->first.name() != key_to_be_removed.name())
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
+  Maid::Signer signer{ std::move(maid_and_signer_->second) };
+  maid_and_signer_.reset();
+  return signer;
 }
 
 template <>
-Anpmid Passport::Get<Anpmid>() const {
-  std::lock_guard<std::mutex> lock{ fobs_mutex_ };
-  if (!anpmid_)
-    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::uninitialised_fob));
-  return *anpmid_;
+Pmid::Signer Passport::RemoveKeyAndSigner<Pmid>(const Pmid& key_to_be_removed) {
+  return RemovePassportKeyAndSigner(pmids_and_signers_, mutex_, key_to_be_removed);
 }
 
 template <>
-Pmid Passport::Get<Pmid>() const {
-  std::lock_guard<std::mutex> lock{ fobs_mutex_ };
-  if (!pmid_)
-    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::uninitialised_fob));
-  return *pmid_;
+Mpid::Signer Passport::RemoveKeyAndSigner<Mpid>(const Mpid& key_to_be_removed) {
+  return RemovePassportKeyAndSigner(mpids_and_signers_, mutex_, key_to_be_removed);
 }
 
-void Passport::CreateMpid(const NonEmptyString& name) {
-  SelectableFobPair selectable_fob_pair;
-  selectable_fob_pair.anmpid.reset(new Anmpid);
-  selectable_fob_pair.mpid.reset(new Mpid(name, *selectable_fob_pair.anmpid));
-  std::lock_guard<std::mutex> lock(selectable_fobs_mutex_);
-  auto result(selectable_fobs_.insert(std::make_pair(name, std::move(selectable_fob_pair))));
-  if (!result.second)
-    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::public_id_already_exists));
-}
-
-void Passport::DeleteMpid(const NonEmptyString& name) {
-  std::lock_guard<std::mutex> lock(selectable_fobs_mutex_);
-  selectable_fobs_.erase(name);
-}
-
-Anmpid Passport::GetAnmpid(const NonEmptyString& name) const {
-  return GetSelectableFob<Anmpid>(name);
-}
-
-Mpid Passport::GetMpid(const NonEmptyString& name) const {
-  return GetSelectableFob<Mpid>(name);
-}
-
-template <>
-Anmpid Passport::GetFromSelectableFobPair(const SelectableFobPair& selectable_fob_pair) const {
-  if (!selectable_fob_pair.anmpid)
-    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::uninitialised_fob));
-  return *selectable_fob_pair.anmpid;
-}
-
-template <>
-Mpid Passport::GetFromSelectableFobPair(const SelectableFobPair& selectable_fob_pair) const {
-  if (!selectable_fob_pair.mpid)
-    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::uninitialised_fob));
-  return *selectable_fob_pair.mpid;
+Maid::Signer Passport::ReplaceMaidAndSigner(const Maid& maid_to_be_replaced,
+                                            MaidAndSigner new_maid_and_signer) {
+  std::lock_guard<std::mutex> lock{ mutex_ };
+  if (!maid_and_signer_ || maid_and_signer_->first.name() != maid_to_be_replaced.name())
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::no_such_element));
+  if (new_maid_and_signer.first.name() == maid_and_signer_->first.name() ||
+      new_maid_and_signer.second.name() == maid_and_signer_->second.name()) {
+    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::id_already_exists));
+  }
+  Maid::Signer signer{ std::move(maid_and_signer_->second) };
+  maid_and_signer_ = maidsafe::make_unique<MaidAndSigner>(new_maid_and_signer);
+  return signer;
 }
 
 }  // namespace passport

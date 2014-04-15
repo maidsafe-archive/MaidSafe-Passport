@@ -31,11 +31,11 @@ void PublicFobFromProtobuf(const NonEmptyString& serialised_public_fob, DataTagV
                            asymm::PublicKey& public_key, asymm::Signature& validation_token) {
   protobuf::PublicFob proto_public_fob;
   if (!proto_public_fob.ParseFromString(serialised_public_fob.string()))
-    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::fob_parsing_error));
-  validation_token = asymm::Signature(proto_public_fob.validation_token());
-  public_key = asymm::DecodeKey(asymm::EncodedPublicKey(proto_public_fob.encoded_public_key()));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+  validation_token = asymm::Signature{ proto_public_fob.validation_token() };
+  public_key = asymm::DecodeKey(asymm::EncodedPublicKey{ proto_public_fob.encoded_public_key() });
   if (static_cast<uint32_t>(enum_value) != proto_public_fob.type())
-    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::fob_parsing_error));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
 }
 
 NonEmptyString PublicFobToProtobuf(DataTagValue enum_value, const asymm::PublicKey& public_key,
@@ -44,7 +44,7 @@ NonEmptyString PublicFobToProtobuf(DataTagValue enum_value, const asymm::PublicK
   proto_public_fob.set_type(static_cast<uint32_t>(enum_value));
   proto_public_fob.set_encoded_public_key(asymm::EncodeKey(public_key).string());
   proto_public_fob.set_validation_token(validation_token.string());
-  return NonEmptyString(proto_public_fob.SerializeAsString());
+  return NonEmptyString{ proto_public_fob.SerializeAsString() };
 }
 
 }  // namespace detail

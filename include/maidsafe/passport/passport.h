@@ -19,19 +19,23 @@
 #ifndef MAIDSAFE_PASSPORT_PASSPORT_H_
 #define MAIDSAFE_PASSPORT_PASSPORT_H_
 
-#include <cstdint>
-#include <map>
 #include <memory>
 #include <mutex>
+#include <type_traits>
+#include <utility>
+#include <vector>
 
 #include "maidsafe/common/config.h"
-#include "maidsafe/common/rsa.h"
+#include "maidsafe/common/crypto.h"
+#include "maidsafe/common/error.h"
+#include "maidsafe/common/log.h"
 #include "maidsafe/common/types.h"
 
 #include "maidsafe/passport/types.h"
-#include "maidsafe/passport/detail/fob.h"
 
 namespace maidsafe {
+
+namespace authentication { struct UserCredentials; }
 
 namespace passport {
 
@@ -52,99 +56,85 @@ namespace passport {
 // of the https://github.com/maidsafe/MaidSafe-Common/wiki project. The following methods are used
 // for self-authenticated network identity' storage/retrieval on the network.
 
-// Methods for serialising/parsing the identity required for data storage.
+// Functions for serialising/parsing the identity required for data storage.
 NonEmptyString SerialisePmid(const Pmid& pmid);
 Pmid ParsePmid(const NonEmptyString& serialised_pmid);
+
+typedef std::pair<Maid, Maid::Signer> MaidAndSigner;
+typedef std::pair<Pmid, Pmid::Signer> PmidAndSigner;
+typedef std::pair<Mpid, Mpid::Signer> MpidAndSigner;
+// Utility functions to create keys and signers.
+MaidAndSigner CreateMaidAndSigner();
+PmidAndSigner CreatePmidAndSigner();
+MpidAndSigner CreateMpidAndSigner(const NonEmptyString& chosen_name);
 
 // The Passport class contains identity types for the various network related tasks available, see
 // types.h for details about the identity types.
 class Passport {
  public:
-  // Creates Fobs during construction.
-  Passport();
+  explicit Passport(MaidAndSigner maid_and_signer);
 
-  explicit Passport(const NonEmptyString& serialised_passport);
+  // Constructs from a previously-encrypted passport.  All fields of 'user_credentials' must be
+  // identical to those used during the encryption.  Throws if unable to decrypt and parse.
+  Passport(const crypto::CipherText& encrypted_passport,
+           const authentication::UserCredentials& user_credentials);
+  // Serialises and encrypts the entire contents of the passport.  Throws if any of the user
+  // credential fields are null, or if the passport doesn't contain a Maid.
+  crypto::CipherText Encrypt(const authentication::UserCredentials& user_credentials) const;
 
-  NonEmptyString Serialise() const;
+  // Throws if the passport doesn't contain a Maid.
+  Maid GetMaid() const;
 
-  template <typename FobType>
-  FobType Get() const;
+  // Throws if key or signing key already exists.
+  void AddKeyAndSigner(PmidAndSigner pmid_and_signer);
+  void AddKeyAndSigner(MpidAndSigner mpid_and_signer);
 
-  // There's no restriction on the number of Mpids an application can create/use.
-  void CreateMpid(const NonEmptyString& name);
-  void DeleteMpid(const NonEmptyString& name);
+  // Returns all the keys of the given type (may be empty).  Doesn't throw.
+  std::vector<Pmid> GetPmids() const;
+  std::vector<Mpid> GetMpids() const;
 
-  Anmpid GetAnmpid(const NonEmptyString& name) const;
-  Mpid GetMpid(const NonEmptyString& name) const;
+  // To invalidate a key on the network, the revocation message must be signed by the corresponding
+  // signer key.  This function returns the original signing key for 'key_to_be_removed'.  If 'Key'
+  // type is Maid, the passport can no longer be serialised via 'Encrypt' (used when destroying an
+  // account).  Throws if 'key_to_be_removed' doesn't exist in the passport.
+  template <typename Key>
+  typename Key::Signer RemoveKeyAndSigner(const Key& key_to_be_removed);
+
+  // To invalidate a key on the network, the revocation message must be signed by the corresponding
+  // signer key.  This function returns the original signing key for 'maid_to_be_replaced'.  Throws
+  // if 'maid_to_be_replaced' doesn't exist or if either of the replacements is the same as the
+  // original.
+  Maid::Signer ReplaceMaidAndSigner(const Maid& maid_to_be_replaced,
+                                    MaidAndSigner new_maid_and_signer);
 
  private:
   Passport(const Passport&) MAIDSAFE_DELETE;
   Passport(Passport&&) MAIDSAFE_DELETE;
   Passport& operator=(Passport) MAIDSAFE_DELETE;
 
-  struct SelectableFobPair {
-    SelectableFobPair() : anmpid(), mpid() {}
+  void Parse(const NonEmptyString& serialised_passport);
+  NonEmptyString Serialise() const;
 
-    SelectableFobPair(SelectableFobPair&& other)
-        : anmpid(std::move(other.anmpid)), mpid(std::move(other.mpid)) {}
+  void Decrypt(const crypto::CipherText& encrypted_passport,
+               const authentication::UserCredentials& user_credentials);
 
-    SelectableFobPair& operator=(SelectableFobPair&& other) {
-      anmpid = std::move(other.anmpid);
-      mpid = std::move(other.mpid);
-      return *this;
-    }
-
-    std::unique_ptr<Anmpid> anmpid;
-    std::unique_ptr<Mpid> mpid;
-
-   private:
-    SelectableFobPair(const SelectableFobPair&) MAIDSAFE_DELETE;
-    SelectableFobPair& operator=(const SelectableFobPair&) MAIDSAFE_DELETE;
-  };
-
-  bool NoFobsNull() const;
-
-  template <typename FobType>
-  FobType GetSelectableFob(const NonEmptyString& name) const;
-
-  template <typename FobType>
-  FobType GetFromSelectableFobPair(const SelectableFobPair& selectable_fob_pair) const;
-
-  std::unique_ptr<Anmaid> anmaid_;
-  std::unique_ptr<Maid> maid_;
-  std::unique_ptr<Anpmid> anpmid_;
-  std::unique_ptr<Pmid> pmid_;
-
-  std::map<NonEmptyString, SelectableFobPair> selectable_fobs_;
-  mutable std::mutex fobs_mutex_, selectable_fobs_mutex_;
+  std::unique_ptr<MaidAndSigner> maid_and_signer_;
+  std::vector<PmidAndSigner> pmids_and_signers_;
+  std::vector<MpidAndSigner> mpids_and_signers_;
+  mutable std::mutex mutex_;
 };
 
 template <>
-Anmaid Passport::Get<Anmaid>() const;
-
+Maid::Signer Passport::RemoveKeyAndSigner<Maid>(const Maid& key_to_be_removed);
 template <>
-Maid Passport::Get<Maid>() const;
-
+Pmid::Signer Passport::RemoveKeyAndSigner<Pmid>(const Pmid& key_to_be_removed);
 template <>
-Anpmid Passport::Get<Anpmid>() const;
+Mpid::Signer Passport::RemoveKeyAndSigner<Mpid>(const Mpid& key_to_be_removed);
 
-template <>
-Pmid Passport::Get<Pmid>() const;
-
-template <typename FobType>
-FobType Passport::GetSelectableFob(const NonEmptyString& name) const {
-  std::lock_guard<std::mutex> lock(selectable_fobs_mutex_);
-  auto itr(selectable_fobs_.find(name));
-  if (itr == selectable_fobs_.end())
-    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::uninitialised_fob));
-  return GetFromSelectableFobPair<FobType>(itr->second);
+template <typename Key>
+typename Key::Signer Passport::RemoveKeyAndSigner(const Key& key_to_be_removed) {
+  static_assert(false, "Key type can only be Maid, Pmid or Mpid.");
 }
-
-template <>
-Anmpid Passport::GetFromSelectableFobPair(const SelectableFobPair& selectable_fob_pair) const;
-
-template <>
-Mpid Passport::GetFromSelectableFobPair(const SelectableFobPair& selectable_fob_pair) const;
 
 }  // namespace passport
 

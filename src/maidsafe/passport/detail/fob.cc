@@ -29,28 +29,28 @@ namespace detail {
 
 Identity CreateFobName(const asymm::PublicKey& public_key,
                        const asymm::Signature& validation_token) {
-  return Identity(crypto::Hash<crypto::SHA512>(asymm::EncodeKey(public_key) + validation_token));
+  return Identity{ crypto::Hash<crypto::SHA512>(asymm::EncodeKey(public_key) + validation_token) };
 }
 
 Identity CreateMpidName(const NonEmptyString& chosen_name) {
-  return Identity(crypto::Hash<crypto::SHA512>(chosen_name));
+  return Identity{ crypto::Hash<crypto::SHA512>(chosen_name) };
 }
 
 void FobFromProtobuf(const protobuf::Fob& proto_fob, DataTagValue enum_value, asymm::Keys& keys,
                      asymm::Signature& validation_token, Identity& name) {
   if (!proto_fob.IsInitialized())
-    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::fob_parsing_error));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
 
   validation_token = asymm::Signature(proto_fob.validation_token());
   name = Identity(proto_fob.name());
 
-  asymm::PlainText plain(RandomString(64));
+  asymm::PlainText plain{ RandomString(64) };
   keys.private_key = asymm::DecodeKey(asymm::EncodedPrivateKey(proto_fob.encoded_private_key()));
   keys.public_key = asymm::DecodeKey(asymm::EncodedPublicKey(proto_fob.encoded_public_key()));
   if ((enum_value != MpidTag::kValue && CreateFobName(keys.public_key, validation_token) != name) ||
       asymm::Decrypt(asymm::Encrypt(plain, keys.public_key), keys.private_key) != plain ||
       enum_value != DataTagValue(proto_fob.type())) {
-    BOOST_THROW_EXCEPTION(MakeError(PassportErrors::fob_parsing_error));
+    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   }
 }
 
@@ -68,7 +68,7 @@ void FobToProtobuf(DataTagValue enum_value, const asymm::Keys& keys,
 
 Fob<MpidTag>::Fob(const NonEmptyString& chosen_name, const Signer& signing_fob)
     : keys_(asymm::GenerateKeyPair()),
-      validation_token_(asymm::Sign(asymm::PlainText(asymm::EncodeKey(keys_.public_key)),
+      validation_token_(asymm::Sign(asymm::PlainText{ asymm::EncodeKey(keys_.public_key) },
                                     signing_fob.private_key())),
       name_(CreateMpidName(chosen_name)) {}
 
@@ -88,7 +88,7 @@ Fob<MpidTag>& Fob<MpidTag>::operator=(Fob<MpidTag> other) {
 Fob<MpidTag>::Fob(const protobuf::Fob& proto_fob) : keys_(), validation_token_(), name_() {
   Identity name;
   FobFromProtobuf(proto_fob, MpidTag::kValue, keys_, validation_token_, name);
-  name_ = Name(name);
+  name_ = Name{ name };
 }
 
 void Fob<MpidTag>::ToProtobuf(protobuf::Fob* proto_fob) const {
@@ -100,13 +100,13 @@ void Fob<MpidTag>::ToProtobuf(protobuf::Fob* proto_fob) const {
 NonEmptyString SerialisePmid(const Fob<PmidTag>& pmid) {
   protobuf::Fob proto_fob;
   pmid.ToProtobuf(&proto_fob);
-  return NonEmptyString(proto_fob.SerializeAsString());
+  return NonEmptyString{ proto_fob.SerializeAsString() };
 }
 
 Fob<PmidTag> ParsePmid(const NonEmptyString& serialised_pmid) {
   protobuf::Fob proto_fob;
   proto_fob.ParseFromString(serialised_pmid.string());
-  return Fob<PmidTag>(proto_fob);
+  return Fob<PmidTag>{ proto_fob };
 }
 
 #ifdef TESTING
@@ -114,37 +114,37 @@ Fob<PmidTag> ParsePmid(const NonEmptyString& serialised_pmid) {
 NonEmptyString SerialiseAnmaid(const Fob<AnmaidTag>& anmaid) {
   protobuf::Fob proto_fob;
   anmaid.ToProtobuf(&proto_fob);
-  return NonEmptyString(proto_fob.SerializeAsString());
+  return NonEmptyString{ proto_fob.SerializeAsString() };
 }
 
 Fob<AnmaidTag> ParseAnmaid(const NonEmptyString& serialised_anmaid) {
   protobuf::Fob proto_fob;
   proto_fob.ParseFromString(serialised_anmaid.string());
-  return Fob<AnmaidTag>(proto_fob);
+  return Fob<AnmaidTag>{ proto_fob };
 }
 
 NonEmptyString SerialiseMaid(const Fob<MaidTag>& maid) {
   protobuf::Fob proto_fob;
   maid.ToProtobuf(&proto_fob);
-  return NonEmptyString(proto_fob.SerializeAsString());
+  return NonEmptyString{ proto_fob.SerializeAsString() };
 }
 
 Fob<MaidTag> ParseMaid(const NonEmptyString& serialised_maid) {
   protobuf::Fob proto_fob;
   proto_fob.ParseFromString(serialised_maid.string());
-  return Fob<MaidTag>(proto_fob);
+  return Fob<MaidTag>{ proto_fob };
 }
 
 NonEmptyString SerialiseAnpmid(const Fob<AnpmidTag>& anpmid) {
   protobuf::Fob proto_fob;
   anpmid.ToProtobuf(&proto_fob);
-  return NonEmptyString(proto_fob.SerializeAsString());
+  return NonEmptyString{ proto_fob.SerializeAsString() };
 }
 
 Fob<AnpmidTag> ParseAnpmid(const NonEmptyString& serialised_anpmid) {
   protobuf::Fob proto_fob;
   proto_fob.ParseFromString(serialised_anpmid.string());
-  return Fob<AnpmidTag>(proto_fob);
+  return Fob<AnpmidTag>{ proto_fob };
 }
 
 std::vector<Fob<PmidTag>> ReadPmidList(const boost::filesystem::path& file_path) {
@@ -152,23 +152,23 @@ std::vector<Fob<PmidTag>> ReadPmidList(const boost::filesystem::path& file_path)
   protobuf::PmidList pmid_list_msg;
   pmid_list_msg.ParseFromString(ReadFile(file_path).string());
   for (int i = 0; i < pmid_list_msg.pmids_size(); ++i)
-    pmid_list.push_back(std::move(ParsePmid(NonEmptyString(pmid_list_msg.pmids(i)))));
+    pmid_list.emplace_back(ParsePmid(NonEmptyString{ pmid_list_msg.pmids(i) }));
   return pmid_list;
 }
 
 bool WritePmidList(const boost::filesystem::path& file_path,
                    const std::vector<Fob<PmidTag>>& pmid_list) {
   protobuf::PmidList pmid_list_msg;
-  for (auto& pmid : pmid_list)
+  for (const auto& pmid : pmid_list)
     pmid_list_msg.add_pmids()->assign(SerialisePmid(pmid).string());
   return WriteFile(file_path, pmid_list_msg.SerializeAsString());
 }
 
 AnmaidToPmid ParseKeys(const protobuf::KeyChainList::KeyChain& key_chain) {
-  return std::move(AnmaidToPmid(ParseAnmaid(NonEmptyString(key_chain.anmaid())),
-                                ParseMaid(NonEmptyString(key_chain.maid())),
-                                ParseAnpmid(NonEmptyString(key_chain.anpmid())),
-                                ParsePmid(NonEmptyString(key_chain.pmid()))));
+  return std::move(AnmaidToPmid(ParseAnmaid(NonEmptyString{ key_chain.anmaid() }),
+                                ParseMaid(NonEmptyString{ key_chain.maid()}),
+                                ParseAnpmid(NonEmptyString{ key_chain.anpmid() }),
+                                ParsePmid(NonEmptyString{ key_chain.pmid() })));
 }
 
 std::vector<AnmaidToPmid> ReadKeyChainList(const boost::filesystem::path& file_path) {
@@ -176,14 +176,14 @@ std::vector<AnmaidToPmid> ReadKeyChainList(const boost::filesystem::path& file_p
   protobuf::KeyChainList keychain_list_msg;
   keychain_list_msg.ParseFromString(ReadFile(file_path).string());
   for (int i = 0; i < keychain_list_msg.keychains_size(); ++i)
-    keychain_list.push_back(std::move(ParseKeys(keychain_list_msg.keychains(i))));
+    keychain_list.emplace_back(ParseKeys(keychain_list_msg.keychains(i)));
   return keychain_list;
 }
 
 bool WriteKeyChainList(const boost::filesystem::path& file_path,
                        const std::vector<AnmaidToPmid>& keychain_list) {
   protobuf::KeyChainList keychain_list_msg;
-  for (auto& keychain : keychain_list) {
+  for (const auto& keychain : keychain_list) {
     auto entry = keychain_list_msg.add_keychains();
     entry->set_anmaid(SerialiseAnmaid(keychain.anmaid).string());
     entry->set_maid(SerialiseMaid(keychain.maid).string());
