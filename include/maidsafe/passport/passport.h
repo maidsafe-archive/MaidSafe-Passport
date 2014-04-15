@@ -132,8 +132,8 @@ template <>
 Mpid::Signer Passport::RemoveKeyAndSigner<Mpid>(const Mpid& key_to_be_removed);
 
 template <typename Key>
-typename Key::Signer Passport::RemoveKeyAndSigner(const Key& key_to_be_removed) {
-  static_assert(false, "Key type can only be Maid, Pmid or Mpid.");
+typename Key::Signer Passport::RemoveKeyAndSigner(const Key&) {
+  return Key::Key_type_can_only_be_Maid_Pmid_or_Mpid;
 }
 
 }  // namespace passport
