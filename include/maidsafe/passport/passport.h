@@ -25,7 +25,6 @@
 #include <utility>
 #include <vector>
 
-#include "maidsafe/common/config.h"
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/error.h"
 #include "maidsafe/common/log.h"
@@ -108,9 +107,9 @@ class Passport {
                                     MaidAndSigner new_maid_and_signer);
 
  private:
-  Passport(const Passport&) MAIDSAFE_DELETE;
-  Passport(Passport&&) MAIDSAFE_DELETE;
-  Passport& operator=(Passport) MAIDSAFE_DELETE;
+  Passport(const Passport&) = delete;
+  Passport(Passport&&) = delete;
+  Passport& operator=(Passport) = delete;
 
   void Parse(const NonEmptyString& serialised_passport);
   NonEmptyString Serialise() const;

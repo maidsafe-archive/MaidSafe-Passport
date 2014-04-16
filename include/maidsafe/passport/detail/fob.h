@@ -25,7 +25,6 @@
 
 #include "boost/filesystem/path.hpp"
 
-#include "maidsafe/common/config.h"
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/common/types.h"
 
@@ -166,7 +165,7 @@ class Fob<TagType, typename std::enable_if<!is_self_signed<TagType>::type::value
   asymm::PublicKey public_key() const { return keys_.public_key; }
 
  private:
-  Fob() MAIDSAFE_DELETE;
+  Fob() = delete;
   asymm::Keys keys_;
   asymm::Signature validation_token_;
   Name name_;
