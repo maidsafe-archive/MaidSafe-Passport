@@ -55,9 +55,19 @@ namespace passport {
 // of the https://github.com/maidsafe/MaidSafe-Common/wiki project. The following methods are used
 // for self-authenticated network identity' storage/retrieval on the network.
 
-// Functions for serialising/parsing the identity required for data storage.
-NonEmptyString SerialisePmid(const Pmid& pmid);
-Pmid ParsePmid(const NonEmptyString& serialised_pmid);
+// Functions for serialising/parsing identities.
+crypto::CipherText EncryptMaid(const Maid& maid, const crypto::AES256Key& symm_key,
+                               const crypto::AES256InitialisationVector& symm_iv);
+crypto::CipherText EncryptAnpmid(const Anpmid& anpmid, const crypto::AES256Key& symm_key,
+                                 const crypto::AES256InitialisationVector& symm_iv);
+crypto::CipherText EncryptPmid(const Pmid& pmid, const crypto::AES256Key& symm_key,
+                               const crypto::AES256InitialisationVector& symm_iv);
+Maid DecryptMaid(const crypto::CipherText& encrypted_maid, const crypto::AES256Key& symm_key,
+                 const crypto::AES256InitialisationVector& symm_iv);
+Anpmid DecryptAnpmid(const crypto::CipherText& encrypted_anpmid, const crypto::AES256Key& symm_key,
+                     const crypto::AES256InitialisationVector& symm_iv);
+Pmid DecryptPmid(const crypto::CipherText& encrypted_pmid, const crypto::AES256Key& symm_key,
+                 const crypto::AES256InitialisationVector& symm_iv);
 
 typedef std::pair<Maid, Maid::Signer> MaidAndSigner;
 typedef std::pair<Pmid, Pmid::Signer> PmidAndSigner;

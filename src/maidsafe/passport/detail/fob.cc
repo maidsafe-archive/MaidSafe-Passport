@@ -97,17 +97,60 @@ void Fob<MpidTag>::ToProtobuf(protobuf::Fob* proto_fob) const {
 
 
 
-NonEmptyString SerialisePmid(const Fob<PmidTag>& pmid) {
+namespace {
+
+template <typename TagType>
+crypto::CipherText Encrypt(const Fob<TagType>& fob, const crypto::AES256Key& symm_key,
+                           const crypto::AES256InitialisationVector& symm_iv) {
   protobuf::Fob proto_fob;
-  pmid.ToProtobuf(&proto_fob);
-  return NonEmptyString{ proto_fob.SerializeAsString() };
+  fob.ToProtobuf(&proto_fob);
+  return crypto::SymmEncrypt(crypto::PlainText{ proto_fob.SerializeAsString() }, symm_key, symm_iv);
 }
 
-Fob<PmidTag> ParsePmid(const NonEmptyString& serialised_pmid) {
+template <typename TagType>
+Fob<TagType> Decrypt(const crypto::CipherText& encrypted_fob, const crypto::AES256Key& symm_key,
+                     const crypto::AES256InitialisationVector& symm_iv) {
   protobuf::Fob proto_fob;
-  proto_fob.ParseFromString(serialised_pmid.string());
-  return Fob<PmidTag>{ proto_fob };
+  proto_fob.ParseFromString(crypto::SymmDecrypt(encrypted_fob, symm_key, symm_iv).string());
+  return Fob<TagType>{ proto_fob };
 }
+
+}  // unnamed namespace
+
+crypto::CipherText EncryptMaid(const Fob<MaidTag>& maid, const crypto::AES256Key& symm_key,
+                               const crypto::AES256InitialisationVector& symm_iv) {
+  return Encrypt(maid, symm_key, symm_iv);
+}
+
+crypto::CipherText EncryptAnpmid(const Fob<AnpmidTag>& anpmid, const crypto::AES256Key& symm_key,
+                                 const crypto::AES256InitialisationVector& symm_iv) {
+  return Encrypt(anpmid, symm_key, symm_iv);
+}
+
+crypto::CipherText EncryptPmid(const Fob<PmidTag>& pmid, const crypto::AES256Key& symm_key,
+                               const crypto::AES256InitialisationVector& symm_iv) {
+  return Encrypt(pmid, symm_key, symm_iv);
+}
+
+Fob<MaidTag> DecryptMaid(const crypto::CipherText& encrypted_maid,
+                         const crypto::AES256Key& symm_key,
+                         const crypto::AES256InitialisationVector& symm_iv) {
+  return Decrypt<MaidTag>(encrypted_maid, symm_key, symm_iv);
+}
+
+Fob<AnpmidTag> DecryptAnpmid(const crypto::CipherText& encrypted_anpmid,
+                             const crypto::AES256Key& symm_key,
+                             const crypto::AES256InitialisationVector& symm_iv) {
+  return Decrypt<AnpmidTag>(encrypted_anpmid, symm_key, symm_iv);
+}
+
+Fob<PmidTag> DecryptPmid(const crypto::CipherText& encrypted_pmid,
+                         const crypto::AES256Key& symm_key,
+                         const crypto::AES256InitialisationVector& symm_iv) {
+  return Decrypt<PmidTag>(encrypted_pmid, symm_key, symm_iv);
+}
+
+
 
 #ifdef TESTING
 
@@ -145,6 +188,18 @@ Fob<AnpmidTag> ParseAnpmid(const NonEmptyString& serialised_anpmid) {
   protobuf::Fob proto_fob;
   proto_fob.ParseFromString(serialised_anpmid.string());
   return Fob<AnpmidTag>{ proto_fob };
+}
+
+NonEmptyString SerialisePmid(const Fob<PmidTag>& pmid) {
+  protobuf::Fob proto_fob;
+  pmid.ToProtobuf(&proto_fob);
+  return NonEmptyString{ proto_fob.SerializeAsString() };
+}
+
+Fob<PmidTag> ParsePmid(const NonEmptyString& serialised_pmid) {
+  protobuf::Fob proto_fob;
+  proto_fob.ParseFromString(serialised_pmid.string());
+  return Fob<PmidTag>{ proto_fob };
 }
 
 std::vector<Fob<PmidTag>> ReadPmidList(const boost::filesystem::path& file_path) {

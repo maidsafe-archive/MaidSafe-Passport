@@ -49,12 +49,49 @@ bool AllFieldsMatch(const Fobtype& lhs, const Fobtype& rhs) {
 }
 
 TEST_CASE("Free functions", "[Passport][Behavioural]") {
-  CreateMaidAndSigner();
+  MaidAndSigner maid_and_signer{ CreateMaidAndSigner() };
   CreateMpidAndSigner(NonEmptyString{ RandomString((RandomUint32() % 100) + 1) });
   PmidAndSigner pmid_and_signer{ CreatePmidAndSigner() };
-  NonEmptyString serialised_pmid{ maidsafe::passport::SerialisePmid(pmid_and_signer.first) };
-  Pmid pmid{ maidsafe::passport::ParsePmid(serialised_pmid) };
+
+  crypto::AES256Key symm_key{ RandomString(crypto::AES256_KeySize - 1) + "a" };
+  crypto::AES256InitialisationVector symm_iv{ RandomString(crypto::AES256_IVSize) };
+
+  crypto::CipherText encrypted_maid{ maidsafe::passport::EncryptMaid(maid_and_signer.first,
+                                                                     symm_key, symm_iv) };
+  crypto::CipherText encrypted_anpmid{ maidsafe::passport::EncryptAnpmid(pmid_and_signer.second,
+                                                                         symm_key, symm_iv) };
+  crypto::CipherText encrypted_pmid{ maidsafe::passport::EncryptPmid(pmid_and_signer.first,
+                                                                     symm_key, symm_iv) };
+
+  Maid maid{ maidsafe::passport::DecryptMaid(encrypted_maid, symm_key, symm_iv) };
+  CHECK(AllFieldsMatch(maid_and_signer.first, maid));
+  Anpmid anpmid{ maidsafe::passport::DecryptAnpmid(encrypted_anpmid, symm_key, symm_iv) };
+  CHECK(AllFieldsMatch(pmid_and_signer.second, anpmid));
+  Pmid pmid{ maidsafe::passport::DecryptPmid(encrypted_pmid, symm_key, symm_iv) };
   CHECK(AllFieldsMatch(pmid_and_signer.first, pmid));
+  CHECK_THROWS_AS(maidsafe::passport::DecryptMaid(encrypted_anpmid, symm_key, symm_iv),
+                  maidsafe_error);
+  CHECK_THROWS_AS(maidsafe::passport::DecryptAnpmid(encrypted_pmid, symm_key, symm_iv),
+                  maidsafe_error);
+  CHECK_THROWS_AS(maidsafe::passport::DecryptPmid(encrypted_maid, symm_key, symm_iv),
+                  maidsafe_error);
+
+  symm_key = crypto::AES256Key{ RandomString(crypto::AES256_KeySize - 1) + "b" };
+  crypto::CipherText encrypted_maid1{ maidsafe::passport::EncryptMaid(maid_and_signer.first,
+                                                                      symm_key, symm_iv) };
+  crypto::CipherText encrypted_anpmid1{ maidsafe::passport::EncryptAnpmid(pmid_and_signer.second,
+                                                                          symm_key, symm_iv) };
+  crypto::CipherText encrypted_pmid1{ maidsafe::passport::EncryptPmid(pmid_and_signer.first,
+                                                                      symm_key, symm_iv) };
+  CHECK(encrypted_maid != encrypted_maid1);
+  CHECK(encrypted_anpmid != encrypted_anpmid1);
+  CHECK(encrypted_pmid != encrypted_pmid1);
+  CHECK_THROWS_AS(maidsafe::passport::DecryptMaid(encrypted_maid, symm_key, symm_iv),
+                  maidsafe_error);
+  CHECK_THROWS_AS(maidsafe::passport::DecryptAnpmid(encrypted_anpmid, symm_key, symm_iv),
+                  maidsafe_error);
+  CHECK_THROWS_AS(maidsafe::passport::DecryptPmid(encrypted_pmid, symm_key, symm_iv),
+                  maidsafe_error);
 }
 
 authentication::UserCredentials CreateUserCredentials() {

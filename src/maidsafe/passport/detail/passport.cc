@@ -76,9 +76,35 @@ typename Key::Signer RemovePassportKeyAndSigner(
 
 }  // unnamed namespace
 
-NonEmptyString SerialisePmid(const Pmid& pmid) { return detail::SerialisePmid(pmid); }
+crypto::CipherText EncryptMaid(const Maid& maid, const crypto::AES256Key& symm_key,
+                               const crypto::AES256InitialisationVector& symm_iv) {
+  return detail::EncryptMaid(maid, symm_key, symm_iv);
+}
 
-Pmid ParsePmid(const NonEmptyString& serialised_pmid) { return detail::ParsePmid(serialised_pmid); }
+crypto::CipherText EncryptAnpmid(const Anpmid& anpmid, const crypto::AES256Key& symm_key,
+                                 const crypto::AES256InitialisationVector& symm_iv) {
+  return detail::EncryptAnpmid(anpmid, symm_key, symm_iv);
+}
+
+crypto::CipherText EncryptPmid(const Pmid& pmid, const crypto::AES256Key& symm_key,
+                               const crypto::AES256InitialisationVector& symm_iv) {
+  return detail::EncryptPmid(pmid, symm_key, symm_iv);
+}
+
+Maid DecryptMaid(const crypto::CipherText& encrypted_maid, const crypto::AES256Key& symm_key,
+                 const crypto::AES256InitialisationVector& symm_iv) {
+  return detail::DecryptMaid(encrypted_maid, symm_key, symm_iv);
+}
+
+Anpmid DecryptAnpmid(const crypto::CipherText& encrypted_anpmid, const crypto::AES256Key& symm_key,
+                     const crypto::AES256InitialisationVector& symm_iv) {
+  return detail::DecryptAnpmid(encrypted_anpmid, symm_key, symm_iv);
+}
+
+Pmid DecryptPmid(const crypto::CipherText& encrypted_pmid, const crypto::AES256Key& symm_key,
+                 const crypto::AES256InitialisationVector& symm_iv) {
+  return detail::DecryptPmid(encrypted_pmid, symm_key, symm_iv);
+}
 
 MaidAndSigner CreateMaidAndSigner() {
   Maid::Signer signer;

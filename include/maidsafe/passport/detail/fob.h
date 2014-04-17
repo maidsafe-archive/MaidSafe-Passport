@@ -25,6 +25,7 @@
 
 #include "boost/filesystem/path.hpp"
 
+#include "maidsafe/common/crypto.h"
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/common/types.h"
 
@@ -212,8 +213,21 @@ class Fob<MpidTag> {
 
 
 // ========== General ==============================================================================
-NonEmptyString SerialisePmid(const Fob<PmidTag>& pmid);
-Fob<PmidTag> ParsePmid(const NonEmptyString& serialised_pmid);
+crypto::CipherText EncryptMaid(const Fob<MaidTag>& maid, const crypto::AES256Key& symm_key,
+                               const crypto::AES256InitialisationVector& symm_iv);
+crypto::CipherText EncryptAnpmid(const Fob<AnpmidTag>& anpmid, const crypto::AES256Key& symm_key,
+                                 const crypto::AES256InitialisationVector& symm_iv);
+crypto::CipherText EncryptPmid(const Fob<PmidTag>& pmid, const crypto::AES256Key& symm_key,
+                               const crypto::AES256InitialisationVector& symm_iv);
+Fob<MaidTag> DecryptMaid(const crypto::CipherText& encrypted_maid,
+                         const crypto::AES256Key& symm_key,
+                         const crypto::AES256InitialisationVector& symm_iv);
+Fob<AnpmidTag> DecryptAnpmid(const crypto::CipherText& encrypted_anpmid,
+                             const crypto::AES256Key& symm_key,
+                             const crypto::AES256InitialisationVector& symm_iv);
+Fob<PmidTag> DecryptPmid(const crypto::CipherText& encrypted_pmid,
+                         const crypto::AES256Key& symm_key,
+                         const crypto::AES256InitialisationVector& symm_iv);
 
 #ifdef TESTING
 
