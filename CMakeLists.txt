@@ -81,7 +81,7 @@ endif()
 # Package                                                                                          #
 #==================================================================================================#
 set(EXPORT_NAME maidsafe_passport)
-install(TARGETS maidsafe_passport EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION bin/lib)
+install(TARGETS maidsafe_passport EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
 
 install(FILES ${PassportApi} DESTINATION include/maidsafe/passport)
 install(FILES ${PassportDetailApi} DESTINATION include/maidsafe/passport/detail)
