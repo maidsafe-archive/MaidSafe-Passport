@@ -54,7 +54,7 @@ target_link_libraries(maidsafe_passport maidsafe_common)
 
 if(MaidsafeTesting)
   ms_add_executable(test_passport "Tests/Passport" ${PassportTestsAllFiles})
-  target_link_libraries(test_passport maidsafe_passport)
+  target_link_libraries(test_passport maidsafe_passport maidsafe_test)
 endif()
 
 ms_rename_outdated_built_exes()
@@ -80,8 +80,10 @@ endif()
 #==================================================================================================#
 # Package                                                                                          #
 #==================================================================================================#
-set(EXPORT_NAME maidsafe_passport)
-install(TARGETS maidsafe_passport EXPORT ${EXPORT_NAME} ARCHIVE DESTINATION lib)
+install(TARGETS maidsafe_passport COMPONENT Development CONFIGURATIONS Debug Release ARCHIVE DESTINATION lib)
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ COMPONENT Development DESTINATION include)
 
-install(FILES ${PassportApi} DESTINATION include/maidsafe/passport)
-install(FILES ${PassportDetailApi} DESTINATION include/maidsafe/passport/detail)
+if(MaidsafeTesting)
+  install(TARGETS test_passport COMPONENT Tests CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
+  install(TARGETS test_passport COMPONENT Tests CONFIGURATIONS Release RUNTIME DESTINATION bin)
+endif()
