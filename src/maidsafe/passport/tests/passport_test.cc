@@ -105,7 +105,7 @@ authentication::UserCredentials CreateUserCredentials() {
   return user_credentials;
 }
 
-TEST_CASE("Constructors, basic encrypt, setters and getters", "[Passport][Behavioural]") {
+TEST_CASE("Constructors basic encrypt setters and getters", "[Passport][Behavioural]") {
   MaidAndSigner maid_and_signer{ CreateMaidAndSigner() };
   Passport passport{ maid_and_signer };
   CHECK(AllFieldsMatch(passport.GetMaid(), maid_and_signer.first));
@@ -347,7 +347,7 @@ TEST_CASE("Encrypt", "[Passport][Behavioural]") {
     CHECK(AllFieldsMatch(*mpids_itr++, (*mpids_and_signers_itr++).first));
 }
 
-TEST_CASE("Parallel adds, encrypts and removes", "[Passport][Behavioural]") {
+TEST_CASE("Parallel adds encrypts and removes", "[Passport][Behavioural]") {
   MaidAndSigner maid_and_signer{ CreateMaidAndSigner() };
   Passport passport{ maid_and_signer };
   std::vector<std::future<void>> add_futures;
