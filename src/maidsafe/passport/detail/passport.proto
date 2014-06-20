@@ -17,6 +17,7 @@
     use of the MaidSafe Software.                                                                 */
 
 package maidsafe.passport.detail.protobuf;
+option optimize_for = LITE_RUNTIME;
 
 message Fob {
   required uint32 type = 1;
