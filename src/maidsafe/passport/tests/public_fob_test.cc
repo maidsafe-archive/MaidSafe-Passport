@@ -32,7 +32,7 @@ namespace passport {
 
 namespace test {
 
-TEST_CASE("Generate and validate PublicFobs", "[Public Fob][Behavioural]") {
+TEST(PublicFobTest, BEH_GenerateAndValidate) {
   Anmaid anmaid;
   Maid maid(anmaid);
   Anpmid anpmid;
@@ -87,7 +87,7 @@ TEST_CASE("Generate and validate PublicFobs", "[Public Fob][Behavioural]") {
   static_assert(!is_long_term_cacheable<PublicPmid>::value, "");
   static_assert(!is_long_term_cacheable<PublicAnmpid>::value, "");
   static_assert(!is_long_term_cacheable<PublicMpid>::value, "");
-  CHECK(true);  // To avoid Catch '--warn NoAssertions' triggering a CTest failure.
+  EXPECT_TRUE(true);  // To avoid Catch '--warn NoAssertions' triggering a CTest failure.
 }
 
 template <typename PublicFobType>
@@ -121,7 +121,7 @@ void CheckParsingFromWrongType(PublicFobType& public_fob, SerialisedType seriali
     typename PublicFobType::serialised_type{ serialised_string } };
 }
 
-TEST_CASE("PublicFob serialisation and parsing", "[Public Fob][Behavioural]") {
+TEST(PublicFobTest, BEH_SerialisationAndParsing) {
   Anmaid anmaid;
   Maid maid{ anmaid };
   Anpmid anpmid;
@@ -136,12 +136,12 @@ TEST_CASE("PublicFob serialisation and parsing", "[Public Fob][Behavioural]") {
   PublicAnmpid public_anmpid{ anmpid };
   PublicMpid public_mpid{ mpid };
 
-  CHECK(CheckSerialisationAndParsing(public_anmaid));
-  CHECK(CheckSerialisationAndParsing(public_maid));
-  CHECK(CheckSerialisationAndParsing(public_anpmid));
-  CHECK(CheckSerialisationAndParsing(public_pmid));
-  CHECK(CheckSerialisationAndParsing(public_anmpid));
-  CHECK(CheckSerialisationAndParsing(public_mpid));
+  EXPECT_TRUE(CheckSerialisationAndParsing(public_anmaid));
+  EXPECT_TRUE(CheckSerialisationAndParsing(public_maid));
+  EXPECT_TRUE(CheckSerialisationAndParsing(public_anpmid));
+  EXPECT_TRUE(CheckSerialisationAndParsing(public_pmid));
+  EXPECT_TRUE(CheckSerialisationAndParsing(public_anmpid));
+  EXPECT_TRUE(CheckSerialisationAndParsing(public_mpid));
 
   PublicAnmaid::serialised_type serialised_anmaid{ public_anmaid.Serialise() };
   PublicMaid::serialised_type serialised_maid{ public_maid.Serialise() };
@@ -150,107 +150,107 @@ TEST_CASE("PublicFob serialisation and parsing", "[Public Fob][Behavioural]") {
   PublicAnmpid::serialised_type serialised_anmpid{ public_anmpid.Serialise() };
   PublicMpid::serialised_type serialised_mpid{ public_mpid.Serialise() };
 
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anmaid, serialised_maid), maidsafe_error);
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anmaid, serialised_anpmid), maidsafe_error);
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anmaid, serialised_pmid), maidsafe_error);
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anmaid, serialised_anmpid), maidsafe_error);
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anmaid, serialised_mpid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_anmaid, serialised_maid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_anmaid, serialised_anpmid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_anmaid, serialised_pmid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_anmaid, serialised_anmpid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_anmaid, serialised_mpid), maidsafe_error);
 
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_maid, serialised_anmaid), maidsafe_error);
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_maid, serialised_anpmid), maidsafe_error);
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_maid, serialised_pmid), maidsafe_error);
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_maid, serialised_anmpid), maidsafe_error);
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_maid, serialised_mpid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_maid, serialised_anmaid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_maid, serialised_anpmid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_maid, serialised_pmid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_maid, serialised_anmpid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_maid, serialised_mpid), maidsafe_error);
 
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anpmid, serialised_anmaid), maidsafe_error);
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anpmid, serialised_maid), maidsafe_error);
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anpmid, serialised_pmid), maidsafe_error);
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anpmid, serialised_anmpid), maidsafe_error);
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anpmid, serialised_mpid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_anpmid, serialised_anmaid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_anpmid, serialised_maid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_anpmid, serialised_pmid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_anpmid, serialised_anmpid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_anpmid, serialised_mpid), maidsafe_error);
 
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_pmid, serialised_anmaid), maidsafe_error);
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_pmid, serialised_maid), maidsafe_error);
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_pmid, serialised_anpmid), maidsafe_error);
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_pmid, serialised_anmpid), maidsafe_error);
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_pmid, serialised_mpid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_pmid, serialised_anmaid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_pmid, serialised_maid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_pmid, serialised_anpmid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_pmid, serialised_anmpid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_pmid, serialised_mpid), maidsafe_error);
 
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anmpid, serialised_anmaid), maidsafe_error);
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anmpid, serialised_maid), maidsafe_error);
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anmpid, serialised_anpmid), maidsafe_error);
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anmpid, serialised_pmid), maidsafe_error);
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_anmpid, serialised_mpid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_anmpid, serialised_anmaid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_anmpid, serialised_maid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_anmpid, serialised_anpmid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_anmpid, serialised_pmid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_anmpid, serialised_mpid), maidsafe_error);
 
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_mpid, serialised_anmaid), maidsafe_error);
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_mpid, serialised_maid), maidsafe_error);
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_mpid, serialised_anpmid), maidsafe_error);
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_mpid, serialised_pmid), maidsafe_error);
-  CHECK_THROWS_AS(CheckParsingFromWrongType(public_mpid, serialised_anmpid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_mpid, serialised_anmaid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_mpid, serialised_maid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_mpid, serialised_anpmid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_mpid, serialised_pmid), maidsafe_error);
+  EXPECT_THROW(CheckParsingFromWrongType(public_mpid, serialised_anmpid), maidsafe_error);
 }
 
-TEST_CASE("Construct PublicFobs from invalid strings", "[Public Fob][Behavioural]") {
+TEST(PublicFobTest, BEH_DoNotConstructPublicFobsFromInvalidStrings) {
   Identity name(RandomString(64));
   NonEmptyString string(RandomAlphaNumericString(1 + RandomUint32() % 100));
-  CHECK_THROWS_AS(PublicAnmaid(PublicAnmaid::Name(name), PublicAnmaid::serialised_type(string)),
+  EXPECT_THROW(PublicAnmaid(PublicAnmaid::Name(name), PublicAnmaid::serialised_type(string)),
                   std::exception);
-  CHECK_THROWS_AS(PublicMaid(PublicMaid::Name(name), PublicMaid::serialised_type(string)),
+  EXPECT_THROW(PublicMaid(PublicMaid::Name(name), PublicMaid::serialised_type(string)),
                   std::exception);
-  CHECK_THROWS_AS(PublicAnpmid(PublicAnpmid::Name(name), PublicAnpmid::serialised_type(string)),
+  EXPECT_THROW(PublicAnpmid(PublicAnpmid::Name(name), PublicAnpmid::serialised_type(string)),
                   std::exception);
-  CHECK_THROWS_AS(PublicPmid(PublicPmid::Name(name), PublicPmid::serialised_type(string)),
+  EXPECT_THROW(PublicPmid(PublicPmid::Name(name), PublicPmid::serialised_type(string)),
                   std::exception);
-  CHECK_THROWS_AS(PublicAnmpid(PublicAnmpid::Name(name), PublicAnmpid::serialised_type(string)),
+  EXPECT_THROW(PublicAnmpid(PublicAnmpid::Name(name), PublicAnmpid::serialised_type(string)),
                   std::exception);
-  CHECK_THROWS_AS(PublicMpid(PublicMpid::Name(name), PublicMpid::serialised_type(string)),
+  EXPECT_THROW(PublicMpid(PublicMpid::Name(name), PublicMpid::serialised_type(string)),
                   std::exception);
 }
 
-TEST_CASE("Construct PublicFobs from uninitialised strings", "[Public Fob][Behavioural]") {
+TEST(PublicFobTest, BEH_DoNotConstructPublicFobsFromUninitialisedStrings) {
   Identity uninitialised_name;
   Identity name(RandomString(64));
   NonEmptyString uninitialised_string;
   NonEmptyString string(RandomAlphaNumericString(1 + RandomUint32() % 100));
-  CHECK_THROWS_AS(
+  EXPECT_THROW(
       PublicAnmaid(PublicAnmaid::Name(name), (PublicAnmaid::serialised_type(uninitialised_string))),
       std::exception);
-  CHECK_THROWS_AS(
+  EXPECT_THROW(
       PublicMaid(PublicMaid::Name(name), (PublicMaid::serialised_type(uninitialised_string))),
       std::exception);
-  CHECK_THROWS_AS(
+  EXPECT_THROW(
       PublicAnpmid(PublicAnpmid::Name(name), (PublicAnpmid::serialised_type(uninitialised_string))),
       std::exception);
-  CHECK_THROWS_AS(
+  EXPECT_THROW(
       PublicPmid(PublicPmid::Name(name), (PublicPmid::serialised_type(uninitialised_string))),
       std::exception);
-  CHECK_THROWS_AS(
+  EXPECT_THROW(
       PublicAnmpid(PublicAnmpid::Name(name), (PublicAnmpid::serialised_type(uninitialised_string))),
       std::exception);
-  CHECK_THROWS_AS(
+  EXPECT_THROW(
       PublicMpid(PublicMpid::Name(name), (PublicMpid::serialised_type(uninitialised_string))),
       std::exception);
 
-  CHECK_THROWS_AS(
+  EXPECT_THROW(
       PublicAnmaid(PublicAnmaid::Name(uninitialised_name), (PublicAnmaid::serialised_type(string))),
       std::exception);
-  CHECK_THROWS_AS(
+  EXPECT_THROW(
       PublicMaid(PublicMaid::Name(uninitialised_name), (PublicMaid::serialised_type(string))),
       std::exception);
-  CHECK_THROWS_AS(
+  EXPECT_THROW(
       PublicAnpmid(PublicAnpmid::Name(uninitialised_name), (PublicAnpmid::serialised_type(string))),
       std::exception);
-  CHECK_THROWS_AS(
+  EXPECT_THROW(
       PublicPmid(PublicPmid::Name(uninitialised_name), (PublicPmid::serialised_type(string))),
       std::exception);
-  CHECK_THROWS_AS(
+  EXPECT_THROW(
       PublicAnmpid(PublicAnmpid::Name(uninitialised_name), (PublicAnmpid::serialised_type(string))),
       std::exception);
-  CHECK_THROWS_AS(
+  EXPECT_THROW(
       PublicMpid(PublicMpid::Name(uninitialised_name), (PublicMpid::serialised_type(string))),
       std::exception);
 }
 
-TEST_CASE("Serialise uninitialised PublicFob", "[Public Fob][Behavioural]") {
+TEST(PublicFobTest, BEH_SerialiseUninitialisedPublicFob) {
   pb::PublicFob proto_public_fob;
-  CHECK_THROWS_AS(NonEmptyString(proto_public_fob.SerializeAsString()), std::exception);
+  EXPECT_THROW(NonEmptyString(proto_public_fob.SerializeAsString()), std::exception);
 }
 
 }  // namespace test

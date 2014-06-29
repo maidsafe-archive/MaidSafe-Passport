@@ -53,8 +53,8 @@ target_include_directories(maidsafe_passport PUBLIC ${PROJECT_SOURCE_DIR}/includ
 target_link_libraries(maidsafe_passport maidsafe_common)
 
 if(MaidsafeTesting)
-  ms_add_executable(test_passport "Tests/Passport" ${PassportTestsAllFiles})
-  target_link_libraries(test_passport maidsafe_passport maidsafe_test)
+  ms_add_executable(TESTpassport "Tests/Passport" ${PassportTestsAllFiles})
+  target_link_libraries(TESTpassport maidsafe_passport maidsafe_test)
 endif()
 
 ms_rename_outdated_built_exes()
@@ -71,7 +71,7 @@ include(standard_flags)
 #==================================================================================================#
 if(MaidsafeTesting)
   ms_add_style_test()
-  ms_add_catch_tests(test_passport)
+  ms_add_gtests(TESTpassport)
   ms_add_project_experimental()
   ms_test_summary_output()
 endif()
@@ -84,6 +84,6 @@ install(TARGETS maidsafe_passport COMPONENT Development CONFIGURATIONS Debug Rel
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ COMPONENT Development DESTINATION include)
 
 if(MaidsafeTesting)
-  install(TARGETS test_passport COMPONENT Tests CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
-  install(TARGETS test_passport COMPONENT Tests CONFIGURATIONS Release RUNTIME DESTINATION bin)
+  install(TARGETS TESTpassport COMPONENT Tests CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
+  install(TARGETS TESTpassport COMPONENT Tests CONFIGURATIONS Release RUNTIME DESTINATION bin)
 endif()

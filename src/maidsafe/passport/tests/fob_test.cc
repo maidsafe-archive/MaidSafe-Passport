@@ -34,7 +34,7 @@ namespace passport {
 
 namespace test {
 
-TEST_CASE("Fob generation and validation", "[Fob][Behavioural]") {
+TEST(FobTest, FUNC_GenerationAndValidation) {
   Anmaid anmaid;
   Maid maid(anmaid);
   Anpmid anpmid;
@@ -82,7 +82,7 @@ TEST_CASE("Fob generation and validation", "[Fob][Behavioural]") {
   static_assert(!is_long_term_cacheable<Pmid>::value, "");
   static_assert(!is_long_term_cacheable<Anmpid>::value, "");
   static_assert(!is_long_term_cacheable<Mpid>::value, "");
-  CHECK(true);  // To avoid Catch '--warn NoAssertions' triggering a CTest failure.
+  EXPECT_TRUE(true);
 }
 
 template <typename Fobtype>
@@ -109,7 +109,7 @@ bool CheckSerialisationAndParsing(Fobtype fob) {
   return true;
 }
 
-TEST_CASE("Fob serialisation and parsing", "[Fob][Behavioural]") {
+TEST(FobTest, BEH_SerialisationAndParsing) {
   Anmaid anmaid;
   Maid maid(anmaid);
   Anpmid anpmid;
@@ -117,12 +117,12 @@ TEST_CASE("Fob serialisation and parsing", "[Fob][Behavioural]") {
   Anmpid anmpid;
   Mpid mpid(NonEmptyString(RandomAlphaNumericString(1 + RandomUint32() % 100)), anmpid);
 
-  CHECK(CheckSerialisationAndParsing(anmaid));
-  CHECK(CheckSerialisationAndParsing(maid));
-  CHECK(CheckSerialisationAndParsing(anpmid));
-  CHECK(CheckSerialisationAndParsing(pmid));
-  CHECK(CheckSerialisationAndParsing(anmpid));
-  CHECK(CheckSerialisationAndParsing(mpid));
+  EXPECT_TRUE(CheckSerialisationAndParsing(anmaid));
+  EXPECT_TRUE(CheckSerialisationAndParsing(maid));
+  EXPECT_TRUE(CheckSerialisationAndParsing(anpmid));
+  EXPECT_TRUE(CheckSerialisationAndParsing(pmid));
+  EXPECT_TRUE(CheckSerialisationAndParsing(anmpid));
+  EXPECT_TRUE(CheckSerialisationAndParsing(mpid));
 }
 
 bool CheckTokenAndName(const asymm::PublicKey& public_key, const asymm::Signature& signature,
@@ -160,7 +160,7 @@ bool CheckNamingAndValidation(Fobtype fob, asymm::PublicKey signer_public_key,
                            Identity(fob.name()), chosen_name);
 }
 
-TEST_CASE("Fob naming and validation", "[Fob][Behavioural]") {
+TEST(FobTest, BEH_NamingAndValidation) {
   Anmaid anmaid;
   Maid maid(anmaid);
   Anpmid anpmid;
@@ -169,12 +169,12 @@ TEST_CASE("Fob naming and validation", "[Fob][Behavioural]") {
   NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 100));
   Mpid mpid(chosen_name, anmpid);
 
-  CHECK(CheckNamingAndValidation(anmaid));
-  CHECK(CheckNamingAndValidation(maid, anmaid.public_key()));
-  CHECK(CheckNamingAndValidation(anpmid));
-  CHECK(CheckNamingAndValidation(pmid, anpmid.public_key()));
-  CHECK(CheckNamingAndValidation(anmpid));
-  CHECK(CheckNamingAndValidation(mpid, anmpid.public_key(), chosen_name));
+  EXPECT_TRUE(CheckNamingAndValidation(anmaid));
+  EXPECT_TRUE(CheckNamingAndValidation(maid, anmaid.public_key()));
+  EXPECT_TRUE(CheckNamingAndValidation(anpmid));
+  EXPECT_TRUE(CheckNamingAndValidation(pmid, anpmid.public_key()));
+  EXPECT_TRUE(CheckNamingAndValidation(anmpid));
+  EXPECT_TRUE(CheckNamingAndValidation(mpid, anmpid.public_key(), chosen_name));
 }
 
 }  // namespace test
