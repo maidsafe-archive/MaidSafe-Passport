@@ -48,7 +48,7 @@ bool AllFieldsMatch(const Fobtype& lhs, const Fobtype& rhs) {
          lhs.name() == rhs.name();
 }
 
-TEST(PassportTest, BEH_Freefunctions) {
+TEST(PassportTest, BEH_FreeFunctions) {
   MaidAndSigner maid_and_signer{ CreateMaidAndSigner() };
   CreateMpidAndSigner(NonEmptyString{ RandomString((RandomUint32() % 100) + 1) });
   PmidAndSigner pmid_and_signer{ CreatePmidAndSigner() };

@@ -87,7 +87,6 @@ TEST(PublicFobTest, BEH_GenerateAndValidate) {
   static_assert(!is_long_term_cacheable<PublicPmid>::value, "");
   static_assert(!is_long_term_cacheable<PublicAnmpid>::value, "");
   static_assert(!is_long_term_cacheable<PublicMpid>::value, "");
-  EXPECT_TRUE(true);  // To avoid Catch '--warn NoAssertions' triggering a CTest failure.
 }
 
 template <typename PublicFobType>
