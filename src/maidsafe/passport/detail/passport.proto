@@ -16,8 +16,9 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-package maidsafe.passport.detail.protobuf;
 option optimize_for = LITE_RUNTIME;
+
+package maidsafe.passport.detail.protobuf;
 
 message Fob {
   required uint32 type = 1;
