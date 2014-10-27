@@ -19,7 +19,11 @@
 #include "maidsafe/passport/detail/fob.h"
 
 #include "maidsafe/common/utils.h"
-#include "maidsafe/passport/detail/passport.pb.h"
+
+#include "maidsafe/common/cereal/cerealize_helpers.h"
+#include "maidsafe/passport/detail/cereal/passport.h"
+#include "maidsafe/passport/detail/cereal/pmid_list.h"
+#include "maidsafe/passport/detail/cereal/key_chain_list.h"
 
 namespace maidsafe {
 
@@ -36,32 +40,29 @@ Identity CreateMpidName(const NonEmptyString& chosen_name) {
   return Identity{ crypto::Hash<crypto::SHA512>(chosen_name) };
 }
 
-void FobFromProtobuf(const protobuf::Fob& proto_fob, DataTagValue enum_value, asymm::Keys& keys,
+void FobFromCereal(const cereal::Fob& cereal_fob, DataTagValue enum_value, asymm::Keys& keys,
                      asymm::Signature& validation_token, Identity& name) {
-  if (!proto_fob.IsInitialized())
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
-
-  validation_token = asymm::Signature(proto_fob.validation_token());
-  name = Identity(proto_fob.name());
+  validation_token = asymm::Signature(cereal_fob.validation_token_);
+  name = Identity(cereal_fob.name_);
 
   asymm::PlainText plain{ RandomString(64) };
-  keys.private_key = asymm::DecodeKey(asymm::EncodedPrivateKey(proto_fob.encoded_private_key()));
-  keys.public_key = asymm::DecodeKey(asymm::EncodedPublicKey(proto_fob.encoded_public_key()));
+  keys.private_key = asymm::DecodeKey(asymm::EncodedPrivateKey(cereal_fob.encoded_private_key_));
+  keys.public_key = asymm::DecodeKey(asymm::EncodedPublicKey(cereal_fob.encoded_public_key_));
   if ((enum_value != MpidTag::kValue && CreateFobName(keys.public_key, validation_token) != name) ||
       asymm::Decrypt(asymm::Encrypt(plain, keys.public_key), keys.private_key) != plain ||
-      enum_value != DataTagValue(proto_fob.type())) {
+      enum_value != DataTagValue(cereal_fob.type_)) {
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   }
 }
 
-void FobToProtobuf(DataTagValue enum_value, const asymm::Keys& keys,
+void FobToCereal(DataTagValue enum_value, const asymm::Keys& keys,
                    const asymm::Signature& validation_token, const std::string& name,
-                   protobuf::Fob* proto_fob) {
-  proto_fob->set_type(static_cast<uint32_t>(enum_value));
-  proto_fob->set_name(name);
-  proto_fob->set_encoded_private_key(asymm::EncodeKey(keys.private_key).string());
-  proto_fob->set_encoded_public_key(asymm::EncodeKey(keys.public_key).string());
-  proto_fob->set_validation_token(validation_token.string());
+                   cereal::Fob* cereal_fob) {
+  cereal_fob->type_ = static_cast<uint32_t>(enum_value);
+  cereal_fob->name_ = name;
+  cereal_fob->encoded_private_key_ = asymm::EncodeKey(keys.private_key).string();
+  cereal_fob->encoded_public_key_ = asymm::EncodeKey(keys.public_key).string();
+  cereal_fob->validation_token_ = validation_token.string();
 }
 
 
@@ -85,14 +86,14 @@ Fob<MpidTag>& Fob<MpidTag>::operator=(Fob<MpidTag> other) {
   return *this;
 }
 
-Fob<MpidTag>::Fob(const protobuf::Fob& proto_fob) : keys_(), validation_token_(), name_() {
+Fob<MpidTag>::Fob(const cereal::Fob& cereal_fob) : keys_(), validation_token_(), name_() {
   Identity name;
-  FobFromProtobuf(proto_fob, MpidTag::kValue, keys_, validation_token_, name);
+  FobFromCereal(cereal_fob, MpidTag::kValue, keys_, validation_token_, name);
   name_ = Name{ name };
 }
 
-void Fob<MpidTag>::ToProtobuf(protobuf::Fob* proto_fob) const {
-  FobToProtobuf(MpidTag::kValue, keys_, validation_token_, name_->string(), proto_fob);
+void Fob<MpidTag>::ToCereal(cereal::Fob* cereal_fob) const {
+  FobToCereal(MpidTag::kValue, keys_, validation_token_, name_->string(), cereal_fob);
 }
 
 
@@ -102,17 +103,19 @@ namespace {
 template <typename TagType>
 crypto::CipherText Encrypt(const Fob<TagType>& fob, const crypto::AES256Key& symm_key,
                            const crypto::AES256InitialisationVector& symm_iv) {
-  protobuf::Fob proto_fob;
-  fob.ToProtobuf(&proto_fob);
-  return crypto::SymmEncrypt(crypto::PlainText{ proto_fob.SerializeAsString() }, symm_key, symm_iv);
+  cereal::Fob cereal_fob;
+  fob.ToCereal(&cereal_fob);
+  return crypto::SymmEncrypt(crypto::PlainText{ common::cereal::ConvertToString(cereal_fob) },
+                             symm_key, symm_iv);
 }
 
 template <typename TagType>
 Fob<TagType> Decrypt(const crypto::CipherText& encrypted_fob, const crypto::AES256Key& symm_key,
                      const crypto::AES256InitialisationVector& symm_iv) {
-  protobuf::Fob proto_fob;
-  proto_fob.ParseFromString(crypto::SymmDecrypt(encrypted_fob, symm_key, symm_iv).string());
-  return Fob<TagType>{ proto_fob };
+  cereal::Fob cereal_fob;
+  common::cereal::ConvertFromString(crypto::SymmDecrypt(encrypted_fob, symm_key, symm_iv).string(),
+                                    cereal_fob);
+  return Fob<TagType>{ cereal_fob };
 }
 
 }  // unnamed namespace
@@ -155,97 +158,100 @@ Fob<PmidTag> DecryptPmid(const crypto::CipherText& encrypted_pmid,
 #ifdef TESTING
 
 NonEmptyString SerialiseAnmaid(const Fob<AnmaidTag>& anmaid) {
-  protobuf::Fob proto_fob;
-  anmaid.ToProtobuf(&proto_fob);
-  return NonEmptyString{ proto_fob.SerializeAsString() };
+  cereal::Fob cereal_fob;
+  anmaid.ToCereal(&cereal_fob);
+  return NonEmptyString{ common::cereal::ConvertToString(cereal_fob) };
 }
 
 Fob<AnmaidTag> ParseAnmaid(const NonEmptyString& serialised_anmaid) {
-  protobuf::Fob proto_fob;
-  proto_fob.ParseFromString(serialised_anmaid.string());
-  return Fob<AnmaidTag>{ proto_fob };
+  cereal::Fob cereal_fob;
+  common::cereal::ConvertFromString(serialised_anmaid.string(), cereal_fob);
+  return Fob<AnmaidTag>{ cereal_fob };
 }
 
 NonEmptyString SerialiseMaid(const Fob<MaidTag>& maid) {
-  protobuf::Fob proto_fob;
-  maid.ToProtobuf(&proto_fob);
-  return NonEmptyString{ proto_fob.SerializeAsString() };
+  cereal::Fob cereal_fob;
+  maid.ToCereal(&cereal_fob);
+  return NonEmptyString{ common::cereal::ConvertToString(cereal_fob) };
 }
 
 Fob<MaidTag> ParseMaid(const NonEmptyString& serialised_maid) {
-  protobuf::Fob proto_fob;
-  proto_fob.ParseFromString(serialised_maid.string());
-  return Fob<MaidTag>{ proto_fob };
+  cereal::Fob cereal_fob;
+  common::cereal::ConvertFromString(serialised_maid.string(), cereal_fob);
+  return Fob<MaidTag>{ cereal_fob };
 }
 
 NonEmptyString SerialiseAnpmid(const Fob<AnpmidTag>& anpmid) {
-  protobuf::Fob proto_fob;
-  anpmid.ToProtobuf(&proto_fob);
-  return NonEmptyString{ proto_fob.SerializeAsString() };
+  cereal::Fob cereal_fob;
+  anpmid.ToCereal(&cereal_fob);
+  return NonEmptyString{ common::cereal::ConvertToString(cereal_fob) };
 }
 
 Fob<AnpmidTag> ParseAnpmid(const NonEmptyString& serialised_anpmid) {
-  protobuf::Fob proto_fob;
-  proto_fob.ParseFromString(serialised_anpmid.string());
-  return Fob<AnpmidTag>{ proto_fob };
+  cereal::Fob cereal_fob;
+  common::cereal::ConvertFromString(serialised_anpmid.string(), cereal_fob);
+  return Fob<AnpmidTag>{ cereal_fob };
 }
 
 NonEmptyString SerialisePmid(const Fob<PmidTag>& pmid) {
-  protobuf::Fob proto_fob;
-  pmid.ToProtobuf(&proto_fob);
-  return NonEmptyString{ proto_fob.SerializeAsString() };
+  cereal::Fob cereal_fob;
+  pmid.ToCereal(&cereal_fob);
+  return NonEmptyString{ common::cereal::ConvertToString(cereal_fob) };
 }
 
 Fob<PmidTag> ParsePmid(const NonEmptyString& serialised_pmid) {
-  protobuf::Fob proto_fob;
-  proto_fob.ParseFromString(serialised_pmid.string());
-  return Fob<PmidTag>{ proto_fob };
+  cereal::Fob cereal_fob;
+  common::cereal::ConvertFromString(serialised_pmid.string(), cereal_fob);
+  return Fob<PmidTag>{ cereal_fob };
 }
 
 std::vector<Fob<PmidTag>> ReadPmidList(const boost::filesystem::path& file_path) {
   std::vector<Fob<PmidTag>> pmid_list;
-  protobuf::PmidList pmid_list_msg;
-  pmid_list_msg.ParseFromString(ReadFile(file_path).string());
-  for (int i = 0; i < pmid_list_msg.pmids_size(); ++i)
-    pmid_list.emplace_back(ParsePmid(NonEmptyString{ pmid_list_msg.pmids(i) }));
+  cereal::PmidList pmid_list_msg;
+  common::cereal::ConvertFromString(ReadFile(file_path).string(), pmid_list_msg);
+  for (std::size_t i = 0; i < pmid_list_msg.pmids_.size(); ++i)
+    pmid_list.emplace_back(ParsePmid(NonEmptyString{ pmid_list_msg.pmids_[i] }));
   return pmid_list;
 }
 
 bool WritePmidList(const boost::filesystem::path& file_path,
                    const std::vector<Fob<PmidTag>>& pmid_list) {
-  protobuf::PmidList pmid_list_msg;
+  cereal::PmidList pmid_list_msg;
   for (const auto& pmid : pmid_list)
-    pmid_list_msg.add_pmids()->assign(SerialisePmid(pmid).string());
-  return WriteFile(file_path, pmid_list_msg.SerializeAsString());
+    ((pmid_list_msg.pmids_.emplace_back(),
+      &pmid_list_msg.pmids_[pmid_list_msg.pmids_.size() - 1]))->assign(
+        SerialisePmid(pmid).string());
+  return WriteFile(file_path, common::cereal::ConvertToString(pmid_list_msg));
 }
 
-AnmaidToPmid ParseKeys(const protobuf::KeyChainList::KeyChain& key_chain) {
-  return std::move(AnmaidToPmid(ParseAnmaid(NonEmptyString{ key_chain.anmaid() }),
-                                ParseMaid(NonEmptyString{ key_chain.maid()}),
-                                ParseAnpmid(NonEmptyString{ key_chain.anpmid() }),
-                                ParsePmid(NonEmptyString{ key_chain.pmid() })));
+AnmaidToPmid ParseKeys(const cereal::KeyChainList::KeyChain& key_chain) {
+  return std::move(AnmaidToPmid(ParseAnmaid(NonEmptyString{ key_chain.anmaid_ }),
+                                ParseMaid(NonEmptyString{ key_chain.maid_}),
+                                ParseAnpmid(NonEmptyString{ key_chain.anpmid_ }),
+                                ParsePmid(NonEmptyString{ key_chain.pmid_ })));
 }
 
 std::vector<AnmaidToPmid> ReadKeyChainList(const boost::filesystem::path& file_path) {
   std::vector<AnmaidToPmid> keychain_list;
-  protobuf::KeyChainList keychain_list_msg;
-  keychain_list_msg.ParseFromString(ReadFile(file_path).string());
-  for (int i = 0; i < keychain_list_msg.keychains_size(); ++i)
-    keychain_list.emplace_back(ParseKeys(keychain_list_msg.keychains(i)));
+  cereal::KeyChainList keychain_list_msg;
+  common::cereal::ConvertFromString(ReadFile(file_path).string(), keychain_list_msg);
+  for (std::size_t i = 0; i < keychain_list_msg.keychains_.size(); ++i)
+    keychain_list.emplace_back(ParseKeys(keychain_list_msg.keychains_[i]));
   return keychain_list;
 }
 
 bool WriteKeyChainList(const boost::filesystem::path& file_path,
                        const std::vector<AnmaidToPmid>& keychain_list) {
-  protobuf::KeyChainList keychain_list_msg;
+  cereal::KeyChainList keychain_list_msg;
   for (const auto& keychain : keychain_list) {
-    auto entry = keychain_list_msg.add_keychains();
-    entry->set_anmaid(SerialiseAnmaid(keychain.anmaid).string());
-    entry->set_maid(SerialiseMaid(keychain.maid).string());
-    entry->set_anpmid(SerialiseAnpmid(keychain.anpmid).string());
-    entry->set_pmid(SerialisePmid(keychain.pmid).string());
+    auto entry = ((keychain_list_msg.keychains_.emplace_back(),
+                   &keychain_list_msg.keychains_[keychain_list_msg.keychains_.size() - 1]));
+    entry->anmaid_ = SerialiseAnmaid(keychain.anmaid).string();
+    entry->maid_ = SerialiseMaid(keychain.maid).string();
+    entry->anpmid_ = SerialiseAnpmid(keychain.anpmid).string();
+    entry->pmid_ = SerialisePmid(keychain.pmid).string();
   }
-  return WriteFile(file_path, keychain_list_msg.SerializeAsString());
+  return WriteFile(file_path, common::cereal::ConvertToString(keychain_list_msg));
 }
 
 template <>

@@ -33,10 +33,10 @@ namespace passport {
 
 namespace detail {
 
-void PublicFobFromProtobuf(const NonEmptyString& serialised_public_fob, DataTagValue enum_value,
+void PublicFobFromCereal(const NonEmptyString& serialised_public_fob, DataTagValue enum_value,
                            asymm::PublicKey& public_key, asymm::Signature& validation_token);
 
-NonEmptyString PublicFobToProtobuf(DataTagValue enum_value, const asymm::PublicKey& public_key,
+NonEmptyString PublicFobToCereal(DataTagValue enum_value, const asymm::PublicKey& public_key,
                                    const asymm::Signature& validation_token);
 
 template <typename TagType>
@@ -78,11 +78,11 @@ class PublicFob {
       : name_(std::move(name)), public_key_(), validation_token_() {
     if (!name_->IsInitialised())
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
-    PublicFobFromProtobuf(serialised_public_fob.data, Tag::kValue, public_key_, validation_token_);
+    PublicFobFromCereal(serialised_public_fob.data, Tag::kValue, public_key_, validation_token_);
   }
 
   serialised_type Serialise() const {
-    return serialised_type(PublicFobToProtobuf(Tag::kValue, public_key_, validation_token_));
+    return serialised_type(PublicFobToCereal(Tag::kValue, public_key_, validation_token_));
   }
 
   Name name() const { return name_; }

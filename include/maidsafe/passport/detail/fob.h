@@ -37,19 +37,19 @@ namespace passport {
 
 namespace detail {
 
-namespace protobuf { class Fob; }
+namespace cereal { class Fob; }
 
 Identity CreateFobName(const asymm::PublicKey& public_key,
                        const asymm::Signature& validation_token);
 
 Identity CreateMpidName(const NonEmptyString& chosen_name);
 
-void FobFromProtobuf(const protobuf::Fob& proto_fob, DataTagValue enum_value, asymm::Keys& keys,
+void FobFromCereal(const cereal::Fob& cereal_fob, DataTagValue enum_value, asymm::Keys& keys,
                      asymm::Signature& validation_token, Identity& name);
 
-void FobToProtobuf(DataTagValue enum_value, const asymm::Keys& keys,
+void FobToCereal(DataTagValue enum_value, const asymm::Keys& keys,
                    const asymm::Signature& validation_token, const std::string& name,
-                   protobuf::Fob* proto_fob);
+                   cereal::Fob* cereal_fob);
 
 template <typename TagType>
 struct is_self_signed {
@@ -93,14 +93,14 @@ class Fob<TagType, typename std::enable_if<is_self_signed<TagType>::type::value>
     return *this;
   }
 
-  explicit Fob(const protobuf::Fob& proto_fob) : keys_(), validation_token_(), name_() {
+  explicit Fob(const cereal::Fob& cereal_fob) : keys_(), validation_token_(), name_() {
     Identity name;
-    FobFromProtobuf(proto_fob, Tag::kValue, keys_, validation_token_, name);
+    FobFromCereal(cereal_fob, Tag::kValue, keys_, validation_token_, name);
     name_ = Name{ name };
   }
 
-  void ToProtobuf(protobuf::Fob* proto_fob) const {
-    FobToProtobuf(Tag::kValue, keys_, validation_token_, name_->string(), proto_fob);
+  void ToCereal(cereal::Fob* cereal_fob) const {
+    FobToCereal(Tag::kValue, keys_, validation_token_, name_->string(), cereal_fob);
   }
 
   Name name() const { return name_; }
@@ -150,14 +150,14 @@ class Fob<TagType, typename std::enable_if<!is_self_signed<TagType>::type::value
     return *this;
   }
 
-  explicit Fob(const protobuf::Fob& proto_fob) : keys_(), validation_token_(), name_() {
+  explicit Fob(const cereal::Fob& cereal_fob) : keys_(), validation_token_(), name_() {
     Identity name;
-    FobFromProtobuf(proto_fob, Tag::kValue, keys_, validation_token_, name);
+    FobFromCereal(cereal_fob, Tag::kValue, keys_, validation_token_, name);
     name_ = Name{ name };
   }
 
-  void ToProtobuf(protobuf::Fob* proto_fob) const {
-    FobToProtobuf(Tag::kValue, keys_, validation_token_, name_->string(), proto_fob);
+  void ToCereal(cereal::Fob* cereal_fob) const {
+    FobToCereal(Tag::kValue, keys_, validation_token_, name_->string(), cereal_fob);
   }
 
   Name name() const { return name_; }
@@ -195,8 +195,8 @@ class Fob<MpidTag> {
   }
   Fob& operator=(Fob other);
 
-  explicit Fob(const protobuf::Fob& proto_fob);
-  void ToProtobuf(protobuf::Fob* proto_fob) const;
+  explicit Fob(const cereal::Fob& cereal_fob);
+  void ToCereal(cereal::Fob* cereal_fob) const;
 
   Name name() const { return name_; }
   asymm::Signature validation_token() const { return validation_token_; }

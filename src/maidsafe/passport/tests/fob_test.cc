@@ -25,7 +25,9 @@
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
-#include "maidsafe/passport/detail/passport.pb.h"
+#include "maidsafe/passport/detail/cereal/fob.h"
+#include "maidsafe/common/cereal/cerealize_helpers.h"
+
 #include "maidsafe/passport/types.h"
 
 namespace maidsafe {
@@ -87,9 +89,9 @@ TEST(FobTest, FUNC_GenerationAndValidation) {
 
 template <typename Fobtype>
 bool CheckSerialisationAndParsing(Fobtype fob) {
-  maidsafe::passport::detail::protobuf::Fob proto_fob;
-  fob.ToProtobuf(&proto_fob);
-  Fobtype fob2(proto_fob);
+  passport::detail::cereal::Fob cereal_fob;
+  fob.ToCereal(&cereal_fob);
+  Fobtype fob2(cereal_fob);
   if (fob.validation_token() != fob2.validation_token()) {
     LOG(kError) << "Validation tokens don't match.";
     return false;

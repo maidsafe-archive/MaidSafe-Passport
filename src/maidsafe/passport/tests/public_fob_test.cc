@@ -22,9 +22,9 @@
 #include "maidsafe/common/utils.h"
 
 #include "maidsafe/passport/types.h"
-#include "maidsafe/passport/detail/passport.pb.h"
 
-namespace pb = maidsafe::passport::detail::protobuf;
+#include "maidsafe/common/cereal/cerealize_helpers.h"
+#include "maidsafe/passport/detail/cereal/public_fob.h"
 
 namespace maidsafe {
 
@@ -248,8 +248,8 @@ TEST(PublicFobTest, BEH_DoNotConstructPublicFobsFromUninitialisedStrings) {
 }
 
 TEST(PublicFobTest, BEH_SerialiseUninitialisedPublicFob) {
-  pb::PublicFob proto_public_fob;
-  EXPECT_THROW(NonEmptyString(proto_public_fob.SerializeAsString()), std::exception);
+  passport::detail::cereal::PublicFob cereal_public_fob;
+  EXPECT_THROW(NonEmptyString(common::cereal::ConvertToString(cereal_public_fob)), std::exception);
 }
 
 }  // namespace test
