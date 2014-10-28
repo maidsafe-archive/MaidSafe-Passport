@@ -31,18 +31,29 @@ namespace detail {
 namespace cereal {
 
 struct KeyChainList_KeyChain {
+  KeyChainList_KeyChain()
+    : anmaid_ {},
+      maid_ {},
+      anpmid_ {},
+      pmid_ {}
+  { }
+
   template<typename Archive>
   void serialize(Archive& ref_archive) {
     ref_archive(anmaid_, maid_, anpmid_, pmid_);
   }
 
-  std::string anmaid_ {};
-  std::string maid_ {};
-  std::string anpmid_ {};
-  std::string pmid_ {};
+  std::string anmaid_;
+  std::string maid_;
+  std::string anpmid_;
+  std::string pmid_;
 };
 
 struct KeyChainList {
+  KeyChainList()
+    : keychains_ {}
+  { }
+
   template<typename Archive>
   void serialize(Archive& ref_archive) {
     ref_archive(keychains_);
@@ -50,7 +61,7 @@ struct KeyChainList {
 
   using KeyChain = KeyChainList_KeyChain;
 
-  std::vector<KeyChain> keychains_ {};
+  std::vector<KeyChain> keychains_;
 };
 
 }  // namespace cereal

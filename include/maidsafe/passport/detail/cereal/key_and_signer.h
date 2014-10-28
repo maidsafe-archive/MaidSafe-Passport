@@ -30,13 +30,18 @@ namespace detail {
 namespace cereal {
 
 struct KeyAndSigner {
+  KeyAndSigner()
+    : key_ {},
+      signer_ {}
+  { }
+
   template<typename Archive>
   void serialize(Archive& ref_archive) {
     ref_archive(key_, signer_);
   }
 
-  Fob key_ {};
-  Fob signer_ {};
+  Fob key_;
+  Fob signer_;
 };
 
 }  // namespace cereal

@@ -249,7 +249,7 @@ TEST(PublicFobTest, BEH_DoNotConstructPublicFobsFromUninitialisedStrings) {
 
 TEST(PublicFobTest, BEH_SerialiseUninitialisedPublicFob) {
   passport::detail::cereal::PublicFob cereal_public_fob;
-  EXPECT_THROW(NonEmptyString(common::cereal::ConvertToString(cereal_public_fob)), std::exception);
+  EXPECT_THROW(NonEmptyString(maidsafe::cereal::ConvertToString(cereal_public_fob)), std::exception);
 }
 
 }  // namespace test

@@ -31,14 +31,20 @@ namespace detail {
 namespace cereal {
 
 struct Passport {
+  Passport()
+    : maid_and_signer_ {},
+      pmids_and_signers_ {},
+      mpids_and_signers_ {}
+  { }
+
   template<typename Archive>
   void serialize(Archive& ref_archive) {
     ref_archive(maid_and_signer_, pmids_and_signers_, mpids_and_signers_);
   }
 
-  KeyAndSigner maid_and_signer_ {};
-  std::vector<KeyAndSigner> pmids_and_signers_ {};
-  std::vector<KeyAndSigner> mpids_and_signers_ {};
+  KeyAndSigner maid_and_signer_;
+  std::vector<KeyAndSigner> pmids_and_signers_;
+  std::vector<KeyAndSigner> mpids_and_signers_;
 };
 
 }  // namespace cereal

@@ -31,12 +31,16 @@ namespace detail {
 namespace cereal {
 
 struct PmidList {
+  PmidList()
+    : pmids_ {}
+  { }
+
   template<typename Archive>
   void serialize(Archive& ref_archive) {
     ref_archive(pmids_);
   }
 
-  std::vector<std::string> pmids_ {};
+  std::vector<std::string> pmids_;
 };
 
 }  // namespace cereal

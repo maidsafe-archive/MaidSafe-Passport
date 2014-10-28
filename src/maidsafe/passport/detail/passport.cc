@@ -145,7 +145,7 @@ Passport::Passport(const crypto::CipherText& encrypted_passport,
 
 void Passport::Parse(const NonEmptyString& serialised_passport) {
   detail::cereal::Passport cereal_passport;
-  try { common::cereal::ConvertFromString(serialised_passport.string(), cereal_passport); }
+  try { maidsafe::cereal::ConvertFromString(serialised_passport.string(), cereal_passport); }
   catch(...) {
     LOG(kError) << "Failed to parse passport.";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
@@ -198,7 +198,7 @@ NonEmptyString Passport::Serialise() const {
     mpid_and_signer.second.ToCereal(&cereal_key_and_signer->signer_);
   }
 
-  return NonEmptyString{ common::cereal::ConvertToString(cereal_passport) };
+  return NonEmptyString{ maidsafe::cereal::ConvertToString(cereal_passport) };
 }
 
 crypto::CipherText Passport::Encrypt(

@@ -31,16 +31,24 @@ namespace detail {
 namespace cereal {
 
 struct Fob {
+  Fob()
+    : type_ {},
+      name_ {},
+      encoded_private_key_ {},
+      encoded_public_key_ {},
+      validation_token_ {}
+  { }
+
   template<typename Archive>
   void serialize(Archive& ref_archive) {
     ref_archive(type_, name_, encoded_private_key_, encoded_public_key_, validation_token_);
   }
 
-  std::uint32_t type_ {};
-  std::string name_ {};
-  std::string encoded_private_key_ {};
-  std::string encoded_public_key_ {};
-  std::string validation_token_ {};
+  std::uint32_t type_ ;
+  std::string name_;
+  std::string encoded_private_key_;
+  std::string encoded_public_key_;
+  std::string validation_token_;
 };
 
 }  // namespace cereal
