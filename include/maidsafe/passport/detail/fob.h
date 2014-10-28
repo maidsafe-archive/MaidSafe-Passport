@@ -37,7 +37,7 @@ namespace passport {
 
 namespace detail {
 
-namespace cereal { class Fob; }
+namespace cereal { struct Fob; }
 
 Identity CreateFobName(const asymm::PublicKey& public_key,
                        const asymm::Signature& validation_token);
