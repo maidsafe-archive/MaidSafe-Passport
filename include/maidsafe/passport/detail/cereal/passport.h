@@ -38,8 +38,8 @@ struct Passport {
   { }
 
   template<typename Archive>
-  void serialize(Archive& ref_archive) {
-    ref_archive(maid_and_signer_, pmids_and_signers_, mpids_and_signers_);
+  Archive& serialize(Archive& ref_archive) {
+    return ref_archive(maid_and_signer_, pmids_and_signers_, mpids_and_signers_);
   }
 
   KeyAndSigner maid_and_signer_;

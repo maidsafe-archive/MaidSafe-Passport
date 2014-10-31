@@ -38,8 +38,8 @@ struct PublicFob {
   { }
 
   template<typename Archive>
-  void serialize(Archive& ref_archive) {
-    ref_archive(type_, encoded_public_key_, validation_token_);
+  Archive& serialize(Archive& ref_archive) {
+    return ref_archive(type_, encoded_public_key_, validation_token_);
   }
 
   std::uint32_t type_;

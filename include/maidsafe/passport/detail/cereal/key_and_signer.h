@@ -36,8 +36,8 @@ struct KeyAndSigner {
   { }
 
   template<typename Archive>
-  void serialize(Archive& ref_archive) {
-    ref_archive(key_, signer_);
+  Archive& serialize(Archive& ref_archive) {
+    return ref_archive(key_, signer_);
   }
 
   Fob key_;

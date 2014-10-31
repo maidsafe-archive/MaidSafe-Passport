@@ -23,7 +23,7 @@
 #include "maidsafe/common/authentication/user_credentials.h"
 #include "maidsafe/common/authentication/user_credential_utils.h"
 
-#include "maidsafe/common/cereal/cerealize_helpers.h"
+#include "maidsafe/common/serialisation.h"
 #include "maidsafe/passport/detail/cereal/passport.h"
 #include "maidsafe/passport/detail/cereal/key_and_signer.h"
 
@@ -145,7 +145,7 @@ Passport::Passport(const crypto::CipherText& encrypted_passport,
 
 void Passport::Parse(const NonEmptyString& serialised_passport) {
   detail::cereal::Passport cereal_passport;
-  try { maidsafe::cereal::ConvertFromString(serialised_passport.string(), cereal_passport); }
+  try { maidsafe::ConvertFromString(serialised_passport.string(), cereal_passport); }
   catch(...) {
     LOG(kError) << "Failed to parse passport.";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
@@ -198,7 +198,7 @@ NonEmptyString Passport::Serialise() const {
     mpid_and_signer.second.ToCereal(&cereal_key_and_signer->signer_);
   }
 
-  return NonEmptyString{ maidsafe::cereal::ConvertToString(cereal_passport) };
+  return NonEmptyString{ maidsafe::ConvertToString(cereal_passport) };
 }
 
 crypto::CipherText Passport::Encrypt(

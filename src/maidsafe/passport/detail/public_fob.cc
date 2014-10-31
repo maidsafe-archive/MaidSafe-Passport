@@ -20,7 +20,7 @@
 
 #include "maidsafe/common/utils.h"
 
-#include "maidsafe/common/cereal/cerealize_helpers.h"
+#include "maidsafe/common/serialisation.h"
 #include "maidsafe/passport/detail/cereal/public_fob.h"
 
 namespace maidsafe {
@@ -32,7 +32,7 @@ namespace detail {
 void PublicFobFromCereal(const NonEmptyString& serialised_public_fob, DataTagValue enum_value,
                            asymm::PublicKey& public_key, asymm::Signature& validation_token) {
   cereal::PublicFob cereal_public_fob;
-  try { maidsafe::cereal::ConvertFromString(serialised_public_fob.string(), cereal_public_fob); }
+  try { maidsafe::ConvertFromString(serialised_public_fob.string(), cereal_public_fob); }
   catch(...) { BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error)); }
 
   validation_token = asymm::Signature{ cereal_public_fob.validation_token_ };
@@ -47,7 +47,7 @@ NonEmptyString PublicFobToCereal(DataTagValue enum_value, const asymm::PublicKey
   cereal_public_fob.type_ = static_cast<uint32_t>(enum_value);
   cereal_public_fob.encoded_public_key_ = asymm::EncodeKey(public_key).string();
   cereal_public_fob.validation_token_ = validation_token.string();
-  return NonEmptyString{ maidsafe::cereal::ConvertToString(cereal_public_fob) };
+  return NonEmptyString{ maidsafe::ConvertToString(cereal_public_fob) };
 }
 
 }  // namespace detail

@@ -36,8 +36,8 @@ struct PmidList {
   { }
 
   template<typename Archive>
-  void serialize(Archive& ref_archive) {
-    ref_archive(pmids_);
+  Archive& serialize(Archive& ref_archive) {
+    return ref_archive(pmids_);
   }
 
   std::vector<std::string> pmids_;
