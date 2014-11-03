@@ -19,6 +19,7 @@
 #ifndef MAIDSAFE_PASSPORT_DETAIL_PUBLIC_FOB_H_
 #define MAIDSAFE_PASSPORT_DETAIL_PUBLIC_FOB_H_
 
+#include <string>
 #include <type_traits>
 
 #include "maidsafe/common/rsa.h"
@@ -27,17 +28,13 @@
 #include "maidsafe/passport/detail/config.h"
 #include "maidsafe/passport/detail/fob.h"
 
+#include "maidsafe/common/serialisation.h"
+
 namespace maidsafe {
 
 namespace passport {
 
 namespace detail {
-
-void PublicFobFromCereal(const NonEmptyString& serialised_public_fob, DataTagValue enum_value,
-                           asymm::PublicKey& public_key, asymm::Signature& validation_token);
-
-NonEmptyString PublicFobToCereal(DataTagValue enum_value, const asymm::PublicKey& public_key,
-                                   const asymm::Signature& validation_token);
 
 template <typename TagType>
 class PublicFob {
@@ -50,12 +47,18 @@ class PublicFob {
   PublicFob(const PublicFob& other)
       : name_(other.name_),
         public_key_(other.public_key_),
-        validation_token_(other.validation_token_) {}
+        validation_token_(other.validation_token_),
+        str_stream_(other.str_stream_.str()) {}
 
   PublicFob(PublicFob&& other)
       : name_(std::move(other.name_)),
         public_key_(std::move(other.public_key_)),
-        validation_token_(std::move(other.validation_token_)) {}
+        validation_token_(std::move(other.validation_token_)),
+        // Bug:
+        // https://gcc.gnu.org/bugzilla/show_bug.cgi?id=54316
+        // str_stream_(std::move(other.str_stream_))
+        // Workaround till GCC 5:
+        str_stream_(other.str_stream_.str()) {}
 
   friend void swap(PublicFob& lhs, PublicFob& rhs) {
     using std::swap;
@@ -72,28 +75,57 @@ class PublicFob {
   explicit PublicFob(const Fob<Tag>& fob)
       : name_(fob.name()),
         public_key_(fob.public_key()),
-        validation_token_(fob.validation_token()) {}
+        validation_token_(fob.validation_token()),
+        str_stream_() {}
 
   PublicFob(Name name, const serialised_type& serialised_public_fob)
-      : name_(std::move(name)), public_key_(), validation_token_() {
+      : name_(std::move(name)), public_key_(), validation_token_(),
+        str_stream_(serialised_public_fob.data.string()) {
     if (!name_->IsInitialised())
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
-    PublicFobFromCereal(serialised_public_fob.data, Tag::kValue, public_key_, validation_token_);
+
+    try { maidsafe::ConvertFromStream(str_stream_, *this); }
+    catch(...) { BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error)); }
   }
 
   serialised_type Serialise() const {
-    return serialised_type(PublicFobToCereal(Tag::kValue, public_key_, validation_token_));
+    str_stream_.clear();
+    str_stream_.str("");
+    return serialised_type(NonEmptyString {maidsafe::ConvertToString(str_stream_, *this)});
   }
 
   Name name() const { return name_; }
   asymm::PublicKey public_key() const { return public_key_; }
   asymm::Signature validation_token() const { return validation_token_; }
 
+  template<typename Archive>
+  Archive& load(Archive& ref_archive) {
+    std::uint32_t temp_tag;
+    std::string temp_raw_public_key;
+    auto& archive = ref_archive(temp_tag, temp_raw_public_key, validation_token_);
+
+    if (temp_tag != static_cast<std::uint32_t>(Tag::kValue)) {
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+    }
+
+    public_key_ = asymm::DecodeKey(asymm::EncodedPublicKey {temp_raw_public_key });
+    return archive;
+  }
+
+  template<typename Archive>
+  Archive& save(Archive& ref_archive) const {
+    return ref_archive(static_cast<std::uint32_t>(Tag::kValue),
+                       asymm::EncodeKey(public_key_).string(),
+                       validation_token_);
+  }
+
  private:
   PublicFob();
   Name name_;
   asymm::PublicKey public_key_;
   asymm::Signature validation_token_;
+
+  mutable std::stringstream str_stream_;
 };
 
 }  // namespace detail
