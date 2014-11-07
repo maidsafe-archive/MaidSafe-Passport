@@ -28,6 +28,7 @@
 #include "maidsafe/common/crypto.h"
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/common/types.h"
+#include "maidsafe/common/serialisation.h"
 
 #include "maidsafe/passport/detail/config.h"
 
@@ -44,12 +45,9 @@ Identity CreateFobName(const asymm::PublicKey& public_key,
 
 Identity CreateMpidName(const NonEmptyString& chosen_name);
 
-void FobFromCereal(const cereal::Fob& cereal_fob, DataTagValue enum_value, asymm::Keys& keys,
-                     asymm::Signature& validation_token, Identity& name);
-
-void FobToCereal(DataTagValue enum_value, const asymm::Keys& keys,
-                   const asymm::Signature& validation_token, const std::string& name,
-                   cereal::Fob* cereal_fob);
+void ValidateFobDeserialisation(DataTagValue enum_value, asymm::Keys& keys,
+                                asymm::Signature& validation_token, Identity& name,
+                                std::uint32_t type);
 
 template <typename TagType>
 struct is_self_signed {
@@ -93,20 +91,46 @@ class Fob<TagType, typename std::enable_if<is_self_signed<TagType>::type::value>
     return *this;
   }
 
-  explicit Fob(const cereal::Fob& cereal_fob) : keys_(), validation_token_(), name_() {
-    Identity name;
-    FobFromCereal(cereal_fob, Tag::kValue, keys_, validation_token_, name);
-    name_ = Name{ name };
+  explicit Fob(const std::string& binary_stream) : keys_(), validation_token_(), name_() {
+    maidsafe::ConvertFromString(binary_stream, *this);
   }
 
-  void ToCereal(cereal::Fob* cereal_fob) const {
-    FobToCereal(Tag::kValue, keys_, validation_token_, name_->string(), cereal_fob);
+  std::string ToCereal() const {
+    return maidsafe::ConvertToString(*this);
   }
 
   Name name() const { return name_; }
   asymm::Signature validation_token() const { return validation_token_; }
   asymm::PrivateKey private_key() const { return keys_.private_key; }
   asymm::PublicKey public_key() const { return keys_.public_key; }
+
+  template<typename Archive>
+  Archive& load(Archive& ref_archive) {
+    asymm::EncodedPrivateKey temp_private_key {};
+    asymm::EncodedPublicKey temp_public_key {};
+    std::uint32_t temp_type {};
+    Identity name;
+
+    auto& archive = ref_archive(temp_type, name, temp_private_key,
+                                temp_public_key, validation_token_);
+
+    keys_.private_key = asymm::DecodeKey(temp_private_key);
+    keys_.public_key = asymm::DecodeKey(temp_public_key);
+
+    ValidateFobDeserialisation(Tag::kValue, keys_, validation_token_, name, temp_type);
+    name_ = Name {name};
+
+    return archive;
+  }
+
+  template<typename Archive>
+  Archive& save(Archive& ref_archive) const {
+    return ref_archive(static_cast<uint32_t>(Tag::kValue),
+                       name_->string(),
+                       asymm::EncodeKey(keys_.private_key).string(),
+                       asymm::EncodeKey(keys_.public_key).string(),
+                       validation_token_);
+  }
 
  private:
   asymm::Keys keys_;
@@ -150,20 +174,46 @@ class Fob<TagType, typename std::enable_if<!is_self_signed<TagType>::type::value
     return *this;
   }
 
-  explicit Fob(const cereal::Fob& cereal_fob) : keys_(), validation_token_(), name_() {
-    Identity name;
-    FobFromCereal(cereal_fob, Tag::kValue, keys_, validation_token_, name);
-    name_ = Name{ name };
+  explicit Fob(const std::string& binary_stream) : keys_(), validation_token_(), name_() {
+    maidsafe::ConvertFromString(binary_stream, *this);
   }
 
-  void ToCereal(cereal::Fob* cereal_fob) const {
-    FobToCereal(Tag::kValue, keys_, validation_token_, name_->string(), cereal_fob);
+  std::string ToCereal() const {
+    return maidsafe::ConvertToString(*this);
   }
 
   Name name() const { return name_; }
   asymm::Signature validation_token() const { return validation_token_; }
   asymm::PrivateKey private_key() const { return keys_.private_key; }
   asymm::PublicKey public_key() const { return keys_.public_key; }
+
+  template<typename Archive>
+  Archive& load(Archive& ref_archive) {
+    asymm::EncodedPrivateKey temp_private_key {};
+    asymm::EncodedPublicKey temp_public_key {};
+    std::uint32_t temp_type {};
+    Identity name;
+
+    auto& archive = ref_archive(temp_type, name, temp_private_key,
+                                temp_public_key, validation_token_);
+
+    keys_.private_key = asymm::DecodeKey(temp_private_key);
+    keys_.public_key = asymm::DecodeKey(temp_public_key);
+
+    ValidateFobDeserialisation(Tag::kValue, keys_, validation_token_, name, temp_type);
+    name_ = Name {name};
+
+    return archive;
+  }
+
+  template<typename Archive>
+  Archive& save(Archive& ref_archive) const {
+    return ref_archive(static_cast<uint32_t>(Tag::kValue),
+                       name_->string(),
+                       asymm::EncodeKey(keys_.private_key).string(),
+                       asymm::EncodeKey(keys_.public_key).string(),
+                       validation_token_);
+  }
 
  private:
   Fob() = delete;
@@ -195,13 +245,41 @@ class Fob<MpidTag> {
   }
   Fob& operator=(Fob other);
 
-  explicit Fob(const cereal::Fob& cereal_fob);
-  void ToCereal(cereal::Fob* cereal_fob) const;
+  explicit Fob(const std::string& binary_stream);
+  std::string ToCereal() const;
 
   Name name() const { return name_; }
   asymm::Signature validation_token() const { return validation_token_; }
   asymm::PrivateKey private_key() const { return keys_.private_key; }
   asymm::PublicKey public_key() const { return keys_.public_key; }
+
+  template<typename Archive>
+  Archive& load(Archive& ref_archive) {
+    asymm::EncodedPrivateKey temp_private_key {};
+    asymm::EncodedPublicKey temp_public_key {};
+    std::uint32_t temp_type {};
+    Identity name;
+
+    auto& archive = ref_archive(temp_type, name, temp_private_key,
+                                temp_public_key, validation_token_);
+
+    keys_.private_key = asymm::DecodeKey(temp_private_key);
+    keys_.public_key = asymm::DecodeKey(temp_public_key);
+
+    ValidateFobDeserialisation(Tag::kValue, keys_, validation_token_, name, temp_type);
+    name_ = Name {name};
+
+    return archive;
+  }
+
+  template<typename Archive>
+  Archive& save(Archive& ref_archive) const {
+    return ref_archive(static_cast<uint32_t>(Tag::kValue),
+                       name_->string(),
+                       asymm::EncodeKey(keys_.private_key).string(),
+                       asymm::EncodeKey(keys_.public_key).string(),
+                       validation_token_);
+  }
 
  private:
   Fob();

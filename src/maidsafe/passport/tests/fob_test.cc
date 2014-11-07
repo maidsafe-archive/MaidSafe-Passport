@@ -89,9 +89,7 @@ TEST(FobTest, FUNC_GenerationAndValidation) {
 
 template <typename Fobtype>
 bool CheckSerialisationAndParsing(Fobtype fob) {
-  passport::detail::cereal::Fob cereal_fob;
-  fob.ToCereal(&cereal_fob);
-  Fobtype fob2(cereal_fob);
+  Fobtype fob2(fob.ToCereal());
   if (fob.validation_token() != fob2.validation_token()) {
     LOG(kError) << "Validation tokens don't match.";
     return false;

@@ -40,8 +40,8 @@ struct KeyAndSigner {
     return ref_archive(key_, signer_);
   }
 
-  Fob key_;
-  Fob signer_;
+  std::string key_;
+  std::string signer_;
 };
 
 }  // namespace cereal

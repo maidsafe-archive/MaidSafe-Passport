@@ -179,23 +179,23 @@ NonEmptyString Passport::Serialise() const {
   }
 
   detail::cereal::KeyAndSigner* cereal_key_and_signer{ &cereal_passport.maid_and_signer_ };
-  maid_and_signer_->first.ToCereal(&cereal_key_and_signer->key_);
-  maid_and_signer_->second.ToCereal(&cereal_key_and_signer->signer_);
+  cereal_key_and_signer->key_ = maid_and_signer_->first.ToCereal();
+  cereal_key_and_signer->signer_ = maid_and_signer_->second.ToCereal();
 
   for (const auto& pmid_and_signer : pmids_and_signers_) {
     cereal_key_and_signer = ((cereal_passport.pmids_and_signers_.emplace_back(),
                              &cereal_passport.pmids_and_signers_[
                              cereal_passport.pmids_and_signers_.size() - 1]));
-    pmid_and_signer.first.ToCereal(&cereal_key_and_signer->key_);
-    pmid_and_signer.second.ToCereal(&cereal_key_and_signer->signer_);
+    cereal_key_and_signer->key_ = pmid_and_signer.first.ToCereal();
+    cereal_key_and_signer->signer_ = pmid_and_signer.second.ToCereal();
   }
 
   for (const auto& mpid_and_signer : mpids_and_signers_) {
     cereal_key_and_signer = ((cereal_passport.mpids_and_signers_.emplace_back(),
                               &cereal_passport.mpids_and_signers_[
                               cereal_passport.mpids_and_signers_.size() - 1]));
-    mpid_and_signer.first.ToCereal(&cereal_key_and_signer->key_);
-    mpid_and_signer.second.ToCereal(&cereal_key_and_signer->signer_);
+    cereal_key_and_signer->key_ = mpid_and_signer.first.ToCereal();
+    cereal_key_and_signer->signer_ = mpid_and_signer.second.ToCereal();
   }
 
   return NonEmptyString{ maidsafe::ConvertToString(cereal_passport) };
