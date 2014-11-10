@@ -52,7 +52,7 @@ ms_add_static_library(maidsafe_passport ${PassportAllFiles} ${PassportDetailAllF
 target_include_directories(maidsafe_passport PUBLIC ${PROJECT_SOURCE_DIR}/include PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(maidsafe_passport maidsafe_common)
 
-if(MaidsafeTesting)
+if(INCLUDE_TESTS)
   ms_add_executable(test_passport "Tests/Passport" ${PassportTestsAllFiles})
   target_link_libraries(test_passport maidsafe_passport maidsafe_test)
 endif()
@@ -69,7 +69,7 @@ include(standard_flags)
 #==================================================================================================#
 # Tests                                                                                            #
 #==================================================================================================#
-if(MaidsafeTesting)
+if(INCLUDE_TESTS)
   ms_add_default_tests()
   ms_add_gtests(test_passport)
   ms_test_summary_output()
@@ -82,7 +82,7 @@ endif()
 install(TARGETS maidsafe_passport COMPONENT Development CONFIGURATIONS Debug Release ARCHIVE DESTINATION lib)
 install(DIRECTORY ${PROJECT_SOURCE_DIR}/include/ COMPONENT Development DESTINATION include)
 
-if(MaidsafeTesting)
+if(INCLUDE_TESTS)
   install(TARGETS test_passport COMPONENT Tests CONFIGURATIONS Debug RUNTIME DESTINATION bin/debug)
   install(TARGETS test_passport COMPONENT Tests CONFIGURATIONS Release RUNTIME DESTINATION bin)
 endif()
