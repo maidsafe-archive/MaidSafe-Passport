@@ -44,6 +44,7 @@ ms_glob_dir(Passport ${PassportSourcesDir} Passport)
 ms_glob_dir(PassportDetail ${PassportSourcesDir}/detail "Passport Detail")
 ms_glob_dir(PassportTests ${PassportSourcesDir}/tests Tests)
 
+
 #==================================================================================================#
 # Define MaidSafe libraries and executables                                                        #
 #==================================================================================================#
