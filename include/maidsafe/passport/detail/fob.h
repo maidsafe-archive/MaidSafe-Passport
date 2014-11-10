@@ -38,8 +38,6 @@ namespace passport {
 
 namespace detail {
 
-namespace cereal { struct Fob; }
-
 Identity CreateFobName(const asymm::PublicKey& public_key,
                        const asymm::Signature& validation_token);
 
@@ -92,7 +90,8 @@ class Fob<TagType, typename std::enable_if<is_self_signed<TagType>::type::value>
   }
 
   explicit Fob(const std::string& binary_stream) : keys_(), validation_token_(), name_() {
-    maidsafe::ConvertFromString(binary_stream, *this);
+    try {maidsafe::ConvertFromString(binary_stream, *this);}
+    catch(...) {BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));}
   }
 
   std::string ToCereal() const {
@@ -114,11 +113,11 @@ class Fob<TagType, typename std::enable_if<is_self_signed<TagType>::type::value>
     auto& archive = ref_archive(temp_type, name, temp_private_key,
                                 temp_public_key, validation_token_);
 
-    keys_.private_key = asymm::DecodeKey(temp_private_key);
-    keys_.public_key = asymm::DecodeKey(temp_public_key);
+    keys_.private_key = asymm::DecodeKey(std::move(temp_private_key));
+    keys_.public_key = asymm::DecodeKey(std::move(temp_public_key));
 
     ValidateFobDeserialisation(Tag::kValue, keys_, validation_token_, name, temp_type);
-    name_ = Name {name};
+    name_ = Name {std::move(name)};
 
     return archive;
   }
@@ -148,6 +147,7 @@ class Fob<TagType, typename std::enable_if<!is_self_signed<TagType>::type::value
   typedef Fob<typename SignerFob<TagType>::Tag> Signer;
   typedef TagType Tag;
 
+  Fob() = delete;
   // This constructor is only available to this specialisation (i.e. non-self-signed fob)
   explicit Fob(const Signer& signing_fob,
                typename std::enable_if<!std::is_same<Fob<Tag>, Signer>::value>::type* = 0)
@@ -175,7 +175,8 @@ class Fob<TagType, typename std::enable_if<!is_self_signed<TagType>::type::value
   }
 
   explicit Fob(const std::string& binary_stream) : keys_(), validation_token_(), name_() {
-    maidsafe::ConvertFromString(binary_stream, *this);
+    try {maidsafe::ConvertFromString(binary_stream, *this);}
+    catch(...) {BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));}
   }
 
   std::string ToCereal() const {
@@ -197,11 +198,11 @@ class Fob<TagType, typename std::enable_if<!is_self_signed<TagType>::type::value
     auto& archive = ref_archive(temp_type, name, temp_private_key,
                                 temp_public_key, validation_token_);
 
-    keys_.private_key = asymm::DecodeKey(temp_private_key);
-    keys_.public_key = asymm::DecodeKey(temp_public_key);
+    keys_.private_key = asymm::DecodeKey(std::move(temp_private_key));
+    keys_.public_key = asymm::DecodeKey(std::move(temp_public_key));
 
     ValidateFobDeserialisation(Tag::kValue, keys_, validation_token_, name, temp_type);
-    name_ = Name {name};
+    name_ = Name {std::move(name)};
 
     return archive;
   }
@@ -216,7 +217,6 @@ class Fob<TagType, typename std::enable_if<!is_self_signed<TagType>::type::value
   }
 
  private:
-  Fob() = delete;
   asymm::Keys keys_;
   asymm::Signature validation_token_;
   Name name_;
@@ -232,6 +232,7 @@ class Fob<MpidTag> {
   typedef Fob<typename SignerFob<MpidTag>::Tag> Signer;
   typedef MpidTag Tag;
 
+  Fob() = delete;
   // This constructor is only available to this specialisation (i.e. Mpid)
   Fob(const NonEmptyString& chosen_name, const Signer& signing_fob);
 
@@ -263,11 +264,11 @@ class Fob<MpidTag> {
     auto& archive = ref_archive(temp_type, name, temp_private_key,
                                 temp_public_key, validation_token_);
 
-    keys_.private_key = asymm::DecodeKey(temp_private_key);
-    keys_.public_key = asymm::DecodeKey(temp_public_key);
+    keys_.private_key = asymm::DecodeKey(std::move(temp_private_key));
+    keys_.public_key = asymm::DecodeKey(std::move(temp_public_key));
 
     ValidateFobDeserialisation(Tag::kValue, keys_, validation_token_, name, temp_type);
-    name_ = Name {name};
+    name_ = Name {std::move(name)};
 
     return archive;
   }
@@ -282,7 +283,6 @@ class Fob<MpidTag> {
   }
 
  private:
-  Fob();
   asymm::Keys keys_;
   asymm::Signature validation_token_;
   Name name_;

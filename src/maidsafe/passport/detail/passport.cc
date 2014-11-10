@@ -24,8 +24,7 @@
 #include "maidsafe/common/authentication/user_credential_utils.h"
 
 #include "maidsafe/common/serialisation.h"
-#include "maidsafe/passport/detail/cereal/passport.h"
-#include "maidsafe/passport/detail/cereal/key_and_signer.h"
+#include "maidsafe/passport/detail/passport_cereal.h"
 
 namespace maidsafe {
 
@@ -144,7 +143,7 @@ Passport::Passport(const crypto::CipherText& encrypted_passport,
 }
 
 void Passport::Parse(const NonEmptyString& serialised_passport) {
-  detail::cereal::Passport cereal_passport;
+  detail::PassportCereal cereal_passport;
   try { maidsafe::ConvertFromString(serialised_passport.string(), cereal_passport); }
   catch(...) {
     LOG(kError) << "Failed to parse passport.";
@@ -171,14 +170,14 @@ void Passport::Parse(const NonEmptyString& serialised_passport) {
 }
 
 NonEmptyString Passport::Serialise() const {
-  detail::cereal::Passport cereal_passport;
+  detail::PassportCereal cereal_passport;
   std::lock_guard<std::mutex> lock{ mutex_ };
   if (!maid_and_signer_) {
     LOG(kError) << "Passport must contain a Maid in order to be serialised.";
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::serialisation_error));
   }
 
-  detail::cereal::KeyAndSigner* cereal_key_and_signer{ &cereal_passport.maid_and_signer_ };
+  detail::KeyAndSignerCereal* cereal_key_and_signer{ &cereal_passport.maid_and_signer_ };
   cereal_key_and_signer->key_ = maid_and_signer_->first.ToCereal();
   cereal_key_and_signer->signer_ = maid_and_signer_->second.ToCereal();
 

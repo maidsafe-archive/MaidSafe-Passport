@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_PASSPORT_DETAIL_CEREAL_PMID_LIST_H_
-#define MAIDSAFE_PASSPORT_DETAIL_CEREAL_PMID_LIST_H_
+#ifndef MAIDSAFE_PASSPORT_DETAIL_PMID_LIST_CEREAL_H_
+#define MAIDSAFE_PASSPORT_DETAIL_PMID_LIST_CEREAL_H_
 
 #include <string>
 #include <vector>
@@ -28,10 +28,8 @@ namespace passport {
 
 namespace detail {
 
-namespace cereal {
-
-struct PmidList {
-  PmidList()
+struct PmidListCereal {
+  PmidListCereal()
     : pmids_ {}
   { }
 
@@ -43,12 +41,10 @@ struct PmidList {
   std::vector<std::string> pmids_;
 };
 
-}  // namespace cereal
-
 }  // namespace detail
 
 }  // namespace passport
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_PASSPORT_DETAIL_CEREAL_PMID_LIST_H_
+#endif  // MAIDSAFE_PASSPORT_DETAIL_PMID_LIST_CEREAL_H_

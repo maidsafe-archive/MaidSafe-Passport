@@ -44,6 +44,8 @@ class PublicFob {
   typedef Fob<typename SignerFob<TagType>::Tag> Signer;
   typedef TaggedValue<NonEmptyString, Tag> serialised_type;
 
+  PublicFob() = delete;
+
   PublicFob(const PublicFob& other)
       : name_(other.name_),
         public_key_(other.public_key_),
@@ -98,7 +100,7 @@ class PublicFob {
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
     }
 
-    public_key_ = asymm::DecodeKey(asymm::EncodedPublicKey {temp_raw_public_key });
+    public_key_ = asymm::DecodeKey(asymm::EncodedPublicKey {std::move(temp_raw_public_key)});
     return archive;
   }
 
@@ -110,7 +112,6 @@ class PublicFob {
   }
 
  private:
-  PublicFob();
   Name name_;
   asymm::PublicKey public_key_;
   asymm::Signature validation_token_;

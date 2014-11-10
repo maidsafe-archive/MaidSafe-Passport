@@ -20,9 +20,8 @@
 
 #include "maidsafe/common/utils.h"
 
-#include "maidsafe/passport/detail/cereal/passport.h"
-#include "maidsafe/passport/detail/cereal/pmid_list.h"
-#include "maidsafe/passport/detail/cereal/key_chain_list.h"
+#include "maidsafe/passport/detail/pmid_list_cereal.h"
+#include "maidsafe/passport/detail/key_chain_list_cereal.h"
 
 namespace maidsafe {
 
@@ -69,7 +68,8 @@ Fob<MpidTag>& Fob<MpidTag>::operator=(Fob<MpidTag> other) {
 }
 
 Fob<MpidTag>::Fob(const std::string& binary_stream) : keys_(), validation_token_(), name_() {
-  maidsafe::ConvertFromString(binary_stream, *this);
+  try {maidsafe::ConvertFromString(binary_stream, *this);}
+  catch(...) {BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));}
 }
 
 std::string Fob<MpidTag>::ToCereal() const {
@@ -163,7 +163,7 @@ Fob<PmidTag> ParsePmid(const NonEmptyString& serialised_pmid) {
 
 std::vector<Fob<PmidTag>> ReadPmidList(const boost::filesystem::path& file_path) {
   std::vector<Fob<PmidTag>> pmid_list;
-  cereal::PmidList pmid_list_msg;
+  PmidListCereal pmid_list_msg;
   maidsafe::ConvertFromString(ReadFile(file_path).string(), pmid_list_msg);
   for (std::size_t i = 0; i < pmid_list_msg.pmids_.size(); ++i)
     pmid_list.emplace_back(ParsePmid(NonEmptyString{ pmid_list_msg.pmids_[i] }));
@@ -172,7 +172,7 @@ std::vector<Fob<PmidTag>> ReadPmidList(const boost::filesystem::path& file_path)
 
 bool WritePmidList(const boost::filesystem::path& file_path,
                    const std::vector<Fob<PmidTag>>& pmid_list) {
-  cereal::PmidList pmid_list_msg;
+  PmidListCereal pmid_list_msg;
   for (const auto& pmid : pmid_list)
     ((pmid_list_msg.pmids_.emplace_back(),
       &pmid_list_msg.pmids_[pmid_list_msg.pmids_.size() - 1]))->assign(
@@ -180,7 +180,7 @@ bool WritePmidList(const boost::filesystem::path& file_path,
   return WriteFile(file_path, maidsafe::ConvertToString(pmid_list_msg));
 }
 
-AnmaidToPmid ParseKeys(const cereal::KeyChainList::KeyChain& key_chain) {
+AnmaidToPmid ParseKeys(const KeyChainListCereal::KeyChainCereal& key_chain) {
   return std::move(AnmaidToPmid(ParseAnmaid(NonEmptyString{ key_chain.anmaid_ }),
                                 ParseMaid(NonEmptyString{ key_chain.maid_}),
                                 ParseAnpmid(NonEmptyString{ key_chain.anpmid_ }),
@@ -189,7 +189,7 @@ AnmaidToPmid ParseKeys(const cereal::KeyChainList::KeyChain& key_chain) {
 
 std::vector<AnmaidToPmid> ReadKeyChainList(const boost::filesystem::path& file_path) {
   std::vector<AnmaidToPmid> keychain_list;
-  cereal::KeyChainList keychain_list_msg;
+  KeyChainListCereal keychain_list_msg;
   maidsafe::ConvertFromString(ReadFile(file_path).string(), keychain_list_msg);
   for (std::size_t i = 0; i < keychain_list_msg.keychains_.size(); ++i)
     keychain_list.emplace_back(ParseKeys(keychain_list_msg.keychains_[i]));
@@ -198,7 +198,7 @@ std::vector<AnmaidToPmid> ReadKeyChainList(const boost::filesystem::path& file_p
 
 bool WriteKeyChainList(const boost::filesystem::path& file_path,
                        const std::vector<AnmaidToPmid>& keychain_list) {
-  cereal::KeyChainList keychain_list_msg;
+  KeyChainListCereal keychain_list_msg;
   for (const auto& keychain : keychain_list) {
     auto entry = ((keychain_list_msg.keychains_.emplace_back(),
                    &keychain_list_msg.keychains_[keychain_list_msg.keychains_.size() - 1]));

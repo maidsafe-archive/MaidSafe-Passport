@@ -16,11 +16,12 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_PASSPORT_DETAIL_CEREAL_PUBLIC_FOB_H_
-#define MAIDSAFE_PASSPORT_DETAIL_CEREAL_PUBLIC_FOB_H_
+
+#ifndef MAIDSAFE_PASSPORT_DETAIL_PASSPORT_CEREAL_H_
+#define MAIDSAFE_PASSPORT_DETAIL_PASSPORT_CEREAL_H_
 
 #include <string>
-#include <cstdint>
+#include <vector>
 
 namespace maidsafe {
 
@@ -28,26 +29,38 @@ namespace passport {
 
 namespace detail {
 
-namespace cereal {
-
-struct PublicFob {
-  PublicFob()
-    : type_ {},
-      encoded_public_key_ {},
-      validation_token_ {}
+struct KeyAndSignerCereal {
+  KeyAndSignerCereal()
+    : key_ {},
+      signer_ {}
   { }
 
   template<typename Archive>
   Archive& serialize(Archive& ref_archive) {
-    return ref_archive(type_, encoded_public_key_, validation_token_);
+    return ref_archive(key_, signer_);
   }
 
-  std::uint32_t type_;
-  std::string encoded_public_key_;
-  std::string validation_token_;
+  std::string key_;
+  std::string signer_;
 };
 
-}  // namespace cereal
+
+struct PassportCereal {
+  PassportCereal()
+    : maid_and_signer_ {},
+      pmids_and_signers_ {},
+      mpids_and_signers_ {}
+  { }
+
+  template<typename Archive>
+  Archive& serialize(Archive& ref_archive) {
+    return ref_archive(maid_and_signer_, pmids_and_signers_, mpids_and_signers_);
+  }
+
+  KeyAndSignerCereal maid_and_signer_;
+  std::vector<KeyAndSignerCereal> pmids_and_signers_;
+  std::vector<KeyAndSignerCereal> mpids_and_signers_;
+};
 
 }  // namespace detail
 
@@ -55,4 +68,4 @@ struct PublicFob {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_PASSPORT_DETAIL_CEREAL_PUBLIC_FOB_H_
+#endif  // MAIDSAFE_PASSPORT_DETAIL_PASSPORT_CEREAL_H_

@@ -45,24 +45,11 @@ ms_glob_dir(PassportDetail ${PassportSourcesDir}/detail "Passport Detail")
 ms_glob_dir(PassportTests ${PassportSourcesDir}/tests Tests)
 
 #==================================================================================================#
-# Set up Cereal files                                                                        #
-#==================================================================================================#
-SET(DetailCerealHeaders
-  "${PROJECT_SOURCE_DIR}/include/maidsafe/passport/detail/cereal/fob.h"
-  "${PROJECT_SOURCE_DIR}/include/maidsafe/passport/detail/cereal/key_and_signer.h"
-  "${PROJECT_SOURCE_DIR}/include/maidsafe/passport/detail/cereal/key_chain_list.h"
-  "${PROJECT_SOURCE_DIR}/include/maidsafe/passport/detail/cereal/passport.h"
-  "${PROJECT_SOURCE_DIR}/include/maidsafe/passport/detail/cereal/pmid_list.h"
-  "${PROJECT_SOURCE_DIR}/include/maidsafe/passport/detail/cereal/public_fob.h"
-)
-
-#==================================================================================================#
 # Define MaidSafe libraries and executables                                                        #
 #==================================================================================================#
 ms_add_static_library(maidsafe_passport
   ${PassportAllFiles}
-  ${PassportDetailAllFiles}
-  ${DetailCerealHeaders})
+  ${PassportDetailAllFiles})
 target_include_directories(maidsafe_passport PUBLIC ${PROJECT_SOURCE_DIR}/include PRIVATE ${PROJECT_SOURCE_DIR}/src)
 target_link_libraries(maidsafe_passport maidsafe_common)
 

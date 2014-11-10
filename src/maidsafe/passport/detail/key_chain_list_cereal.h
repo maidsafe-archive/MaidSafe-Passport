@@ -16,8 +16,8 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-#ifndef MAIDSAFE_PASSPORT_DETAIL_CEREAL_KEY_CHAIN_LIST_H_
-#define MAIDSAFE_PASSPORT_DETAIL_CEREAL_KEY_CHAIN_LIST_H_
+#ifndef MAIDSAFE_PASSPORT_DETAIL_KEY_CHAIN_LIST_CEREAL_H_
+#define MAIDSAFE_PASSPORT_DETAIL_KEY_CHAIN_LIST_CEREAL_H_
 
 #include <string>
 #include <vector>
@@ -28,10 +28,8 @@ namespace passport {
 
 namespace detail {
 
-namespace cereal {
-
-struct KeyChainList_KeyChain {
-  KeyChainList_KeyChain()
+struct KeyChainListKeyChainCereal {
+  KeyChainListKeyChainCereal()
     : anmaid_ {},
       maid_ {},
       anpmid_ {},
@@ -49,8 +47,8 @@ struct KeyChainList_KeyChain {
   std::string pmid_;
 };
 
-struct KeyChainList {
-  KeyChainList()
+struct KeyChainListCereal {
+  KeyChainListCereal()
     : keychains_ {}
   { }
 
@@ -59,12 +57,10 @@ struct KeyChainList {
     return ref_archive(keychains_);
   }
 
-  using KeyChain = KeyChainList_KeyChain;
+  using KeyChainCereal = KeyChainListKeyChainCereal;
 
-  std::vector<KeyChain> keychains_;
+  std::vector<KeyChainCereal> keychains_;
 };
-
-}  // namespace cereal
 
 }  // namespace detail
 
@@ -72,4 +68,4 @@ struct KeyChainList {
 
 }  // namespace maidsafe
 
-#endif  // MAIDSAFE_PASSPORT_DETAIL_CEREAL_KEY_CHAIN_LIST_H_
+#endif  // MAIDSAFE_PASSPORT_DETAIL_KEY_CHAIN_LIST_CEREAL_H_
