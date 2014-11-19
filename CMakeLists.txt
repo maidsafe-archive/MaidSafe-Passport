@@ -49,8 +49,13 @@ ms_glob_dir(PassportTests ${PassportSourcesDir}/tests Tests)
 # Define MaidSafe libraries and executables                                                        #
 #==================================================================================================#
 ms_add_static_library(maidsafe_passport ${PassportAllFiles} ${PassportDetailAllFiles})
-target_include_directories(maidsafe_passport PUBLIC ${PROJECT_SOURCE_DIR}/include PRIVATE ${PROJECT_SOURCE_DIR}/src)
-target_link_libraries(maidsafe_passport maidsafe_common)
+target_include_directories(maidsafe_passport
+  PUBLIC
+    ${PROJECT_SOURCE_DIR}/include
+    ${CMAKE_BINARY_DIR}/GeneratedProtoFiles
+  PRIVATE
+    ${PROJECT_SOURCE_DIR}/src)
+target_link_libraries(maidsafe_passport maidsafe_common protobuf_lite)
 
 if(MaidsafeTesting)
   ms_add_executable(test_passport "Tests/Passport" ${PassportTestsAllFiles})
