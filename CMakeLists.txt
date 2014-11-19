@@ -52,10 +52,9 @@ ms_add_static_library(maidsafe_passport ${PassportAllFiles} ${PassportDetailAllF
 target_include_directories(maidsafe_passport
   PUBLIC
     ${PROJECT_SOURCE_DIR}/include
-    ${CMAKE_BINARY_DIR}/GeneratedProtoFiles
   PRIVATE
     ${PROJECT_SOURCE_DIR}/src)
-target_link_libraries(maidsafe_passport maidsafe_common protobuf_lite)
+target_link_libraries(maidsafe_passport maidsafe_common)
 
 if(MaidsafeTesting)
   ms_add_executable(test_passport "Tests/Passport" ${PassportTestsAllFiles})
