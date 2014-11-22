@@ -1,4 +1,4 @@
-/*  Copyright 2012 MaidSafe.net limited
+/*  Copyright 2014 MaidSafe.net limited
 
     This MaidSafe Software is licensed to you under (1) the MaidSafe.net Commercial License,
     version 1.0 or later, or (2) The General Public License (GPL), version 3, depending on which
@@ -16,47 +16,35 @@
     See the Licences for the specific language governing permissions and limitations relating to
     use of the MaidSafe Software.                                                                 */
 
-option optimize_for = LITE_RUNTIME;
+#ifndef MAIDSAFE_PASSPORT_DETAIL_PMID_LIST_CEREAL_H_
+#define MAIDSAFE_PASSPORT_DETAIL_PMID_LIST_CEREAL_H_
 
-package maidsafe.passport.detail.protobuf;
+#include <string>
+#include <vector>
 
-message Fob {
-  required uint32 type = 1;
-  required bytes name = 2;
-  required bytes encoded_private_key = 3;
-  required bytes encoded_public_key = 4;
-  required bytes validation_token = 5;
-}
+namespace maidsafe {
 
-message PublicFob {
-  required uint32 type = 1;
-  required bytes encoded_public_key = 2;
-  required bytes validation_token = 3;
-}
+namespace passport {
 
-message KeyAndSigner {
-  required Fob key = 1;
-  required Fob signer = 2;
-}
+namespace detail {
 
-message Passport {
-  required KeyAndSigner maid_and_signer = 1;
-  repeated KeyAndSigner pmids_and_signers = 2;
-  repeated KeyAndSigner mpids_and_signers = 3;
-}
+struct PmidListCereal {
+  PmidListCereal()
+    : pmids_ {}
+  { }
 
-// Only used for testing
-message PmidList {
-  repeated bytes pmids = 1;
-}
-
-// Only used for testing
-message KeyChainList {
-  message KeyChain {
-    required bytes anmaid = 1;
-    required bytes maid = 2;
-    required bytes anpmid = 3;
-    required bytes pmid = 4;
+  template<typename Archive>
+  Archive& serialize(Archive& ref_archive) {
+    return ref_archive(pmids_);
   }
-  repeated KeyChain keychains = 1;
-}
+
+  std::vector<std::string> pmids_;
+};
+
+}  // namespace detail
+
+}  // namespace passport
+
+}  // namespace maidsafe
+
+#endif  // MAIDSAFE_PASSPORT_DETAIL_PMID_LIST_CEREAL_H_
