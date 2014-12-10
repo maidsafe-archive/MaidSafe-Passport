@@ -25,7 +25,7 @@
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
 
-#include "maidsafe/common/serialisation.h"
+#include "maidsafe/common/serialisation/serialisation.h"
 
 #include "maidsafe/passport/types.h"
 

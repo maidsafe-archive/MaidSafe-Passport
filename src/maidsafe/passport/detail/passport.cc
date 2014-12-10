@@ -23,7 +23,7 @@
 #include "maidsafe/common/authentication/user_credentials.h"
 #include "maidsafe/common/authentication/user_credential_utils.h"
 
-#include "maidsafe/common/serialisation.h"
+#include "maidsafe/common/serialisation/serialisation.h"
 #include "maidsafe/passport/detail/passport_cereal.h"
 
 namespace maidsafe {

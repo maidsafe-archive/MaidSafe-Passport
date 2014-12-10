@@ -28,7 +28,7 @@
 #include "maidsafe/passport/detail/config.h"
 #include "maidsafe/passport/detail/fob.h"
 
-#include "maidsafe/common/serialisation.h"
+#include "maidsafe/common/serialisation/serialisation.h"
 
 namespace maidsafe {
 
