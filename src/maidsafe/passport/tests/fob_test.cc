@@ -41,7 +41,7 @@ TEST(FobTest, FUNC_GenerationAndValidation) {
   Anpmid anpmid;
   Pmid pmid(anpmid);
   Anmpid anmpid;
-  Mpid mpid(NonEmptyString(RandomAlphaNumericString(1 + RandomUint32() % 100)), anmpid);
+  Mpid mpid(anmpid);
 
   Anmaid anmaid1(anmaid);
   Maid maid1(maid);
@@ -114,7 +114,7 @@ TEST(FobTest, BEH_SerialisationAndParsing) {
   Anpmid anpmid;
   Pmid pmid(anpmid);
   Anmpid anmpid;
-  Mpid mpid(NonEmptyString(RandomAlphaNumericString(1 + RandomUint32() % 100)), anmpid);
+  Mpid mpid(anmpid);
 
   EXPECT_TRUE(CheckSerialisationAndParsing(anmaid));
   EXPECT_TRUE(CheckSerialisationAndParsing(maid));
@@ -165,15 +165,14 @@ TEST(FobTest, BEH_NamingAndValidation) {
   Anpmid anpmid;
   Pmid pmid(anpmid);
   Anmpid anmpid;
-  NonEmptyString chosen_name(RandomAlphaNumericString(1 + RandomUint32() % 100));
-  Mpid mpid(chosen_name, anmpid);
+  Mpid mpid(anmpid);
 
   EXPECT_TRUE(CheckNamingAndValidation(anmaid));
   EXPECT_TRUE(CheckNamingAndValidation(maid, anmaid.public_key()));
   EXPECT_TRUE(CheckNamingAndValidation(anpmid));
   EXPECT_TRUE(CheckNamingAndValidation(pmid, anpmid.public_key()));
   EXPECT_TRUE(CheckNamingAndValidation(anmpid));
-  EXPECT_TRUE(CheckNamingAndValidation(mpid, anmpid.public_key(), chosen_name));
+  EXPECT_TRUE(CheckNamingAndValidation(mpid, anmpid.public_key()));
 }
 
 }  // namespace test

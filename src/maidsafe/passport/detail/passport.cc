@@ -117,9 +117,9 @@ PmidAndSigner CreatePmidAndSigner() {
   return std::make_pair(Pmid{ signer }, signer);
 }
 
-MpidAndSigner CreateMpidAndSigner(const NonEmptyString& chosen_name) {
+MpidAndSigner CreateMpidAndSigner() {
   Mpid::Signer signer;
-  return std::make_pair(Mpid{ chosen_name, signer }, signer);
+  return std::make_pair(Mpid{ signer }, signer);
 }
 
 Passport::Passport(MaidAndSigner maid_and_signer)

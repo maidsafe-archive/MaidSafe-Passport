@@ -34,10 +34,6 @@ Identity CreateFobName(const asymm::PublicKey& public_key,
   return Identity{ crypto::Hash<crypto::SHA512>(asymm::EncodeKey(public_key) + validation_token) };
 }
 
-Identity CreateMpidName(const NonEmptyString& chosen_name) {
-  return Identity{ crypto::Hash<crypto::SHA512>(chosen_name) };
-}
-
 void ValidateFobDeserialisation(DataTagValue enum_value, asymm::Keys& keys,
                      asymm::Signature& validation_token, Identity& name, std::uint32_t type) {
   asymm::PlainText plain{ RandomString(64) };
@@ -46,34 +42,6 @@ void ValidateFobDeserialisation(DataTagValue enum_value, asymm::Keys& keys,
       enum_value != DataTagValue(type)) {
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   }
-}
-
-Fob<MpidTag>::Fob(const NonEmptyString& chosen_name, const Signer& signing_fob)
-    : keys_(asymm::GenerateKeyPair()),
-      validation_token_(asymm::Sign(asymm::PlainText{ asymm::EncodeKey(keys_.public_key) },
-                                    signing_fob.private_key())),
-      name_(CreateMpidName(chosen_name)) {}
-
-Fob<MpidTag>::Fob(const Fob<MpidTag>& other)
-    : keys_(other.keys_), validation_token_(other.validation_token_), name_(other.name_) {}
-
-Fob<MpidTag>::Fob(Fob<MpidTag>&& other)
-    : keys_(std::move(other.keys_)),
-      validation_token_(std::move(other.validation_token_)),
-      name_(std::move(other.name_)) {}
-
-Fob<MpidTag>& Fob<MpidTag>::operator=(Fob<MpidTag> other) {
-  swap(*this, other);
-  return *this;
-}
-
-Fob<MpidTag>::Fob(const std::string& binary_stream) : keys_(), validation_token_(), name_() {
-  try {maidsafe::ConvertFromString(binary_stream, *this);}
-  catch(...) {BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));}
-}
-
-std::string Fob<MpidTag>::ToCereal() const {
-  return maidsafe::ConvertToString(*this);
 }
 
 namespace {
