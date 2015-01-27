@@ -47,7 +47,7 @@ bool AllFieldsMatch(const Fobtype& lhs, const Fobtype& rhs) {
 
 TEST(PassportTest, BEH_FreeFunctions) {
   MaidAndSigner maid_and_signer{ CreateMaidAndSigner() };
-  CreateMpidAndSigner(NonEmptyString{ RandomString((RandomUint32() % 100) + 1) });
+  // CreateMpidAndSigner();
   PmidAndSigner pmid_and_signer{ CreatePmidAndSigner() };
 
   crypto::AES256Key symm_key{ RandomString(crypto::AES256_KeySize - 1) + "a" };
@@ -146,7 +146,7 @@ TEST(PassportTest, FUNC_ConstructorsSettersAndGetters) {
   // Add Mpids, check getters and encrypt/decrypt
   std::vector<MpidAndSigner> mpids_and_signers;
   for (size_t i(0); i < 3; ++i) {
-    mpids_and_signers.emplace_back(CreateMpidAndSigner(NonEmptyString{ std::to_string(i) }));
+    mpids_and_signers.emplace_back(CreateMpidAndSigner());
     if (i != 0) {
       MpidAndSigner duplicate_anmpid{ std::make_pair(mpids_and_signers.back().first,
                                                      mpids_and_signers.front().second) };
@@ -200,7 +200,7 @@ TEST(PassportTest, FUNC_RemoveAndReplaceKeys) {
   }
   std::vector<MpidAndSigner> mpids_and_signers;
   for (size_t i(0); i < 3; ++i) {
-    mpids_and_signers.emplace_back(CreateMpidAndSigner(NonEmptyString{ std::to_string(i) }));
+    mpids_and_signers.emplace_back(CreateMpidAndSigner());
     passport.AddKeyAndSigner(mpids_and_signers.back());
   }
 
@@ -281,7 +281,7 @@ TEST(PassportTest, FUNC_Encrypt) {
   }
   std::vector<MpidAndSigner> mpids_and_signers;
   for (size_t i(0); i < 3; ++i) {
-    mpids_and_signers.emplace_back(CreateMpidAndSigner(NonEmptyString{ std::to_string(i) }));
+    mpids_and_signers.emplace_back(CreateMpidAndSigner());
     passport.AddKeyAndSigner(mpids_and_signers.back());
   }
 
@@ -357,7 +357,7 @@ TEST(PassportTest, FUNC_ParallelAddsEncryptsAndRemoves) {
   std::vector<MpidAndSigner> mpids_and_signers;
   for (size_t i(0); i < 3; ++i) {
     pmids_and_signers.emplace_back(CreatePmidAndSigner());
-    mpids_and_signers.emplace_back(CreateMpidAndSigner(NonEmptyString{ std::to_string(i) }));
+    mpids_and_signers.emplace_back(CreateMpidAndSigner());
   }
 
   for (size_t i(0); i < 3; ++i) {

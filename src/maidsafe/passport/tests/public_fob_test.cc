@@ -37,7 +37,7 @@ TEST(PublicFobTest, BEH_GenerateAndValidate) {
   Anpmid anpmid;
   Pmid pmid(anpmid);
   Anmpid anmpid;
-  Mpid mpid(NonEmptyString(RandomAlphaNumericString(1 + RandomUint32() % 100)), anmpid);
+  Mpid mpid(anmpid);
 
   PublicAnmaid public_anmaid(anmaid);
   PublicMaid public_maid(maid);
@@ -125,7 +125,7 @@ TEST(PublicFobTest, BEH_SerialisationAndParsing) {
   Anpmid anpmid;
   Pmid pmid{ anpmid };
   Anmpid anmpid;
-  Mpid mpid{ NonEmptyString{ RandomAlphaNumericString(1 + RandomUint32() % 100) }, anmpid };
+  Mpid mpid{ anmpid };
 
   PublicAnmaid public_anmaid{ anmaid };
   PublicMaid public_maid{ maid };

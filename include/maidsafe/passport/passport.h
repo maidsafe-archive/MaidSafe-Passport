@@ -75,7 +75,7 @@ typedef std::pair<Mpid, Mpid::Signer> MpidAndSigner;
 // Utility functions to create keys and signers.
 MaidAndSigner CreateMaidAndSigner();
 PmidAndSigner CreatePmidAndSigner();
-MpidAndSigner CreateMpidAndSigner(const NonEmptyString& chosen_name);
+MpidAndSigner CreateMpidAndSigner();
 
 // The Passport class contains identity types for the various network related tasks available, see
 // types.h for details about the identity types.

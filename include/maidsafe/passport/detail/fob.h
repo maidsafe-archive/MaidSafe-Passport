@@ -41,8 +41,6 @@ namespace detail {
 Identity CreateFobName(const asymm::PublicKey& public_key,
                        const asymm::Signature& validation_token);
 
-Identity CreateMpidName(const NonEmptyString& chosen_name);
-
 void ValidateFobDeserialisation(DataTagValue enum_value, asymm::Keys& keys,
                                 asymm::Signature& validation_token, Identity& name,
                                 std::uint32_t type);
@@ -221,73 +219,6 @@ class Fob<TagType, typename std::enable_if<!is_self_signed<TagType>::type::value
   asymm::Signature validation_token_;
   Name name_;
 };
-
-
-
-// ========== Public ID Fob ========================================================================
-template <>
-class Fob<MpidTag> {
- public:
-  typedef maidsafe::detail::Name<Fob> Name;
-  typedef Fob<typename SignerFob<MpidTag>::Tag> Signer;
-  typedef MpidTag Tag;
-
-  Fob() = delete;
-  // This constructor is only available to this specialisation (i.e. Mpid)
-  Fob(const NonEmptyString& chosen_name, const Signer& signing_fob);
-
-  Fob(const Fob& other);
-  Fob(Fob&& other);
-  friend void swap(Fob& lhs, Fob& rhs) {
-    using std::swap;
-    swap(lhs.keys_, rhs.keys_);
-    swap(lhs.validation_token_, rhs.validation_token_);
-    swap(lhs.name_, rhs.name_);
-  }
-  Fob& operator=(Fob other);
-
-  explicit Fob(const std::string& binary_stream);
-  std::string ToCereal() const;
-
-  Name name() const { return name_; }
-  asymm::Signature validation_token() const { return validation_token_; }
-  asymm::PrivateKey private_key() const { return keys_.private_key; }
-  asymm::PublicKey public_key() const { return keys_.public_key; }
-
-  template<typename Archive>
-  Archive& load(Archive& ref_archive) {
-    asymm::EncodedPrivateKey temp_private_key {};
-    asymm::EncodedPublicKey temp_public_key {};
-    std::uint32_t temp_type {};
-    Identity name;
-
-    auto& archive = ref_archive(temp_type, name, temp_private_key,
-                                temp_public_key, validation_token_);
-
-    keys_.private_key = asymm::DecodeKey(std::move(temp_private_key));
-    keys_.public_key = asymm::DecodeKey(std::move(temp_public_key));
-
-    ValidateFobDeserialisation(Tag::kValue, keys_, validation_token_, name, temp_type);
-    name_ = Name {std::move(name)};
-
-    return archive;
-  }
-
-  template<typename Archive>
-  Archive& save(Archive& ref_archive) const {
-    return ref_archive(static_cast<uint32_t>(Tag::kValue),
-                       name_->string(),
-                       asymm::EncodeKey(keys_.private_key).string(),
-                       asymm::EncodeKey(keys_.public_key).string(),
-                       validation_token_);
-  }
-
- private:
-  asymm::Keys keys_;
-  asymm::Signature validation_token_;
-  Name name_;
-};
-
 
 
 // ========== General ==============================================================================
