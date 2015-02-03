@@ -32,8 +32,8 @@ struct KeyChainListKeyChainCereal {
   KeyChainListKeyChainCereal() : anmaid_{}, maid_{}, anpmid_{}, pmid_{} {}
 
   template <typename Archive>
-  Archive& serialize(Archive& ref_archive) {
-    return ref_archive(anmaid_, maid_, anpmid_, pmid_);
+  Archive& serialize(Archive& archive) {
+    return archive(anmaid_, maid_, anpmid_, pmid_);
   }
 
   std::string anmaid_;
@@ -46,8 +46,8 @@ struct KeyChainListCereal {
   KeyChainListCereal() : keychains_{} {}
 
   template <typename Archive>
-  Archive& serialize(Archive& ref_archive) {
-    return ref_archive(keychains_);
+  Archive& serialize(Archive& archive) {
+    return archive(keychains_);
   }
 
   using KeyChainCereal = KeyChainListKeyChainCereal;

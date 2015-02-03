@@ -32,8 +32,8 @@ struct PmidListCereal {
   PmidListCereal() : pmids_{} {}
 
   template <typename Archive>
-  Archive& serialize(Archive& ref_archive) {
-    return ref_archive(pmids_);
+  Archive& serialize(Archive& archive) {
+    return archive(pmids_);
   }
 
   std::vector<std::string> pmids_;

@@ -99,26 +99,26 @@ class Fob<TagType, typename std::enable_if<is_self_signed<TagType>::type::value>
   asymm::PublicKey public_key() const { return keys_.public_key; }
 
   template <typename Archive>
-  Archive& load(Archive& ref_archive) {
-    asymm::EncodedPrivateKey temp_private_key{};
-    asymm::EncodedPublicKey temp_public_key{};
+  Archive& load(Archive& archive) {
+    asymm::EncodedPrivateKey temp_private_key;
+    asymm::EncodedPublicKey temp_public_key;
     Identity name;
 
-    auto& archive = ref_archive(name, temp_private_key, temp_public_key, validation_token_);
+    archive(name, temp_private_key, temp_public_key, validation_token_);
 
     keys_.private_key = asymm::DecodeKey(std::move(temp_private_key));
     keys_.public_key = asymm::DecodeKey(std::move(temp_public_key));
-
-    ValidateToken(name);
     name_ = Name{std::move(name)};
+
+    ValidateToken();
 
     return archive;
   }
 
   template <typename Archive>
-  Archive& save(Archive& ref_archive) const {
-    return ref_archive(name_->string(), asymm::EncodeKey(keys_.private_key).string(),
-                       asymm::EncodeKey(keys_.public_key).string(), validation_token_);
+  Archive& save(Archive& archive) const {
+    return archive(name_->string(), asymm::EncodeKey(keys_.private_key).string(),
+                   asymm::EncodeKey(keys_.public_key).string(), validation_token_);
   }
 
  private:
@@ -132,7 +132,7 @@ class Fob<TagType, typename std::enable_if<is_self_signed<TagType>::type::value>
                        keys_.private_key);
   }
 
-  void ValidateToken(const Identity& name) const {
+  void ValidateToken() const {
     // Check the validation token is valid
     if (!asymm::CheckSignature(asymm::PlainText(asymm::EncodeKey(keys_.public_key).string() +
                                                 ConvertToString(Tag::kValue)),
@@ -144,7 +144,7 @@ class Fob<TagType, typename std::enable_if<is_self_signed<TagType>::type::value>
     if (asymm::Decrypt(asymm::Encrypt(plain, keys_.public_key), keys_.private_key) != plain)
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
     // Check the name is the hash of the public key + validation token
-    if (CreateName() != name)
+    if (CreateName() != name_.value)
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   }
 
@@ -237,26 +237,26 @@ class Fob<TagType, typename std::enable_if<!is_self_signed<TagType>::type::value
   asymm::PublicKey public_key() const { return keys_.public_key; }
 
   template <typename Archive>
-  Archive& load(Archive& ref_archive) {
-    asymm::EncodedPrivateKey temp_private_key{};
-    asymm::EncodedPublicKey temp_public_key{};
+  Archive& load(Archive& archive) {
+    asymm::EncodedPrivateKey temp_private_key;
+    asymm::EncodedPublicKey temp_public_key;
     Identity name;
 
-    auto& archive = ref_archive(name, temp_private_key, temp_public_key, validation_token_);
+    archive(name, temp_private_key, temp_public_key, validation_token_);
 
     keys_.private_key = asymm::DecodeKey(std::move(temp_private_key));
     keys_.public_key = asymm::DecodeKey(std::move(temp_public_key));
-
-    ValidateToken(name);
     name_ = Name{std::move(name)};
+
+    ValidateToken();
 
     return archive;
   }
 
   template <typename Archive>
-  Archive& save(Archive& ref_archive) const {
-    return ref_archive(name_->string(), asymm::EncodeKey(keys_.private_key).string(),
-                       asymm::EncodeKey(keys_.public_key).string(), validation_token_);
+  Archive& save(Archive& archive) const {
+    return archive(name_->string(), asymm::EncodeKey(keys_.private_key).string(),
+                   asymm::EncodeKey(keys_.public_key).string(), validation_token_);
   }
 
  private:
@@ -277,7 +277,7 @@ class Fob<TagType, typename std::enable_if<!is_self_signed<TagType>::type::value
     return token;
   }
 
-  void ValidateToken(const Identity& name) const {
+  void ValidateToken() const {
     // Check the validation token is valid
     if (!asymm::CheckSignature(asymm::PlainText(validation_token_.signature_of_public_key.string() +
                                                 asymm::EncodeKey(keys_.public_key).string() +
@@ -290,7 +290,7 @@ class Fob<TagType, typename std::enable_if<!is_self_signed<TagType>::type::value
     if (asymm::Decrypt(asymm::Encrypt(plain, keys_.public_key), keys_.private_key) != plain)
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
     // Check the name is the hash of the public key + validation token
-    if (CreateName() != name)
+    if (CreateName() != name_.value)
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   }
 
