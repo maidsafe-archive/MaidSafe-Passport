@@ -29,11 +29,9 @@ namespace passport {
 namespace detail {
 
 struct PmidListCereal {
-  PmidListCereal()
-    : pmids_ {}
-  { }
+  PmidListCereal() : pmids_{} {}
 
-  template<typename Archive>
+  template <typename Archive>
   Archive& serialize(Archive& ref_archive) {
     return ref_archive(pmids_);
   }

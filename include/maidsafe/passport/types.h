@@ -46,7 +46,7 @@ typedef detail::Fob<detail::PmidTag> Pmid;
 
 // Maidsafe Public Identification: Identifies a public client on the network and is used by the
 // client software for public authenticatable network transactions (e.g messaging).  It is signed by
-// the Anmpid passed during its construction.  Its name is user-chosen.
+// the Anmpid passed during its construction.
 typedef detail::Fob<detail::MpidTag> Mpid;
 
 // Anonymous Maid: Used only to sign the Maid and is self-signed.

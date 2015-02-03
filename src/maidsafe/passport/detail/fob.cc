@@ -31,14 +31,15 @@ namespace detail {
 
 Identity CreateFobName(const asymm::PublicKey& public_key,
                        const asymm::Signature& validation_token) {
-  return Identity{ crypto::Hash<crypto::SHA512>(asymm::EncodeKey(public_key) + validation_token) };
+  return Identity{crypto::Hash<crypto::SHA512>(asymm::EncodeKey(public_key) + validation_token)};
 }
 
 void ValidateFobDeserialisation(DataTagValue enum_value, asymm::Keys& keys,
-                     asymm::Signature& validation_token, Identity& name, std::uint32_t type) {
-  asymm::PlainText plain{ RandomString(64) };
-  if ((enum_value != MpidTag::kValue && CreateFobName(keys.public_key, validation_token) != name)
-      || asymm::Decrypt(asymm::Encrypt(plain, keys.public_key), keys.private_key) != plain ||
+                                asymm::Signature& validation_token, Identity& name,
+                                std::uint32_t type) {
+  asymm::PlainText plain{RandomString(64)};
+  if ((enum_value != MpidTag::kValue && CreateFobName(keys.public_key, validation_token) != name) ||
+      asymm::Decrypt(asymm::Encrypt(plain, keys.public_key), keys.private_key) != plain ||
       enum_value != DataTagValue(type)) {
     BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   }
@@ -49,13 +50,13 @@ namespace {
 template <typename TagType>
 crypto::CipherText Encrypt(const Fob<TagType>& fob, const crypto::AES256Key& symm_key,
                            const crypto::AES256InitialisationVector& symm_iv) {
-  return crypto::SymmEncrypt(crypto::PlainText{ fob.ToCereal() }, symm_key, symm_iv);
+  return crypto::SymmEncrypt(crypto::PlainText{fob.ToCereal()}, symm_key, symm_iv);
 }
 
 template <typename TagType>
 Fob<TagType> Decrypt(const crypto::CipherText& encrypted_fob, const crypto::AES256Key& symm_key,
                      const crypto::AES256InitialisationVector& symm_iv) {
-  return Fob<TagType> {crypto::SymmDecrypt(encrypted_fob, symm_key, symm_iv).string()};
+  return Fob<TagType>{crypto::SymmDecrypt(encrypted_fob, symm_key, symm_iv).string()};
 }
 
 }  // unnamed namespace
@@ -98,35 +99,31 @@ Fob<PmidTag> DecryptPmid(const crypto::CipherText& encrypted_pmid,
 #ifdef TESTING
 
 NonEmptyString SerialiseAnmaid(const Fob<AnmaidTag>& anmaid) {
-  return NonEmptyString{ anmaid.ToCereal() };
+  return NonEmptyString{anmaid.ToCereal()};
 }
 
 Fob<AnmaidTag> ParseAnmaid(const NonEmptyString& serialised_anmaid) {
-  return Fob<AnmaidTag>{ serialised_anmaid.string() };
+  return Fob<AnmaidTag>{serialised_anmaid.string()};
 }
 
-NonEmptyString SerialiseMaid(const Fob<MaidTag>& maid) {
-  return NonEmptyString{ maid.ToCereal() };
-}
+NonEmptyString SerialiseMaid(const Fob<MaidTag>& maid) { return NonEmptyString{maid.ToCereal()}; }
 
 Fob<MaidTag> ParseMaid(const NonEmptyString& serialised_maid) {
-  return Fob<MaidTag>{ serialised_maid.string() };
+  return Fob<MaidTag>{serialised_maid.string()};
 }
 
 NonEmptyString SerialiseAnpmid(const Fob<AnpmidTag>& anpmid) {
-  return NonEmptyString{ anpmid.ToCereal() };
+  return NonEmptyString{anpmid.ToCereal()};
 }
 
 Fob<AnpmidTag> ParseAnpmid(const NonEmptyString& serialised_anpmid) {
-  return Fob<AnpmidTag>{ serialised_anpmid.string() };
+  return Fob<AnpmidTag>{serialised_anpmid.string()};
 }
 
-NonEmptyString SerialisePmid(const Fob<PmidTag>& pmid) {
-  return NonEmptyString{ pmid.ToCereal() };
-}
+NonEmptyString SerialisePmid(const Fob<PmidTag>& pmid) { return NonEmptyString{pmid.ToCereal()}; }
 
 Fob<PmidTag> ParsePmid(const NonEmptyString& serialised_pmid) {
-  return Fob<PmidTag>{ serialised_pmid.string() };
+  return Fob<PmidTag>{serialised_pmid.string()};
 }
 
 std::vector<Fob<PmidTag>> ReadPmidList(const boost::filesystem::path& file_path) {
@@ -134,7 +131,7 @@ std::vector<Fob<PmidTag>> ReadPmidList(const boost::filesystem::path& file_path)
   PmidListCereal pmid_list_msg;
   maidsafe::ConvertFromString(ReadFile(file_path).string(), pmid_list_msg);
   for (std::size_t i = 0; i < pmid_list_msg.pmids_.size(); ++i)
-    pmid_list.emplace_back(ParsePmid(NonEmptyString{ pmid_list_msg.pmids_[i] }));
+    pmid_list.emplace_back(ParsePmid(NonEmptyString{pmid_list_msg.pmids_[i]}));
   return pmid_list;
 }
 
@@ -142,17 +139,15 @@ bool WritePmidList(const boost::filesystem::path& file_path,
                    const std::vector<Fob<PmidTag>>& pmid_list) {
   PmidListCereal pmid_list_msg;
   for (const auto& pmid : pmid_list)
-    ((pmid_list_msg.pmids_.emplace_back(),
-      &pmid_list_msg.pmids_[pmid_list_msg.pmids_.size() - 1]))->assign(
-        SerialisePmid(pmid).string());
+    ((pmid_list_msg.pmids_.emplace_back(), &pmid_list_msg.pmids_[pmid_list_msg.pmids_.size() - 1]))
+        ->assign(SerialisePmid(pmid).string());
   return WriteFile(file_path, maidsafe::ConvertToString(pmid_list_msg));
 }
 
 AnmaidToPmid ParseKeys(const KeyChainListCereal::KeyChainCereal& key_chain) {
-  return std::move(AnmaidToPmid(ParseAnmaid(NonEmptyString{ key_chain.anmaid_ }),
-                                ParseMaid(NonEmptyString{ key_chain.maid_}),
-                                ParseAnpmid(NonEmptyString{ key_chain.anpmid_ }),
-                                ParsePmid(NonEmptyString{ key_chain.pmid_ })));
+  return std::move(AnmaidToPmid(
+      ParseAnmaid(NonEmptyString{key_chain.anmaid_}), ParseMaid(NonEmptyString{key_chain.maid_}),
+      ParseAnpmid(NonEmptyString{key_chain.anpmid_}), ParsePmid(NonEmptyString{key_chain.pmid_})));
 }
 
 std::vector<AnmaidToPmid> ReadKeyChainList(const boost::filesystem::path& file_path) {

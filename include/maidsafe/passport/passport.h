@@ -34,7 +34,9 @@
 
 namespace maidsafe {
 
-namespace authentication { struct UserCredentials; }
+namespace authentication {
+struct UserCredentials;
+}
 
 namespace passport {
 

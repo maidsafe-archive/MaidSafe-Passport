@@ -29,14 +29,9 @@ namespace passport {
 namespace detail {
 
 struct KeyChainListKeyChainCereal {
-  KeyChainListKeyChainCereal()
-    : anmaid_ {},
-      maid_ {},
-      anpmid_ {},
-      pmid_ {}
-  { }
+  KeyChainListKeyChainCereal() : anmaid_{}, maid_{}, anpmid_{}, pmid_{} {}
 
-  template<typename Archive>
+  template <typename Archive>
   Archive& serialize(Archive& ref_archive) {
     return ref_archive(anmaid_, maid_, anpmid_, pmid_);
   }
@@ -48,11 +43,9 @@ struct KeyChainListKeyChainCereal {
 };
 
 struct KeyChainListCereal {
-  KeyChainListCereal()
-    : keychains_ {}
-  { }
+  KeyChainListCereal() : keychains_{} {}
 
-  template<typename Archive>
+  template <typename Archive>
   Archive& serialize(Archive& ref_archive) {
     return ref_archive(keychains_);
   }

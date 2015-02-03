@@ -30,12 +30,9 @@ namespace passport {
 namespace detail {
 
 struct KeyAndSignerCereal {
-  KeyAndSignerCereal()
-    : key_ {},
-      signer_ {}
-  { }
+  KeyAndSignerCereal() : key_{}, signer_{} {}
 
-  template<typename Archive>
+  template <typename Archive>
   Archive& serialize(Archive& ref_archive) {
     return ref_archive(key_, signer_);
   }
@@ -46,13 +43,9 @@ struct KeyAndSignerCereal {
 
 
 struct PassportCereal {
-  PassportCereal()
-    : maid_and_signer_ {},
-      pmids_and_signers_ {},
-      mpids_and_signers_ {}
-  { }
+  PassportCereal() : maid_and_signer_{}, pmids_and_signers_{}, mpids_and_signers_{} {}
 
-  template<typename Archive>
+  template <typename Archive>
   Archive& serialize(Archive& ref_archive) {
     return ref_archive(maid_and_signer_, pmids_and_signers_, mpids_and_signers_);
   }

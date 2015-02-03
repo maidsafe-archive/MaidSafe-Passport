@@ -110,29 +110,29 @@ bool CheckSerialisationAndParsing(PublicFobType public_fob) {
 
 template <typename PublicFobType, typename SerialisedType>
 void CheckParsingFromWrongType(PublicFobType& public_fob, SerialisedType serialised_public_fob) {
-  static_assert(!std::is_same<typename PublicFobType::Tag,
-    typename SerialisedType::tag_type>::value,
-    "The test is designed to be passed different types.");
-  Identity name{ public_fob.name().value };
+  static_assert(
+      !std::is_same<typename PublicFobType::Tag, typename SerialisedType::tag_type>::value,
+      "The test is designed to be passed different types.");
+  Identity name{public_fob.name().value};
   NonEmptyString serialised_string(serialised_public_fob.data);
-  public_fob = PublicFobType{ typename PublicFobType::Name{ name },
-    typename PublicFobType::serialised_type{ serialised_string } };
+  public_fob = PublicFobType{typename PublicFobType::Name{name},
+                             typename PublicFobType::serialised_type{serialised_string}};
 }
 
 TEST(PublicFobTest, BEH_SerialisationAndParsing) {
   Anmaid anmaid;
-  Maid maid{ anmaid };
+  Maid maid{anmaid};
   Anpmid anpmid;
-  Pmid pmid{ anpmid };
+  Pmid pmid{anpmid};
   Anmpid anmpid;
-  Mpid mpid{ anmpid };
+  Mpid mpid{anmpid};
 
-  PublicAnmaid public_anmaid{ anmaid };
-  PublicMaid public_maid{ maid };
-  PublicAnpmid public_anpmid{ anpmid };
-  PublicPmid public_pmid{ pmid };
-  PublicAnmpid public_anmpid{ anmpid };
-  PublicMpid public_mpid{ mpid };
+  PublicAnmaid public_anmaid{anmaid};
+  PublicMaid public_maid{maid};
+  PublicAnpmid public_anpmid{anpmid};
+  PublicPmid public_pmid{pmid};
+  PublicAnmpid public_anmpid{anmpid};
+  PublicMpid public_mpid{mpid};
 
   EXPECT_TRUE(CheckSerialisationAndParsing(public_anmaid));
   EXPECT_TRUE(CheckSerialisationAndParsing(public_maid));
@@ -141,12 +141,12 @@ TEST(PublicFobTest, BEH_SerialisationAndParsing) {
   EXPECT_TRUE(CheckSerialisationAndParsing(public_anmpid));
   EXPECT_TRUE(CheckSerialisationAndParsing(public_mpid));
 
-  PublicAnmaid::serialised_type serialised_anmaid{ public_anmaid.Serialise() };
-  PublicMaid::serialised_type serialised_maid{ public_maid.Serialise() };
-  PublicAnpmid::serialised_type serialised_anpmid{ public_anpmid.Serialise() };
-  PublicPmid::serialised_type serialised_pmid{ public_pmid.Serialise() };
-  PublicAnmpid::serialised_type serialised_anmpid{ public_anmpid.Serialise() };
-  PublicMpid::serialised_type serialised_mpid{ public_mpid.Serialise() };
+  PublicAnmaid::serialised_type serialised_anmaid{public_anmaid.Serialise()};
+  PublicMaid::serialised_type serialised_maid{public_maid.Serialise()};
+  PublicAnpmid::serialised_type serialised_anpmid{public_anpmid.Serialise()};
+  PublicPmid::serialised_type serialised_pmid{public_pmid.Serialise()};
+  PublicAnmpid::serialised_type serialised_anmpid{public_anmpid.Serialise()};
+  PublicMpid::serialised_type serialised_mpid{public_mpid.Serialise()};
 
   EXPECT_THROW(CheckParsingFromWrongType(public_anmaid, serialised_maid), maidsafe_error);
   EXPECT_THROW(CheckParsingFromWrongType(public_anmaid, serialised_anpmid), maidsafe_error);
@@ -189,17 +189,17 @@ TEST(PublicFobTest, BEH_DoNotConstructPublicFobsFromInvalidStrings) {
   Identity name(RandomString(64));
   NonEmptyString string(RandomAlphaNumericString(1 + RandomUint32() % 100));
   EXPECT_THROW(PublicAnmaid(PublicAnmaid::Name(name), PublicAnmaid::serialised_type(string)),
-                  std::exception);
+               std::exception);
   EXPECT_THROW(PublicMaid(PublicMaid::Name(name), PublicMaid::serialised_type(string)),
-                  std::exception);
+               std::exception);
   EXPECT_THROW(PublicAnpmid(PublicAnpmid::Name(name), PublicAnpmid::serialised_type(string)),
-                  std::exception);
+               std::exception);
   EXPECT_THROW(PublicPmid(PublicPmid::Name(name), PublicPmid::serialised_type(string)),
-                  std::exception);
+               std::exception);
   EXPECT_THROW(PublicAnmpid(PublicAnmpid::Name(name), PublicAnmpid::serialised_type(string)),
-                  std::exception);
+               std::exception);
   EXPECT_THROW(PublicMpid(PublicMpid::Name(name), PublicMpid::serialised_type(string)),
-                  std::exception);
+               std::exception);
 }
 
 TEST(PublicFobTest, BEH_DoNotConstructPublicFobsFromUninitialisedStrings) {

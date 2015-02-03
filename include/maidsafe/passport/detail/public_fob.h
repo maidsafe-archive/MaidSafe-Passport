@@ -78,19 +78,22 @@ class PublicFob {
     if (!name_->IsInitialised())
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
 
-    try { maidsafe::ConvertFromString(serialised_public_fob.data.string(), *this); }
-    catch(...) { BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error)); }
+    try {
+      maidsafe::ConvertFromString(serialised_public_fob.data.string(), *this);
+    } catch (...) {
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+    }
   }
 
   serialised_type Serialise() const {
-    return serialised_type(NonEmptyString {maidsafe::ConvertToString(*this)});
+    return serialised_type(NonEmptyString{maidsafe::ConvertToString(*this)});
   }
 
   Name name() const { return name_; }
   asymm::PublicKey public_key() const { return public_key_; }
   asymm::Signature validation_token() const { return validation_token_; }
 
-  template<typename Archive>
+  template <typename Archive>
   Archive& load(Archive& ref_archive) {
     std::uint32_t temp_tag;
     std::string temp_raw_public_key;
@@ -100,15 +103,14 @@ class PublicFob {
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
     }
 
-    public_key_ = asymm::DecodeKey(asymm::EncodedPublicKey {std::move(temp_raw_public_key)});
+    public_key_ = asymm::DecodeKey(asymm::EncodedPublicKey{std::move(temp_raw_public_key)});
     return archive;
   }
 
-  template<typename Archive>
+  template <typename Archive>
   Archive& save(Archive& ref_archive) const {
     return ref_archive(static_cast<std::uint32_t>(Tag::kValue),
-                       asymm::EncodeKey(public_key_).string(),
-                       validation_token_);
+                       asymm::EncodeKey(public_key_).string(), validation_token_);
   }
 
  private:

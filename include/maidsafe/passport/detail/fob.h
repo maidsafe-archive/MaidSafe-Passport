@@ -61,19 +61,22 @@ class Fob<TagType, typename std::enable_if<is_self_signed<TagType>::type::value>
   typedef TagType Tag;
 
   // This constructor is only available to this specialisation (i.e. self-signed fob).
-  Fob() : keys_(asymm::GenerateKeyPair()),
-      validation_token_(asymm::Sign(asymm::PlainText{ asymm::EncodeKey(keys_.public_key) },
-                                    keys_.private_key)),
-      name_(CreateFobName(keys_.public_key, validation_token_)) {
+  Fob()
+      : keys_(asymm::GenerateKeyPair()),
+        validation_token_(
+            asymm::Sign(asymm::PlainText{asymm::EncodeKey(keys_.public_key)}, keys_.private_key)),
+        name_(CreateFobName(keys_.public_key, validation_token_)) {
     static_assert(std::is_same<Fob<Tag>, Signer>::value,
                   "This constructor is only applicable for self-signing fobs.");
   }
 
-  Fob(const Fob& other) : keys_(other.keys_), validation_token_(other.validation_token_),
-      name_(other.name_) {}
+  Fob(const Fob& other)
+      : keys_(other.keys_), validation_token_(other.validation_token_), name_(other.name_) {}
 
-  Fob(Fob&& other) : keys_(std::move(other.keys_)),
-      validation_token_(std::move(other.validation_token_)), name_(std::move(other.name_)) {}
+  Fob(Fob&& other)
+      : keys_(std::move(other.keys_)),
+        validation_token_(std::move(other.validation_token_)),
+        name_(std::move(other.name_)) {}
 
   friend void swap(Fob& lhs, Fob& rhs) {
     using std::swap;
@@ -88,45 +91,44 @@ class Fob<TagType, typename std::enable_if<is_self_signed<TagType>::type::value>
   }
 
   explicit Fob(const std::string& binary_stream) : keys_(), validation_token_(), name_() {
-    try {maidsafe::ConvertFromString(binary_stream, *this);}
-    catch(...) {BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));}
+    try {
+      maidsafe::ConvertFromString(binary_stream, *this);
+    } catch (...) {
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+    }
   }
 
-  std::string ToCereal() const {
-    return maidsafe::ConvertToString(*this);
-  }
+  std::string ToCereal() const { return maidsafe::ConvertToString(*this); }
 
   Name name() const { return name_; }
   asymm::Signature validation_token() const { return validation_token_; }
   asymm::PrivateKey private_key() const { return keys_.private_key; }
   asymm::PublicKey public_key() const { return keys_.public_key; }
 
-  template<typename Archive>
+  template <typename Archive>
   Archive& load(Archive& ref_archive) {
-    asymm::EncodedPrivateKey temp_private_key {};
-    asymm::EncodedPublicKey temp_public_key {};
-    std::uint32_t temp_type {};
+    asymm::EncodedPrivateKey temp_private_key{};
+    asymm::EncodedPublicKey temp_public_key{};
+    std::uint32_t temp_type{};
     Identity name;
 
-    auto& archive = ref_archive(temp_type, name, temp_private_key,
-                                temp_public_key, validation_token_);
+    auto& archive =
+        ref_archive(temp_type, name, temp_private_key, temp_public_key, validation_token_);
 
     keys_.private_key = asymm::DecodeKey(std::move(temp_private_key));
     keys_.public_key = asymm::DecodeKey(std::move(temp_public_key));
 
     ValidateFobDeserialisation(Tag::kValue, keys_, validation_token_, name, temp_type);
-    name_ = Name {std::move(name)};
+    name_ = Name{std::move(name)};
 
     return archive;
   }
 
-  template<typename Archive>
+  template <typename Archive>
   Archive& save(Archive& ref_archive) const {
-    return ref_archive(static_cast<uint32_t>(Tag::kValue),
-                       name_->string(),
+    return ref_archive(static_cast<uint32_t>(Tag::kValue), name_->string(),
                        asymm::EncodeKey(keys_.private_key).string(),
-                       asymm::EncodeKey(keys_.public_key).string(),
-                       validation_token_);
+                       asymm::EncodeKey(keys_.public_key).string(), validation_token_);
   }
 
  private:
@@ -150,15 +152,17 @@ class Fob<TagType, typename std::enable_if<!is_self_signed<TagType>::type::value
   explicit Fob(const Signer& signing_fob,
                typename std::enable_if<!std::is_same<Fob<Tag>, Signer>::value>::type* = 0)
       : keys_(asymm::GenerateKeyPair()),
-        validation_token_(asymm::Sign(asymm::PlainText{ asymm::EncodeKey(keys_.public_key) },
+        validation_token_(asymm::Sign(asymm::PlainText{asymm::EncodeKey(keys_.public_key)},
                                       signing_fob.private_key())),
         name_(CreateFobName(keys_.public_key, validation_token_)) {}
 
-  Fob(const Fob& other) : keys_(other.keys_), validation_token_(other.validation_token_),
-      name_(other.name_) {}
+  Fob(const Fob& other)
+      : keys_(other.keys_), validation_token_(other.validation_token_), name_(other.name_) {}
 
-  Fob(Fob&& other) : keys_(std::move(other.keys_)),
-      validation_token_(std::move(other.validation_token_)), name_(std::move(other.name_)) {}
+  Fob(Fob&& other)
+      : keys_(std::move(other.keys_)),
+        validation_token_(std::move(other.validation_token_)),
+        name_(std::move(other.name_)) {}
 
   friend void swap(Fob& lhs, Fob& rhs) {
     using std::swap;
@@ -173,45 +177,44 @@ class Fob<TagType, typename std::enable_if<!is_self_signed<TagType>::type::value
   }
 
   explicit Fob(const std::string& binary_stream) : keys_(), validation_token_(), name_() {
-    try {maidsafe::ConvertFromString(binary_stream, *this);}
-    catch(...) {BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));}
+    try {
+      maidsafe::ConvertFromString(binary_stream, *this);
+    } catch (...) {
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+    }
   }
 
-  std::string ToCereal() const {
-    return maidsafe::ConvertToString(*this);
-  }
+  std::string ToCereal() const { return maidsafe::ConvertToString(*this); }
 
   Name name() const { return name_; }
   asymm::Signature validation_token() const { return validation_token_; }
   asymm::PrivateKey private_key() const { return keys_.private_key; }
   asymm::PublicKey public_key() const { return keys_.public_key; }
 
-  template<typename Archive>
+  template <typename Archive>
   Archive& load(Archive& ref_archive) {
-    asymm::EncodedPrivateKey temp_private_key {};
-    asymm::EncodedPublicKey temp_public_key {};
-    std::uint32_t temp_type {};
+    asymm::EncodedPrivateKey temp_private_key{};
+    asymm::EncodedPublicKey temp_public_key{};
+    std::uint32_t temp_type{};
     Identity name;
 
-    auto& archive = ref_archive(temp_type, name, temp_private_key,
-                                temp_public_key, validation_token_);
+    auto& archive =
+        ref_archive(temp_type, name, temp_private_key, temp_public_key, validation_token_);
 
     keys_.private_key = asymm::DecodeKey(std::move(temp_private_key));
     keys_.public_key = asymm::DecodeKey(std::move(temp_public_key));
 
     ValidateFobDeserialisation(Tag::kValue, keys_, validation_token_, name, temp_type);
-    name_ = Name {std::move(name)};
+    name_ = Name{std::move(name)};
 
     return archive;
   }
 
-  template<typename Archive>
+  template <typename Archive>
   Archive& save(Archive& ref_archive) const {
-    return ref_archive(static_cast<uint32_t>(Tag::kValue),
-                       name_->string(),
+    return ref_archive(static_cast<uint32_t>(Tag::kValue), name_->string(),
                        asymm::EncodeKey(keys_.private_key).string(),
-                       asymm::EncodeKey(keys_.public_key).string(),
-                       validation_token_);
+                       asymm::EncodeKey(keys_.public_key).string(), validation_token_);
   }
 
  private:
@@ -248,8 +251,11 @@ bool WritePmidList(const boost::filesystem::path& file_path,
 struct AnmaidToPmid {
   AnmaidToPmid(Fob<AnmaidTag> anmaid_in, Fob<MaidTag> maid_in, Fob<AnpmidTag> anpmid_in,
                Fob<PmidTag> pmid_in)
-      : anmaid(std::move(anmaid_in)), maid(std::move(maid_in)),
-        anpmid(std::move(anpmid_in)), pmid(std::move(pmid_in)), chain_size(4) {}
+      : anmaid(std::move(anmaid_in)),
+        maid(std::move(maid_in)),
+        anpmid(std::move(anpmid_in)),
+        pmid(std::move(pmid_in)),
+        chain_size(4) {}
   AnmaidToPmid() : anmaid(), maid(anmaid), anpmid(), pmid(anpmid), chain_size(4) {}
   Fob<AnmaidTag> anmaid;
   Fob<MaidTag> maid;
