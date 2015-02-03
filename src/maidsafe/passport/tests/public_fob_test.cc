@@ -20,10 +20,10 @@
 
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
+#include "maidsafe/common/serialisation/serialisation.h"
 
 #include "maidsafe/passport/types.h"
-
-#include "maidsafe/common/serialisation/serialisation.h"
+#include "maidsafe/passport/tests/test_utils.h"
 
 namespace maidsafe {
 
@@ -97,7 +97,7 @@ bool CheckSerialisationAndParsing(PublicFobType public_fob) {
     LOG(kError) << "Names don't match.";
     return false;
   }
-  if (public_fob.validation_token() != public_fob2.validation_token()) {
+  if (!Equal<PublicFobType::Tag>(public_fob.validation_token(), public_fob2.validation_token())) {
     LOG(kError) << "Validation tokens don't match.";
     return false;
   }
@@ -186,7 +186,7 @@ TEST(PublicFobTest, BEH_SerialisationAndParsing) {
 }
 
 TEST(PublicFobTest, BEH_DoNotConstructPublicFobsFromInvalidStrings) {
-  Identity name(RandomString(64));
+  Identity name(RandomString(crypto::SHA512::DIGESTSIZE));
   NonEmptyString string(RandomAlphaNumericString(1 + RandomUint32() % 100));
   EXPECT_THROW(PublicAnmaid(PublicAnmaid::Name(name), PublicAnmaid::serialised_type(string)),
                std::exception);
@@ -204,7 +204,7 @@ TEST(PublicFobTest, BEH_DoNotConstructPublicFobsFromInvalidStrings) {
 
 TEST(PublicFobTest, BEH_DoNotConstructPublicFobsFromUninitialisedStrings) {
   Identity uninitialised_name;
-  Identity name(RandomString(64));
+  Identity name(RandomString(crypto::SHA512::DIGESTSIZE));
   NonEmptyString uninitialised_string;
   NonEmptyString string(RandomAlphaNumericString(1 + RandomUint32() % 100));
   EXPECT_THROW(

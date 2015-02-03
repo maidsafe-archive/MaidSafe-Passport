@@ -37,40 +37,40 @@ namespace passport {
 // Maidsafe Anonymous Identification: Identifies a client on the network and is used by the client
 // software for anonymous authenticatable network transactions (e.g. Put/Delete data).  It is signed
 // by the Anmaid passed during its construction.
-typedef detail::Fob<detail::MaidTag> Maid;
+using Maid = detail::Fob<detail::MaidTag>;
 
 // Proxy Maidsafe Identification: Identifies a vault on the network, see
 // https://github.com/maidsafe/MaidSafe-Vault/wiki for more information about vaults.  It is signed
 // by the Anpmid passed during its construction.
-typedef detail::Fob<detail::PmidTag> Pmid;
+using Pmid = detail::Fob<detail::PmidTag>;
 
 // Maidsafe Public Identification: Identifies a public client on the network and is used by the
 // client software for public authenticatable network transactions (e.g messaging).  It is signed by
 // the Anmpid passed during its construction.
-typedef detail::Fob<detail::MpidTag> Mpid;
+using Mpid = detail::Fob<detail::MpidTag>;
 
 // Anonymous Maid: Used only to sign the Maid and is self-signed.
-typedef detail::Fob<detail::AnmaidTag> Anmaid;
+using Anmaid = detail::Fob<detail::AnmaidTag>;
 
 // Anonymous Pmid: Used only to sign the Pmid and is self-signed.
-typedef detail::Fob<detail::AnpmidTag> Anpmid;
+using Anpmid = detail::Fob<detail::AnpmidTag>;
 
 // Anonymous Mpid: Used only to sign the Mpid and is self-signed.
-typedef detail::Fob<detail::AnmpidTag> Anmpid;
+using Anmpid = detail::Fob<detail::AnmpidTag>;
 
 
 // Public key types allowing peers to encrypt communications to eachother on the network.  The
 // digital signatures are generated using the RSA-probabilistic signature scheme, RSA-PSS.  More
 // information can be found at http://www.rsa.com/rsalabs, or http://www.cryptopp.com for the
 // implementation.
-typedef detail::PublicFob<detail::AnmaidTag> PublicAnmaid;
-typedef detail::PublicFob<detail::MaidTag> PublicMaid;
+using PublicAnmaid = detail::PublicFob<detail::AnmaidTag>;
+using PublicMaid = detail::PublicFob<detail::MaidTag>;
 
-typedef detail::PublicFob<detail::AnpmidTag> PublicAnpmid;
-typedef detail::PublicFob<detail::PmidTag> PublicPmid;
+using PublicAnpmid = detail::PublicFob<detail::AnpmidTag>;
+using PublicPmid = detail::PublicFob<detail::PmidTag>;
 
-typedef detail::PublicFob<detail::AnmpidTag> PublicAnmpid;
-typedef detail::PublicFob<detail::MpidTag> PublicMpid;
+using PublicAnmpid = detail::PublicFob<detail::AnmpidTag>;
+using PublicMpid = detail::PublicFob<detail::MpidTag>;
 
 // Public key type traits.
 template <typename T>

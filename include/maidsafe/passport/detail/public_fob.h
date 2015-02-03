@@ -39,10 +39,11 @@ namespace detail {
 template <typename TagType>
 class PublicFob {
  public:
-  typedef maidsafe::detail::Name<PublicFob> Name;
-  typedef TagType Tag;
-  typedef Fob<typename SignerFob<TagType>::Tag> Signer;
-  typedef TaggedValue<NonEmptyString, Tag> serialised_type;
+  using Name = maidsafe::detail::Name<PublicFob>;
+  using Tag = TagType;
+  using Signer = Fob<typename SignerFob<TagType>::Tag>;
+  using serialised_type = TaggedValue<NonEmptyString, Tag>;
+  using ValidationToken = typename Fob<Tag>::ValidationToken;
 
   PublicFob() = delete;
 
@@ -91,7 +92,7 @@ class PublicFob {
 
   Name name() const { return name_; }
   asymm::PublicKey public_key() const { return public_key_; }
-  asymm::Signature validation_token() const { return validation_token_; }
+  ValidationToken validation_token() const { return validation_token_; }
 
   template <typename Archive>
   Archive& load(Archive& ref_archive) {
@@ -116,7 +117,7 @@ class PublicFob {
  private:
   Name name_;
   asymm::PublicKey public_key_;
-  asymm::Signature validation_token_;
+  ValidationToken validation_token_;
 };
 
 }  // namespace detail

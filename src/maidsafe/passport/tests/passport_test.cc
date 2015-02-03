@@ -30,6 +30,7 @@
 #include "maidsafe/common/authentication/user_credentials.h"
 
 #include "maidsafe/passport/detail/fob.h"
+#include "maidsafe/passport/tests/test_utils.h"
 
 namespace maidsafe {
 
@@ -37,9 +38,9 @@ namespace passport {
 
 namespace test {
 
-template <typename Fobtype>
-bool AllFieldsMatch(const Fobtype& lhs, const Fobtype& rhs) {
-  return lhs.validation_token() == rhs.validation_token() &&
+template <typename FobType>
+bool AllFieldsMatch(const FobType& lhs, const FobType& rhs) {
+  return Equal<FobType::Tag>(lhs.validation_token(), rhs.validation_token()) &&
          asymm::MatchingKeys(lhs.private_key(), rhs.private_key()) &&
          asymm::MatchingKeys(lhs.public_key(), rhs.public_key()) && lhs.name() == rhs.name();
 }
@@ -165,9 +166,9 @@ TEST(PassportTest, FUNC_ConstructorsSettersAndGetters) {
   }
 }
 
-template <typename Fobtype>
-bool NoFieldsMatch(const Fobtype& lhs, const Fobtype& rhs) {
-  if (lhs.validation_token() == rhs.validation_token()) {
+template <typename FobType>
+bool NoFieldsMatch(const FobType& lhs, const FobType& rhs) {
+  if (Equal<FobType::Tag>(lhs.validation_token(), rhs.validation_token())) {
     LOG(kError) << "Validation tokens match.";
     return false;
   }
@@ -285,9 +286,9 @@ TEST(PassportTest, FUNC_Encrypt) {
   const uint32_t kPinValue{RandomUint32()};
   const std::string kPasswordStr{RandomAlphaNumericString((RandomUint32() % 100) + 1)};
   authentication::UserCredentials user_credentials;
-  typedef authentication::UserCredentials::Keyword Keyword;
-  typedef authentication::UserCredentials::Pin Pin;
-  typedef authentication::UserCredentials::Password Password;
+  using Keyword = authentication::UserCredentials::Keyword;
+  using Pin = authentication::UserCredentials::Pin;
+  using Password = authentication::UserCredentials::Password;
   user_credentials.pin = maidsafe::make_unique<Pin>(std::to_string(kPinValue));
   user_credentials.password = maidsafe::make_unique<Password>(kPasswordStr);
 

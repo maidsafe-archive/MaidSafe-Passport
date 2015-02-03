@@ -71,9 +71,9 @@ Anpmid DecryptAnpmid(const crypto::CipherText& encrypted_anpmid, const crypto::A
 Pmid DecryptPmid(const crypto::CipherText& encrypted_pmid, const crypto::AES256Key& symm_key,
                  const crypto::AES256InitialisationVector& symm_iv);
 
-typedef std::pair<Maid, Maid::Signer> MaidAndSigner;
-typedef std::pair<Pmid, Pmid::Signer> PmidAndSigner;
-typedef std::pair<Mpid, Mpid::Signer> MpidAndSigner;
+using MaidAndSigner = std::pair<Maid, Maid::Signer>;
+using PmidAndSigner = std::pair<Pmid, Pmid::Signer>;
+using MpidAndSigner = std::pair<Mpid, Mpid::Signer>;
 // Utility functions to create keys and signers.
 MaidAndSigner CreateMaidAndSigner();
 PmidAndSigner CreatePmidAndSigner();

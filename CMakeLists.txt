@@ -58,6 +58,7 @@ target_link_libraries(maidsafe_passport maidsafe_common)
 
 if(INCLUDE_TESTS)
   ms_add_executable(test_passport "Tests/Passport" ${PassportTestsAllFiles})
+  target_include_directories(test_passport PRIVATE ${PROJECT_SOURCE_DIR}/src)
   target_link_libraries(test_passport maidsafe_passport maidsafe_test)
 endif()
 

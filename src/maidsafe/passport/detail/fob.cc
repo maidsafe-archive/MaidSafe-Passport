@@ -29,22 +29,6 @@ namespace passport {
 
 namespace detail {
 
-Identity CreateFobName(const asymm::PublicKey& public_key,
-                       const asymm::Signature& validation_token) {
-  return Identity{crypto::Hash<crypto::SHA512>(asymm::EncodeKey(public_key) + validation_token)};
-}
-
-void ValidateFobDeserialisation(DataTagValue enum_value, asymm::Keys& keys,
-                                asymm::Signature& validation_token, Identity& name,
-                                std::uint32_t type) {
-  asymm::PlainText plain{RandomString(64)};
-  if ((enum_value != MpidTag::kValue && CreateFobName(keys.public_key, validation_token) != name) ||
-      asymm::Decrypt(asymm::Encrypt(plain, keys.public_key), keys.private_key) != plain ||
-      enum_value != DataTagValue(type)) {
-    BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
-  }
-}
-
 namespace {
 
 template <typename TagType>

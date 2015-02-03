@@ -24,10 +24,10 @@
 #include "maidsafe/common/rsa.h"
 #include "maidsafe/common/test.h"
 #include "maidsafe/common/utils.h"
-
 #include "maidsafe/common/serialisation/serialisation.h"
 
 #include "maidsafe/passport/types.h"
+#include "maidsafe/passport/tests/test_utils.h"
 
 namespace maidsafe {
 
@@ -83,13 +83,12 @@ TEST(FobTest, FUNC_GenerationAndValidation) {
   static_assert(!is_long_term_cacheable<Pmid>::value, "");
   static_assert(!is_long_term_cacheable<Anmpid>::value, "");
   static_assert(!is_long_term_cacheable<Mpid>::value, "");
-  EXPECT_TRUE(true);
 }
 
-template <typename Fobtype>
-bool CheckSerialisationAndParsing(Fobtype fob) {
-  Fobtype fob2(fob.ToCereal());
-  if (fob.validation_token() != fob2.validation_token()) {
+template <typename FobType>
+bool CheckSerialisationAndParsing(FobType fob) {
+  FobType fob2(fob.ToCereal());
+  if (!Equal<FobType::Tag>(fob.validation_token(), fob2.validation_token())) {
     LOG(kError) << "Validation tokens don't match.";
     return false;
   }
@@ -125,8 +124,7 @@ TEST(FobTest, BEH_SerialisationAndParsing) {
 }
 
 bool CheckTokenAndName(const asymm::PublicKey& public_key, const asymm::Signature& signature,
-                       const asymm::PublicKey& signer_key, const Identity& name,
-                       NonEmptyString chosen_name = NonEmptyString()) {
+                       const asymm::PublicKey& signer_key, const Identity& name) {
   bool validation_result(
       asymm::CheckSignature(asymm::PlainText(asymm::EncodeKey(public_key)), signature, signer_key));
   if (!validation_result) {
@@ -134,29 +132,45 @@ bool CheckTokenAndName(const asymm::PublicKey& public_key, const asymm::Signatur
     return false;
   }
 
-  Identity name_result;
-  if (chosen_name.IsInitialised())
-    name_result = crypto::Hash<crypto::SHA512>(chosen_name);
-  else
-    name_result = crypto::Hash<crypto::SHA512>(asymm::EncodeKey(public_key) + signature);
-  if (name_result != name) {
+  if (crypto::Hash<crypto::SHA512>(asymm::EncodeKey(public_key) + signature) != name) {
     LOG(kError) << "Bad name.";
     return false;
   }
   return true;
 }
 
-template <typename Fobtype>
-bool CheckNamingAndValidation(Fobtype fob) {
-  return CheckTokenAndName(fob.public_key(), fob.validation_token(), fob.private_key(),
-                           Identity(fob.name()));
+template <typename FobType>
+testing::AssertionResult CheckNamingAndValidation(FobType fob) {
+  if (!asymm::CheckSignature(asymm::PlainText(asymm::EncodeKey(fob.public_key()).string() +
+                                              ConvertToString(FobType::Tag::kValue)),
+                             fob.validation_token(), fob.public_key())) {
+    return testing::AssertionFailure() << "Bad validation token.";
+  }
+
+  if (crypto::Hash<crypto::SHA512>(asymm::EncodeKey(fob.public_key()) + fob.validation_token()) !=
+      fob.name().value) {
+    return testing::AssertionFailure() << "Bad name.";
+  }
+
+  return testing::AssertionSuccess();
 }
 
-template <typename Fobtype>
-bool CheckNamingAndValidation(Fobtype fob, asymm::PublicKey signer_public_key,
-                              NonEmptyString chosen_name = NonEmptyString()) {
-  return CheckTokenAndName(fob.public_key(), fob.validation_token(), signer_public_key,
-                           Identity(fob.name()), chosen_name);
+template <typename FobType>
+testing::AssertionResult CheckNamingAndValidation(FobType fob, asymm::PublicKey signer_public_key) {
+  if (!asymm::CheckSignature(
+          asymm::PlainText(fob.validation_token().signature_of_public_key.string() +
+                           asymm::EncodeKey(fob.public_key()).string() +
+                           ConvertToString(FobType::Tag::kValue)),
+          fob.validation_token().self_signature, fob.public_key())) {
+    return testing::AssertionFailure() << "Bad validation token.";
+  }
+
+  if (crypto::Hash<crypto::SHA512>(asymm::EncodeKey(fob.public_key()).string() +
+                                   ConvertToString(fob.validation_token())) != fob.name().value) {
+    return testing::AssertionFailure() << "Bad name.";
+  }
+
+  return testing::AssertionSuccess();
 }
 
 TEST(FobTest, BEH_NamingAndValidation) {
