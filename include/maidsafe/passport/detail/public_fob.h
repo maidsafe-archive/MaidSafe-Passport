@@ -45,12 +45,9 @@ class PublicFob {
   using serialised_type = TaggedValue<NonEmptyString, Tag>;
   using ValidationToken = typename Fob<Tag>::ValidationToken;
 
-  PublicFob() = delete;
+  PublicFob() = default;
 
-  PublicFob(const PublicFob& other)
-      : name_(other.name_),
-        public_key_(other.public_key_),
-        validation_token_(other.validation_token_) {}
+  PublicFob(const PublicFob& other) = default;
 
   PublicFob(PublicFob&& other)
       : name_(std::move(other.name_)),
@@ -87,9 +84,25 @@ class PublicFob {
     return serialised_type(NonEmptyString{maidsafe::ConvertToString(*this)});
   }
 
-  Name name() const { return name_; }
-  asymm::PublicKey public_key() const { return public_key_; }
-  ValidationToken validation_token() const { return validation_token_; }
+  bool IsInitialised() const { return name_->IsInitialised(); }
+
+  Name name() const {
+    if (!IsInitialised())
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+    return name_;
+  }
+
+  asymm::PublicKey public_key() const {
+    if (!IsInitialised())
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+    return public_key_;
+  }
+
+  ValidationToken validation_token() const {
+    if (!IsInitialised())
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+    return validation_token_;
+  }
 
   template <typename Archive>
   Archive& load(Archive& archive) {
@@ -102,6 +115,8 @@ class PublicFob {
 
   template <typename Archive>
   Archive& save(Archive& archive) const {
+    if (!IsInitialised())
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
     return archive(asymm::EncodeKey(public_key_).string(), validation_token_);
   }
 
