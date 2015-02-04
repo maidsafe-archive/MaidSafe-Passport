@@ -88,7 +88,7 @@ TEST(FobTest, FUNC_GenerationAndValidation) {
 template <typename FobType>
 bool CheckSerialisationAndParsing(FobType fob) {
   FobType fob2(fob.ToCereal());
-  if (!Equal<FobType::Tag>(fob.validation_token(), fob2.validation_token())) {
+  if (!Equal<typename FobType::Tag>(fob.validation_token(), fob2.validation_token())) {
     LOG(kError) << "Validation tokens don't match.";
     return false;
   }
@@ -156,7 +156,8 @@ testing::AssertionResult CheckNamingAndValidation(FobType fob) {
 }
 
 template <typename FobType>
-testing::AssertionResult CheckNamingAndValidation(FobType fob, asymm::PublicKey signer_public_key) {
+testing::AssertionResult CheckNamingAndValidation(FobType fob,
+                                                  asymm::PublicKey /*signer_public_key*/) {
   if (!asymm::CheckSignature(
           asymm::PlainText(fob.validation_token().signature_of_public_key.string() +
                            asymm::EncodeKey(fob.public_key()).string() +

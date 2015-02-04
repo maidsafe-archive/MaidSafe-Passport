@@ -40,7 +40,7 @@ namespace test {
 
 template <typename FobType>
 bool AllFieldsMatch(const FobType& lhs, const FobType& rhs) {
-  return Equal<FobType::Tag>(lhs.validation_token(), rhs.validation_token()) &&
+  return Equal<typename FobType::Tag>(lhs.validation_token(), rhs.validation_token()) &&
          asymm::MatchingKeys(lhs.private_key(), rhs.private_key()) &&
          asymm::MatchingKeys(lhs.public_key(), rhs.public_key()) && lhs.name() == rhs.name();
 }
@@ -168,7 +168,7 @@ TEST(PassportTest, FUNC_ConstructorsSettersAndGetters) {
 
 template <typename FobType>
 bool NoFieldsMatch(const FobType& lhs, const FobType& rhs) {
-  if (Equal<FobType::Tag>(lhs.validation_token(), rhs.validation_token())) {
+  if (Equal<typename FobType::Tag>(lhs.validation_token(), rhs.validation_token())) {
     LOG(kError) << "Validation tokens match.";
     return false;
   }

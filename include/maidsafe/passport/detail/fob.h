@@ -43,6 +43,8 @@ struct is_self_signed {
   using type = typename std::is_same<typename SignerFob<TagType>::Tag, TagType>::type;
 };
 
+asymm::PlainText GetRandomString();
+
 
 
 // ========== Self-signed Fob ======================================================================
@@ -140,7 +142,7 @@ class Fob<TagType, typename std::enable_if<is_self_signed<TagType>::type::value>
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
     }
     // Check the private key hasn't been replaced
-    asymm::PlainText plain(RandomString(100));
+    asymm::PlainText plain(GetRandomString());
     if (asymm::Decrypt(asymm::Encrypt(plain, keys_.public_key), keys_.private_key) != plain)
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
     // Check the name is the hash of the public key + validation token
@@ -286,7 +288,7 @@ class Fob<TagType, typename std::enable_if<!is_self_signed<TagType>::type::value
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
     }
     // Check the private key hasn't been replaced
-    asymm::PlainText plain(RandomString(100));
+    asymm::PlainText plain(GetRandomString());
     if (asymm::Decrypt(asymm::Encrypt(plain, keys_.public_key), keys_.private_key) != plain)
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
     // Check the name is the hash of the public key + validation token

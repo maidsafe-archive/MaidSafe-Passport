@@ -45,6 +45,10 @@ Fob<TagType> Decrypt(const crypto::CipherText& encrypted_fob, const crypto::AES2
 
 }  // unnamed namespace
 
+asymm::PlainText GetRandomString() {
+  return asymm::PlainText(RandomString((RandomUint32() % 100) + 100));
+}
+
 crypto::CipherText EncryptMaid(const Fob<MaidTag>& maid, const crypto::AES256Key& symm_key,
                                const crypto::AES256InitialisationVector& symm_iv) {
   return Encrypt(maid, symm_key, symm_iv);
