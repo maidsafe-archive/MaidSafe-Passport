@@ -123,8 +123,10 @@ class Passport {
   Passport(Passport&&) = delete;
   Passport& operator=(Passport) = delete;
 
-  void Parse(const NonEmptyString& serialised_passport);
-  NonEmptyString Serialise() const;
+  void FromString(const NonEmptyString& serialised_passport, const crypto::AES256Key& symm_key,
+                  const crypto::AES256InitialisationVector& symm_iv);
+  NonEmptyString ToString(const crypto::AES256Key& symm_key,
+                          const crypto::AES256InitialisationVector& symm_iv) const;
 
   void Decrypt(const crypto::CipherText& encrypted_passport,
                const authentication::UserCredentials& user_credentials);

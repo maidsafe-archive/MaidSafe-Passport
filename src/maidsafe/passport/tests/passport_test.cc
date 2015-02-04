@@ -38,13 +38,6 @@ namespace passport {
 
 namespace test {
 
-template <typename FobType>
-bool AllFieldsMatch(const FobType& lhs, const FobType& rhs) {
-  return Equal<typename FobType::Tag>(lhs.validation_token(), rhs.validation_token()) &&
-         asymm::MatchingKeys(lhs.private_key(), rhs.private_key()) &&
-         asymm::MatchingKeys(lhs.public_key(), rhs.public_key()) && lhs.name() == rhs.name();
-}
-
 TEST(PassportTest, BEH_FreeFunctions) {
   MaidAndSigner maid_and_signer{CreateMaidAndSigner()};
   // CreateMpidAndSigner();
@@ -61,11 +54,11 @@ TEST(PassportTest, BEH_FreeFunctions) {
       maidsafe::passport::EncryptPmid(pmid_and_signer.first, symm_key, symm_iv)};
 
   Maid maid{maidsafe::passport::DecryptMaid(encrypted_maid, symm_key, symm_iv)};
-  EXPECT_TRUE(AllFieldsMatch(maid_and_signer.first, maid));
+  EXPECT_TRUE(Equal(maid_and_signer.first, maid));
   Anpmid anpmid{maidsafe::passport::DecryptAnpmid(encrypted_anpmid, symm_key, symm_iv)};
-  EXPECT_TRUE(AllFieldsMatch(pmid_and_signer.second, anpmid));
+  EXPECT_TRUE(Equal(pmid_and_signer.second, anpmid));
   Pmid pmid{maidsafe::passport::DecryptPmid(encrypted_pmid, symm_key, symm_iv)};
-  EXPECT_TRUE(AllFieldsMatch(pmid_and_signer.first, pmid));
+  EXPECT_TRUE(Equal(pmid_and_signer.first, pmid));
   EXPECT_THROW(maidsafe::passport::DecryptMaid(encrypted_anpmid, symm_key, symm_iv),
                maidsafe_error);
   EXPECT_THROW(maidsafe::passport::DecryptAnpmid(encrypted_pmid, symm_key, symm_iv),
@@ -102,7 +95,7 @@ authentication::UserCredentials CreateUserCredentials() {
 TEST(PassportTest, FUNC_ConstructorsSettersAndGetters) {
   MaidAndSigner maid_and_signer{CreateMaidAndSigner()};
   Passport passport{maid_and_signer};
-  EXPECT_TRUE(AllFieldsMatch(passport.GetMaid(), maid_and_signer.first));
+  EXPECT_TRUE(Equal(passport.GetMaid(), maid_and_signer.first));
   EXPECT_TRUE(passport.GetPmids().empty());
   EXPECT_TRUE(passport.GetMpids().empty());
 
@@ -111,7 +104,7 @@ TEST(PassportTest, FUNC_ConstructorsSettersAndGetters) {
   crypto::CipherText encrypted_passport{passport.Encrypt(user_credentials)};
   EXPECT_TRUE(encrypted_passport->IsInitialised());
   Passport decrypted_passport{encrypted_passport, user_credentials};
-  EXPECT_TRUE(AllFieldsMatch(decrypted_passport.GetMaid(), maid_and_signer.first));
+  EXPECT_TRUE(Equal(decrypted_passport.GetMaid(), maid_and_signer.first));
   EXPECT_TRUE(decrypted_passport.GetPmids().empty());
   EXPECT_TRUE(decrypted_passport.GetMpids().empty());
 
@@ -129,14 +122,14 @@ TEST(PassportTest, FUNC_ConstructorsSettersAndGetters) {
     }
     EXPECT_NO_THROW(passport.AddKeyAndSigner(pmids_and_signers.back()));
     ASSERT_TRUE(passport.GetPmids().size() == pmids_and_signers.size());
-    EXPECT_TRUE(AllFieldsMatch(passport.GetPmids().back(), pmids_and_signers.back().first));
+    EXPECT_TRUE(Equal(passport.GetPmids().back(), pmids_and_signers.back().first));
     EXPECT_THROW(passport.AddKeyAndSigner(pmids_and_signers.back()), maidsafe_error);
     encrypted_passport = passport.Encrypt(user_credentials);
     EXPECT_TRUE(encrypted_passport->IsInitialised());
     Passport decrypted{encrypted_passport, user_credentials};
-    EXPECT_TRUE(AllFieldsMatch(decrypted.GetMaid(), maid_and_signer.first));
+    EXPECT_TRUE(Equal(decrypted.GetMaid(), maid_and_signer.first));
     ASSERT_TRUE(decrypted.GetPmids().size() == pmids_and_signers.size());
-    EXPECT_TRUE(AllFieldsMatch(decrypted.GetPmids().back(), pmids_and_signers.back().first));
+    EXPECT_TRUE(Equal(decrypted.GetPmids().back(), pmids_and_signers.back().first));
     EXPECT_TRUE(decrypted.GetMpids().empty());
   }
 
@@ -154,15 +147,15 @@ TEST(PassportTest, FUNC_ConstructorsSettersAndGetters) {
     }
     EXPECT_NO_THROW(passport.AddKeyAndSigner(mpids_and_signers.back()));
     ASSERT_TRUE(passport.GetMpids().size() == mpids_and_signers.size());
-    EXPECT_TRUE(AllFieldsMatch(passport.GetMpids().back(), mpids_and_signers.back().first));
+    EXPECT_TRUE(Equal(passport.GetMpids().back(), mpids_and_signers.back().first));
     EXPECT_THROW(passport.AddKeyAndSigner(mpids_and_signers.back()), maidsafe_error);
     encrypted_passport = passport.Encrypt(user_credentials);
     EXPECT_TRUE(encrypted_passport->IsInitialised());
     Passport decrypted{encrypted_passport, user_credentials};
-    EXPECT_TRUE(AllFieldsMatch(decrypted.GetMaid(), maid_and_signer.first));
+    EXPECT_TRUE(Equal(decrypted.GetMaid(), maid_and_signer.first));
     EXPECT_TRUE(decrypted.GetPmids().size() == pmids_and_signers.size());
     ASSERT_TRUE(decrypted.GetMpids().size() == mpids_and_signers.size());
-    EXPECT_TRUE(AllFieldsMatch(decrypted.GetMpids().back(), mpids_and_signers.back().first));
+    EXPECT_TRUE(Equal(decrypted.GetMpids().back(), mpids_and_signers.back().first));
   }
 }
 
@@ -207,26 +200,26 @@ TEST(PassportTest, FUNC_RemoveAndReplaceKeys) {
       std::make_pair(maid_and_signer.first, new_maid_and_signer.second)};
   EXPECT_THROW(passport.ReplaceMaidAndSigner(maid_and_signer.first, duplicate_new_maid),
                maidsafe_error);
-  EXPECT_TRUE(AllFieldsMatch(passport.GetMaid(), maid_and_signer.first));
+  EXPECT_TRUE(Equal(passport.GetMaid(), maid_and_signer.first));
 
   MaidAndSigner duplicate_new_signer{
       std::make_pair(new_maid_and_signer.first, maid_and_signer.second)};
   EXPECT_THROW(passport.ReplaceMaidAndSigner(maid_and_signer.first, duplicate_new_signer),
                maidsafe_error);
-  EXPECT_TRUE(AllFieldsMatch(passport.GetMaid(), maid_and_signer.first));
+  EXPECT_TRUE(Equal(passport.GetMaid(), maid_and_signer.first));
 
   Anmaid anmaid{passport.ReplaceMaidAndSigner(maid_and_signer.first, new_maid_and_signer)};
-  EXPECT_TRUE(AllFieldsMatch(anmaid, maid_and_signer.second));
+  EXPECT_TRUE(Equal(anmaid, maid_and_signer.second));
   EXPECT_THROW(passport.ReplaceMaidAndSigner(maid_and_signer.first, new_maid_and_signer),
                maidsafe_error);
-  EXPECT_TRUE(AllFieldsMatch(passport.GetMaid(), new_maid_and_signer.first));
+  EXPECT_TRUE(Equal(passport.GetMaid(), new_maid_and_signer.first));
   EXPECT_TRUE(NoFieldsMatch(passport.GetMaid(), maid_and_signer.first));
 
   // Remove Maid
   EXPECT_THROW(passport.RemoveKeyAndSigner(maid_and_signer.first), maidsafe_error);
-  EXPECT_TRUE(AllFieldsMatch(passport.GetMaid(), new_maid_and_signer.first));
+  EXPECT_TRUE(Equal(passport.GetMaid(), new_maid_and_signer.first));
   anmaid = passport.RemoveKeyAndSigner(new_maid_and_signer.first);
-  EXPECT_TRUE(AllFieldsMatch(anmaid, new_maid_and_signer.second));
+  EXPECT_TRUE(Equal(anmaid, new_maid_and_signer.second));
   EXPECT_THROW(passport.GetMaid(), maidsafe_error);
   EXPECT_THROW(passport.RemoveKeyAndSigner(new_maid_and_signer.first), maidsafe_error);
   EXPECT_THROW(passport.ReplaceMaidAndSigner(maid_and_signer.first, new_maid_and_signer),
@@ -235,7 +228,7 @@ TEST(PassportTest, FUNC_RemoveAndReplaceKeys) {
 
   // Remove Pmids
   Anpmid anpmid{passport.RemoveKeyAndSigner(pmids_and_signers[1].first)};
-  EXPECT_TRUE(AllFieldsMatch(anpmid, pmids_and_signers[1].second));
+  EXPECT_TRUE(Equal(anpmid, pmids_and_signers[1].second));
   std::vector<Pmid> pmids{passport.GetPmids()};
   ASSERT_TRUE(pmids.size() == 2U);
   EXPECT_TRUE(pmids[0].name() == pmids_and_signers[0].first.name());
@@ -243,16 +236,16 @@ TEST(PassportTest, FUNC_RemoveAndReplaceKeys) {
   EXPECT_THROW(passport.RemoveKeyAndSigner(pmids_and_signers[1].first), maidsafe_error);
 
   anpmid = passport.RemoveKeyAndSigner(pmids_and_signers[2].first);
-  EXPECT_TRUE(AllFieldsMatch(anpmid, pmids_and_signers[2].second));
+  EXPECT_TRUE(Equal(anpmid, pmids_and_signers[2].second));
   EXPECT_TRUE(passport.GetPmids().size() == 1U);
 
   anpmid = passport.RemoveKeyAndSigner(pmids_and_signers[0].first);
-  EXPECT_TRUE(AllFieldsMatch(anpmid, pmids_and_signers[0].second));
+  EXPECT_TRUE(Equal(anpmid, pmids_and_signers[0].second));
   EXPECT_TRUE(passport.GetPmids().empty());
 
   // Remove Mpids
   Anmpid anmpid{passport.RemoveKeyAndSigner(mpids_and_signers[0].first)};
-  EXPECT_TRUE(AllFieldsMatch(anmpid, mpids_and_signers[0].second));
+  EXPECT_TRUE(Equal(anmpid, mpids_and_signers[0].second));
   std::vector<Mpid> mpids{passport.GetMpids()};
   ASSERT_TRUE(mpids.size() == 2U);
   EXPECT_TRUE(mpids[0].name() == mpids_and_signers[1].first.name());
@@ -260,11 +253,11 @@ TEST(PassportTest, FUNC_RemoveAndReplaceKeys) {
   EXPECT_THROW(passport.RemoveKeyAndSigner(mpids_and_signers[0].first), maidsafe_error);
 
   anmpid = passport.RemoveKeyAndSigner(mpids_and_signers[2].first);
-  EXPECT_TRUE(AllFieldsMatch(anmpid, mpids_and_signers[2].second));
+  EXPECT_TRUE(Equal(anmpid, mpids_and_signers[2].second));
   EXPECT_TRUE(passport.GetMpids().size() == 1U);
 
   anmpid = passport.RemoveKeyAndSigner(mpids_and_signers[1].first);
-  EXPECT_TRUE(AllFieldsMatch(anmpid, mpids_and_signers[1].second));
+  EXPECT_TRUE(Equal(anmpid, mpids_and_signers[1].second));
   EXPECT_TRUE(passport.GetMpids().empty());
 }
 
@@ -324,21 +317,21 @@ TEST(PassportTest, FUNC_Encrypt) {
 
   // Check parsing correctly
   Passport decrypted{encrypted_passport, user_credentials};
-  EXPECT_TRUE(AllFieldsMatch(decrypted.GetMaid(), maid_and_signer.first));
+  EXPECT_TRUE(Equal(decrypted.GetMaid(), maid_and_signer.first));
 
   std::vector<Pmid> pmids{decrypted.GetPmids()};
   ASSERT_TRUE(pmids.size() == pmids_and_signers.size());
   std::vector<Pmid>::iterator pmids_itr{std::begin(pmids)};
   std::vector<PmidAndSigner>::iterator pmids_and_signers_itr{std::begin(pmids_and_signers)};
   while (pmids_itr != std::end(pmids))
-    EXPECT_TRUE(AllFieldsMatch(*pmids_itr++, (*pmids_and_signers_itr++).first));
+    EXPECT_TRUE(Equal(*pmids_itr++, (*pmids_and_signers_itr++).first));
 
   std::vector<Mpid> mpids{decrypted.GetMpids()};
   ASSERT_TRUE(mpids.size() == mpids_and_signers.size());
   std::vector<Mpid>::iterator mpids_itr{std::begin(mpids)};
   std::vector<MpidAndSigner>::iterator mpids_and_signers_itr{std::begin(mpids_and_signers)};
   while (mpids_itr != std::end(mpids))
-    EXPECT_TRUE(AllFieldsMatch(*mpids_itr++, (*mpids_and_signers_itr++).first));
+    EXPECT_TRUE(Equal(*mpids_itr++, (*mpids_and_signers_itr++).first));
 }
 
 TEST(PassportTest, FUNC_ParallelAddsEncryptsAndRemoves) {

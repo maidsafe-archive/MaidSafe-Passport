@@ -27,15 +27,16 @@ namespace passport {
 
 namespace test {
 
-template <typename TagType>
-using SelfSignedFob =
-    detail::Fob<TagType,
-                typename std::enable_if<detail::is_self_signed<TagType>::type::value>::type>;
+typedef testing::Types<detail::AnmaidTag, detail::MaidTag, detail::AnpmidTag, detail::PmidTag,
+                       detail::AnmpidTag, detail::MpidTag> FobTagTypes;
 
 template <typename TagType>
-using NonSelfSignedFob =
-    detail::Fob<TagType,
-                typename std::enable_if<!detail::is_self_signed<TagType>::type::value>::type>;
+using SelfSignedFob = detail::Fob<
+    TagType, typename std::enable_if<detail::is_self_signed<TagType>::type::value>::type>;
+
+template <typename TagType>
+using NonSelfSignedFob = detail::Fob<
+    TagType, typename std::enable_if<!detail::is_self_signed<TagType>::type::value>::type>;
 
 template <typename TagType>
 testing::AssertionResult Equal(const typename SelfSignedFob<TagType>::ValidationToken& lhs,
@@ -111,6 +112,39 @@ detail::Fob<TagType> CreateFob(
   typename detail::Fob<TagType>::Signer signer_fob;
   return detail::Fob<TagType>(signer_fob);
 }
+
+template <typename TagType>
+struct InvalidType;
+
+template <>
+struct InvalidType<detail::AnmaidTag> {
+  using Tag = detail::AnmpidTag;
+};
+
+template <>
+struct InvalidType<detail::MaidTag> {
+  using Tag = detail::AnmpidTag;
+};
+
+template <>
+struct InvalidType<detail::AnpmidTag> {
+  using Tag = detail::AnmpidTag;
+};
+
+template <>
+struct InvalidType<detail::PmidTag> {
+  using Tag = detail::AnmpidTag;
+};
+
+template <>
+struct InvalidType<detail::AnmpidTag> {
+  using Tag = detail::AnmaidTag;
+};
+
+template <>
+struct InvalidType<detail::MpidTag> {
+  using Tag = detail::AnmpidTag;
+};
 
 }  // namespace test
 

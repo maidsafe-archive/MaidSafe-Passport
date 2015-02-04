@@ -85,43 +85,28 @@ class Fob<TagType, typename std::enable_if<is_self_signed<TagType>::type::value>
     return *this;
   }
 
-  explicit Fob(const std::string& binary_stream) : keys_(), validation_token_(), name_() {
+  Fob(const crypto::CipherText& encrypted_fob, const crypto::AES256Key& symm_key,
+      const crypto::AES256InitialisationVector& symm_iv)
+      : keys_(), validation_token_(), name_() {
     try {
-      maidsafe::ConvertFromString(binary_stream, *this);
-    } catch (...) {
+      std::string serialised_fob(crypto::SymmDecrypt(encrypted_fob, symm_key, symm_iv).string());
+      maidsafe::ConvertFromString(serialised_fob, keys_, validation_token_, name_);
+    } catch (const std::exception&) {
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
     }
+    ValidateToken();
   }
 
-  std::string ToCereal() const { return maidsafe::ConvertToString(*this); }
+  crypto::CipherText Encrypt(const crypto::AES256Key& symm_key,
+                             const crypto::AES256InitialisationVector& symm_iv) const {
+    crypto::PlainText serialised_fob(ConvertToString(keys_, validation_token_, name_));
+    return crypto::SymmEncrypt(serialised_fob, symm_key, symm_iv);
+  }
 
   Name name() const { return name_; }
   ValidationToken validation_token() const { return validation_token_; }
   asymm::PrivateKey private_key() const { return keys_.private_key; }
   asymm::PublicKey public_key() const { return keys_.public_key; }
-
-  template <typename Archive>
-  Archive& load(Archive& archive) {
-    asymm::EncodedPrivateKey temp_private_key;
-    asymm::EncodedPublicKey temp_public_key;
-    Identity name;
-
-    archive(name, temp_private_key, temp_public_key, validation_token_);
-
-    keys_.private_key = asymm::DecodeKey(std::move(temp_private_key));
-    keys_.public_key = asymm::DecodeKey(std::move(temp_public_key));
-    name_ = Name{std::move(name)};
-
-    ValidateToken();
-
-    return archive;
-  }
-
-  template <typename Archive>
-  Archive& save(Archive& archive) const {
-    return archive(name_->string(), asymm::EncodeKey(keys_.private_key).string(),
-                   asymm::EncodeKey(keys_.public_key).string(), validation_token_);
-  }
 
  private:
   Identity CreateName() const {
@@ -223,43 +208,28 @@ class Fob<TagType, typename std::enable_if<!is_self_signed<TagType>::type::value
     return *this;
   }
 
-  explicit Fob(const std::string& binary_stream) : keys_(), validation_token_(), name_() {
+  Fob(const crypto::CipherText& encrypted_fob, const crypto::AES256Key& symm_key,
+      const crypto::AES256InitialisationVector& symm_iv)
+      : keys_(), validation_token_(), name_() {
     try {
-      maidsafe::ConvertFromString(binary_stream, *this);
-    } catch (...) {
+      std::string serialised_fob(crypto::SymmDecrypt(encrypted_fob, symm_key, symm_iv).string());
+      maidsafe::ConvertFromString(serialised_fob, keys_, validation_token_, name_);
+    } catch (const std::exception&) {
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
     }
+    ValidateToken();
   }
 
-  std::string ToCereal() const { return maidsafe::ConvertToString(*this); }
+  crypto::CipherText Encrypt(const crypto::AES256Key& symm_key,
+                             const crypto::AES256InitialisationVector& symm_iv) const {
+    crypto::PlainText serialised_fob(ConvertToString(keys_, validation_token_, name_));
+    return crypto::SymmEncrypt(serialised_fob, symm_key, symm_iv);
+  }
 
   Name name() const { return name_; }
   ValidationToken validation_token() const { return validation_token_; }
   asymm::PrivateKey private_key() const { return keys_.private_key; }
   asymm::PublicKey public_key() const { return keys_.public_key; }
-
-  template <typename Archive>
-  Archive& load(Archive& archive) {
-    asymm::EncodedPrivateKey temp_private_key;
-    asymm::EncodedPublicKey temp_public_key;
-    Identity name;
-
-    archive(name, temp_private_key, temp_public_key, validation_token_);
-
-    keys_.private_key = asymm::DecodeKey(std::move(temp_private_key));
-    keys_.public_key = asymm::DecodeKey(std::move(temp_public_key));
-    name_ = Name{std::move(name)};
-
-    ValidateToken();
-
-    return archive;
-  }
-
-  template <typename Archive>
-  Archive& save(Archive& archive) const {
-    return archive(name_->string(), asymm::EncodeKey(keys_.private_key).string(),
-                   asymm::EncodeKey(keys_.public_key).string(), validation_token_);
-  }
 
  private:
   Identity CreateName() const {
@@ -332,14 +302,12 @@ struct AnmaidToPmid {
       : anmaid(std::move(anmaid_in)),
         maid(std::move(maid_in)),
         anpmid(std::move(anpmid_in)),
-        pmid(std::move(pmid_in)),
-        chain_size(4) {}
-  AnmaidToPmid() : anmaid(), maid(anmaid), anpmid(), pmid(anpmid), chain_size(4) {}
+        pmid(std::move(pmid_in)) {}
+  AnmaidToPmid() : anmaid(), maid(anmaid), anpmid(), pmid(anpmid) {}
   Fob<AnmaidTag> anmaid;
   Fob<MaidTag> maid;
   Fob<AnpmidTag> anpmid;
   Fob<PmidTag> pmid;
-  int chain_size;
 };
 
 std::vector<AnmaidToPmid> ReadKeyChainList(const boost::filesystem::path& file_path);

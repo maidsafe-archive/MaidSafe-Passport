@@ -20,145 +20,72 @@
 
 #include "maidsafe/common/utils.h"
 
-#include "maidsafe/passport/detail/pmid_list_cereal.h"
-#include "maidsafe/passport/detail/key_chain_list_cereal.h"
-
 namespace maidsafe {
 
 namespace passport {
 
 namespace detail {
 
-namespace {
-
-template <typename TagType>
-crypto::CipherText Encrypt(const Fob<TagType>& fob, const crypto::AES256Key& symm_key,
-                           const crypto::AES256InitialisationVector& symm_iv) {
-  return crypto::SymmEncrypt(crypto::PlainText{fob.ToCereal()}, symm_key, symm_iv);
-}
-
-template <typename TagType>
-Fob<TagType> Decrypt(const crypto::CipherText& encrypted_fob, const crypto::AES256Key& symm_key,
-                     const crypto::AES256InitialisationVector& symm_iv) {
-  return Fob<TagType>{crypto::SymmDecrypt(encrypted_fob, symm_key, symm_iv).string()};
-}
-
-}  // unnamed namespace
-
 asymm::PlainText GetRandomString() {
   return asymm::PlainText(RandomString((RandomUint32() % 100) + 100));
 }
 
-crypto::CipherText EncryptMaid(const Fob<MaidTag>& maid, const crypto::AES256Key& symm_key,
-                               const crypto::AES256InitialisationVector& symm_iv) {
-  return Encrypt(maid, symm_key, symm_iv);
-}
-
-crypto::CipherText EncryptAnpmid(const Fob<AnpmidTag>& anpmid, const crypto::AES256Key& symm_key,
-                                 const crypto::AES256InitialisationVector& symm_iv) {
-  return Encrypt(anpmid, symm_key, symm_iv);
-}
-
-crypto::CipherText EncryptPmid(const Fob<PmidTag>& pmid, const crypto::AES256Key& symm_key,
-                               const crypto::AES256InitialisationVector& symm_iv) {
-  return Encrypt(pmid, symm_key, symm_iv);
-}
-
-Fob<MaidTag> DecryptMaid(const crypto::CipherText& encrypted_maid,
-                         const crypto::AES256Key& symm_key,
-                         const crypto::AES256InitialisationVector& symm_iv) {
-  return Decrypt<MaidTag>(encrypted_maid, symm_key, symm_iv);
-}
-
-Fob<AnpmidTag> DecryptAnpmid(const crypto::CipherText& encrypted_anpmid,
-                             const crypto::AES256Key& symm_key,
-                             const crypto::AES256InitialisationVector& symm_iv) {
-  return Decrypt<AnpmidTag>(encrypted_anpmid, symm_key, symm_iv);
-}
-
-Fob<PmidTag> DecryptPmid(const crypto::CipherText& encrypted_pmid,
-                         const crypto::AES256Key& symm_key,
-                         const crypto::AES256InitialisationVector& symm_iv) {
-  return Decrypt<PmidTag>(encrypted_pmid, symm_key, symm_iv);
-}
-
-
-
 #ifdef TESTING
 
-NonEmptyString SerialiseAnmaid(const Fob<AnmaidTag>& anmaid) {
-  return NonEmptyString{anmaid.ToCereal()};
-}
-
-Fob<AnmaidTag> ParseAnmaid(const NonEmptyString& serialised_anmaid) {
-  return Fob<AnmaidTag>{serialised_anmaid.string()};
-}
-
-NonEmptyString SerialiseMaid(const Fob<MaidTag>& maid) { return NonEmptyString{maid.ToCereal()}; }
-
-Fob<MaidTag> ParseMaid(const NonEmptyString& serialised_maid) {
-  return Fob<MaidTag>{serialised_maid.string()};
-}
-
-NonEmptyString SerialiseAnpmid(const Fob<AnpmidTag>& anpmid) {
-  return NonEmptyString{anpmid.ToCereal()};
-}
-
-Fob<AnpmidTag> ParseAnpmid(const NonEmptyString& serialised_anpmid) {
-  return Fob<AnpmidTag>{serialised_anpmid.string()};
-}
-
-NonEmptyString SerialisePmid(const Fob<PmidTag>& pmid) { return NonEmptyString{pmid.ToCereal()}; }
-
-Fob<PmidTag> ParsePmid(const NonEmptyString& serialised_pmid) {
-  return Fob<PmidTag>{serialised_pmid.string()};
-}
-
 std::vector<Fob<PmidTag>> ReadPmidList(const boost::filesystem::path& file_path) {
+  std::string contents(ReadFile(file_path).string());
+  InputVectorStream binary_input_stream(SerialisedData(contents.begin(), contents.end()));
+  std::uint32_t pmid_list_size(Parse<std::uint32_t>(binary_input_stream));
   std::vector<Fob<PmidTag>> pmid_list;
-  PmidListCereal pmid_list_msg;
-  maidsafe::ConvertFromString(ReadFile(file_path).string(), pmid_list_msg);
-  for (std::size_t i = 0; i < pmid_list_msg.pmids_.size(); ++i)
-    pmid_list.emplace_back(ParsePmid(NonEmptyString{pmid_list_msg.pmids_[i]}));
+  crypto::AES256Key symm_key(std::string(crypto::AES256_KeySize, 0));
+  crypto::AES256InitialisationVector symm_iv(std::string(crypto::AES256_IVSize, 0));
+  for (std::uint32_t i = 0; i < pmid_list_size; ++i)
+    pmid_list.emplace_back(Parse<crypto::CipherText>(binary_input_stream), symm_key, symm_iv);
   return pmid_list;
 }
 
 bool WritePmidList(const boost::filesystem::path& file_path,
                    const std::vector<Fob<PmidTag>>& pmid_list) {
-  PmidListCereal pmid_list_msg;
+  OutputVectorStream binary_output_stream;
+  Serialise(binary_output_stream, static_cast<std::uint32_t>(pmid_list.size()));
+  crypto::AES256Key symm_key(std::string(crypto::AES256_KeySize, 0));
+  crypto::AES256InitialisationVector symm_iv(std::string(crypto::AES256_IVSize, 0));
   for (const auto& pmid : pmid_list)
-    ((pmid_list_msg.pmids_.emplace_back(), &pmid_list_msg.pmids_[pmid_list_msg.pmids_.size() - 1]))
-        ->assign(SerialisePmid(pmid).string());
-  return WriteFile(file_path, maidsafe::ConvertToString(pmid_list_msg));
-}
-
-AnmaidToPmid ParseKeys(const KeyChainListCereal::KeyChainCereal& key_chain) {
-  return std::move(AnmaidToPmid(
-      ParseAnmaid(NonEmptyString{key_chain.anmaid_}), ParseMaid(NonEmptyString{key_chain.maid_}),
-      ParseAnpmid(NonEmptyString{key_chain.anpmid_}), ParsePmid(NonEmptyString{key_chain.pmid_})));
+    Serialise(binary_output_stream, pmid.Encrypt(symm_key, symm_iv));
+  SerialisedData contents(binary_output_stream.vector());
+  return WriteFile(file_path, std::string(contents.begin(), contents.end()));
 }
 
 std::vector<AnmaidToPmid> ReadKeyChainList(const boost::filesystem::path& file_path) {
+  std::string contents(ReadFile(file_path).string());
+  InputVectorStream binary_input_stream(SerialisedData(contents.begin(), contents.end()));
+  std::uint32_t keychain_list_size(Parse<std::uint32_t>(binary_input_stream));
   std::vector<AnmaidToPmid> keychain_list;
-  KeyChainListCereal keychain_list_msg;
-  maidsafe::ConvertFromString(ReadFile(file_path).string(), keychain_list_msg);
-  for (std::size_t i = 0; i < keychain_list_msg.keychains_.size(); ++i)
-    keychain_list.emplace_back(ParseKeys(keychain_list_msg.keychains_[i]));
+  crypto::AES256Key symm_key(std::string(crypto::AES256_KeySize, 0));
+  crypto::AES256InitialisationVector symm_iv(std::string(crypto::AES256_IVSize, 0));
+  for (std::uint32_t i = 0; i < keychain_list_size; ++i) {
+    keychain_list.emplace_back(
+        Anmaid(Parse<crypto::CipherText>(binary_input_stream), symm_key, symm_iv),
+        Maid(Parse<crypto::CipherText>(binary_input_stream), symm_key, symm_iv),
+        Anpmid(Parse<crypto::CipherText>(binary_input_stream), symm_key, symm_iv),
+        Pmid(Parse<crypto::CipherText>(binary_input_stream), symm_key, symm_iv));
+  }
   return keychain_list;
 }
 
 bool WriteKeyChainList(const boost::filesystem::path& file_path,
                        const std::vector<AnmaidToPmid>& keychain_list) {
-  KeyChainListCereal keychain_list_msg;
+  OutputVectorStream binary_output_stream;
+  Serialise(binary_output_stream, static_cast<std::uint32_t>(keychain_list.size()));
+  crypto::AES256Key symm_key(std::string(crypto::AES256_KeySize, 0));
+  crypto::AES256InitialisationVector symm_iv(std::string(crypto::AES256_IVSize, 0));
   for (const auto& keychain : keychain_list) {
-    auto entry = ((keychain_list_msg.keychains_.emplace_back(),
-                   &keychain_list_msg.keychains_[keychain_list_msg.keychains_.size() - 1]));
-    entry->anmaid_ = SerialiseAnmaid(keychain.anmaid).string();
-    entry->maid_ = SerialiseMaid(keychain.maid).string();
-    entry->anpmid_ = SerialiseAnpmid(keychain.anpmid).string();
-    entry->pmid_ = SerialisePmid(keychain.pmid).string();
+    Serialise(binary_output_stream, keychain.anmaid.Encrypt(symm_key, symm_iv),
+              keychain.maid.Encrypt(symm_key, symm_iv), keychain.anpmid.Encrypt(symm_key, symm_iv),
+              keychain.pmid.Encrypt(symm_key, symm_iv));
   }
-  return WriteFile(file_path, maidsafe::ConvertToString(keychain_list_msg));
+  SerialisedData contents(binary_output_stream.vector());
+  return WriteFile(file_path, std::string(contents.begin(), contents.end()));
 }
 
 template <>

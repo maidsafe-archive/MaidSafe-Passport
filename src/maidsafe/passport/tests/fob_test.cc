@@ -35,159 +35,82 @@ namespace passport {
 
 namespace test {
 
-TEST(FobTest, FUNC_GenerationAndValidation) {
-  Anmaid anmaid;
-  Maid maid(anmaid);
-  Anpmid anpmid;
-  Pmid pmid(anpmid);
-  Anmpid anmpid;
-  Mpid mpid(anmpid);
+template <typename TagType>
+class FobTest : public testing::Test {
+ protected:
+  using Fob = detail::Fob<TagType>;
+  using WrongTagType = typename InvalidType<TagType>::Tag;
+  using WrongFob = detail::Fob<WrongTagType>;
+};
 
-  Anmaid anmaid1(anmaid);
-  Maid maid1(maid);
-  Anpmid anpmid1;
-  Pmid pmid1(anpmid1);
-  Anmpid anmpid1(anmpid);
-  Mpid mpid1(mpid);
+TYPED_TEST_CASE(FobTest, FobTagTypes);
 
-  Anmaid anmaid2(std::move(anmaid1));
-  Maid maid2(std::move(maid1));
-  Anpmid anpmid2(std::move(anpmid1));
-  Pmid pmid2(std::move(pmid1));
-  Anmpid anmpid2(std::move(anmpid1));
-  Mpid mpid2(std::move(mpid1));
+TYPED_TEST(FobTest, BEH_ConstructAssignAndSwap) {
+  // Construct normally (self-signed are default constructed, non-self-signed are passed signer in
+  // constructor)
+  typename TestFixture::Fob fob1(CreateFob<TypeParam>());
+  typename TestFixture::Fob fob2(CreateFob<TypeParam>());
+  ASSERT_FALSE(Equal(fob1, fob2));
 
-  anmaid1 = anmaid;
-  maid1 = maid;
-  anpmid1 = anpmid;
-  pmid1 = pmid;
-  anmpid1 = anmpid;
-  mpid1 = mpid;
+  // Copy construct
+  typename TestFixture::Fob copied_fob(fob1);
+  EXPECT_TRUE(Equal(fob1, copied_fob));
 
-  anmaid2 = std::move(anmaid1);
-  maid2 = std::move(maid1);
-  anpmid2 = std::move(anpmid1);
-  pmid2 = std::move(pmid1);
-  anmpid2 = std::move(anmpid1);
-  mpid2 = std::move(mpid1);
+  // Move construct
+  typename TestFixture::Fob moved_fob(std::move(copied_fob));
+  EXPECT_TRUE(Equal(fob1, moved_fob));
 
-  static_assert(!is_short_term_cacheable<Anmaid>::value, "");
-  static_assert(!is_short_term_cacheable<Maid>::value, "");
-  static_assert(!is_short_term_cacheable<Anpmid>::value, "");
-  static_assert(!is_short_term_cacheable<Pmid>::value, "");
-  static_assert(!is_short_term_cacheable<Anmpid>::value, "");
-  static_assert(!is_short_term_cacheable<Mpid>::value, "");
-  static_assert(!is_long_term_cacheable<Anmaid>::value, "");
-  static_assert(!is_long_term_cacheable<Maid>::value, "");
-  static_assert(!is_long_term_cacheable<Anpmid>::value, "");
-  static_assert(!is_long_term_cacheable<Pmid>::value, "");
-  static_assert(!is_long_term_cacheable<Anmpid>::value, "");
-  static_assert(!is_long_term_cacheable<Mpid>::value, "");
+  // Copy assign
+  copied_fob = fob2;
+  EXPECT_TRUE(Equal(fob2, copied_fob));
+
+  // Move assign
+  moved_fob = std::move(copied_fob);
+  EXPECT_TRUE(Equal(fob2, moved_fob));
+
+  // Swap
+  copied_fob = fob1;
+  swap(copied_fob, moved_fob);
+  EXPECT_TRUE(Equal(fob2, copied_fob));
+  EXPECT_TRUE(Equal(fob1, moved_fob));
 }
 
-template <typename FobType>
-bool CheckSerialisationAndParsing(FobType fob) {
-  FobType fob2(fob.ToCereal());
-  if (!Equal<typename FobType::Tag>(fob.validation_token(), fob2.validation_token())) {
-    LOG(kError) << "Validation tokens don't match.";
-    return false;
-  }
-  if (!asymm::MatchingKeys(fob.private_key(), fob2.private_key())) {
-    LOG(kError) << "Private keys don't match.";
-    return false;
-  }
-  if (!asymm::MatchingKeys(fob.public_key(), fob2.public_key())) {
-    LOG(kError) << "Public keys don't match.";
-    return false;
-  }
-  if (fob.name() != fob2.name()) {
-    LOG(kError) << "Names don't match.";
-    return false;
-  }
-  return true;
-}
+TYPED_TEST(FobTest, BEH_EncryptAndDecrypt) {
+  typename TestFixture::Fob fob(CreateFob<TypeParam>());
 
-TEST(FobTest, BEH_SerialisationAndParsing) {
-  Anmaid anmaid;
-  Maid maid(anmaid);
-  Anpmid anpmid;
-  Pmid pmid(anpmid);
-  Anmpid anmpid;
-  Mpid mpid(anmpid);
+  // Valid encryption and decryption
+  crypto::AES256Key symm_key(RandomString(crypto::AES256_KeySize));
+  crypto::AES256InitialisationVector symm_iv(RandomString(crypto::AES256_IVSize));
+  crypto::CipherText encrypted_fob(fob.Encrypt(symm_key, symm_iv));
+  typename TestFixture::Fob decrypted_fob(encrypted_fob, symm_key, symm_iv);
+  EXPECT_TRUE(Equal(fob, decrypted_fob));
 
-  EXPECT_TRUE(CheckSerialisationAndParsing(anmaid));
-  EXPECT_TRUE(CheckSerialisationAndParsing(maid));
-  EXPECT_TRUE(CheckSerialisationAndParsing(anpmid));
-  EXPECT_TRUE(CheckSerialisationAndParsing(pmid));
-  EXPECT_TRUE(CheckSerialisationAndParsing(anmpid));
-  EXPECT_TRUE(CheckSerialisationAndParsing(mpid));
-}
+  // Modfiy encrypted data and try to decrypt
+  std::size_t index(RandomUint32() % encrypted_fob->string().size());
+  std::string invalid_encrypted_fob(encrypted_fob->string());
+  invalid_encrypted_fob[index] = (invalid_encrypted_fob[index] == 'a' ? 'b' : 'a');
+  EXPECT_THROW(typename TestFixture::Fob(crypto::CipherText(NonEmptyString(invalid_encrypted_fob)),
+                                         symm_key, symm_iv),
+               common_error);
 
-bool CheckTokenAndName(const asymm::PublicKey& public_key, const asymm::Signature& signature,
-                       const asymm::PublicKey& signer_key, const Identity& name) {
-  bool validation_result(
-      asymm::CheckSignature(asymm::PlainText(asymm::EncodeKey(public_key)), signature, signer_key));
-  if (!validation_result) {
-    LOG(kError) << "Bad validation token.";
-    return false;
-  }
+  // Check decrypting with wrong AES key/IV
+  index = RandomUint32() % symm_key.string().size();
+  std::string invalid_symm_key(symm_key.string());
+  invalid_symm_key[index] = (invalid_symm_key[index] == 'a' ? 'b' : 'a');
+  index = RandomUint32() % symm_iv.string().size();
+  std::string invalid_symm_iv(symm_iv.string());
+  invalid_symm_iv[index] = (invalid_symm_iv[index] == 'a' ? 'b' : 'a');
+  EXPECT_THROW(
+      typename TestFixture::Fob(encrypted_fob, crypto::AES256Key(invalid_symm_key), symm_iv),
+      common_error);
+  EXPECT_THROW(typename TestFixture::Fob(encrypted_fob, symm_key,
+                                         crypto::AES256InitialisationVector(invalid_symm_iv)),
+               common_error);
 
-  if (crypto::Hash<crypto::SHA512>(asymm::EncodeKey(public_key) + signature) != name) {
-    LOG(kError) << "Bad name.";
-    return false;
-  }
-  return true;
-}
-
-template <typename FobType>
-testing::AssertionResult CheckNamingAndValidation(FobType fob) {
-  if (!asymm::CheckSignature(asymm::PlainText(asymm::EncodeKey(fob.public_key()).string() +
-                                              ConvertToString(FobType::Tag::kValue)),
-                             fob.validation_token(), fob.public_key())) {
-    return testing::AssertionFailure() << "Bad validation token.";
-  }
-
-  if (crypto::Hash<crypto::SHA512>(asymm::EncodeKey(fob.public_key()) + fob.validation_token()) !=
-      fob.name().value) {
-    return testing::AssertionFailure() << "Bad name.";
-  }
-
-  return testing::AssertionSuccess();
-}
-
-template <typename FobType>
-testing::AssertionResult CheckNamingAndValidation(FobType fob,
-                                                  asymm::PublicKey /*signer_public_key*/) {
-  if (!asymm::CheckSignature(
-          asymm::PlainText(fob.validation_token().signature_of_public_key.string() +
-                           asymm::EncodeKey(fob.public_key()).string() +
-                           ConvertToString(FobType::Tag::kValue)),
-          fob.validation_token().self_signature, fob.public_key())) {
-    return testing::AssertionFailure() << "Bad validation token.";
-  }
-
-  if (crypto::Hash<crypto::SHA512>(asymm::EncodeKey(fob.public_key()).string() +
-                                   ConvertToString(fob.validation_token())) != fob.name().value) {
-    return testing::AssertionFailure() << "Bad name.";
-  }
-
-  return testing::AssertionSuccess();
-}
-
-TEST(FobTest, BEH_NamingAndValidation) {
-  Anmaid anmaid;
-  Maid maid(anmaid);
-  Anpmid anpmid;
-  Pmid pmid(anpmid);
-  Anmpid anmpid;
-  Mpid mpid(anmpid);
-
-  EXPECT_TRUE(CheckNamingAndValidation(anmaid));
-  EXPECT_TRUE(CheckNamingAndValidation(maid, anmaid.public_key()));
-  EXPECT_TRUE(CheckNamingAndValidation(anpmid));
-  EXPECT_TRUE(CheckNamingAndValidation(pmid, anpmid.public_key()));
-  EXPECT_TRUE(CheckNamingAndValidation(anmpid));
-  EXPECT_TRUE(CheckNamingAndValidation(mpid, anmpid.public_key()));
+  // Check decrypting from wrong type
+  typename TestFixture::WrongFob wrong_fob(CreateFob<typename TestFixture::WrongTagType>());
+  encrypted_fob = wrong_fob.Encrypt(symm_key, symm_iv);
+  EXPECT_THROW(typename TestFixture::Fob(encrypted_fob, symm_key, symm_iv), common_error);
 }
 
 }  // namespace test

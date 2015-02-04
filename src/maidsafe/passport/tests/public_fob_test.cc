@@ -31,39 +31,6 @@ namespace passport {
 
 namespace test {
 
-template <typename TagType>
-struct InvalidType;
-
-template <>
-struct InvalidType<detail::AnmaidTag> {
-  using Tag = detail::AnmpidTag;
-};
-
-template <>
-struct InvalidType<detail::MaidTag> {
-  using Tag = detail::AnmpidTag;
-};
-
-template <>
-struct InvalidType<detail::AnpmidTag> {
-  using Tag = detail::AnmpidTag;
-};
-
-template <>
-struct InvalidType<detail::PmidTag> {
-  using Tag = detail::AnmpidTag;
-};
-
-template <>
-struct InvalidType<detail::AnmpidTag> {
-  using Tag = detail::AnmaidTag;
-};
-
-template <>
-struct InvalidType<detail::MpidTag> {
-  using Tag = detail::AnmpidTag;
-};
-
 TEST(PublicFobStaticTest, BEH_Cacheability) {
   static_assert(!is_short_term_cacheable<PublicAnmaid>::value, "");
   static_assert(is_short_term_cacheable<PublicMaid>::value, "");
@@ -89,8 +56,6 @@ class PublicFobTest : public testing::Test {
   using WrongPublicFob = detail::PublicFob<WrongTagType>;
 };
 
-typedef testing::Types<detail::AnmaidTag, detail::MaidTag, detail::AnpmidTag, detail::PmidTag,
-                       detail::AnmpidTag, detail::MpidTag> FobTagTypes;
 TYPED_TEST_CASE(PublicFobTest, FobTagTypes);
 
 TYPED_TEST(PublicFobTest, BEH_ConstructAssignAndSwap) {
