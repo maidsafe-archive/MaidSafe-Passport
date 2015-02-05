@@ -29,12 +29,12 @@ namespace passport {
 
 namespace detail {
 
-typedef maidsafe::detail::Tag<DataTagValue::kAnmaidValue> AnmaidTag;
-typedef maidsafe::detail::Tag<DataTagValue::kMaidValue> MaidTag;
-typedef maidsafe::detail::Tag<DataTagValue::kAnpmidValue> AnpmidTag;
-typedef maidsafe::detail::Tag<DataTagValue::kPmidValue> PmidTag;
-typedef maidsafe::detail::Tag<DataTagValue::kAnmpidValue> AnmpidTag;
-typedef maidsafe::detail::Tag<DataTagValue::kMpidValue> MpidTag;
+using AnmaidTag = maidsafe::detail::Tag<DataTagValue::kAnmaidValue>;
+using MaidTag = maidsafe::detail::Tag<DataTagValue::kMaidValue>;
+using AnpmidTag = maidsafe::detail::Tag<DataTagValue::kAnpmidValue>;
+using PmidTag = maidsafe::detail::Tag<DataTagValue::kPmidValue>;
+using AnmpidTag = maidsafe::detail::Tag<DataTagValue::kAnmpidValue>;
+using MpidTag = maidsafe::detail::Tag<DataTagValue::kMpidValue>;
 
 template <typename TagType, class Enable = void>
 class Fob {};
@@ -42,25 +42,25 @@ class Fob {};
 // Keys are by default self-signed.
 template <typename TagType>
 struct SignerFob {
-  typedef TagType Tag;
+  using Tag = TagType;
 };
 
 // Maid is signed by Anmaid
 template <>
 struct SignerFob<MaidTag> {
-  typedef AnmaidTag Tag;
+  using Tag = AnmaidTag;
 };
 
 // Pmid is signed by Anpmid
 template <>
 struct SignerFob<PmidTag> {
-  typedef AnpmidTag Tag;
+  using Tag = AnpmidTag;
 };
 
 // Mpid is signed by Anmpid
 template <>
 struct SignerFob<MpidTag> {
-  typedef AnmpidTag Tag;
+  using Tag = AnmpidTag;
 };
 
 #ifdef TESTING

@@ -39,17 +39,15 @@ namespace detail {
 template <typename TagType>
 class PublicFob {
  public:
-  typedef maidsafe::detail::Name<PublicFob> Name;
-  typedef TagType Tag;
-  typedef Fob<typename SignerFob<TagType>::Tag> Signer;
-  typedef TaggedValue<NonEmptyString, Tag> serialised_type;
+  using Name = maidsafe::detail::Name<PublicFob>;
+  using Tag = TagType;
+  using Signer = Fob<typename SignerFob<TagType>::Tag>;
+  using serialised_type = TaggedValue<NonEmptyString, Tag>;
+  using ValidationToken = typename Fob<Tag>::ValidationToken;
 
-  PublicFob() = delete;
+  PublicFob() = default;
 
-  PublicFob(const PublicFob& other)
-      : name_(other.name_),
-        public_key_(other.public_key_),
-        validation_token_(other.validation_token_) {}
+  PublicFob(const PublicFob& other) = default;
 
   PublicFob(PublicFob&& other)
       : name_(std::move(other.name_)),
@@ -75,46 +73,91 @@ class PublicFob {
 
   PublicFob(Name name, const serialised_type& serialised_public_fob)
       : name_(std::move(name)), public_key_(), validation_token_() {
-    if (!name_->IsInitialised())
+    try {
+      maidsafe::ConvertFromString(serialised_public_fob.data.string(), *this);
+    } catch (...) {
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
-
-    try { maidsafe::ConvertFromString(serialised_public_fob.data.string(), *this); }
-    catch(...) { BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error)); }
+    }
   }
 
   serialised_type Serialise() const {
-    return serialised_type(NonEmptyString {maidsafe::ConvertToString(*this)});
+    return serialised_type(NonEmptyString{maidsafe::ConvertToString(*this)});
   }
 
-  Name name() const { return name_; }
-  asymm::PublicKey public_key() const { return public_key_; }
-  asymm::Signature validation_token() const { return validation_token_; }
+  bool IsInitialised() const { return name_->IsInitialised(); }
 
-  template<typename Archive>
-  Archive& load(Archive& ref_archive) {
-    std::uint32_t temp_tag;
+  Name name() const {
+    if (!IsInitialised())
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+    return name_;
+  }
+
+  asymm::PublicKey public_key() const {
+    if (!IsInitialised())
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+    return public_key_;
+  }
+
+  ValidationToken validation_token() const {
+    if (!IsInitialised())
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+    return validation_token_;
+  }
+
+  template <typename Archive>
+  Archive& load(Archive& archive) {
     std::string temp_raw_public_key;
-    auto& archive = ref_archive(temp_tag, temp_raw_public_key, validation_token_);
-
-    if (temp_tag != static_cast<std::uint32_t>(Tag::kValue)) {
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
-    }
-
-    public_key_ = asymm::DecodeKey(asymm::EncodedPublicKey {std::move(temp_raw_public_key)});
+    archive(temp_raw_public_key, validation_token_);
+    public_key_ = asymm::DecodeKey(asymm::EncodedPublicKey(temp_raw_public_key));
+    ValidateToken(temp_raw_public_key);
     return archive;
   }
 
-  template<typename Archive>
-  Archive& save(Archive& ref_archive) const {
-    return ref_archive(static_cast<std::uint32_t>(Tag::kValue),
-                       asymm::EncodeKey(public_key_).string(),
-                       validation_token_);
+  template <typename Archive>
+  Archive& save(Archive& archive) const {
+    if (!IsInitialised())
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+    return archive(asymm::EncodeKey(public_key_).string(), validation_token_);
   }
 
  private:
+  // For self-signed keys
+  template <typename T = TagType>
+  void ValidateToken(
+      const std::string& encoded_public_key,
+      typename std::enable_if<std::is_same<Fob<T>, Signer>::value>::type* = 0) const {
+    // Check the validation token is valid
+    if (!asymm::CheckSignature(asymm::PlainText(encoded_public_key + ConvertToString(Tag::kValue)),
+                               validation_token_, public_key_)) {
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+    }
+    // Check the name is the hash of the public key + validation token
+    if (crypto::Hash<crypto::SHA512>(encoded_public_key + validation_token_.string()) !=
+        name_.value) {
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+    }
+  }
+
+  // For non-self-signed keys
+  template <typename T = TagType>
+  void ValidateToken(
+      const std::string& encoded_public_key,
+      typename std::enable_if<!std::is_same<Fob<T>, Signer>::value>::type* = 0) const {
+    // Check the validation token is valid
+    if (!asymm::CheckSignature(asymm::PlainText(validation_token_.signature_of_public_key.string() +
+                                                encoded_public_key + ConvertToString(Tag::kValue)),
+                               validation_token_.self_signature, public_key_)) {
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+    }
+    // Check the name is the hash of the public key + validation token
+    if (crypto::Hash<crypto::SHA512>(encoded_public_key + ConvertToString(validation_token_)) !=
+        name_.value)
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+  }
+
   Name name_;
   asymm::PublicKey public_key_;
-  asymm::Signature validation_token_;
+  ValidationToken validation_token_;
 };
 
 }  // namespace detail

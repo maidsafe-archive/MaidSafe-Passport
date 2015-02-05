@@ -34,7 +34,9 @@
 
 namespace maidsafe {
 
-namespace authentication { struct UserCredentials; }
+namespace authentication {
+struct UserCredentials;
+}
 
 namespace passport {
 
@@ -69,9 +71,9 @@ Anpmid DecryptAnpmid(const crypto::CipherText& encrypted_anpmid, const crypto::A
 Pmid DecryptPmid(const crypto::CipherText& encrypted_pmid, const crypto::AES256Key& symm_key,
                  const crypto::AES256InitialisationVector& symm_iv);
 
-typedef std::pair<Maid, Maid::Signer> MaidAndSigner;
-typedef std::pair<Pmid, Pmid::Signer> PmidAndSigner;
-typedef std::pair<Mpid, Mpid::Signer> MpidAndSigner;
+using MaidAndSigner = std::pair<Maid, Maid::Signer>;
+using PmidAndSigner = std::pair<Pmid, Pmid::Signer>;
+using MpidAndSigner = std::pair<Mpid, Mpid::Signer>;
 // Utility functions to create keys and signers.
 MaidAndSigner CreateMaidAndSigner();
 PmidAndSigner CreatePmidAndSigner();
@@ -121,8 +123,10 @@ class Passport {
   Passport(Passport&&) = delete;
   Passport& operator=(Passport) = delete;
 
-  void Parse(const NonEmptyString& serialised_passport);
-  NonEmptyString Serialise() const;
+  void FromString(const NonEmptyString& serialised_passport, const crypto::AES256Key& symm_key,
+                  const crypto::AES256InitialisationVector& symm_iv);
+  NonEmptyString ToString(const crypto::AES256Key& symm_key,
+                          const crypto::AES256InitialisationVector& symm_iv) const;
 
   void Decrypt(const crypto::CipherText& encrypted_passport,
                const authentication::UserCredentials& user_credentials);
