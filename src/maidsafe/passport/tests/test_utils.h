@@ -31,33 +31,6 @@ typedef testing::Types<detail::AnmaidTag, detail::MaidTag, detail::AnpmidTag, de
                        detail::AnmpidTag, detail::MpidTag> FobTagTypes;
 
 template <typename TagType>
-using SelfSignedFob = detail::Fob<
-    TagType, typename std::enable_if<detail::is_self_signed<TagType>::type::value>::type>;
-
-template <typename TagType>
-using NonSelfSignedFob = detail::Fob<
-    TagType, typename std::enable_if<!detail::is_self_signed<TagType>::type::value>::type>;
-
-template <typename TagType>
-testing::AssertionResult Equal(const typename SelfSignedFob<TagType>::ValidationToken& lhs,
-                               const typename SelfSignedFob<TagType>::ValidationToken& rhs) {
-  if (lhs == rhs)
-    return testing::AssertionSuccess();
-  else
-    return testing::AssertionFailure() << "Signature mismatch.";
-}
-
-template <typename TagType>
-testing::AssertionResult Equal(const typename NonSelfSignedFob<TagType>::ValidationToken& lhs,
-                               const typename NonSelfSignedFob<TagType>::ValidationToken& rhs) {
-  if (lhs.signature_of_public_key != rhs.signature_of_public_key)
-    return testing::AssertionFailure() << "Signature of public key mismatch.";
-  if (lhs.self_signature != rhs.self_signature)
-    return testing::AssertionFailure() << "Self-signature mismatch.";
-  return testing::AssertionSuccess();
-}
-
-template <typename TagType>
 testing::AssertionResult Equal(const detail::Fob<TagType>& lhs, const detail::Fob<TagType>& rhs) {
   if (lhs.name() != rhs.name())
     return testing::AssertionFailure() << "Name mismatch.";
@@ -65,7 +38,9 @@ testing::AssertionResult Equal(const detail::Fob<TagType>& lhs, const detail::Fo
     return testing::AssertionFailure() << "Private key mismatch.";
   if (!asymm::MatchingKeys(lhs.public_key(), rhs.public_key()))
     return testing::AssertionFailure() << "Public key mismatch.";
-  return Equal<TagType>(lhs.validation_token(), rhs.validation_token());
+  if (lhs.validation_token() != rhs.validation_token())
+    return testing::AssertionFailure() << "Validation token mismatch.";
+  return testing::AssertionSuccess();
 }
 
 template <typename TagType>
@@ -79,7 +54,9 @@ testing::AssertionResult Equal(const detail::PublicFob<TagType>& lhs,
     return testing::AssertionFailure() << "Name mismatch.";
   if (!asymm::MatchingKeys(lhs.public_key(), rhs.public_key()))
     return testing::AssertionFailure() << "Public key mismatch.";
-  return Equal<TagType>(lhs.validation_token(), rhs.validation_token());
+  if (lhs.validation_token() != rhs.validation_token())
+    return testing::AssertionFailure() << "Validation token mismatch.";
+  return testing::AssertionSuccess();
 }
 
 template <typename TagType>
@@ -91,7 +68,9 @@ testing::AssertionResult Match(const detail::Fob<TagType>& fob,
     return testing::AssertionFailure() << "Name mismatch.";
   if (!asymm::MatchingKeys(fob.public_key(), public_fob.public_key()))
     return testing::AssertionFailure() << "Public key mismatch.";
-  return Equal<TagType>(fob.validation_token(), public_fob.validation_token());
+  if (fob.validation_token() != public_fob.validation_token())
+    return testing::AssertionFailure() << "Validation token mismatch.";
+  return testing::AssertionSuccess();
 }
 
 // For self-signed keys

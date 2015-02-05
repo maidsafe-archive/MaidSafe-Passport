@@ -52,6 +52,17 @@ TYPED_TEST(FobTest, BEH_ConstructAssignAndSwap) {
   typename TestFixture::Fob fob2(CreateFob<TypeParam>());
   ASSERT_FALSE(Equal(fob1, fob2));
 
+  // Check operator== and operator!= for the validation tokens while we've got two different keys
+  EXPECT_FALSE(fob1.validation_token() == fob2.validation_token());
+  EXPECT_FALSE(fob2.validation_token() == fob1.validation_token());
+  EXPECT_TRUE(fob1.validation_token() != fob2.validation_token());
+  EXPECT_TRUE(fob2.validation_token() != fob1.validation_token());
+  EXPECT_TRUE(fob1.validation_token() == fob1.validation_token());
+  EXPECT_FALSE(fob1.validation_token() != fob1.validation_token());
+  auto copy_of_validation_token(fob1.validation_token());
+  EXPECT_TRUE(fob1.validation_token() == copy_of_validation_token);
+  EXPECT_FALSE(fob1.validation_token() != copy_of_validation_token);
+
   // Copy construct
   typename TestFixture::Fob copied_fob(fob1);
   EXPECT_TRUE(Equal(fob1, copied_fob));

@@ -170,6 +170,15 @@ class Fob<TagType, typename std::enable_if<!is_self_signed<TagType>::type::value
       return *this;
     }
 
+    friend bool operator==(const ValidationToken& lhs, const ValidationToken& rhs) {
+      return lhs.signature_of_public_key == rhs.signature_of_public_key &&
+             lhs.self_signature == rhs.self_signature;
+    }
+
+    friend bool operator!=(const ValidationToken& lhs, const ValidationToken& rhs) {
+      return !operator==(lhs, rhs);
+    }
+
     template <typename Archive>
     void serialize(Archive& archive) {
       archive(signature_of_public_key, self_signature);

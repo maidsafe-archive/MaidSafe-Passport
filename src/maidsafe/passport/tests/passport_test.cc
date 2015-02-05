@@ -161,7 +161,7 @@ TEST(PassportTest, FUNC_ConstructorsSettersAndGetters) {
 
 template <typename FobType>
 bool NoFieldsMatch(const FobType& lhs, const FobType& rhs) {
-  if (Equal<typename FobType::Tag>(lhs.validation_token(), rhs.validation_token())) {
+  if (lhs.validation_token() == rhs.validation_token()) {
     LOG(kError) << "Validation tokens match.";
     return false;
   }
