@@ -64,11 +64,14 @@ std::vector<AnmaidToPmid> ReadKeyChainList(const boost::filesystem::path& file_p
   crypto::AES256Key symm_key(std::string(crypto::AES256_KeySize, 0));
   crypto::AES256InitialisationVector symm_iv(std::string(crypto::AES256_IVSize, 0));
   for (std::uint32_t i = 0; i < keychain_list_size; ++i) {
-    keychain_list.emplace_back(
-        Anmaid(Parse<crypto::CipherText>(binary_input_stream), symm_key, symm_iv),
-        Maid(Parse<crypto::CipherText>(binary_input_stream), symm_key, symm_iv),
-        Anpmid(Parse<crypto::CipherText>(binary_input_stream), symm_key, symm_iv),
-        Pmid(Parse<crypto::CipherText>(binary_input_stream), symm_key, symm_iv));
+    crypto::CipherText encrypted_anmaid(Parse<crypto::CipherText>(binary_input_stream));
+    crypto::CipherText encrypted_maid(Parse<crypto::CipherText>(binary_input_stream));
+    crypto::CipherText encrypted_anpmid(Parse<crypto::CipherText>(binary_input_stream));
+    crypto::CipherText encrypted_pmid(Parse<crypto::CipherText>(binary_input_stream));
+    keychain_list.emplace_back(Anmaid(std::move(encrypted_anmaid), symm_key, symm_iv),
+                               Maid(std::move(encrypted_maid), symm_key, symm_iv),
+                               Anpmid(std::move(encrypted_anpmid), symm_key, symm_iv),
+                               Pmid(std::move(encrypted_pmid), symm_key, symm_iv));
   }
   return keychain_list;
 }
