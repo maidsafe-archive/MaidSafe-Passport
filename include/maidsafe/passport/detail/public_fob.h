@@ -79,12 +79,16 @@ class PublicFob : public Data {
 
   virtual ~PublicFob() final = default;
 
-  virtual std::uint32_t TagValue() const final { return static_cast<std::uint32_t>(Tag::kValue); }
-
-  virtual bool Authenticate() const final { return name_->IsInitialised(); }
+  virtual std::uint32_t TagValue() const final {
+    if (!IsInitialised())
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+    return static_cast<std::uint32_t>(Tag::kValue);
+  }
 
   virtual boost::optional<std::unique_ptr<Data>> Merge(
       const std::vector<std::unique_ptr<Data>>& /*data_collection*/) const final {
+    if (!IsInitialised())
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
     return boost::none;
   }
 
@@ -110,7 +114,7 @@ class PublicFob : public Data {
 
   template <typename Archive>
   Archive& save(Archive& archive) const {
-    if (!Authenticate())
+    if (!IsInitialised())
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
     return archive(cereal::base_class<Data>(this), name_, asymm::EncodeKey(public_key_).string(),
                    validation_token_);
@@ -131,7 +135,11 @@ class PublicFob : public Data {
   }
 
  private:
-  virtual const Identity& Id() const final { return name_.value; }
+  virtual const Identity& Id() const final {
+    if (!IsInitialised())
+      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::uninitialised));
+    return name_.value;
+  }
 
   // For self-signed keys
   template <typename T = TagType>
