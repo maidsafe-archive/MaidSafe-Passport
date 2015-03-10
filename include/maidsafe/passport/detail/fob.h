@@ -111,8 +111,6 @@ class Fob<TagType, typename std::enable_if<is_self_signed<TagType>::type::value>
   }
 
   ValidationToken CreateValidationToken() const {
-    std::vector<byte> contents(asymm::EncodeKey(keys_.public_key).string());
-    std::vector<byte> type_id(Serialise(Tag::type_id));
     return asymm::Sign(asymm::PlainText(Serialise(keys_.public_key, Tag::type_id)),
                        keys_.private_key);
   }

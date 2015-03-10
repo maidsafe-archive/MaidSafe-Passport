@@ -63,7 +63,7 @@ class PublicFob : public Data {
   PublicFob(const PublicFob& other) = default;
 
   PublicFob(PublicFob&& other)
-      : Data(std::move(other)), 
+      : Data(std::move(other)),
         public_key_(std::move(other.public_key_)),
         validation_token_(std::move(other.validation_token_)) {}
 
@@ -102,11 +102,10 @@ class PublicFob : public Data {
     try {
       archive(cereal::base_class<Data>(this), temp_raw_public_key, validation_token_);
       public_key_ = asymm::DecodeKey(asymm::EncodedPublicKey(temp_raw_public_key));
-    }
-    catch (const std::exception&) {
+    } catch (const std::exception&) {
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
     }
-    ValidateToken(temp_raw_public_key);
+    ValidateToken();
     return archive;
   }
 
@@ -116,15 +115,14 @@ class PublicFob : public Data {
   // For self-signed keys
   template <typename T = TagType>
   void ValidateToken(
-      const SerialisedData& encoded_public_key,
       typename std::enable_if<std::is_same<Fob<T>, Signer>::value>::type* = 0) const {
     // Check the validation token is valid
-    if (!asymm::CheckSignature(asymm::PlainText(encoded_public_key + ConvertToString(Tag::kValue)),
+    if (!asymm::CheckSignature(asymm::PlainText(Serialise(public_key_, Tag::type_id)),
                                validation_token_, public_key_)) {
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
     }
     // Check the name is the hash of the public key + validation token
-    if (crypto::Hash<crypto::SHA512>(Serialise(keys_.public_key, validation_token_)) != name_) {
+    if (crypto::Hash<crypto::SHA512>(Serialise(public_key_, validation_token_)) != name_) {
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
     }
   }
@@ -132,11 +130,10 @@ class PublicFob : public Data {
   // For non-self-signed keys
   template <typename T = TagType>
   void ValidateToken(
-      const SerialisedData& encoded_public_key,
       typename std::enable_if<!std::is_same<Fob<T>, Signer>::value>::type* = 0) const {
     // Check the validation token is valid
     SerialisedData self(validation_token_.signature_of_public_key.string());
-    SerialisedData serialised_public_key(Serialise(keys_.public_key));
+    SerialisedData serialised_public_key(Serialise(public_key_));
     self.insert(self.end(), serialised_public_key.begin(), serialised_public_key.end());
     SerialisedData type_id(Serialise(Tag::type_id));
     self.insert(self.end(), type_id.begin(), type_id.end());
@@ -145,7 +142,7 @@ class PublicFob : public Data {
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
     }
     // Check the name is the hash of the public key + validation token
-    if (crypto::Hash<crypto::SHA512>(Serialise(keys_.public_key, validation_token_)) != name_)
+    if (crypto::Hash<crypto::SHA512>(Serialise(public_key_, validation_token_)) != name_)
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   }
 
