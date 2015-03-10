@@ -28,9 +28,7 @@ namespace passport {
 
 namespace detail {
 
-asymm::PlainText GetRandomString() {
-  return asymm::PlainText(RandomBytes(100, 200));
-}
+asymm::PlainText GetRandomString() { return asymm::PlainText(RandomBytes(100, 200)); }
 
 #ifdef TESTING
 

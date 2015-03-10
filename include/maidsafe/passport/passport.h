@@ -59,11 +59,15 @@ namespace passport {
 
 // Functions for serialising/parsing identities.
 crypto::CipherText EncryptMaid(const Maid& maid, const crypto::AES256KeyAndIV& symm_key_and_iv);
-crypto::CipherText EncryptAnpmid(const Anpmid& anpmid, const crypto::AES256KeyAndIV& symm_key_and_iv);
+crypto::CipherText EncryptAnpmid(const Anpmid& anpmid,
+                                 const crypto::AES256KeyAndIV& symm_key_and_iv);
 crypto::CipherText EncryptPmid(const Pmid& pmid, const crypto::AES256KeyAndIV& symm_key_and_iv);
-Maid DecryptMaid(const crypto::CipherText& encrypted_maid, const crypto::AES256KeyAndIV& symm_key_and_iv);
-Anpmid DecryptAnpmid(const crypto::CipherText& encrypted_anpmid, const crypto::AES256KeyAndIV& symm_key_and_iv);
-Pmid DecryptPmid(const crypto::CipherText& encrypted_pmid, const crypto::AES256KeyAndIV& symm_key_and_iv);
+Maid DecryptMaid(const crypto::CipherText& encrypted_maid,
+                 const crypto::AES256KeyAndIV& symm_key_and_iv);
+Anpmid DecryptAnpmid(const crypto::CipherText& encrypted_anpmid,
+                     const crypto::AES256KeyAndIV& symm_key_and_iv);
+Pmid DecryptPmid(const crypto::CipherText& encrypted_pmid,
+                 const crypto::AES256KeyAndIV& symm_key_and_iv);
 
 using MaidAndSigner = std::pair<Maid, Maid::Signer>;
 using PmidAndSigner = std::pair<Pmid, Pmid::Signer>;

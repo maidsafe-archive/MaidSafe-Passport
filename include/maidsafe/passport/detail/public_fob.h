@@ -92,8 +92,8 @@ class PublicFob : public Data {
 
   template <typename Archive>
   Archive& save(Archive& archive) const {
-    return archive(cereal::base_class<Data>(this), asymm::EncodeKey(public_key_).string(),
-                   validation_token_);
+    archive(cereal::base_class<Data>(this));  // Do this first to check IsInitialised() == true.
+    return archive(asymm::EncodeKey(public_key_).string(), validation_token_);
   }
 
   template <typename Archive>
@@ -116,13 +116,18 @@ class PublicFob : public Data {
   template <typename T = TagType>
   void ValidateToken(
       typename std::enable_if<std::is_same<Fob<T>, Signer>::value>::type* = 0) const {
-    // Check the validation token is valid
-    if (!asymm::CheckSignature(asymm::PlainText(Serialise(public_key_, Tag::type_id)),
-                               validation_token_, public_key_)) {
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
-    }
-    // Check the name is the hash of the public key + validation token
-    if (crypto::Hash<crypto::SHA512>(Serialise(public_key_, validation_token_)) != name_) {
+    try {
+      // Check the validation token is valid
+      if (!asymm::CheckSignature(asymm::PlainText(Serialise(public_key_, Tag::type_id)),
+                                 validation_token_, public_key_)) {
+        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+      }
+      // Check the name is the hash of the public key + validation token
+      if (crypto::Hash<crypto::SHA512>(Serialise(public_key_, validation_token_)) != name_) {
+        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+      }
+    } catch (const std::exception& e) {
+      LOG(kWarning) << "Error validating public key token: " << boost::diagnostic_information(e);
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
     }
   }
@@ -131,19 +136,24 @@ class PublicFob : public Data {
   template <typename T = TagType>
   void ValidateToken(
       typename std::enable_if<!std::is_same<Fob<T>, Signer>::value>::type* = 0) const {
-    // Check the validation token is valid
-    SerialisedData self(validation_token_.signature_of_public_key.string());
-    SerialisedData serialised_public_key(Serialise(public_key_));
-    self.insert(self.end(), serialised_public_key.begin(), serialised_public_key.end());
-    SerialisedData type_id(Serialise(Tag::type_id));
-    self.insert(self.end(), type_id.begin(), type_id.end());
-    if (!asymm::CheckSignature(asymm::PlainText(self), validation_token_.self_signature,
-                               public_key_)) {
+    try {
+      // Check the validation token is valid
+      SerialisedData self(validation_token_.signature_of_public_key.string());
+      SerialisedData serialised_public_key(Serialise(public_key_));
+      self.insert(self.end(), serialised_public_key.begin(), serialised_public_key.end());
+      SerialisedData type_id(Serialise(Tag::type_id));
+      self.insert(self.end(), type_id.begin(), type_id.end());
+      if (!asymm::CheckSignature(asymm::PlainText(self), validation_token_.self_signature,
+                                 public_key_)) {
+        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+      }
+      // Check the name is the hash of the public key + validation token
+      if (crypto::Hash<crypto::SHA512>(Serialise(public_key_, validation_token_)) != name_)
+        BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
+    } catch (const std::exception& e) {
+      LOG(kWarning) << "Error validating public key token: " << boost::diagnostic_information(e);
       BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
     }
-    // Check the name is the hash of the public key + validation token
-    if (crypto::Hash<crypto::SHA512>(Serialise(public_key_, validation_token_)) != name_)
-      BOOST_THROW_EXCEPTION(MakeError(CommonErrors::parsing_error));
   }
 
   asymm::PublicKey public_key_;

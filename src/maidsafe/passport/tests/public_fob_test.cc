@@ -121,12 +121,20 @@ TYPED_TEST(PublicFobTest, BEH_SerialisationAndParsing) {
   typename TestFixture::WrongPublicFob wrong_public_fob(wrong_fob);
   serialised_public_fob = Serialise(wrong_public_fob);
   EXPECT_THROW(Parse<TestPublicFob>(serialised_public_fob), common_error);
+
+  // Serialise/parse as base type
+  const std::unique_ptr<Data> data_ptr(new TestPublicFob(fob));
+  serialised_public_fob = Serialise(data_ptr);
+  std::unique_ptr<Data> parsed_ptr(Parse<std::unique_ptr<Data>>(serialised_public_fob));
+  ASSERT_NE(nullptr, parsed_ptr.get());
+  ASSERT_NE(nullptr, dynamic_cast<TestPublicFob*>(parsed_ptr.get()));
+  EXPECT_TRUE(Equal(public_fob, *dynamic_cast<TestPublicFob*>(parsed_ptr.get())));
 }
 
 TYPED_TEST(PublicFobTest, BEH_DefaultConstructed) {
   typename TestFixture::PublicFob public_fob;
   EXPECT_FALSE(public_fob.IsInitialised());
-  EXPECT_THROW(public_fob.name(), common_error);
+  EXPECT_THROW(public_fob.Name(), common_error);
   EXPECT_THROW(public_fob.public_key(), common_error);
   EXPECT_THROW(public_fob.validation_token(), common_error);
   EXPECT_THROW(Serialise(public_fob), common_error);

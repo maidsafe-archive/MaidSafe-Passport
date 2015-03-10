@@ -78,7 +78,8 @@ crypto::CipherText EncryptMaid(const Maid& maid, const crypto::AES256KeyAndIV& s
   return maid.Encrypt(symm_key_and_iv);
 }
 
-crypto::CipherText EncryptAnpmid(const Anpmid& anpmid, const crypto::AES256KeyAndIV& symm_key_and_iv) {
+crypto::CipherText EncryptAnpmid(const Anpmid& anpmid,
+                                 const crypto::AES256KeyAndIV& symm_key_and_iv) {
   return anpmid.Encrypt(symm_key_and_iv);
 }
 
@@ -86,15 +87,18 @@ crypto::CipherText EncryptPmid(const Pmid& pmid, const crypto::AES256KeyAndIV& s
   return pmid.Encrypt(symm_key_and_iv);
 }
 
-Maid DecryptMaid(const crypto::CipherText& encrypted_maid, const crypto::AES256KeyAndIV& symm_key_and_iv) {
+Maid DecryptMaid(const crypto::CipherText& encrypted_maid,
+                 const crypto::AES256KeyAndIV& symm_key_and_iv) {
   return Maid(encrypted_maid, symm_key_and_iv);
 }
 
-Anpmid DecryptAnpmid(const crypto::CipherText& encrypted_anpmid, const crypto::AES256KeyAndIV& symm_key_and_iv) {
+Anpmid DecryptAnpmid(const crypto::CipherText& encrypted_anpmid,
+                     const crypto::AES256KeyAndIV& symm_key_and_iv) {
   return Anpmid(encrypted_anpmid, symm_key_and_iv);
 }
 
-Pmid DecryptPmid(const crypto::CipherText& encrypted_pmid, const crypto::AES256KeyAndIV& symm_key_and_iv) {
+Pmid DecryptPmid(const crypto::CipherText& encrypted_pmid,
+                 const crypto::AES256KeyAndIV& symm_key_and_iv) {
   return Pmid(encrypted_pmid, symm_key_and_iv);
 }
 
