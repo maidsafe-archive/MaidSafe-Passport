@@ -28,6 +28,17 @@ namespace passport {
 
 namespace detail {
 
+#ifndef _MSC_VER
+
+const std::uint32_t AnmaidTag::type_id;
+const std::uint32_t MaidTag::type_id;
+const std::uint32_t AnpmidTag::type_id;
+const std::uint32_t PmidTag::type_id;
+const std::uint32_t AnmpidTag::type_id;
+const std::uint32_t MpidTag::type_id;
+
+#endif
+
 asymm::PlainText GetRandomString() { return asymm::PlainText(RandomBytes(100, 200)); }
 
 #ifdef TESTING
